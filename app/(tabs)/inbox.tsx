@@ -1,5 +1,6 @@
 import React from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { colors, spacing, typography } from '../../theme';
 
 export default function InboxTab() {
   return (
@@ -19,28 +20,29 @@ export default function InboxTab() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: colors.neutral[50], // Was #f5f5f5
   },
   header: {
-    padding: 16,
-    backgroundColor: '#fff',
+    padding: spacing[4], // Was 16
+    backgroundColor: colors.light.surface, // Was #fff
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    borderBottomColor: colors.neutral[200], // Was #e0e0e0
   },
   title: {
-    fontSize: 24,
+    fontSize: typography.fontSize['2xl'], // Was 24
     fontWeight: 'bold',
-    color: '#000',
+    color: colors.neutral[900], // Was #000
   },
   content: {
-    padding: 16,
+    padding: spacing[4], // Was 16
     alignItems: 'center',
     justifyContent: 'center',
     minHeight: 200,
   },
   placeholder: {
-    fontSize: 16,
-    color: '#666',
+    fontSize: typography.fontSize.base, // Was 16
+    color: colors.neutral[500], // Was #666
     textAlign: 'center',
   },
 });
+

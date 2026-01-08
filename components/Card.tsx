@@ -3,8 +3,8 @@
  */
 
 import React from 'react';
-import { View, StyleSheet, ViewStyle } from 'react-native';
-import { colors, spacing, borderRadius, shadows } from '../theme';
+import { StyleSheet, View, ViewStyle } from 'react-native';
+import { borderRadius, colors, shadows, spacing } from '../theme';
 
 interface CardProps {
   children: React.ReactNode;
@@ -38,7 +38,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.light.surface,
     borderRadius: borderRadius.lg,
     borderWidth: 1,
-    borderColor: colors.light.border,
+    borderColor: colors.neutral[200], // More subtle border
   },
 });
 

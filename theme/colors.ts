@@ -4,54 +4,54 @@
  */
 
 export const colors = {
-  // Primary palette - Modern Indigo (Vibrant & Premium)
+  // Primary palette - Corporate Navy (Trust & Professionalism)
   primary: {
-    50: '#EEF2FF',
-    100: '#E0E7FF',
-    200: '#C7D2FE',
-    300: '#A5B4FC',
-    400: '#818CF8',
-    500: '#6366F1', // Main primary
-    600: '#4F46E5',
-    700: '#4338CA',
-    800: '#3730A3',
-    900: '#312E81',
+    50: '#F0F9FF',
+    100: '#E0F2FE',
+    200: '#BAE6FD',
+    300: '#7DD3FC',
+    400: '#38BDF8',
+    500: '#0EA5E9', // Sky Blue for accents (Modern Tech)
+    600: '#0284C7',
+    700: '#0369A1', // Main Corporate Blue
+    800: '#075985',
+    900: '#0C4A6E', // Deep Navy
   },
   
-  // Neutral grays - Clean Slate
+  // Neutral grays - Cool Gray (Professional)
   neutral: {
-    50: '#F8FAFC',
-    100: '#F1F5F9',
-    200: '#E2E8F0',
-    300: '#CBD5E1',
-    400: '#94A3B8',
-    500: '#64748B',
-    600: '#475569',
-    700: '#334155',
-    800: '#1E293B',
-    900: '#0F172A',
+    50: '#F9FAFB',
+    100: '#F3F4F6',
+    200: '#E5E7EB',
+    300: '#D1D5DB',
+    400: '#9CA3AF',
+    500: '#6B7280',
+    600: '#4B5563',
+    700: '#374151',
+    800: '#1F2937',
+    900: '#111827',
   },
   
-  // Dark theme base - Slate Dark
+  // Dark theme base - Deep Navy
   dark: {
-    background: '#0F172A', // Slate 900
-    surface: '#1E293B',     // Slate 800
-    surfaceElevated: '#334155', // Slate 700
+    background: '#0B1120',
+    surface: '#1E293B',
+    surfaceElevated: '#334155',
     border: '#334155',
-    text: '#F8FAFC',
-    textSecondary: '#94A3B8',
-    textTertiary: '#64748B',
+    text: '#F9FAFB',
+    textSecondary: '#9CA3AF',
+    textTertiary: '#6B7280',
   },
   
   // Light theme base
   light: {
-    background: '#FFFFFF',
-    surface: '#FAFAFA',
-    surfaceElevated: '#F5F5F5',
-    border: '#E5E5E5',
-    text: '#171717',
-    textSecondary: '#525252',
-    textTertiary: '#A3A3A3',
+    background: '#F9FAFB', // Slight off-white for reduced eye strain
+    surface: '#FFFFFF',
+    surfaceElevated: '#FFFFFF',
+    border: '#E5E7EB',     // Subtle borders
+    text: '#111827',       // Almost black for sharpness
+    textSecondary: '#4B5563',
+    textTertiary: '#6B7280',
   },
   
   // Semantic colors - muted, never urgent
@@ -80,6 +80,7 @@ export const colors = {
     discord: '#5865F2',
     maps: '#34A853',
   },
+
 };
 
 export type ColorScheme = 'light' | 'dark';

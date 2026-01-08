@@ -19,7 +19,7 @@ import { ReviewQueueScreen } from '../screens/ReviewQueueScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
 import { SplashScreen } from '../screens/SplashScreen';
 import { TeamHubScreen } from '../screens/TeamHubScreen';
-// import { UnifiedCalendarScreen } from '../../screens/UnifiedCalendarScreen';
+import { UnifiedCalendarScreen } from '../screens/UnifiedCalendarScreen';
 import { UnifiedInboxScreen } from '../screens/UnifiedInboxScreen';
 // Auth imports removed for UI review - will be added back when backend is ready
 import { colors } from '../theme';
@@ -220,7 +220,7 @@ function MainTabs() {
       })}
     >
       <Tab.Screen name="Home" component={HomeStack} />
-      {/* <Tab.Screen name="Calendar" component={CalendarStack} /> */}
+      <Tab.Screen name="Calendar" component={CalendarStack} />
       <Tab.Screen name="Inbox" component={InboxStack} />
       <Tab.Screen name="Chat" component={ChatStack} />
       <Tab.Screen name="Settings" component={SettingsStack} />
@@ -271,35 +271,35 @@ function HomeStack() {
   );
 }
 
-// function CalendarStack() {
-//   return (
-//     <Stack.Navigator screenOptions={{ headerShown: false }}>
-//       <Stack.Screen name="UnifiedCalendar">
-//         {({ navigation }) => (
-//           <UnifiedCalendarScreen
-//             events={mockEvents}
-//             onEventPress={(event) => {
-//               navigation.navigate('EditAction', {
-//                 action: {
-//                   id: event.id,
-//                   type: 'calendar',
-//                   title: event.title,
-//                   description: event.description || '',
-//                   platform: event.platform,
-//                   proposedAt: new Date(),
-//                   expiresAt: new Date(),
-//                   status: 'pending',
-//                   requiresApproval: true,
-//                 },
-//               });
-//             }}
-//             onBack={() => navigation.goBack()}
-//           />
-//         )}
-//       </Stack.Screen>
-//     </Stack.Navigator>
-//   );
-// }
+function CalendarStack() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="UnifiedCalendar">
+        {({ navigation }) => (
+          <UnifiedCalendarScreen
+            events={mockEvents}
+            onEventPress={(event) => {
+              navigation.navigate('EditAction', {
+                action: {
+                  id: event.id,
+                  type: 'calendar',
+                  title: event.title,
+                  description: event.description || '',
+                  platform: event.platform,
+                  proposedAt: new Date(),
+                  expiresAt: new Date(),
+                  status: 'pending',
+                  requiresApproval: true,
+                },
+              });
+            }}
+            onBack={() => navigation.goBack()}
+          />
+        )}
+      </Stack.Screen>
+    </Stack.Navigator>
+  );
+}
 
 function InboxStack() {
   return (

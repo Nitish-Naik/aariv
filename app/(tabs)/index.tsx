@@ -8,6 +8,7 @@ import {
     View,
 } from 'react-native';
 import { Card } from '../../components/Card';
+import { colors, spacing, typography } from '../../theme';
 
 export default function HomeTab() {
   const router = useRouter();
@@ -74,72 +75,73 @@ export default function HomeTab() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: colors.neutral[50],
   },
   content: {
-    padding: 16,
+    padding: spacing[4],
   },
   header: {
-    marginBottom: 24,
+    marginBottom: spacing[6],
   },
   greeting: {
-    fontSize: 28,
+    fontSize: typography.fontSize['2xl'],
     fontWeight: 'bold',
-    color: '#000',
-    marginBottom: 4,
+    color: colors.neutral[900],
+    marginBottom: spacing[1],
   },
   subtitle: {
-    fontSize: 16,
-    color: '#666',
+    fontSize: typography.fontSize.base,
+    color: colors.neutral[500],
   },
   section: {
-    marginBottom: 24,
+    marginBottom: spacing[6],
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: typography.fontSize.lg,
     fontWeight: '600',
-    color: '#000',
-    marginBottom: 12,
+    color: colors.neutral[900],
+    marginBottom: spacing[3],
   },
   quickActions: {
     flexDirection: 'row',
-    gap: 12,
+    gap: spacing[3],
   },
   quickAction: {
     flex: 1,
   },
   quickActionCard: {
-    padding: 16,
+    padding: spacing[4],
   },
   quickActionTitle: {
-    fontSize: 14,
+    fontSize: typography.fontSize.sm,
     fontWeight: '600',
-    color: '#000',
-    marginBottom: 4,
+    color: colors.neutral[900],
+    marginBottom: spacing[1],
   },
   quickActionCount: {
-    fontSize: 24,
+    fontSize: typography.fontSize['2xl'],
     fontWeight: 'bold',
-    color: '#007AFF',
+    color: colors.primary[500],
   },
   quickActionSubtitle: {
-    fontSize: 12,
-    color: '#666',
+    fontSize: typography.fontSize.xs,
+    color: colors.neutral[500],
   },
   cardText: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 16,
+    fontSize: typography.fontSize.sm,
+    color: colors.neutral[600],
+    marginBottom: spacing[4],
+    lineHeight: typography.lineHeight.normal * typography.fontSize.sm,
   },
   button: {
-    backgroundColor: '#007AFF',
-    padding: 12,
-    borderRadius: 8,
+    backgroundColor: colors.primary[500],
+    padding: spacing[3],
+    borderRadius: spacing[2],
     alignItems: 'center',
   },
   buttonText: {
-    color: '#fff',
-    fontSize: 16,
+    color: '#ffffff',
+    fontSize: typography.fontSize.base,
     fontWeight: '600',
   },
 });
