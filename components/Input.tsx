@@ -4,14 +4,15 @@
 
 import React from 'react';
 import {
-  TextInput,
-  View,
-  Text,
   StyleSheet,
+  Text,
+  TextInput,
   TextInputProps,
+  View,
   ViewStyle,
 } from 'react-native';
-import { colors, spacing, borderRadius, typography } from '../theme';
+import { useTheme } from '../context/ThemeContext';
+import { borderRadius, spacing, typography } from '../theme';
 
 interface InputProps extends TextInputProps {
   label?: string;
@@ -26,6 +27,9 @@ export const Input: React.FC<InputProps> = ({
   style,
   ...props
 }) => {
+  const { colors } = useTheme();
+  const styles = getStyles(colors);
+
   return (
     <View style={[styles.container, containerStyle]}>
       {label && <Text style={styles.label}>{label}</Text>}
@@ -39,7 +43,7 @@ export const Input: React.FC<InputProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (colors: any) => StyleSheet.create({
   container: {
     marginBottom: spacing[4],
   },
@@ -50,13 +54,13 @@ const styles = StyleSheet.create({
   },
   input: {
     ...typography.textStyles.body,
-    backgroundColor: colors.light.surface,
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: colors.light.border,
+    borderColor: colors.border,
     borderRadius: borderRadius.md,
     paddingHorizontal: spacing[4],
     paddingVertical: spacing[3],
-    color: colors.neutral[900],
+    color: colors.text,
   },
   inputError: {
     borderColor: colors.semantic.error,

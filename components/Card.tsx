@@ -3,12 +3,13 @@
  */
 
 import React from 'react';
-import { StyleSheet, View, ViewStyle } from 'react-native';
-import { borderRadius, colors, shadows, spacing } from '../theme';
+import { View, ViewStyle } from 'react-native';
+import { useTheme } from '../context/ThemeContext';
+import { borderRadius, shadows, spacing } from '../theme';
 
 interface CardProps {
   children: React.ReactNode;
-  style?: ViewStyle;
+  style?: ViewStyle | ViewStyle[];
   elevated?: boolean;
   padding?: keyof typeof spacing;
 }
@@ -19,10 +20,17 @@ export const Card: React.FC<CardProps> = ({
   elevated = false,
   padding = 4,
 }) => {
+  const { colors } = useTheme();
+
   return (
     <View
       style={[
-        styles.card,
+        {
+          backgroundColor: colors.surface,
+          borderRadius: borderRadius.lg,
+          borderWidth: 1,
+          borderColor: colors.border,
+        },
         elevated ? shadows.md : undefined,
         { padding: spacing[padding] },
         style,
@@ -32,13 +40,4 @@ export const Card: React.FC<CardProps> = ({
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  card: {
-    backgroundColor: colors.light.surface,
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    borderColor: colors.neutral[200], // More subtle border
-  },
-});
 

@@ -2,11 +2,13 @@
  * Swipe Card Component for Action Queue
  */
 
-import React from 'react';
-import { View, Text, StyleSheet, Animated, PanResponder } from 'react-native';
-import { colors, spacing, borderRadius, typography } from '../theme';
-import type { ActionItem } from '../types';
 import { format } from 'date-fns';
+import React from 'react';
+import { Animated, PanResponder, StyleSheet, Text, View } from 'react-native';
+import { useTheme } from '../context/ThemeContext';
+import { borderRadius, spacing, typography } from '../theme';
+import type { ActionItem } from '../types';
+import { PlatformIcon } from './PlatformIcon';
 
 interface SwipeCardProps {
   action: ActionItem;
@@ -21,6 +23,9 @@ export const SwipeCard: React.FC<SwipeCardProps> = ({
   onSwipeLeft,
   style,
 }) => {
+  const { colors } = useTheme();
+  const styles = getStyles(colors);
+  
   const pan = React.useRef(new Animated.ValueXY()).current;
 
   const panResponder = React.useRef(
@@ -71,7 +76,7 @@ export const SwipeCard: React.FC<SwipeCardProps> = ({
     inputRange: [-200, 0, 200],
     outputRange: [
       colors.action.reject + '20',
-      colors.light.surface,
+      colors.surface,
       colors.action.approve + '20',
     ],
   });
@@ -86,88 +91,144 @@ export const SwipeCard: React.FC<SwipeCardProps> = ({
             { translateY: pan.y },
             { rotate },
           ],
-          backgroundColor,
+          backgroundColor, // This uses the interpolated background color
         },
         style,
       ]}
       {...panResponder.panHandlers}
     >
       <View style={styles.header}>
+        <PlatformIcon platform={action.platform} size={24} />
         <Text style={styles.platform}>{action.platform.toUpperCase()}</Text>
         <Text style={styles.time}>
           {format(action.proposedAt, 'MMM d, h:mm a')}
         </Text>
       </View>
-      
+
       <Text style={styles.title}>{action.title}</Text>
       <Text style={styles.description}>{action.description}</Text>
-      
+
       <View style={styles.footer}>
-        <View style={[styles.hint, styles.rejectHint]}>
-          <Text style={styles.hintText}>← Reject</Text>
+        <View style={[styles.badge, styles.badgePending]}>
+          <Text style={styles.badgeText}>Pending Review</Text>
         </View>
-        <View style={[styles.hint, styles.approveHint]}>
-          <Text style={styles.hintText}>Approve →</Text>
-        </View>
+        <Text style={styles.swipeHint}>Current Task</Text>
       </View>
+      
+      {/* Visual cues for swipe directions - only visible when dragging */}
+      <Animated.View 
+        style={[
+          styles.overlay, 
+          { 
+            opacity: pan.x.interpolate({
+              inputRange: [50, 150],
+              outputRange: [0, 1],
+              extrapolate: 'clamp',
+            }),
+            backgroundColor: colors.action.approve + '10', // Very light green
+          }
+        ]} 
+      >
+         <Text style={[styles.overlayText, { color: colors.action.approve }]}>APPROVE</Text>
+      </Animated.View>
+
+      <Animated.View 
+        style={[
+          styles.overlay, 
+          { 
+            opacity: pan.x.interpolate({
+              inputRange: [-150, -50],
+              outputRange: [1, 0],
+              extrapolate: 'clamp',
+            }),
+            backgroundColor: colors.action.reject + '10', // Very light red
+          }
+        ]} 
+      >
+         <Text style={[styles.overlayText, { color: colors.action.reject, right: 20, left: undefined }]}>REJECT</Text>
+      </Animated.View>
     </Animated.View>
   );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (colors: any) => StyleSheet.create({
   card: {
-    width: '90%',
-    minHeight: 200,
-    borderRadius: borderRadius.xl,
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.lg,
     padding: spacing[5],
-    marginVertical: spacing[2],
+    width: '100%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 8,
     borderWidth: 1,
-    borderColor: colors.light.border,
+    borderColor: colors.border,
+    minHeight: 200,
+    justifyContent: 'space-between',
   },
   header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: spacing[3],
   },
   platform: {
     ...typography.textStyles.caption,
-    color: colors.primary[500],
-    fontWeight: typography.fontWeight.semibold,
+    fontWeight: 'bold',
+    color: colors.textSecondary,
+    marginLeft: spacing[2],
+    flex: 1,
   },
   time: {
     ...typography.textStyles.caption,
-    color: colors.neutral[500],
+    color: colors.textTertiary,
   },
   title: {
-    ...typography.textStyles.h4,
-    color: colors.neutral[900],
+    ...typography.textStyles.h3,
+    color: colors.text,
     marginBottom: spacing[2],
   },
   description: {
     ...typography.textStyles.body,
-    color: colors.neutral[600],
-    flex: 1,
+    color: colors.textSecondary,
+    marginBottom: spacing[4],
+    lineHeight: 24,
   },
   footer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: spacing[4],
+    alignItems: 'center',
+    marginTop: 'auto',
   },
-  hint: {
+  badge: {
     paddingHorizontal: spacing[3],
     paddingVertical: spacing[1],
-    borderRadius: borderRadius.md,
+    borderRadius: borderRadius.full,
   },
-  rejectHint: {
-    backgroundColor: colors.action.reject + '20',
+  badgePending: {
+    backgroundColor: colors.action.pending + '20',
   },
-  approveHint: {
-    backgroundColor: colors.action.approve + '20',
-  },
-  hintText: {
+  badgeText: {
     ...typography.textStyles.caption,
-    color: colors.neutral[600],
+    fontWeight: 'bold',
+    color: colors.action.pending,
   },
+  swipeHint: {
+    ...typography.textStyles.caption,
+    color: colors.textTertiary,
+    fontStyle: 'italic',
+  },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: borderRadius.lg,
+    justifyContent: 'center',
+    alignItems: 'flex-start',
+    paddingLeft: 20,
+  },
+  overlayText: {
+    fontSize: 24,
+    fontWeight: '900',
+    letterSpacing: 2,
+    transform: [{ rotate: '-15deg' }],
+  }
 });
-

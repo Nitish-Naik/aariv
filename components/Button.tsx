@@ -4,14 +4,15 @@
 
 import React from 'react';
 import {
-    ActivityIndicator,
-    StyleSheet,
-    Text,
-    TextStyle,
-    TouchableOpacity,
-    ViewStyle,
+  ActivityIndicator,
+  StyleSheet,
+  Text,
+  TextStyle,
+  TouchableOpacity,
+  ViewStyle,
 } from 'react-native';
-import { colors, spacing, typography } from '../theme';
+import { useTheme } from '../context/ThemeContext';
+import { spacing, typography } from '../theme';
 
 interface ButtonProps {
   title: string;
@@ -34,6 +35,9 @@ export const Button: React.FC<ButtonProps> = ({
   style,
   textStyle,
 }) => {
+  const { colors } = useTheme();
+  const styles = getStyles(colors);
+
   const buttonStyle = [
     styles.button,
     styles[variant],
@@ -58,7 +62,7 @@ export const Button: React.FC<ButtonProps> = ({
     >
       {loading ? (
         <ActivityIndicator
-          color={variant === 'primary' ? colors.light.text : colors.primary[500]}
+          color={variant === 'primary' ? colors.text : colors.primary[500]}
         />
       ) : (
         <Text style={buttonTextStyle}>{title}</Text>
@@ -67,7 +71,7 @@ export const Button: React.FC<ButtonProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (colors: any) => StyleSheet.create({
   button: {
     borderRadius: 8,
     alignItems: 'center',
@@ -110,7 +114,7 @@ const styles = StyleSheet.create({
     ...typography.textStyles.button,
   },
   primaryText: {
-    color: colors.light.text,
+    color: colors.text,
   },
   secondaryText: {
     color: colors.neutral[900],
