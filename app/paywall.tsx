@@ -13,7 +13,8 @@ import {
     View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { colors, spacing, typography } from '../theme';
+import { useTheme } from '../context/ThemeContext';
+import { spacing, typography } from '../theme';
 
 const { width } = Dimensions.get('window');
 
@@ -71,10 +72,14 @@ const BENEFITS = [
 export default function PaywallScreen() {
   const router = useRouter();
   const [isYearly, setIsYearly] = useState(false);
+  const { colors, isDark } = useTheme();
   
   // Iris Animation (Breathing Orb)
   const fadeAnim = useRef(new Animated.Value(0.6)).current;
   const scaleAnim = useRef(new Animated.Value(1)).current;
+
+  // Generate dynamic styles based on theme
+  const styles = getStyles(colors, isDark);
 
   useEffect(() => {
     const breathe = Animated.loop(
@@ -110,13 +115,13 @@ export default function PaywallScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" />
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         
         {/* Header / Iris */}
         <View style={styles.header}>
             <TouchableOpacity onPress={() => router.back()} style={styles.closeButton}>
-                <Ionicons name="close" size={24} color={colors.neutral[400]} />
+                <Ionicons name="close" size={24} color={colors.textSecondary} />
             </TouchableOpacity>
             
             <View style={styles.irisContainer}>
@@ -125,10 +130,10 @@ export default function PaywallScreen() {
             </View>
 
             <Text style={styles.headline}>Let Iris run ahead, quietly.</Text>
-            <Text style={styles.subHeadline}>Not more notifications. More clarity.</Text>
+            <Text style={styles.subHeadline}>No more notifications. More clarity.</Text>
             
             <View style={styles.irisIntroContainer}>
-                <Text style={styles.irisIntro}>"I prepared the next steps. You decide when to delegate."</Text>
+                <Text style={styles.irisIntro}>`&ldquo;`I prepared the next steps. You decide when to delegate.`&ldquo;`</Text>
             </View>
         </View>
 
@@ -136,7 +141,7 @@ export default function PaywallScreen() {
         <View style={styles.benefitsContainer}>
             {BENEFITS.map((benefit, index) => (
                 <View key={index} style={styles.benefitItem}>
-                    <Ionicons name="checkmark-circle-outline" size={18} color={colors.primary[300]} />
+                    <Ionicons name="checkmark-circle-outline" size={18} color={colors.primary[500]} />
                     <Text style={styles.benefitText}>{benefit}</Text>
                 </View>
             ))}
@@ -148,9 +153,9 @@ export default function PaywallScreen() {
             <Switch
                 value={isYearly}
                 onValueChange={setIsYearly}
-                trackColor={{ false: colors.neutral[700], true: colors.primary[600] }}
+                trackColor={{ false: isDark ? colors.neutral[700] : colors.neutral[300], true: colors.primary[500] }}
                 thumbColor={colors.neutral[100]}
-                ios_backgroundColor={colors.neutral[700]}
+                ios_backgroundColor={isDark ? colors.neutral[700] : colors.neutral[300]}
                 style={{ transform: [{ scaleX: 0.8 }, { scaleY: 0.8 }] }}
             />
             <Text style={[styles.toggleLabel, isYearly && styles.activeLabel]}>Yearly <Text style={styles.saveTag}>(Save 20%)</Text></Text>
@@ -206,10 +211,10 @@ export default function PaywallScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0F172A', // Slate 900 - Premium Dark
+    backgroundColor: colors.background,
   },
   scrollContent: {
     padding: spacing[6],
@@ -255,7 +260,7 @@ const styles = StyleSheet.create({
   },
   headline: {
     ...typography.textStyles.h2,
-    color: '#F8FAFC',
+    color: colors.text,
     textAlign: 'center',
     marginBottom: spacing[2],
     letterSpacing: -0.5,
@@ -263,20 +268,22 @@ const styles = StyleSheet.create({
   subHeadline: {
     ...typography.textStyles.body,
     fontSize: 18,
-    color: '#94A3B8', // Slate 400
+    color: colors.textSecondary,
     textAlign: 'center',
     marginBottom: spacing[6],
     letterSpacing: 0.5,
   },
   irisIntroContainer: {
-      backgroundColor: 'rgba(30, 41, 59, 0.5)', // Slate 800 with opacity
+      backgroundColor: isDark ? 'rgba(30, 41, 59, 0.5)' : colors.neutral[100], 
       paddingHorizontal: spacing[4],
       paddingVertical: spacing[2],
       borderRadius: 20,
+      borderWidth: 1,
+      borderColor: isDark ? 'transparent' : colors.neutral[200],
   },
   irisIntro: {
       ...typography.textStyles.bodySmall,
-      color: colors.primary[200],
+      color: isDark ? colors.primary[200] : colors.primary[700],
       fontStyle: 'italic',
       textAlign: 'center',
   },
@@ -290,16 +297,16 @@ const styles = StyleSheet.create({
   benefitItem: {
       flexDirection: 'row',
       alignItems: 'center',
-      backgroundColor: 'rgba(30, 41, 59, 0.3)',
+      backgroundColor: isDark ? 'rgba(30, 41, 59, 0.3)' : '#FFFFFF',
       paddingHorizontal: spacing[3],
       paddingVertical: spacing[1],
       borderRadius: 12,
       borderWidth: 1,
-      borderColor: 'rgba(148, 163, 184, 0.1)',
+      borderColor: isDark ? 'rgba(148, 163, 184, 0.1)' : colors.neutral[200],
   },
   benefitText: {
       ...typography.textStyles.caption,
-      color: '#CBD5E1',
+      color: colors.textSecondary,
       marginLeft: spacing[1],
   },
   toggleContainer: {
@@ -311,11 +318,11 @@ const styles = StyleSheet.create({
   },
   toggleLabel: {
       ...typography.textStyles.bodySmall,
-      color: '#64748B',
+      color: colors.textTertiary,
       fontWeight: '600',
   },
   activeLabel: {
-      color: '#F8FAFC',
+      color: colors.text,
   },
   saveTag: {
       color: colors.semantic.success,
@@ -326,14 +333,14 @@ const styles = StyleSheet.create({
       marginBottom: spacing[8],
   },
   tierCard: {
-      backgroundColor: '#1E293B', // Slate 800
+      backgroundColor: colors.surface,
       borderRadius: 16,
       padding: spacing[4],
       borderWidth: 1,
-      borderColor: '#334155',
+      borderColor: colors.border,
   },
   tierCardHighlighted: {
-      backgroundColor: '#0F172A', // Slate 900
+      backgroundColor: isDark ? '#0F172A' : '#F0F9FF', // Slate 900 or Light Blue
       borderColor: colors.primary[500],
       borderWidth: 1.5,
       shadowColor: colors.primary[500],
@@ -350,31 +357,31 @@ const styles = StyleSheet.create({
   },
   tierName: {
       ...typography.textStyles.h4,
-      color: '#F8FAFC',
+      color: colors.text,
       marginBottom: 2,
   },
   tierDesc: {
       ...typography.textStyles.caption,
-      color: '#94A3B8',
+      color: colors.textSecondary,
   },
   tierPrice: {
       ...typography.textStyles.h3,
-      color: '#F8FAFC',
+      color: colors.text,
   },
   tierPeriod: {
       ...typography.textStyles.caption,
-      color: '#64748B',
+      color: colors.textTertiary,
       textAlign: 'right',
   },
   textHighlighted: {
-      color: colors.primary[400],
+      color: colors.primary[500],
   },
   textHighlightedDim: {
-      color: colors.primary[200],
+      color: colors.primary[400],
   },
   tierDivider: {
       height: 1,
-      backgroundColor: '#334155',
+      backgroundColor: colors.border,
       marginBottom: spacing[4],
   },
   ctaButton: {
@@ -385,7 +392,7 @@ const styles = StyleSheet.create({
   ctaButtonOutline: {
       backgroundColor: 'transparent',
       borderWidth: 1,
-      borderColor: '#475569',
+      borderColor: colors.neutral[500],
   },
   ctaButtonHighlighted: {
       backgroundColor: colors.primary[600],
@@ -395,7 +402,7 @@ const styles = StyleSheet.create({
       fontWeight: 'bold',
   },
   ctaTextOutline: {
-      color: '#F8FAFC',
+      color: colors.text,
   },
   ctaTextHighlighted: {
       color: '#FFFFFF',
@@ -411,23 +418,23 @@ const styles = StyleSheet.create({
   },
   footerLinkText: {
       ...typography.textStyles.caption,
-      color: '#94A3B8',
+      color: colors.textSecondary,
       textDecorationLine: 'underline',
   },
   footerPipe: {
-      color: '#475569',
+      color: colors.textSecondary,
       marginTop: spacing[1],
   },
   cancelText: {
       ...typography.textStyles.caption,
-      color: '#64748B',
+      color: colors.textTertiary,
       textAlign: 'center',
       marginBottom: spacing[4],
   },
   legalText: {
       ...typography.textStyles.caption,
       fontSize: 10,
-      color: '#475569',
+      color: colors.textTertiary,
       textAlign: 'center',
       paddingHorizontal: spacing[8],
       lineHeight: 14,
