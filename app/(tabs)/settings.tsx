@@ -1,7 +1,7 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
-  Alert,
   ScrollView,
   StyleSheet,
   Switch,
@@ -9,248 +9,256 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { Button } from '../../components/Button';
-import { Card } from '../../components/Card';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../context/ThemeContext';
 import { spacing, typography } from '../../theme';
 
 export default function SettingsTab() {
   const router = useRouter();
   const { isDark, toggleTheme, colors } = useTheme();
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-  const [autoApproveEnabled, setAutoApproveEnabled] = useState(false);
+  const styles = getStyles(colors, isDark);
 
-  const styles = getStyles(colors);
-
-  const handleSignOut = () => {
-    Alert.alert(
-      'Sign Out',
-      'Are you sure you want to sign out?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Sign Out',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              // await signOut(); // Mocked auth
-              // await clearAllData();
-              Alert.alert('Signed Out', 'You have been signed out (mock).');
-              // router.replace('/');
-            } catch (error: any) {
-              Alert.alert('Error', error.message || 'Failed to sign out');
-            }
-          },
-        },
-      ]
-    );
-  };
-
-  const handleClearCache = () => {
-    Alert.alert(
-      'Clear Cache',
-      'This will clear all cached data. Continue?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Clear',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              // await clearAllData();
-              Alert.alert('Success', 'Cache cleared');
-            } catch (error: any) {
-              // Alert.alert('Error', error.message || 'Failed to clear cache');
-            }
-          },
-        },
-      ]
-    );
-  };
+  const [mode, setMode] = useState<'passive' | 'active'>('active');
+  const [readEmail, setReadEmail] = useState(true);
+  const [readCalendar, setReadCalendar] = useState(true);
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
-        <Text style={styles.title}>Settings</Text>
+        <Text style={styles.headerTitle}>Protocols</Text>
+        <Text style={styles.headerSubtitle}>Configure assistant behavior and permissions.</Text>
       </View>
 
-      {/* Preferences */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Preferences</Text>
-        <Card>
-          <View style={styles.settingRow}>
-            <View style={styles.settingInfo}>
-              <Text style={styles.settingLabel}>Notifications</Text>
-              <Text style={styles.settingDescription}>
-                Receive notifications for new actions
-              </Text>
+      <ScrollView contentContainerStyle={styles.content}>
+        
+        {/* Operating Mode Section */}
+        <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Operating Mode</Text>
+            <View style={styles.modeSelector}>
+                <TouchableOpacity 
+                    style={[styles.modeOption, mode === 'passive' && styles.modeActive]}
+                    onPress={() => setMode('passive')}
+                >
+                    <Ionicons name="shield-checkmark-outline" size={24} color={mode === 'passive' ? '#FFF' : colors.textSecondary} />
+                    <Text style={[styles.modeText, mode === 'passive' && styles.modeTextActive]}>Passive</Text>
+                    <Text style={[styles.modeSub, mode === 'passive' && styles.modeTextActive]}>Wait for commands</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity 
+                    style={[styles.modeOption, mode === 'active' && styles.modeActive]}
+                    onPress={() => setMode('active')}
+                >
+                    <Ionicons name="flash-outline" size={24} color={mode === 'active' ? '#FFF' : colors.textSecondary} />
+                    <Text style={[styles.modeText, mode === 'active' && styles.modeTextActive]}>Executive</Text>
+                    <Text style={[styles.modeSub, mode === 'active' && styles.modeTextActive]}>Proactive action</Text>
+                </TouchableOpacity>
             </View>
-            <Switch
-              value={notificationsEnabled}
-              onValueChange={setNotificationsEnabled}
-              trackColor={{ false: colors.neutral[300], true: colors.primary[500] }}
-            />
-          </View>
-          <View style={styles.divider} />
+        </View>
 
-          <View style={styles.settingRow}>
-            <View style={styles.settingInfo}>
-              <Text style={styles.settingLabel}>Auto-Approval</Text>
-              <Text style={styles.settingDescription}>
-                Automatically approve low-risk actions
-              </Text>
+        {/* Neural Link Section */}
+        <View style={styles.section}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing[4] }}>
+                <Text style={styles.sectionTitle}>Neural Access</Text>
+                <TouchableOpacity onPress={() => router.push('/toolkits')}>
+                    <Text style={{ color: colors.primary[500], fontSize: 13, fontWeight: '600' }}>Expand Capacity</Text>
+                </TouchableOpacity>
             </View>
-            <Switch
-              value={autoApproveEnabled}
-              onValueChange={setAutoApproveEnabled}
-              trackColor={{ false: colors.neutral[300], true: colors.primary[500] }}
-            />
-          </View>
-          <View style={styles.divider} />
 
-          <View style={styles.settingRow}>
-            <View style={styles.settingInfo}>
-              <Text style={styles.settingLabel}>Dark Mode</Text>
-              <Text style={styles.settingDescription}>
-                Use dark color scheme
-              </Text>
+            <View style={styles.settingRow}>
+                <View style={styles.settingInfo}>
+                    <Text style={styles.settingLabel}>Inbox Read Access</Text>
+                    <Text style={styles.settingDesc}>Allow scanning of high-priority emails.</Text>
+                </View>
+                <Switch 
+                    value={readEmail} 
+                    onValueChange={setReadEmail} 
+                    trackColor={{ false: colors.border, true: colors.primary[500] }}
+                />
             </View>
-            <Switch
-              value={isDark}
-              onValueChange={toggleTheme}
-              trackColor={{ false: colors.neutral[300], true: colors.primary[500] }}
-            />
-          </View>
-        </Card>
-      </View>
-      {/* Subscription */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Subscription</Text>
-        <Card>
-          <TouchableOpacity
-            style={styles.menuItem}
-            onPress={() => router.push('/paywall')}
-          >
-            <View style={{ flex: 1 }}>
-                <Text style={styles.menuItemText}>Manage Subscription</Text>
-                <Text style={{ ...typography.textStyles.caption, color: colors.primary[500] }}>Current Plan: Free</Text>
+            <View style={styles.divider} />
+            <View style={styles.settingRow}>
+                <View style={styles.settingInfo}>
+                    <Text style={styles.settingLabel}>Calendar Negotiation</Text>
+                    <Text style={styles.settingDesc}>Allow moving flexible meetings automatically.</Text>
+                </View>
+                <Switch 
+                    value={readCalendar} 
+                    onValueChange={setReadCalendar} 
+                    trackColor={{ false: colors.border, true: colors.primary[500] }}
+                />
             </View>
-            <Text style={styles.chevron}>›</Text>
-          </TouchableOpacity>
-        </Card>
-      </View>
-      {/* Security */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Security & Data</Text>
-        <Card>
-          <TouchableOpacity
-            style={styles.menuItem}
-            onPress={() => Alert.alert('Key Vault', 'Secure storage for API keys.')}
-          >
-            <Text style={styles.menuItemText}>Manage API Keys (Key Vault)</Text>
-            <Text style={styles.chevron}>›</Text>
-          </TouchableOpacity>
-          <View style={styles.divider} />
+        </View>
 
-          <TouchableOpacity
-            style={styles.menuItem}
-            onPress={() => Alert.alert('Knowledge Graph', 'Visualize your data connections.')}
-          >
-            <Text style={styles.menuItemText}>View Knowledge Graph</Text>
-            <Text style={styles.chevron}>›</Text>
-          </TouchableOpacity>
-          <View style={styles.divider} />
+        {/* Brain Access */}
+        <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Memory & Knowledge</Text>
+            <TouchableOpacity 
+                style={styles.brainCard}
+                onPress={() => router.push('/knowledge-graph')}
+            >
+                <View style={styles.brainIcon}>
+                    <Ionicons name="git-network-outline" size={24} color={colors.primary[400]} />
+                </View>
+                <View style={styles.brainContent}>
+                    <Text style={styles.brainTitle}>View Knowledge Graph</Text>
+                    <Text style={styles.brainSubtitle}>128 nodes • 45 relationships</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />
+            </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.menuItem}
-            onPress={handleClearCache}
-          >
-            <Text style={styles.menuItemText}>Clear Local Cache</Text>
-            <Text style={styles.chevron}>›</Text>
-          </TouchableOpacity>
-        </Card>
-      </View>
+            <TouchableOpacity style={styles.actionRow} onPress={toggleTheme}>
+                 <Text style={styles.actionText}>Toggle Theme (Dev)</Text>
+                 <Text style={styles.actionValue}>{isDark ? 'Dark' : 'Light'}</Text>
+            </TouchableOpacity>
+        </View>
 
-      {/* Account */}
-      <View style={styles.section}>
-        <Button
-          title="Sign Out"
-          onPress={handleSignOut}
-          variant="outline"
-          fullWidth
-        />
-        <Text style={styles.version}>Version 1.0.0 (Alpha)</Text>
-      </View>
-    </ScrollView>
+        <Text style={styles.versionText}>Assistant v2.4.0 • Neural Core v1.1</Text>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
-const getStyles = (colors: any) => StyleSheet.create({
+const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
   },
-  content: {
-    padding: spacing[4],
-    paddingTop: spacing[8],
-  },
   header: {
-    marginBottom: spacing[6],
+    padding: spacing[6],
+    paddingBottom: spacing[4],
   },
-  title: {
+  headerTitle: {
     ...typography.textStyles.h2,
     color: colors.text,
+    marginBottom: spacing[2],
+  },
+  headerSubtitle: {
+      ...typography.textStyles.body,
+      color: colors.textSecondary,
+  },
+  content: {
+    padding: spacing[6],
   },
   section: {
-    marginBottom: spacing[6],
+    marginBottom: spacing[8],
   },
   sectionTitle: {
-    ...typography.textStyles.h4,
-    color: colors.text,
-    marginBottom: spacing[3],
+    ...typography.textStyles.caption,
+    color: colors.textTertiary,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginBottom: spacing[4],
+    fontWeight: '600',
   },
+  
+  // Mode Selector
+  modeSelector: {
+      flexDirection: 'row',
+      gap: spacing[4],
+  },
+  modeOption: {
+      flex: 1,
+      backgroundColor: colors.surface,
+      padding: spacing[4],
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+      alignItems: 'center',
+  },
+  modeActive: {
+      backgroundColor: colors.primary[600],
+      borderColor: colors.primary[600],
+  },
+  modeText: {
+      ...typography.textStyles.h4,
+      color: colors.text,
+      marginTop: spacing[2],
+      marginBottom: 2,
+  },
+  modeSub: {
+      fontSize: 12,
+      color: colors.textSecondary,
+  },
+  modeTextActive: {
+      color: '#FFF',
+  },
+
+  // Rows
   settingRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: spacing[3],
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingVertical: spacing[2],
   },
   settingInfo: {
-    flex: 1,
-    marginRight: spacing[4],
+      flex: 1,
+      paddingRight: spacing[4],
   },
   settingLabel: {
-    ...typography.textStyles.body,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.text,
+      ...typography.textStyles.body,
+      color: colors.text,
+      fontWeight: '500',
   },
-  settingDescription: {
-    ...typography.textStyles.caption,
-    color: colors.textSecondary,
-    marginTop: 2,
+  settingDesc: {
+      fontSize: 13,
+      color: colors.textSecondary,
+      marginTop: 2,
   },
   divider: {
-    height: 1,
-    backgroundColor: colors.border,
+      height: 1,
+      backgroundColor: colors.border,
+      marginVertical: spacing[4],
   },
-  menuItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: spacing[4],
+
+  // Brain Card
+  brainCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.surface,
+      padding: spacing[4],
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+      marginBottom: spacing[4],
   },
-  menuItemText: {
-    ...typography.textStyles.body,
-    color: colors.text,
+  brainIcon: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: isDark ? 'rgba(59, 130, 246, 0.1)' : '#EFF6FF',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: spacing[4],
   },
-  chevron: {
-    fontSize: 20,
-    color: colors.neutral[400],
+  brainContent: {
+      flex: 1,
   },
-  version: {
-    ...typography.textStyles.caption,
-    textAlign: 'center',
-    color: colors.textTertiary,
-    marginTop: spacing[4],
+  brainTitle: {
+      ...typography.textStyles.body,
+      color: colors.text,
+      fontWeight: '600',
   },
+  brainSubtitle: {
+      fontSize: 12,
+      color: colors.textSecondary,
+  },
+
+  actionRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      paddingVertical: spacing[3],
+  },
+  actionText: {
+      color: colors.text,
+  },
+  actionValue: {
+      color: colors.textTertiary,
+  },
+
+  versionText: {
+      textAlign: 'center',
+      color: colors.textTertiary,
+      fontSize: 12,
+      marginTop: spacing[8],
+  }
 });

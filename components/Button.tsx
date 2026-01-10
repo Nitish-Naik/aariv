@@ -62,7 +62,7 @@ export const Button: React.FC<ButtonProps> = ({
     >
       {loading ? (
         <ActivityIndicator
-          color={variant === 'primary' ? colors.text : colors.primary[500]}
+          color={variant === 'primary' ? '#FFFFFF' : colors.primary[500]}
         />
       ) : (
         <Text style={buttonTextStyle}>{title}</Text>
@@ -114,7 +114,7 @@ const getStyles = (colors: any) => StyleSheet.create({
     ...typography.textStyles.button,
   },
   primaryText: {
-    color: colors.text,
+    color: '#FFFFFF', // Always white for primary buttons
   },
   secondaryText: {
     color: colors.neutral[900],

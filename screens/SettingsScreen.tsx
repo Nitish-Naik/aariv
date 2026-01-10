@@ -2,6 +2,7 @@
  * Settings Screen - App settings and key vault management
  */
 
+
 import React, { useState } from 'react';
 import {
   View,

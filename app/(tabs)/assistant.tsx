@@ -1,19 +1,20 @@
+import { Ionicons } from '@expo/vector-icons';
 import { format } from 'date-fns';
 import React, { useEffect, useRef, useState } from 'react';
 import {
-    FlatList,
-    KeyboardAvoidingView,
-    Platform,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  FlatList,
+  KeyboardAvoidingView,
+  Platform,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { Button } from '../../components/Button';
 import { Card } from '../../components/Card';
 import { useTheme } from '../../context/ThemeContext';
-import { spacing, typography } from '../../theme';
+import { borderRadius, spacing, typography } from '../../theme';
 import { ChatMessage } from '../../types';
 import { MOCK_MESSAGES } from '../../utils/mockData';
 
@@ -21,8 +22,10 @@ export default function AssistantTab() {
   const [messages, setMessages] = useState<ChatMessage[]>(MOCK_MESSAGES);
   const [inputText, setInputText] = useState('');
   const flatListRef = useRef<FlatList>(null);
-  const { colors } = useTheme();
-  const styles = getStyles(colors);
+  const { colors, isDark } = useTheme();
+  
+  // Dynamic styles
+  const styles = getStyles(colors, isDark);
 
   useEffect(() => {
     if (messages.length > 0) {
@@ -57,7 +60,6 @@ export default function AssistantTab() {
   };
 
   const handleApproveAction = (actionId: string) => {
-    // Stub
     alert(`Approved action ${actionId}`);
   };
 
@@ -76,6 +78,7 @@ export default function AssistantTab() {
             styles.messageCard,
             isUser ? styles.userMessageCard : styles.assistantMessageCard,
           ]}
+          padding={3}
         >
           <Text style={[styles.messageText, isUser && styles.userMessageText]}>{item.content}</Text>
           <Text style={[styles.messageTime, isUser && styles.userMessageTime]}>
@@ -101,7 +104,7 @@ export default function AssistantTab() {
           {item.actions && item.actions.length > 0 && (
             <View style={styles.actions}>
               {item.actions.map((action) => (
-                <Card key={action.id} style={styles.actionCard}>
+                <Card key={action.id} style={styles.actionCard} padding={3}>
                   <Text style={styles.actionTitle}>{action.title}</Text>
                   <Text style={styles.actionDescription}>
                     {action.description}
@@ -127,7 +130,8 @@ export default function AssistantTab() {
       keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
     >
       <View style={styles.header}>
-        <Text style={styles.title}>Assistant</Text>
+        <Text style={styles.title}>Meet Aariv</Text>
+        <Text style={styles.subtitle}>Calendar meets intelligence.</Text>
       </View>
 
       <FlatList
@@ -138,32 +142,40 @@ export default function AssistantTab() {
         contentContainerStyle={styles.listContent}
       />
 
-      <View style={styles.inputContainer}>
-        <TextInput
-          style={styles.input}
-          placeholder="Ask anything..."
-          value={inputText}
-          onChangeText={setInputText}
-          placeholderTextColor={colors.neutral[400]}
-          returnKeyType="send"
-          onSubmitEditing={handleSend}
-        />
-        <TouchableOpacity
-          style={[
-            styles.sendButton,
-            !inputText.trim() && styles.sendButtonDisabled,
-          ]}
-          onPress={handleSend}
-          disabled={!inputText.trim()}
-        >
-          <Text style={styles.sendButtonText}>Send</Text>
-        </TouchableOpacity>
+      {/* Floating Input Bar */}
+      <View style={styles.inputWrapper}>
+        <View style={styles.inputContainer}>
+          <TextInput
+            style={styles.input}
+            placeholder="Message Aariv..."
+            value={inputText}
+            onChangeText={setInputText}
+            placeholderTextColor={colors.textTertiary}
+            returnKeyType="send"
+            onSubmitEditing={handleSend}
+            selectionColor={colors.primary[500]}
+          />
+          <TouchableOpacity
+            style={[
+              styles.sendButton,
+              !inputText.trim() && styles.sendButtonDisabled,
+            ]}
+            onPress={handleSend}
+            disabled={!inputText.trim()}
+          >
+            <Ionicons 
+              name={inputText.trim() ? "arrow-up" : "mic"} 
+              size={20} 
+              color={inputText.trim() ? '#FFF' : colors.textTertiary} 
+            />
+          </TouchableOpacity>
+        </View>
       </View>
     </KeyboardAvoidingView>
   );
 }
 
-const getStyles = (colors: any) => StyleSheet.create({
+const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
@@ -171,16 +183,22 @@ const getStyles = (colors: any) => StyleSheet.create({
   header: {
     padding: spacing[4],
     paddingTop: spacing[8],
-    backgroundColor: colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    backgroundColor: colors.background,
+    alignItems: 'center',
+    borderBottomWidth: 0,
   },
   title: {
-    ...typography.textStyles.h3,
+    ...typography.textStyles.h2,
     color: colors.text,
+    marginBottom: spacing[1],
+  },
+  subtitle: {
+    ...typography.textStyles.bodySmall,
+    color: colors.textSecondary,
   },
   listContent: {
     padding: spacing[4],
+    paddingBottom: spacing[24], // Space for floating input
   },
   messageContainer: {
     marginBottom: spacing[4],
@@ -193,34 +211,34 @@ const getStyles = (colors: any) => StyleSheet.create({
     alignSelf: 'flex-start',
   },
   messageCard: {
-    padding: spacing[3],
-    borderRadius: spacing[3],
+    borderRadius: spacing[4],
+    borderWidth: 0, // Cleaner look without borders
+    backgroundColor: 'transparent', // Override default card bg
   },
   userMessageCard: {
-    backgroundColor: colors.primary[500],
-    borderBottomRightRadius: 2,
-    borderWidth: 0,
+    backgroundColor: 'transparent',
   },
   assistantMessageCard: {
-    backgroundColor: colors.surface,
-    borderBottomLeftRadius: 2,
+    backgroundColor: 'transparent',
   },
   messageText: {
     ...typography.textStyles.body,
-    color: colors.text,
+    fontSize: 16,
+    color: colors.text, // For assistant
   },
   userMessageText: {
-    color: '#FFF',
+    color: colors.text, // User text also adaptive, or white if we do a bubble
+    textAlign: 'right', // User right aligned
   },
   messageTime: {
     ...typography.textStyles.caption,
-    color: colors.textSecondary,
+    color: colors.textTertiary,
     marginTop: spacing[1],
-    alignSelf: 'flex-end',
+    alignSelf: 'flex-start',
     fontSize: 10,
   },
   userMessageTime: {
-    color: 'rgba(255,255,255,0.7)',
+    alignSelf: 'flex-end',
   },
   suggestions: {
     marginTop: spacing[2],
@@ -230,21 +248,23 @@ const getStyles = (colors: any) => StyleSheet.create({
   },
   suggestionButton: {
     paddingHorizontal: spacing[3],
-    paddingVertical: spacing[1],
-    backgroundColor: colors.neutral[100],
-    borderRadius: spacing[4],
+    paddingVertical: spacing[2],
+    backgroundColor: colors.surfaceElevated,
+    borderRadius: borderRadius.full,
     borderWidth: 1,
-    borderColor: colors.neutral[200],
+    borderColor: colors.border,
   },
   suggestionText: {
     ...typography.textStyles.caption,
-    color: colors.neutral[700],
+    color: colors.text,
   },
   actions: {
     marginTop: spacing[3],
   },
   actionCard: {
-    backgroundColor: colors.neutral[50],
+    backgroundColor: colors.surfaceElevated,
+    borderWidth: 1,
+    borderColor: colors.border,
     padding: spacing[2],
     marginBottom: spacing[2],
   },
@@ -252,43 +272,57 @@ const getStyles = (colors: any) => StyleSheet.create({
     ...typography.textStyles.bodySmall,
     fontWeight: typography.fontWeight.bold,
     marginBottom: spacing[1],
+    color: colors.text,
   },
   actionDescription: {
     ...typography.textStyles.caption,
-    color: colors.neutral[600],
+    color: colors.textSecondary,
     marginBottom: spacing[2],
   },
-  inputContainer: {
+  
+  // Floating Input Styling
+  inputWrapper: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
     padding: spacing[4],
-    backgroundColor: colors.surface,
+    paddingBottom: Platform.OS === 'ios' ? spacing[6] : spacing[4],
+    backgroundColor: isDark 
+      ? 'linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,1) 50%)' // CSS valid, but in RN needs component. 
+      : 'transparent', // In RN we might just use a solid background or BlurView if available
+    // For now, solid background that matches screen
+    backgroundColor: colors.background, 
     borderTopWidth: 1,
     borderTopColor: colors.border,
+  },
+  inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingBottom: Platform.OS === 'ios' ? spacing[8] : spacing[4],
+    backgroundColor: colors.surfaceElevated,
+    borderRadius: borderRadius.full,
+    padding: spacing[2],
+    paddingLeft: spacing[4],
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   input: {
     flex: 1,
-    backgroundColor: colors.neutral[100],
-    paddingHorizontal: spacing[4],
-    paddingVertical: spacing[3],
-    borderRadius: spacing[4],
-    marginRight: spacing[3],
     ...typography.textStyles.body,
+    fontSize: 16,
     color: colors.text,
+    marginRight: spacing[2],
+    height: 40,
   },
   sendButton: {
-    paddingHorizontal: spacing[4],
-    paddingVertical: spacing[3],
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: colors.primary[500],
-    borderRadius: spacing[4],
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   sendButtonDisabled: {
-    backgroundColor: colors.neutral[300],
-  },
-  sendButtonText: {
-    ...typography.textStyles.bodySmall,
-    color: '#FFF',
-    fontWeight: typography.fontWeight.bold,
+    backgroundColor: colors.surface,
   },
 });

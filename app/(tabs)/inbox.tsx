@@ -10,30 +10,78 @@ import {
 import { Card } from '../../components/Card';
 import { PlatformIcon } from '../../components/PlatformIcon';
 import { useTheme } from '../../context/ThemeContext';
-import { spacing, typography } from '../../theme';
+import { borderRadius, spacing, typography } from '../../theme';
 import { MOCK_INBOX_ITEMS } from '../../utils/mockData';
 
-export default function InboxTab() {
-  const [filter, setFilter] = useState<'all' | 'unread'>('all');
+export default function PriorityTab() {
+  const [filter, setFilter] = useState<'high_priority' | 'all'>('high_priority');
   const items = MOCK_INBOX_ITEMS;
-  const { colors } = useTheme();
-  const styles = getStyles(colors);
+  const { colors, isDark } = useTheme();
+  const styles = getStyles(colors, isDark);
 
-  const filteredItems = filter === 'unread' ? items.filter(item => item.unread) : items;
-  const unreadCount = items.filter(item => item.unread).length;
+  // In a real app we would have a 'priority' flag.
+  // For now, we simulate priority by taking the first 3 items or just unread ones.
+  const priorityItems = items.slice(0, 3); 
+  const displayItems = filter === 'high_priority' ? priorityItems : items;
+
+  const renderItem = ({ item }: { item: typeof items[0] }) => (
+    <Card 
+       style={[
+           styles.messageCard, 
+           item.unread && styles.unreadCard
+       ]} 
+       padding={4}
+    >
+      <View style={styles.messageHeader}>
+        <View style={styles.senderInfo}>
+          <PlatformIcon platform={item.platform} size={20} />
+          <Text style={[styles.sender, item.unread && styles.unreadText]}>
+            {item.from}
+          </Text>
+        </View>
+        <Text style={styles.time}>
+          {format(item.receivedAt, 'MMM d')}
+        </Text>
+      </View>
+      <Text
+        style={[styles.subject, item.unread && styles.unreadText]}
+        numberOfLines={1}
+      >
+        {item.subject}
+      </Text>
+      <Text style={styles.preview} numberOfLines={2}>
+        {item.preview}
+      </Text>
+      
+      {/* AI Summary Tag for Priority Items */}
+      {filter === 'high_priority' && (
+          <View style={styles.aiTag}>
+              <Text style={styles.aiTagText}>AI: Needs reply by 5pm</Text>
+          </View>
+      )}
+    </Card>
+  );
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Inbox</Text>
-        {unreadCount > 0 && (
-          <View style={styles.badge}>
-            <Text style={styles.badgeText}>{unreadCount} new</Text>
-          </View>
-        )}
+        <Text style={styles.title}>Focus</Text>
       </View>
 
       <View style={styles.filterTabs}>
+        <TouchableOpacity
+          style={[styles.tab, filter === 'high_priority' && styles.activeTab]}
+          onPress={() => setFilter('high_priority')}
+        >
+          <Text
+            style={[
+              styles.tabText,
+              filter === 'high_priority' && styles.activeTabText,
+            ]}
+          >
+            Priority
+          </Text>
+        </TouchableOpacity>
         <TouchableOpacity
           style={[styles.tab, filter === 'all' && styles.activeTab]}
           onPress={() => setFilter('all')}
@@ -44,196 +92,118 @@ export default function InboxTab() {
               filter === 'all' && styles.activeTabText,
             ]}
           >
-            All Messages
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tab, filter === 'unread' && styles.activeTab]}
-          onPress={() => setFilter('unread')}
-        >
-          <Text
-            style={[
-              styles.tabText,
-              filter === 'unread' && styles.activeTabText,
-            ]}
-          >
-            Unread
+            All Stream
           </Text>
         </TouchableOpacity>
       </View>
 
       <FlatList
-        data={filteredItems}
+        data={displayItems}
+        renderItem={renderItem}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
-        renderItem={({ item }) => (
-          <TouchableOpacity onPress={() => {}}>
-            <Card style={[styles.itemCard, item.unread && styles.unreadCard]}>
-              <View style={styles.itemHeader}>
-                <PlatformIcon platform={item.platform} size={32} />
-                <View style={styles.itemInfo}>
-                  <Text style={styles.itemFrom} numberOfLines={1}>
-                    {item.from}
-                  </Text>
-                  <Text style={styles.itemTime}>
-                    {format(item.receivedAt, 'MMM d, h:mm a')}
-                  </Text>
-                </View>
-                {item.unread && <View style={styles.unreadDot} />}
-              </View>
-              <Text style={styles.itemSubject} numberOfLines={1}>
-                {item.subject}
-              </Text>
-              <Text style={styles.itemPreview} numberOfLines={2}>
-                {item.preview}
-              </Text>
-              {item.priority && (
-                <View
-                  style={[
-                    styles.priorityBadge,
-                    {
-                      backgroundColor:
-                        item.priority === 'high'
-                          ? colors.semantic.error + '20'
-                          : item.priority === 'medium'
-                          ? colors.semantic.warning + '20'
-                          : colors.semantic.info + '20',
-                    },
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.priorityText,
-                      {
-                        color:
-                          item.priority === 'high'
-                            ? colors.semantic.error
-                            : item.priority === 'medium'
-                            ? colors.semantic.warning
-                            : colors.semantic.info,
-                      },
-                    ]}
-                  >
-                    {item.priority.toUpperCase()}
-                  </Text>
-                </View>
-              )}
-            </Card>
-          </TouchableOpacity>
-        )}
+        showsVerticalScrollIndicator={false}
       />
     </View>
   );
 }
 
-const getStyles = (colors: any) => StyleSheet.create({
+const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
   },
   header: {
-    padding: spacing[4],
-    paddingTop: spacing[8],
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.surface,
+    paddingHorizontal: spacing[6],
+    paddingTop: spacing[12],
+    paddingBottom: spacing[4],
+    backgroundColor: colors.background,
   },
   title: {
     ...typography.textStyles.h2,
     color: colors.text,
-    marginRight: spacing[2],
-  },
-  badge: {
-    backgroundColor: colors.primary[500],
-    paddingHorizontal: spacing[2],
-    paddingVertical: 2,
-    borderRadius: 12,
-  },
-  badgeText: {
-    color: 'white',
-    fontSize: 12,
-    fontWeight: 'bold',
   },
   filterTabs: {
     flexDirection: 'row',
-    padding: spacing[4],
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    backgroundColor: colors.surface,
+    paddingHorizontal: spacing[6],
+    marginBottom: spacing[4],
+    gap: spacing[4],
   },
   tab: {
-    marginRight: spacing[4],
-    paddingBottom: spacing[1],
+    paddingVertical: spacing[2],
+    borderRadius: borderRadius.full,
   },
   activeTab: {
     borderBottomWidth: 2,
     borderBottomColor: colors.primary[500],
+    borderRadius: 0,
   },
   tabText: {
-    ...typography.textStyles.body,
-    color: colors.textSecondary,
+    ...typography.textStyles.bodySmall,
+    color: colors.textTertiary,
+    fontWeight: '600',
   },
   activeTabText: {
-    color: colors.primary[500],
-    fontWeight: typography.fontWeight.semibold,
+    color: colors.text,
   },
   listContent: {
     padding: spacing[4],
-    gap: spacing[3],
   },
-  itemCard: {
-    marginBottom: spacing[1],
+  messageCard: {
+    marginBottom: spacing[3],
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   unreadCard: {
-    backgroundColor: colors.neutral[50], // Maybe keep slightly different background for unread
-    borderColor: colors.primary[200],
-    borderWidth: 1,
+    backgroundColor: isDark ? colors.surfaceElevated : '#FFFFFF',
+    borderColor: isDark ? colors.border : colors.neutral[200],
   },
-  itemHeader: {
+  messageHeader: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: spacing[2],
   },
-  itemInfo: {
-    flex: 1,
-    marginLeft: spacing[3],
+  senderInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[2],
   },
-  itemFrom: {
+  sender: {
     ...typography.textStyles.bodySmall,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.text,
+    color: colors.textSecondary,
   },
-  itemTime: {
+  time: {
     ...typography.textStyles.caption,
     color: colors.textTertiary,
   },
-  unreadDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: colors.primary[500],
-  },
-  itemSubject: {
+  subject: {
     ...typography.textStyles.body,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.text,
+    fontWeight: 'bold',
+    color: colors.textSecondary,
     marginBottom: spacing[1],
   },
-  itemPreview: {
-    ...typography.textStyles.bodySmall,
-    color: colors.textSecondary,
-    marginBottom: spacing[2],
+  unreadText: {
+    color: colors.text, // Bright white for unread in dark mode
   },
-  priorityBadge: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: spacing[2],
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  priorityText: {
+  preview: {
     ...typography.textStyles.caption,
-    fontSize: 10,
-    fontWeight: 'bold',
+    color: colors.textTertiary,
+    lineHeight: 20,
+  },
+  aiTag: {
+      marginTop: spacing[3],
+      alignSelf: 'flex-start',
+      backgroundColor: isDark ? 'rgba(59, 130, 246, 0.15)' : '#EFF6FF',
+      paddingHorizontal: spacing[2],
+      paddingVertical: spacing[1],
+      borderRadius: 4,
+  },
+  aiTagText: {
+      fontSize: 10,
+      fontWeight: 'bold',
+      color: colors.primary[500],
   },
 });
 
