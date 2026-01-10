@@ -57,13 +57,7 @@ export default function SettingsTab() {
 
         {/* Neural Link Section */}
         <View style={styles.section}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing[4] }}>
-                <Text style={styles.sectionTitle}>Neural Access</Text>
-                <TouchableOpacity onPress={() => router.push('/toolkits')}>
-                    <Text style={{ color: colors.primary[500], fontSize: 13, fontWeight: '600' }}>Expand Capacity</Text>
-                </TouchableOpacity>
-            </View>
-
+            <Text style={styles.sectionTitle}>Neural Access</Text>
             <View style={styles.settingRow}>
                 <View style={styles.settingInfo}>
                     <Text style={styles.settingLabel}>Inbox Read Access</Text>

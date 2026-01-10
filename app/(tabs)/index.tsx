@@ -57,7 +57,12 @@ export default function HomeTab() {
 
       {/* Integration Status Hub */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>System Status</Text>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Text style={styles.sectionTitle}>System Status</Text>
+            <TouchableOpacity onPress={() => router.push('/toolkits')}>
+                 <Text style={{ color: colors.primary[500], fontSize: 13, fontWeight: '600', marginBottom: spacing[4] }}>+ Add Toolkit</Text>
+            </TouchableOpacity>
+        </View>
         <Card style={styles.statusCard}>
              <View style={styles.statusItem}>
                 <View style={styles.statusLeft}>
