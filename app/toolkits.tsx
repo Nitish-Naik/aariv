@@ -4,6 +4,10 @@ import React, { useMemo, useState } from 'react';
 import {
     Alert,
     FlatList,
+    KeyboardAvoidingView,
+    Modal,
+    Platform,
+    ScrollView,
     StyleSheet,
     Text,
     TextInput,
@@ -13,16 +17,19 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../context/ThemeContext';
 import { spacing, typography } from '../theme';
-import { MOCK_TOOLKITS, Toolkit } from '../utils/mockToolkits';
+import { MOCK_BUNDLES, MOCK_TOOLKITS, Toolkit, ToolkitBundle } from '../utils/mockToolkits';
 
 export default function ToolkitsScreen() {
     const router = useRouter();
     const { colors, isDark } = useTheme();
     const styles = getStyles(colors, isDark);
     
+    // State
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCategory, setSelectedCategory] = useState<string>('All');
     const [installedIds, setInstalledIds] = useState<Set<string>>(new Set(['1', '2', '6', '11']));
+    const [modalVisible, setModalVisible] = useState(false);
+    const [pendingToolkit, setPendingToolkit] = useState<Toolkit | null>(null);
 
     const categories = ['All', 'Productivity', 'Development', 'Communication', 'Finance', 'Design', 'Social'];
 
@@ -35,25 +42,145 @@ export default function ToolkitsScreen() {
         });
     }, [searchQuery, selectedCategory]);
 
-    const handleToggleInstall = (id: string, name: string) => {
-        if (installedIds.has(id)) {
-            Alert.alert("Disconnect Neural Link", `Sever connection to ${name}?`, [
+    // Handlers
+    const initiateConnection = (toolkit: Toolkit) => {
+        if (installedIds.has(toolkit.id)) {
+            // Disconnect flow remains simple
+            Alert.alert("Sever Neural Link", `Disconnect ${toolkit.name}?`, [
                 { text: "Cancel", style: "cancel"},
                 { text: "Disconnect", style: "destructive", onPress: () => {
                     const newSet = new Set(installedIds);
-                    newSet.delete(id);
+                    newSet.delete(toolkit.id);
                     setInstalledIds(newSet);
                 }}
             ]);
         } else {
-            // Simulate Installing
-            const newSet = new Set(installedIds);
-            newSet.add(id);
-            setInstalledIds(newSet);
+            // New "Permission Handshake" flow
+            setPendingToolkit(toolkit);
+            setModalVisible(true);
         }
     };
 
-    const renderItem = ({ item }: { item: Toolkit }) => {
+    const confirmConnection = () => {
+        if (pendingToolkit) {
+            const newSet = new Set(installedIds);
+            newSet.add(pendingToolkit.id);
+            setInstalledIds(newSet);
+            setModalVisible(false);
+            setPendingToolkit(null);
+        }
+    };
+
+    const installBundle = (bundle: ToolkitBundle) => {
+        const potential = bundle.toolkitIds.filter(id => !installedIds.has(id));
+        if (potential.length === 0) {
+            Alert.alert("Already Optimized", "You have this full stack active.");
+            return;
+        }
+
+        Alert.alert(
+            `Activate ${bundle.title}?`, 
+            `This will connect ${potential.length} new tools. Review permissions in next step?`,
+            [
+                { text: "Detailed Review", onPress: () => {
+                    // In a real app, queue them up. Here we just pick the first one for demo
+                    const firstId = potential[0];
+                    const toolkit = MOCK_TOOLKITS.find(t => t.id === firstId);
+                    if (toolkit) {
+                        setPendingToolkit(toolkit);
+                        setModalVisible(true);
+                    }
+                }},
+                { text: "Trust & Connect All", style: "default", onPress: () => {
+                   const newSet = new Set(installedIds);
+                   potential.forEach(id => newSet.add(id));
+                   setInstalledIds(newSet);
+                }}
+            ]
+        );
+    };
+
+    // Components
+    const PermissionHandshakeModal = () => (
+        <Modal
+            animationType="slide"
+            transparent={true}
+            visible={modalVisible}
+            onRequestClose={() => setModalVisible(false)}
+        >
+            <View style={styles.modalOverlay}>
+                <View style={styles.modalContent}>
+                    {pendingToolkit && (
+                        <>
+                            <View style={styles.modalHeader}>
+                                <View style={styles.modalIconBg}>
+                                    <Ionicons name={pendingToolkit.icon as any} size={32} color={colors.primary[500]} />
+                                </View>
+                                <Text style={styles.modalTitle}>Connect {pendingToolkit.name}</Text>
+                                <Text style={styles.modalSubtitle}>Permission Handshake</Text>
+                            </View>
+
+                            <ScrollView style={styles.scopeList}>
+                                <Text style={styles.sectionLabel}>REQUESTED ACCESS</Text>
+                                {pendingToolkit.scopes?.map(scope => (
+                                    <View key={scope.id} style={styles.scopeItem}>
+                                        <Ionicons 
+                                            name={scope.riskLevel === 'critical' || scope.riskLevel === 'high' ? 'warning' : 'checkmark-circle'} 
+                                            size={20} 
+                                            color={getRiskColor(scope.riskLevel, isDark)} 
+                                            style={{ marginRight: 12 }}
+                                        />
+                                        <View style={{ flex: 1 }}>
+                                            <Text style={styles.scopeLabel}>{scope.label}</Text>
+                                            <Text style={styles.scopeDesc}>{scope.description}</Text>
+                                        </View>
+                                        <View style={[styles.riskTag, { backgroundColor: getRiskColor(scope.riskLevel, isDark) + '20' }]}>
+                                            <Text style={[styles.riskText, { color: getRiskColor(scope.riskLevel, isDark) }]}>
+                                                {scope.riskLevel.toUpperCase()}
+                                            </Text>
+                                        </View>
+                                    </View>
+                                ))}
+                            </ScrollView>
+
+                            <View style={styles.modalFooter}>
+                                <Text style={styles.disclaimer}>
+                                    By connecting, you allow the Assistant to act on your behalf within these limits.
+                                </Text>
+                                <View style={styles.modalActions}>
+                                    <TouchableOpacity style={styles.cancelBtn} onPress={() => setModalVisible(false)}>
+                                        <Text style={styles.cancelBtnText}>Deny</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity style={styles.confirmBtn} onPress={confirmConnection}>
+                                        <Text style={styles.confirmBtnText}>Authorize</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
+                        </>
+                    )}
+                </View>
+            </View>
+        </Modal>
+    );
+
+    const renderBundleItem = ({ item }: { item: ToolkitBundle }) => (
+        <TouchableOpacity style={styles.bundleCard} onPress={() => installBundle(item)}>
+            <View style={styles.bundleHeader}>
+                <Ionicons name={item.icon as any} size={24} color={colors.text} />
+                <View style={styles.savingsTag}>
+                    <Text style={styles.savingsText}>{item.savings}</Text>
+                </View>
+            </View>
+            <Text style={styles.bundleTitle}>{item.title}</Text>
+            <Text style={styles.bundleDesc} numberOfLines={2}>{item.description}</Text>
+            <View style={styles.bundleFooter}>
+                <Text style={styles.bundleCount}>{item.toolkitIds.length} Tools</Text>
+                <Ionicons name="arrow-forward-circle" size={24} color={colors.primary[500]} />
+            </View>
+        </TouchableOpacity>
+    );
+
+    const renderToolkitItem = ({ item }: { item: Toolkit }) => {
         const isInstalled = installedIds.has(item.id);
         
         return (
@@ -79,7 +206,7 @@ export default function ToolkitsScreen() {
                         styles.actionButton, 
                         isInstalled ? styles.actionButtonActive : styles.actionButtonInactive
                     ]}
-                    onPress={() => handleToggleInstall(item.id, item.name)}
+                    onPress={() => initiateConnection(item)}
                 >
                     <Text style={[
                         styles.actionButtonText,
@@ -94,69 +221,109 @@ export default function ToolkitsScreen() {
 
     return (
         <SafeAreaView style={styles.container} edges={['top']}>
+            <PermissionHandshakeModal />
+            
             {/* Header */}
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
                     <Ionicons name="arrow-back" size={24} color={colors.text} />
                 </TouchableOpacity>
-                <View style={{ flex: 1 }}>
-                    <Text style={styles.headerTitle}>Neural Expansion</Text>
-                    <Text style={styles.headerSubtitle}>{MOCK_TOOLKITS.length} modules available</Text>
+                <View>
+                    <Text style={styles.headerTitle}>Neural Marketplace</Text>
+                    <Text style={styles.headerSubtitle}>865 Available Modules</Text>
                 </View>
+                <TouchableOpacity style={styles.filterButton}>
+                    <Ionicons name="filter" size={24} color={colors.text} />
+                </TouchableOpacity>
             </View>
 
-            {/* Search Bar */}
-            <View style={styles.searchContainer}>
-                <Ionicons name="search" size={20} color={colors.textTertiary} style={styles.searchIcon} />
-                <TextInput
-                    style={styles.searchInput}
-                    placeholder="Search modules..."
-                    placeholderTextColor={colors.textTertiary}
-                    value={searchQuery}
-                    onChangeText={setSearchQuery}
-                />
-            </View>
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
+                {/* Search */}
+                <View style={styles.searchContainer}>
+                    <Ionicons name="search" size={20} color={colors.neutral[400]} style={styles.searchIcon} />
+                    <TextInput 
+                        style={styles.searchInput}
+                        placeholder="Search capabilities..."
+                        placeholderTextColor={colors.neutral[400]}
+                        value={searchQuery}
+                        onChangeText={setSearchQuery}
+                    />
+                </View>
 
-            {/* Categories */}
-            <View>
-                <FlatList
-                    horizontal
-                    data={categories}
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={styles.categoryList}
-                    keyExtractor={(item) => item}
-                    renderItem={({ item }) => (
-                        <TouchableOpacity
-                            style={[
-                                styles.categoryChip,
-                                selectedCategory === item && styles.categoryChipActive
-                            ]}
-                            onPress={() => setSelectedCategory(item)}
+                {/* Categories */}
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.hScroll} contentContainerStyle={styles.hScrollContent}>
+                    {categories.map((cat) => (
+                        <TouchableOpacity 
+                            key={cat} 
+                            style={[styles.catChip, selectedCategory === cat && styles.catChipActive]}
+                            onPress={() => setSelectedCategory(cat)}
                         >
-                            <Text style={[
-                                styles.categoryText,
-                                selectedCategory === item && styles.categoryTextActive
-                            ]}>{item}</Text>
+                            <Text style={[styles.catText, selectedCategory === cat && styles.catTextActive]}>
+                                {cat}
+                            </Text>
                         </TouchableOpacity>
-                    )}
-                />
-            </View>
+                    ))}
+                </ScrollView>
 
-            {/* Main List */}
-            <FlatList
-                data={filteredToolkits}
-                renderItem={renderItem}
-                keyExtractor={(item) => item.id}
-                contentContainerStyle={styles.listContent}
-                showsVerticalScrollIndicator={false}
-                ListEmptyComponent={
-                    <View style={styles.emptyState}>
-                        <Text style={styles.emptyText}>No modules found matching neural pattern.</Text>
+                {/* Smart Bundles (Only show when not searching) */}
+                {searchQuery === '' && selectedCategory === 'All' && (
+                    <View style={styles.section}>
+                        <Text style={styles.sectionTitle}>Smart Bundles</Text>
+                        <FlatList 
+                            data={MOCK_BUNDLES}
+                            renderItem={renderBundleItem}
+                            keyExtractor={item => item.id}
+                            horizontal
+                            showsHorizontalScrollIndicator={false}
+                            contentContainerStyle={{ paddingHorizontal: spacing[6] }}
+                            ItemSeparatorComponent={() => <View style={{ width: spacing[4] }} />}
+                        />
                     </View>
-                }
-            />
+                )}
+
+                {/* Toolkits List */}
+                <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>Individual Modules</Text>
+                    {filteredToolkits.map(item => (
+                        <View key={item.id} style={{ marginBottom: spacing[4], paddingHorizontal: spacing[6] }}>
+                            {renderToolkitItem({ item })}
+                        </View>
+                    ))}
+                </View>
+            </ScrollView>
+
+            {/* Bottom Copilot Bar */}
+            <KeyboardAvoidingView 
+                behavior={Platform.OS === "ios" ? "padding" : "height"}
+                keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+                style={styles.copilotBarWrapper}
+            >
+                <View style={styles.copilotBar}>
+                    <View style={styles.copilotInputContainer}>
+                        <Ionicons name="sparkles" size={20} color={colors.primary[500]} style={styles.copilotIcon} />
+                        <TextInput 
+                            style={styles.copilotInput}
+                            placeholder="Ask Copilot regarding these tools..."
+                            placeholderTextColor={isDark ? colors.neutral[500] : colors.neutral[400]}
+                        />
+                        <TouchableOpacity style={styles.micButton}>
+                            <Ionicons name="mic" size={20} color={colors.text} />
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </KeyboardAvoidingView>
         </SafeAreaView>
     );
+}
+
+function getRiskColor(level: string, isDark: boolean) {
+    switch (level) {
+        case 'critical': return '#ef4444'; // Red
+        case 'high': return '#f97316'; // Orange
+        case 'medium': return '#eab308'; // Yellow
+        case 'low': return isDark ? '#94a3b8' : '#64748b'; // Slate
+        default: return '#94a3b8';
+    }
 }
 
 const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
@@ -167,154 +334,355 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     header: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: spacing[4],
-        paddingBottom: spacing[4],
-        gap: spacing[4],
+        paddingHorizontal: spacing[6], // lg
+        paddingVertical: spacing[4],   // md
+        justifyContent: 'space-between',
     },
     backButton: {
-        padding: spacing[2],
+        padding: spacing[1], // xs
+        marginRight: spacing[4], // md
     },
     headerTitle: {
-        ...typography.textStyles.h3,
+        ...typography.textStyles.h2,
         color: colors.text,
+        fontSize: 20,
     },
     headerSubtitle: {
-        ...typography.textStyles.caption,
-        color: colors.textSecondary,
+        ...typography.textStyles.bodySmall, // body2
+        color: colors.neutral[500], // gray[500]
+        fontSize: 12,
+    },
+    filterButton: {
+        padding: spacing[1], // xs
     },
     searchContainer: {
-        marginHorizontal: spacing[4],
-        marginBottom: spacing[4],
+        marginHorizontal: spacing[6], // lg
+        marginVertical: spacing[4], // md
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#F3F4F6',
+        backgroundColor: isDark ? colors.surface : '#F1F5F9',
         borderRadius: 12,
-        paddingHorizontal: spacing[4],
+        paddingHorizontal: spacing[4], // md
         height: 48,
         borderWidth: 1,
-        borderColor: isDark ? 'rgba(255,255,255,0.05)' : 'transparent',
+        borderColor: isDark ? colors.border : 'transparent',
     },
     searchIcon: {
-        marginRight: spacing[2],
+        marginRight: spacing[2], // sm
     },
     searchInput: {
         flex: 1,
         color: colors.text,
-        height: '100%',
-        fontSize: 16,
+        ...typography.textStyles.body, // body1
     },
-    categoryList: {
-        paddingHorizontal: spacing[4],
-        paddingBottom: spacing[4],
-        gap: spacing[2],
+    hScroll: {
+        maxHeight: 50,
+        marginBottom: spacing[4], // md
     },
-    categoryChip: {
-        paddingVertical: 6,
-        paddingHorizontal: 16,
+    hScrollContent: {
+        paddingHorizontal: spacing[6], // lg
+        alignItems: 'center',
+    },
+    catChip: {
+        paddingHorizontal: spacing[6], // lg
+        paddingVertical: spacing[1] + 2, // xs + 2
         borderRadius: 20,
-        backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#E5E7EB',
+        backgroundColor: isDark ? colors.surface : '#E2E8F0',
+        marginRight: spacing[2], // sm
         borderWidth: 1,
-        borderColor: 'transparent',
+        borderColor: isDark ? colors.border : 'transparent',
     },
-    categoryChipActive: {
-        backgroundColor: 'rgba(59, 130, 246, 0.15)',
+    catChipActive: {
+        backgroundColor: colors.primary[500],
         borderColor: colors.primary[500],
     },
-    categoryText: {
-        fontSize: 13,
-        color: colors.textSecondary,
+    catText: {
+        ...typography.textStyles.bodySmall, // body2
+        color: colors.text,
         fontWeight: '600',
     },
-    categoryTextActive: {
-        color: colors.primary[400],
+    catTextActive: {
+        color: '#FFFFFF',
     },
-    listContent: {
-        padding: spacing[4],
-        paddingTop: 0,
-        gap: spacing[3],
+    section: {
+        marginTop: spacing[2], // sm
     },
+    sectionTitle: {
+        ...typography.textStyles.h3,
+        color: colors.text,
+        marginLeft: spacing[6], // lg
+        marginBottom: spacing[4], // md
+        fontSize: 18,
+    },
+    // Bundle Styles
+    bundleCard: {
+        width: 280,
+        backgroundColor: isDark ? '#1E293B' : '#FFF',
+        borderRadius: 16,
+        padding: spacing[6], // lg
+        borderWidth: 1,
+        borderColor: isDark ? colors.border : '#E2E8F0',
+        shadowColor: '#000',
+        elevation: 2,
+    },
+    bundleHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+        marginBottom: spacing[4], // md
+    },
+    savingsTag: {
+        backgroundColor: isDark ? 'rgba(34, 197, 94, 0.2)' : '#DCFCE7',
+        paddingHorizontal: spacing[2], // sm
+        paddingVertical: 2,
+        borderRadius: 4,
+    },
+    savingsText: {
+        color: isDark ? '#4ADE80' : '#15803D',
+        fontSize: 10,
+        fontWeight: 'bold',
+        textTransform: 'uppercase',
+    },
+    bundleTitle: {
+        ...typography.textStyles.h3,
+        color: colors.text,
+        fontSize: 18,
+        marginBottom: 4,
+    },
+    bundleDesc: {
+        ...typography.textStyles.bodySmall, // body2
+        color: colors.neutral[500], // gray[500]
+        marginBottom: spacing[6], // lg
+        height: 40,
+    },
+    bundleFooter: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingTop: spacing[2], // sm
+        borderTopWidth: 1,
+        borderTopColor: isDark ? colors.border : '#F1F5F9',
+    },
+    bundleCount: {
+        ...typography.textStyles.caption,
+        color: colors.primary[500],
+        fontWeight: 'bold',
+    },
+    // Toolkit Card Styles
     card: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: isDark ? '#111' : '#FFF', // Slightly Lighter black for cards
-        padding: spacing[4],
+        backgroundColor: isDark ? '#1E1E1E' : '#FFFFFF',
         borderRadius: 16,
+        padding: spacing[4], // md
         borderWidth: 1,
-        borderColor: colors.border,
+        borderColor: isDark ? '#333' : '#E2E8F0',
     },
     iconContainer: {
         width: 48,
         height: 48,
-        borderRadius: 24,
-        backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F3F4F6',
-        alignItems: 'center',
+        borderRadius: 12,
+        backgroundColor: isDark ? '#2D3748' : '#F8FAFC',
         justifyContent: 'center',
-        marginRight: spacing[4],
+        alignItems: 'center',
+        marginRight: spacing[4], // md
     },
     cardContent: {
         flex: 1,
-        marginRight: spacing[2],
+        marginRight: spacing[2], // sm
     },
     cardHeader: {
         flexDirection: 'row',
         alignItems: 'center',
-        alignSelf: 'flex-start',
-        marginBottom: 2,
-        gap: 6,
+        marginBottom: 4,
     },
     cardTitle: {
+        ...typography.textStyles.h3,
         fontSize: 16,
-        fontWeight: '600',
         color: colors.text,
-    },
-    cardDesc: {
-        fontSize: 13,
-        color: colors.textSecondary,
-        lineHeight: 18,
+        marginRight: spacing[2], // sm
     },
     premiumTag: {
-        backgroundColor: isDark ? '#F59E0B' : '#F59E0B',
-        paddingHorizontal: 4,
-        paddingVertical: 1,
-        borderRadius: 3,
+        backgroundColor: isDark ? '#F59E0B20' : '#FEF3C7',
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 4,
     },
     premiumText: {
-        fontSize: 9,
-        fontWeight: '800',
-        color: '#000',
+        fontSize: 10,
+        fontWeight: 'bold',
+        color: '#D97706',
+    },
+    cardDesc: {
+        ...typography.textStyles.bodySmall, // body2
+        color: colors.neutral[500], // gray[500]
+        fontSize: 13,
     },
     actionButton: {
-        paddingVertical: 6,
-        paddingHorizontal: 16,
-        borderRadius: 8,
-        minWidth: 70,
-        alignItems: 'center',
+        paddingHorizontal: spacing[4], // md
+        paddingVertical: spacing[1] + 2, // xs+2
+        borderRadius: 20,
+        borderWidth: 1,
     },
     actionButtonActive: {
         backgroundColor: 'transparent',
-        borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.2)',
+        borderColor: colors.neutral[600], // gray[600]
     },
     actionButtonInactive: {
-        backgroundColor: colors.primary[600],
+        backgroundColor: colors.primary[500],
+        borderColor: 'transparent',
     },
     actionButtonText: {
-        fontSize: 11,
-        fontWeight: '700',
-        letterSpacing: 0.5,
+        fontSize: 12,
+        fontWeight: 'bold',
     },
     actionButtonTextActive: {
-        color: colors.semantic.success,
+        color: colors.neutral[500], // gray[500]
     },
     actionButtonTextInactive: {
-        color: '#FFF',
+        color: '#FFFFFF',
     },
-    emptyState: {
-        padding: spacing[8],
+    // Permission Modal Styles
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.8)',
+        justifyContent: 'flex-end',
+    },
+    modalContent: {
+        backgroundColor: isDark ? '#1E1E1E' : '#FFFFFF',
+        borderTopLeftRadius: 24,
+        borderTopRightRadius: 24,
+        padding: spacing[8], // xl
+        maxHeight: '80%',
+    },
+    modalHeader: {
+        alignItems: 'center',
+        marginBottom: spacing[8], // xl
+    },
+    modalIconBg: {
+        width: 64,
+        height: 64,
+        borderRadius: 32,
+        backgroundColor: isDark ? '#2D3748' : '#F1F5F9',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: spacing[4], // md
+    },
+    modalTitle: {
+        ...typography.textStyles.h2,
+        color: colors.text,
+        textAlign: 'center',
+    },
+    modalSubtitle: {
+        ...typography.textStyles.bodySmall, // body2
+        color: colors.neutral[500], // gray[500]
+        textTransform: 'uppercase',
+        marginTop: 4,
+        letterSpacing: 1,
+    },
+    sectionLabel: {
+        ...typography.textStyles.caption,
+        color: colors.neutral[500], // gray[500]
+        marginBottom: spacing[4], // md
+        fontWeight: 'bold',
+    },
+    scopeList: {
+        marginBottom: spacing[8], // xl
+    },
+    scopeItem: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        marginBottom: spacing[6], // lg
+    },
+    scopeLabel: {
+        ...typography.textStyles.body, // body1
+        fontWeight: 'bold',
+        color: colors.text,
+        marginBottom: 2,
+    },
+    scopeDesc: {
+        ...typography.textStyles.caption,
+        color: colors.neutral[500], // gray[500]
+    },
+    riskTag: {
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 4,
+        marginLeft: spacing[2], // sm
+    },
+    riskText: {
+        fontSize: 10,
+        fontWeight: 'bold',
+    },
+    modalFooter: {
+        paddingTop: spacing[4], // md
+        borderTopWidth: 1,
+        borderTopColor: isDark ? '#333' : '#E2E8F0',
+    },
+    disclaimer: {
+        ...typography.textStyles.caption,
+        color: colors.neutral[500], // gray[500]
+        marginBottom: spacing[6], // lg
+        textAlign: 'center',
+    },
+    modalActions: {
+        flexDirection: 'row',
+        gap: spacing[4], // md
+    },
+    cancelBtn: {
+        flex: 1,
+        padding: spacing[4], // md
+        borderRadius: 12,
+        backgroundColor: isDark ? '#333' : '#F1F5F9',
         alignItems: 'center',
     },
-    emptyText: {
-        color: colors.textTertiary,
-        fontStyle: 'italic',
+    cancelBtnText: {
+        ...typography.textStyles.button,
+        color: colors.text,
+    },
+    confirmBtn: {
+        flex: 1,
+        padding: spacing[4], // md
+        borderRadius: 12,
+        backgroundColor: colors.primary[500],
+        alignItems: 'center',
+    },
+    confirmBtnText: {
+        ...typography.textStyles.button,
+        color: '#FFFFFF',
+    },
+    // Copilot Bar
+    copilotBarWrapper: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        backgroundColor: isDark ? colors.surfaceElevated : '#FFFFFF',
+        borderTopWidth: 1,
+        borderTopColor: isDark ? colors.border : '#E2E8F0',
+    },
+    copilotBar: {
+        paddingHorizontal: spacing[4],
+        paddingVertical: spacing[3],
+        paddingBottom: Platform.OS === 'ios' ? spacing[6] : spacing[3],
+    },
+    copilotInputContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: isDark ? '#2D3748' : '#F1F5F9',
+        borderRadius: 24,
+        paddingHorizontal: spacing[4],
+        height: 48,
+    },
+    copilotIcon: {
+        marginRight: spacing[2],
+    },
+    copilotInput: {
+        flex: 1,
+        color: colors.text,
+        ...typography.textStyles.body,
+    },
+    micButton: {
+        padding: spacing[1],
     }
 });
