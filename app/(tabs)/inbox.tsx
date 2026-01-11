@@ -1,12 +1,17 @@
+import { Ionicons } from '@expo/vector-icons';
 import { format } from 'date-fns';
 import React, { useState } from 'react';
 import {
   FlatList,
+  KeyboardAvoidingView,
+  Platform,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Card } from '../../components/Card';
 import { PlatformIcon } from '../../components/PlatformIcon';
 import { useTheme } from '../../context/ThemeContext';
@@ -19,53 +24,80 @@ export default function PriorityTab() {
   const { colors, isDark } = useTheme();
   const styles = getStyles(colors, isDark);
 
-  // In a real app we would have a 'priority' flag.
-  // For now, we simulate priority by taking the first 3 items or just unread ones.
-  const priorityItems = items.slice(0, 3); 
+  const priorityItems = items.slice(0, 3);
   const displayItems = filter === 'high_priority' ? priorityItems : items;
 
-  const renderItem = ({ item }: { item: typeof items[0] }) => (
-    <Card 
-       style={[
-           styles.messageCard, 
-           item.unread && styles.unreadCard
-       ]} 
-       padding={4}
-    >
-      <View style={styles.messageHeader}>
-        <View style={styles.senderInfo}>
-          <PlatformIcon platform={item.platform} size={20} />
-          <Text style={[styles.sender, item.unread && styles.unreadText]}>
-            {item.from}
-          </Text>
-        </View>
-        <Text style={styles.time}>
-          {format(item.receivedAt, 'MMM d')}
-        </Text>
-      </View>
-      <Text
-        style={[styles.subject, item.unread && styles.unreadText]}
-        numberOfLines={1}
-      >
-        {item.subject}
-      </Text>
-      <Text style={styles.preview} numberOfLines={2}>
-        {item.preview}
-      </Text>
-      
-      {/* AI Summary Tag for Priority Items */}
-      {filter === 'high_priority' && (
-          <View style={styles.aiTag}>
-              <Text style={styles.aiTagText}>AI: Needs reply by 5pm</Text>
+  const renderItem = ({ item, index }: { item: typeof items[0], index: number }) => {
+    // SIMULATED AI INTELLIGENCE
+    // In a real app, this comes from the backend.
+    const isActionable = filter === 'high_priority';
+    const suggestedAction = index === 0 ? "Drafted reply: 'Confirmed for 2pm'" 
+                          : index === 1 ? "Added to Calendar: Nov 19 @ 10am" 
+                          : "Review required: Legal Contract";
+    const actionType = index === 0 ? "reply" : index === 1 ? "calendar" : "alert";
+
+    return (
+        <Card 
+           // Different visual treatment for priority cards to reduce scanning effort
+           style={[
+               styles.messageCard, 
+               isActionable && styles.actionCard
+           ]} 
+           padding={0} // Custom padding handling
+        >
+          <View style={styles.cardInner}>
+                {/* 1. Header: Quick Context (Who & When) */}
+                <View style={styles.messageHeader}>
+                    <View style={styles.senderInfo}>
+                    <PlatformIcon platform={item.platform} size={16} />
+                    <Text style={styles.sender}>{item.from}</Text>
+                    </View>
+                    <Text style={styles.time}>{format(item.receivedAt, 'h:mm a')}</Text>
+                </View>
+
+                {/* 2. Content: Focused Subject */}
+                <Text style={styles.subject} numberOfLines={1}>{item.subject}</Text>
+                
+                {/* 3. DECISION LAYER (The Mental Load Reducer) */}
+                {isActionable ? (
+                    <View style={styles.actionBlock}>
+                        <View style={styles.aiReasoning}>
+                            <Ionicons 
+                                name={actionType === 'reply' ? 'return-up-back' : actionType === 'calendar' ? 'calendar' : 'alert-circle'} 
+                                size={14} 
+                                color={colors.primary[500]} 
+                            />
+                            <Text style={styles.aiReasoningText}>{suggestedAction}</Text>
+                        </View>
+                        
+                        <View style={styles.quickActions}>
+                            <TouchableOpacity style={styles.actionButtonSecondary}>
+                                <Text style={styles.actionTextSecondary}>Edit</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity style={styles.actionButtonPrimary}>
+                                <Text style={styles.actionTextPrimary}>
+                                    {actionType === 'reply' ? 'Send' : actionType === 'calendar' ? 'Confirm' : 'Resolve'}
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                ) : (
+                    <Text style={styles.preview} numberOfLines={2}>{item.preview}</Text>
+                )}
           </View>
-      )}
-    </Card>
-  );
+        </Card>
+      );
+  };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
         <Text style={styles.title}>Focus</Text>
+        {/* Mental Load Reducer: "You are mostly done" indicator */}
+        <View style={styles.chillBadge}>
+            <Ionicons name="checkmark-circle" size={14} color={colors.primary[500]} />
+            <Text style={styles.chillText}>3 decisions left</Text>
+        </View>
       </View>
 
       <View style={styles.filterTabs}>
@@ -73,26 +105,16 @@ export default function PriorityTab() {
           style={[styles.tab, filter === 'high_priority' && styles.activeTab]}
           onPress={() => setFilter('high_priority')}
         >
-          <Text
-            style={[
-              styles.tabText,
-              filter === 'high_priority' && styles.activeTabText,
-            ]}
-          >
-            Priority
+          <Text style={[styles.tabText, filter === 'high_priority' && styles.activeTabText]}>
+            Decisions
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.tab, filter === 'all' && styles.activeTab]}
           onPress={() => setFilter('all')}
         >
-          <Text
-            style={[
-              styles.tabText,
-              filter === 'all' && styles.activeTabText,
-            ]}
-          >
-            All Stream
+          <Text style={[styles.tabText, filter === 'all' && styles.activeTabText]}>
+            Everything Else
           </Text>
         </TouchableOpacity>
       </View>
@@ -104,7 +126,28 @@ export default function PriorityTab() {
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
       />
-    </View>
+
+      {/* Floating Copilot Bar (Improved for Visual Lightness) */}
+      <KeyboardAvoidingView 
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0} 
+          style={styles.copilotWrapper}
+      >
+          <View style={styles.copilotIsland}>
+              <View style={styles.copilotInputContainer}>
+                  <Ionicons name="sparkles" size={18} color={colors.primary[500]} style={styles.copilotIcon} />
+                  <TextInput 
+                      style={styles.copilotInput}
+                      placeholder="Ask Iris..."
+                      placeholderTextColor={colors.textTertiary}
+                  />
+                  <TouchableOpacity style={styles.micButtonSmall}>
+                      <Ionicons name="mic" size={20} color={colors.textSecondary} />
+                  </TouchableOpacity>
+              </View>
+          </View>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
@@ -115,13 +158,29 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   },
   header: {
     paddingHorizontal: spacing[6],
-    paddingTop: spacing[12],
+    paddingTop: spacing[4],
     paddingBottom: spacing[4],
-    backgroundColor: colors.background,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   title: {
     ...typography.textStyles.h2,
     color: colors.text,
+  },
+  chillBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+      backgroundColor: isDark ? 'rgba(59, 130, 246, 0.1)' : '#EFF6FF',
+      paddingHorizontal: 10,
+      paddingVertical: 6,
+      borderRadius: 20,
+  },
+  chillText: {
+      fontSize: 12,
+      fontWeight: '600',
+      color: colors.primary[500],
   },
   filterTabs: {
     flexDirection: 'row',
@@ -131,39 +190,46 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   },
   tab: {
     paddingVertical: spacing[2],
+    paddingHorizontal: spacing[3],
     borderRadius: borderRadius.full,
+    backgroundColor: 'transparent',
   },
   activeTab: {
-    borderBottomWidth: 2,
-    borderBottomColor: colors.primary[500],
-    borderRadius: 0,
+    backgroundColor: isDark ? 'rgba(59, 130, 246, 0.15)' : colors.neutral[100],
   },
   tabText: {
-    ...typography.textStyles.bodySmall,
-    color: colors.textTertiary,
-    fontWeight: '600',
+    ...typography.textStyles.button,
+    color: colors.textSecondary,
+    fontSize: 14,
   },
   activeTabText: {
-    color: colors.text,
+    color: colors.primary[500],
+    fontWeight: '600',
   },
   listContent: {
-    padding: spacing[4],
+    paddingHorizontal: spacing[6],
+    paddingBottom: 120, // Space for Copilot bar
   },
+  
+  // CARD STYLES
   messageCard: {
-    marginBottom: spacing[3],
-    backgroundColor: colors.surface,
+    marginBottom: spacing[4],
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: 'transparent',
+    overflow: 'hidden', // Contain buttons
   },
-  unreadCard: {
-    backgroundColor: isDark ? colors.surfaceElevated : '#FFFFFF',
-    borderColor: isDark ? colors.border : colors.neutral[200],
+  actionCard: {
+      borderColor: isDark ? colors.primary[900] : colors.primary[100],
+      backgroundColor: isDark ? '#0F172A' : '#FFFFFF',
+  },
+  cardInner: {
+      padding: 16,
   },
   messageHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
     marginBottom: spacing[2],
+    alignItems: 'center',
   },
   senderInfo: {
     flexDirection: 'row',
@@ -173,37 +239,114 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   sender: {
     ...typography.textStyles.bodySmall,
     color: colors.textSecondary,
+    fontWeight: '500',
   },
   time: {
     ...typography.textStyles.caption,
     color: colors.textTertiary,
   },
   subject: {
-    ...typography.textStyles.body,
-    fontWeight: 'bold',
-    color: colors.textSecondary,
-    marginBottom: spacing[1],
-  },
-  unreadText: {
-    color: colors.text, // Bright white for unread in dark mode
+    ...typography.textStyles.h4,
+    fontSize: 15,
+    color: colors.text,
+    marginBottom: spacing[3],
   },
   preview: {
-    ...typography.textStyles.caption,
-    color: colors.textTertiary,
+    ...typography.textStyles.bodySmall,
+    color: colors.textSecondary,
     lineHeight: 20,
   },
-  aiTag: {
-      marginTop: spacing[3],
-      alignSelf: 'flex-start',
-      backgroundColor: isDark ? 'rgba(59, 130, 246, 0.15)' : '#EFF6FF',
-      paddingHorizontal: spacing[2],
-      paddingVertical: spacing[1],
-      borderRadius: 4,
+
+  // DECISION LAYER STYLES (Mental Load Reducers)
+  actionBlock: {
+      marginTop: 4,
   },
-  aiTagText: {
-      fontSize: 10,
-      fontWeight: 'bold',
-      color: colors.primary[500],
+  aiReasoning: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      marginBottom: 12,
+  },
+  aiReasoningText: {
+      fontSize: 13,
+      fontWeight: '600',
+      color: colors.text, // Prominent text
+  },
+  quickActions: {
+      flexDirection: 'row',
+      gap: 8,
+  },
+  actionButtonPrimary: {
+      backgroundColor: colors.primary[500],
+      paddingVertical: 8,
+      paddingHorizontal: 16,
+      borderRadius: 8,
+      flex: 1,
+      alignItems: 'center',
+  },
+  actionButtonSecondary: {
+      backgroundColor: isDark ? '#1E293B' : '#F1F5F9',
+      paddingVertical: 8,
+      paddingHorizontal: 16,
+      borderRadius: 8,
+      flex: 1,
+      alignItems: 'center',
+  },
+  actionTextPrimary: {
+      color: '#FFFFFF',
+      fontWeight: '600',
+      fontSize: 13,
+  },
+  actionTextSecondary: {
+      color: colors.text,
+      fontWeight: '500',
+      fontSize: 13,
+  },
+
+  // FLOATING ISLAND STYLES
+  copilotWrapper: {
+      position: 'absolute',
+      bottom: 90, // Pushed UP to avoid the new Floating Tab Dock (which is ~64px high + margins)
+      left: 0,
+      right: 0,
+      alignItems: 'center',
+      zIndex: 100,
+  },
+  copilotIsland: {
+      width: '90%', 
+      maxWidth: 400,
+      backgroundColor: isDark ? '#1E293B' : '#FFFFFF',
+      borderRadius: 30, // Capsule
+      padding: 6,
+      borderWidth: 1,
+      borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+      
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.25,
+      shadowRadius: 8,
+      elevation: 8,
+  },
+  copilotInputContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: spacing[3],
+      height: 44,
+  },
+  copilotIcon: {
+      marginRight: spacing[2],
+      opacity: 0.8
+  },
+  copilotInput: {
+      flex: 1,
+      color: colors.text,
+      ...typography.textStyles.body,
+      fontSize: 15,
+  },
+  micButtonSmall: {
+      padding: spacing[2],
+      backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F1F5F9',
+      borderRadius: 100,
   },
 });
 

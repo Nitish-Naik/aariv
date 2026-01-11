@@ -4,15 +4,17 @@
 
 import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
   Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '../components/Button';
-import { colors, spacing, typography } from '../theme';
+import { useTheme } from '../context/ThemeContext';
 import { signInWithGoogle } from '../services/auth';
+import { spacing, typography } from '../theme';
 
 interface LoginScreenProps {
   onLoginSuccess: () => void;
@@ -20,6 +22,8 @@ interface LoginScreenProps {
 
 export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
   const [loading, setLoading] = useState(false);
+  const { colors, isDark } = useTheme();
+  const styles = getStyles(colors, isDark);
 
   const handleGoogleSignIn = async () => {
     try {
@@ -36,47 +40,52 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
   };
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.content}
-    >
-      <View style={styles.header}>
-        <Text style={styles.logo}>Aariv</Text>
-        <Text style={styles.subtitle}>
-          Your calm, wise, lovable personal copilot
-        </Text>
-      </View>
+    <SafeAreaView style={styles.container}>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.content}
+      >
+        <View style={styles.header}>
+          <Text style={styles.logo}>Aariv</Text>
+          <Text style={styles.subtitle}>
+            Your calm, wise, lovable personal copilot
+          </Text>
+        </View>
 
-      <View style={styles.description}>
-        <Text style={styles.descriptionText}>
-          Aariv helps you stay focused by unifying context and delegating actions
-          only with your approval. Privacy-first, distraction-free.
-        </Text>
-      </View>
+        <View style={styles.description}>
+          <Text style={styles.descriptionText}>
+            Aariv helps you stay focused by unifying context and delegating actions
+            only with your approval. Privacy-first, distraction-free.
+          </Text>
+        </View>
 
-      <View style={styles.buttonContainer}>
-        <Button
-          title="Continue with Google"
-          onPress={handleGoogleSignIn}
-          loading={loading}
-          size="large"
-          style={styles.button}
-        />
-      </View>
+        <View style={styles.buttonContainer}>
+          <Button
+            title="Continue with Google"
+            onPress={handleGoogleSignIn}
+            loading={loading}
+            size="large"
+            style={styles.button}
+          />
+        </View>
 
-      <View style={styles.footer}>
-        <Text style={styles.footerText}>
-          By continuing, you agree to our privacy policy
-        </Text>
-      </View>
-    </ScrollView>
+        <View style={styles.footer}>
+          <Text style={styles.footerText}>
+            By continuing, you agree to our privacy policy
+          </Text>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.dark.background,
+    backgroundColor: colors.background,
+  },
+  scrollView: {
+    flex: 1,
   },
   content: {
     flexGrow: 1,
@@ -89,12 +98,14 @@ const styles = StyleSheet.create({
   },
   logo: {
     ...typography.textStyles.h1,
-    color: colors.light.text,
+    fontSize: 40,
+    color: colors.text,
     marginBottom: spacing[3],
   },
   subtitle: {
     ...typography.textStyles.body,
-    color: colors.dark.textSecondary,
+    fontSize: 18,
+    color: colors.textSecondary,
     textAlign: 'center',
   },
   description: {
@@ -103,7 +114,7 @@ const styles = StyleSheet.create({
   },
   descriptionText: {
     ...typography.textStyles.body,
-    color: colors.dark.textSecondary,
+    color: colors.textSecondary,
     textAlign: 'center',
     lineHeight: 24,
   },
@@ -119,7 +130,7 @@ const styles = StyleSheet.create({
   },
   footerText: {
     ...typography.textStyles.caption,
-    color: colors.dark.textTertiary,
+    color: colors.textTertiary,
     textAlign: 'center',
   },
 });

@@ -140,7 +140,7 @@ export default function SettingsScreen() {
       </ScrollView>
 
       {/* Bottom Copilot Bar */}
-      <KeyboardAvoidingView 
+      {/* <KeyboardAvoidingView 
           behavior={Platform.OS === "ios" ? "padding" : "height"}
           keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
           style={styles.copilotBarWrapper}
@@ -158,7 +158,7 @@ export default function SettingsScreen() {
                   </TouchableOpacity>
               </View>
           </View>
-      </KeyboardAvoidingView>
+      </KeyboardAvoidingView> */}
     </SafeAreaView>
   );
 }
