@@ -189,7 +189,7 @@ export default function PriorityTab() {
       />
 
       {/* Floating Copilot Bar (Improved for Visual Lightness) */}
-      <KeyboardAvoidingView
+      {/* <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
         style={styles.copilotWrapper}
@@ -212,7 +212,7 @@ export default function PriorityTab() {
             </TouchableOpacity>
           </View>
         </View>
-      </KeyboardAvoidingView>
+      </KeyboardAvoidingView> */}
     </SafeAreaView>
   );
 }

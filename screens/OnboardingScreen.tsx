@@ -152,7 +152,7 @@ export default function OnboardingScreen() {
 
                 {currentIndex === ONBOARDING_DATA.length - 1 && (
                      <TouchableOpacity onPress={handleSkip} style={styles.secondaryButton}>
-                        <Text style={styles.secondaryButtonText}>I'll do this later</Text>
+                        <Text style={styles.secondaryButtonText}>I`&apos;`ll do this later</Text>
                      </TouchableOpacity>
                 )}
             </View>
