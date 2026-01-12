@@ -60,7 +60,7 @@ export default function KnowledgeGraphRoute() {
   // State to manage consent and nodes
   // In a real app, 'hasConsented' would be stored in AsyncStorage or backend
   const [hasConsented, setHasConsented] = useState(false);
-  const [viewMode, setViewMode] = useState<'list' | 'graph'>('list');
+  const [viewMode, setViewMode] = useState<'list' | 'graph'>('graph');
   const [nodes, setNodes] = useState<KnowledgeGraphNode[]>(MOCK_NODES);
 
   const handleAccept = () => {
@@ -92,7 +92,7 @@ export default function KnowledgeGraphRoute() {
   if (viewMode === 'graph') {
       return (
           <KnowledgeGraphVisualizerScreen 
-            onBack={() => setViewMode('list')}
+            onBack={() => router.back()}
             onToggleList={() => setViewMode('list')}
           />
       );
@@ -103,7 +103,7 @@ export default function KnowledgeGraphRoute() {
       nodes={nodes}
       onDeleteNode={handleDeleteNode}
       onClearAll={handleClearAll}
-      onBack={() => router.back()}
+      onBack={() => setViewMode('graph')}
       onVisualize={() => setViewMode('graph')}
     />
   );

@@ -2,14 +2,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { format } from 'date-fns';
 import React, { useState } from 'react';
 import {
-  LayoutAnimation,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  UIManager,
-  View,
+    LayoutAnimation,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    UIManager,
+    View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '../components/Button';
@@ -187,17 +187,18 @@ export const KnowledgeGraphViewerScreen: React.FC<KnowledgeGraphViewerScreenProp
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={onBack} style={styles.backButton}>
-           <Ionicons name="arrow-back" size={24} color={colors.text} />
-        </TouchableOpacity>
-        <Text style={styles.title}>Knowledge Graph</Text>
-        {onVisualize ? (
-            <TouchableOpacity onPress={onVisualize} style={styles.backButton}>
-                 <Ionicons name="git-network-outline" size={24} color={colors.primary[500]} />
+        <View style={styles.navigationRow}>
+            <TouchableOpacity onPress={onBack} style={styles.backButton}>
+                <Ionicons name="arrow-back" size={24} color={colors.text} />
+                <Text style={styles.backText}>Back</Text>
             </TouchableOpacity>
-        ) : (
-            <View style={{ width: 24 }} />
-        )}
+            {onVisualize && (
+                <TouchableOpacity onPress={onVisualize} style={styles.visualizeButton}>
+                    <Ionicons name="git-network-outline" size={24} color={colors.primary[500]} />
+                </TouchableOpacity>
+            )}
+        </View>
+        <Text style={styles.title}>Knowledge Graph</Text>
       </View>
 
       <ScrollView 
@@ -312,21 +313,34 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     backgroundColor: colors.background,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
     paddingHorizontal: spacing[4],
     paddingVertical: spacing[4],
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
-    backgroundColor: colors.background, // Ensure header is opaque
+    backgroundColor: colors.background,
+  },
+  navigationRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing[2],
   },
   backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[2],
+  },
+  backText: {
+    ...typography.textStyles.body,
+    color: colors.text,
+  },
+  visualizeButton: {
     padding: 4,
   },
   title: {
-    ...typography.textStyles.h3,
+    ...typography.textStyles.h2,
     color: colors.text,
+    marginBottom: spacing[2],
   },
   statsContainer: {
     padding: spacing[4],

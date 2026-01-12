@@ -151,13 +151,16 @@ export const KnowledgeGraphVisualizerScreen: React.FC<KnowledgeGraphVisualizerSc
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={onBack} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={24} color={'#FFF'} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Neural Graph</Text>
-        <TouchableOpacity onPress={onToggleList} style={styles.listButton}>
-             <Ionicons name="list" size={24} color={'#FFF'} />
-        </TouchableOpacity>
+        <View style={styles.navigationRow}>
+            <TouchableOpacity onPress={onBack} style={styles.backButton}>
+                <Ionicons name="arrow-back" size={24} color={'#FFF'} />
+                <Text style={styles.backText}>Back</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={onToggleList} style={styles.listButton}>
+                 <Ionicons name="list" size={24} color={'#FFF'} />
+            </TouchableOpacity>
+        </View>
+        <Text style={styles.headerTitle}>Knowledge Graph</Text>
       </View>
 
       <View style={styles.graphContainer}>
@@ -213,20 +216,35 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     backgroundColor: '#000', // Enforce pure black for graph
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
     padding: spacing[4],
+    backgroundColor: '#000',
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255,255,255,0.1)',
     zIndex: 20,
-    backgroundColor: '#000',
+  },
+  navigationRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing[2],
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[2],
+  },
+  backText: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: '400',
   },
   headerTitle: {
-      ...typography.textStyles.h4,
+      ...typography.textStyles.h2,
       color: '#FFF',
-      letterSpacing: 2,
-      fontSize: 14,
+      marginBottom: spacing[2],
+  },
+  listButton: {
+      padding: spacing[1],
   },
   backButton: {
       padding: spacing[2],
