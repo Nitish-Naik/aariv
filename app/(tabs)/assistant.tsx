@@ -127,11 +127,20 @@ export default function AssistantTab() {
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       style={styles.container}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+      // keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0} 
+      // Simplified: Since the input is already raised, we might need less offset
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 10 : 0}
     >
       <View style={styles.header}>
-        <Text style={styles.title}>Meet Aariv</Text>
-        <Text style={styles.subtitle}>Calendar meets intelligence.</Text>
+        <View style={{ flex: 1 }}>
+            <Text style={styles.greeting}>Meet Aariv</Text>
+            <Text style={styles.briefing}>
+                 Context active. <Text style={styles.highlight}>Listening...</Text> for logic commands.
+            </Text>
+        </View>
+        <TouchableOpacity style={styles.headerIcon}>
+             <Ionicons name="hardware-chip" size={24} color={colors.primary[500]} />
+        </TouchableOpacity>
       </View>
 
       <FlatList
@@ -181,24 +190,40 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     backgroundColor: colors.background,
   },
   header: {
-    padding: spacing[4],
-    paddingTop: spacing[8],
+    padding: spacing[6],
+    paddingTop: spacing[12] + 20, // Manual safe area adjustment for top-alignment
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    gap: spacing[4],
     backgroundColor: colors.background,
-    alignItems: 'center',
-    borderBottomWidth: 0,
   },
-  title: {
+  greeting: {
     ...typography.textStyles.h2,
     color: colors.text,
-    marginBottom: spacing[1],
+    marginBottom: spacing[2],
   },
-  subtitle: {
-    ...typography.textStyles.bodySmall,
+  briefing: {
+    ...typography.textStyles.body,
+    fontSize: 16,
     color: colors.textSecondary,
+    lineHeight: 24,
+  },
+  highlight: {
+    color: colors.primary[500],
+    fontWeight: '600',
+  },
+  headerIcon: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: isDark ? 'rgba(59, 130, 246, 0.15)' : '#EFF6FF',
+      alignItems: 'center',
+      justifyContent: 'center',
   },
   listContent: {
     padding: spacing[4],
-    paddingBottom: spacing[24], // Space for floating input
+    paddingBottom: 180, // Increased to clear the floating input + tab bar
   },
   messageContainer: {
     marginBottom: spacing[4],
@@ -283,18 +308,13 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   // Floating Input Styling
   inputWrapper: {
     position: 'absolute',
-    bottom: 0,
+    bottom: 90, // Raised above the Floating Tab Dock (which is ~80px height including margin)
     left: 0,
     right: 0,
     padding: spacing[4],
-    paddingBottom: Platform.OS === 'ios' ? spacing[6] : spacing[4],
-    backgroundColor: isDark 
-      ? 'linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,1) 50%)' // CSS valid, but in RN needs component. 
-      : 'transparent', // In RN we might just use a solid background or BlurView if available
-    // For now, solid background that matches screen
-    backgroundColor: colors.background, 
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
+    paddingBottom: spacing[4],
+    // Remove background blocking to keep it airy, or keep minimal
+    backgroundColor: 'transparent',
   },
   inputContainer: {
     flexDirection: 'row',
@@ -305,6 +325,12 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     paddingLeft: spacing[4],
     borderWidth: 1,
     borderColor: colors.border,
+    // Add shadow to separate from content
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
   },
   input: {
     flex: 1,

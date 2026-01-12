@@ -1,305 +1,110 @@
-import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import React, { useEffect, useRef, useState } from 'react';
-import { Animated, Easing, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useTheme } from '../context/ThemeContext';
-import { spacing, typography } from '../theme';
+import React, { useState } from 'react';
+import { KnowledgeGraphConsentScreen } from '../screens/KnowledgeGraphConsentScreen';
+import { KnowledgeGraphViewerScreen } from '../screens/KnowledgeGraphViewerScreen';
+import { KnowledgeGraphVisualizerScreen } from '../screens/KnowledgeGraphVisualizerScreen';
+import type { KnowledgeGraphNode } from '../types';
 
-// Helper to draw lines between two points using simple Views
-const ConnectionLine = ({ start, end, color = 'rgba(255,255,255,0.1)' }: any) => {
-    const dx = end.x - start.x;
-    const dy = end.y - start.y;
-    const length = Math.sqrt(dx * dx + dy * dy);
-    const angle = Math.atan2(dy, dx) * (180 / Math.PI);
-    
-    // Midpoint to center the rotated line
-    const cx = (start.x + end.x) / 2;
-    const cy = (start.y + end.y) / 2;
+// Mock Data for the Knowledge Graph
+const MOCK_NODES: KnowledgeGraphNode[] = [
+  {
+    id: '1',
+    type: 'pattern',
+    label: 'Morning Deep Work',
+    description: 'User consistently blocks 9am-11am for focused work without meetings.',
+    createdAt: new Date('2025-12-01'),
+    expiresAt: new Date('2026-03-01'),
+    connections: ['2', '4'],
+  },
+  {
+    id: '2',
+    type: 'preference',
+    label: 'No Friday Meetings',
+    description: 'User rejects meeting invites scheduled for Friday afternoons.',
+    createdAt: new Date('2025-11-15'),
+    expiresAt: new Date('2026-05-15'),
+    connections: ['1'],
+  },
+  {
+    id: '3',
+    type: 'ritual',
+    label: 'Weekly Team Sync',
+    description: 'Recurring Standup every Monday at 10am.',
+    createdAt: new Date('2025-10-01'),
+    expiresAt: new Date('2026-10-01'),
+    connections: [],
+  },
+  {
+    id: '4',
+    type: 'cadence',
+    label: 'Quick Response Time',
+    description: 'User typically replies to emails within 5 minutes during working hours.',
+    createdAt: new Date('2026-01-05'),
+    expiresAt: new Date('2026-02-05'),
+    connections: ['1', '3'],
+  },
+  {
+    id: '5',
+    type: 'preference',
+    label: 'Zoom over Meet',
+    description: 'User prefers Zoom links for external client calls.',
+    createdAt: new Date('2026-01-10'),
+    expiresAt: new Date('2026-07-10'),
+    connections: [],
+  },
+];
 
-    return (
-        <View
-            style={{
-                position: 'absolute',
-                backgroundColor: color,
-                height: 1,
-                width: length,
-                left: cx - length / 2, // Center the line horizontally on the midpoint
-                top: cy, // Center vertically
-                transform: [{ rotate: `${angle}deg` }],
-            }}
-        />
-    );
-};
-
-export default function KnowledgeGraphScreen() {
+export default function KnowledgeGraphRoute() {
   const router = useRouter();
-  const { colors, isDark } = useTheme();
-  const styles = getStyles(colors, isDark);
   
-  // Animation for "breathing"
-  const pulseAnim = useRef(new Animated.Value(0)).current;
+  // State to manage consent and nodes
+  // In a real app, 'hasConsented' would be stored in AsyncStorage or backend
+  const [hasConsented, setHasConsented] = useState(false);
+  const [viewMode, setViewMode] = useState<'list' | 'graph'>('list');
+  const [nodes, setNodes] = useState<KnowledgeGraphNode[]>(MOCK_NODES);
 
-  useEffect(() => {
-      Animated.loop(
-          Animated.sequence([
-              Animated.timing(pulseAnim, { toValue: 1, duration: 4000, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
-              Animated.timing(pulseAnim, { toValue: 0, duration: 4000, easing: Easing.inOut(Easing.ease), useNativeDriver: true })
-          ])
-      ).start();
-  }, []);
+  const handleAccept = () => {
+    setHasConsented(true);
+  };
 
-  // Mock Graph Data with connections
-  const [selectedNode, setSelectedNode] = useState<number | null>(null);
+  const handleDecline = () => {
+    router.back();
+  };
 
-  const nodes = [
-      { id: 1, label: 'YOU', type: 'core', x: 180, y: 300 },
-      { id: 2, label: 'Product Launch', type: 'project', x: 280, y: 150 },
-      { id: 3, label: 'Samika', type: 'person', x: 60, y: 200 },
-      { id: 4, label: 'Design Team', type: 'group', x: 100, y: 80 },
-      { id: 5, label: 'Q1 Goals', type: 'project', x: 320, y: 380 },
-      { id: 6, label: 'Deep Work', type: 'habit', x: 60, y: 400 },
-      { id: 7, label: 'Q2 Strategy', type: 'project', x: 200, y: 500 }, // New Node
-  ];
+  const handleDeleteNode = (nodeId: string) => {
+    setNodes((prev) => prev.filter((n) => n.id !== nodeId));
+  };
 
-  const connections = [
-      { from: 1, to: 2 },
-      { from: 1, to: 3 },
-      { from: 1, to: 5 },
-      { from: 1, to: 6 },
-      { from: 1, to: 7 },
-      { from: 3, to: 2 }, // Samika works on Launch
-      { from: 3, to: 4 }, // Samika in Design Team
-      { from: 2, to: 4 }, // Launch needs Design
-      { from: 5, to: 7 }, // Goals lead to Strategy
-  ];
+  const handleClearAll = () => {
+    setNodes([]);
+  };
 
-  const renderNode = (node: any) => {
-      const getNodeColor = (type: string) => {
-          switch(type) {
-              case 'core': return '#FFF';
-              case 'project': return colors.semantic.info; // Blue
-              case 'person': return colors.semantic.success; // Green
-              case 'habit': return colors.semantic.warning; // Orange
-              case 'group': return '#A855F7'; // Purple
-              default: return colors.textSecondary;
-          }
-      };
-      
-      const color = getNodeColor(node.type);
-      const isSelected = selectedNode === node.id;
-      const isConnected = selectedNode 
-        ? connections.some(c => (c.from === selectedNode && c.to === node.id) || (c.from === node.id && c.to === selectedNode)) 
-        : false;
+  if (!hasConsented) {
+    return (
+      <KnowledgeGraphConsentScreen
+        onAccept={handleAccept}
+        onDecline={handleDecline}
+        onBack={() => router.back()}
+      />
+    );
+  }
 
-      // Opacity Logic: If something is selected, dim others unless they are the node or connected
-      const opacity = selectedNode === null || isSelected || isConnected || node.id === selectedNode ? 1 : 0.2;
-      const scale = isSelected ? 1.2 : 1;
-
+  if (viewMode === 'graph') {
       return (
-          <TouchableOpacity 
-            key={node.id}
-            activeOpacity={0.8}
-            onPress={() => setSelectedNode(node.id === selectedNode ? null : node.id)}
-            style={[styles.node, { left: node.x - 50, top: node.y - 20, zIndex: 10 }]} // Centering adjustment
-          >
-              <Animated.View 
-                style={[
-                    styles.nodeDot, 
-                    { 
-                        backgroundColor: color, 
-                        opacity: opacity,
-                        transform: [{ scale: scale }],
-                        // Add subtle breathing to all nodes
-                        shadowColor: color,
-                        shadowOpacity: pulseAnim, 
-                        shadowRadius: 10
-                    }
-                ]} 
-               />
-              <Text style={[styles.nodeLabel, { opacity }]}>{node.label}</Text>
-          </TouchableOpacity>
+          <KnowledgeGraphVisualizerScreen 
+            onBack={() => setViewMode('list')}
+            onToggleList={() => setViewMode('list')}
+          />
       );
-  };
-
-  const renderConnections = () => {
-      return connections.map((conn, idx) => {
-          const start = nodes.find(n => n.id === conn.from);
-          const end = nodes.find(n => n.id === conn.to);
-          if (!start || !end) return null;
-
-          // Highlight logic
-          const isHighlighted = selectedNode === conn.from || selectedNode === conn.to;
-          const lineColor = isHighlighted ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.05)';
-          const lineThickness = isHighlighted ? 2 : 1;
-
-          return (
-              <ConnectionLine 
-                key={`conn-${idx}`} 
-                start={start} 
-                end={end} 
-                color={lineColor}
-              />
-          );
-      });
-  };
+  }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={24} color={colors.text} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Neural Graph</Text>
-        <View style={{ width: 24 }} />
-      </View>
-
-      <View style={styles.graphContainer}>
-          <Text style={styles.backgroundText}>CONTEXT LAYER</Text>
-          
-          {/* Render Lines First (Behind nodes) */}
-          {renderConnections()}
-
-          {/* Render Nodes */}
-          {nodes.map(renderNode)}
-      </View>
-      
-      {/* Information Overlay */}
-      <View style={styles.overlay}>
-          <View style={styles.overlayHeader}>
-            <Ionicons name="hardware-chip-outline" size={16} color={colors.primary[500]} />
-            <Text style={styles.overlayTitle}>
-                {selectedNode ? `NODE DETAILS: ${nodes.find(n => n.id === selectedNode)?.label}` : 'ACTIVE CONTEXTS'}
-            </Text>
-          </View>
-
-          {selectedNode ? (
-             <View style={styles.nodeDetailContainer}>
-                 <Text style={styles.detailText}>
-                     Connections: {connections.filter(c => c.from === selectedNode || c.to === selectedNode).length}
-                 </Text>
-                 <Text style={styles.detailText}>
-                     Confidence: 98%
-                 </Text>
-             </View>
-          ) : (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll}>
-                <View style={[styles.chip, { borderColor: colors.semantic.info }]}>
-                    <Text style={[styles.chipText, { color: colors.semantic.info }]}>Project: Launch</Text>
-                </View>
-                <View style={[styles.chip, { borderColor: colors.semantic.success }]}>
-                    <Text style={[styles.chipText, { color: colors.semantic.success }]}>Person: Samika</Text>
-                </View>
-                <View style={[styles.chip, { borderColor: colors.semantic.warning }]}>
-                    <Text style={[styles.chipText, { color: colors.semantic.warning }]}>Mode: Focus</Text>
-                </View>
-            </ScrollView>
-          )}
-      </View>
-
-    </SafeAreaView>
+    <KnowledgeGraphViewerScreen
+      nodes={nodes}
+      onDeleteNode={handleDeleteNode}
+      onClearAll={handleClearAll}
+      onBack={() => router.back()}
+      onVisualize={() => setViewMode('graph')}
+    />
   );
 }
-
-const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#000', // Enforce pure black for graph
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: spacing[4],
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.1)',
-    zIndex: 20,
-    backgroundColor: '#000',
-  },
-  headerTitle: {
-      ...typography.textStyles.h4,
-      color: '#FFF',
-      letterSpacing: 2,
-      fontSize: 14,
-  },
-  backButton: {
-      padding: spacing[2],
-  },
-  graphContainer: {
-      flex: 1,
-      position: 'relative',
-  },
-  backgroundText: {
-      position: 'absolute',
-      bottom: 20,
-      right: 20,
-      fontSize: 48,
-      fontWeight: '900',
-      color: 'rgba(255,255,255,0.03)',
-  },
-  node: {
-      position: 'absolute',
-      alignItems: 'center',
-      justifyContent: 'center',
-      width: 100, // Touch target
-      height: 60,
-  },
-  nodeDot: {
-      width: 14,
-      height: 14,
-      borderRadius: 7,
-      marginBottom: 6,
-      borderWidth: 2,
-      borderColor: '#000', // Stroke for contrast against lines
-  },
-  nodeLabel: {
-      color: 'rgba(255,255,255,0.8)',
-      fontSize: 10,
-      fontWeight: '600',
-      textTransform: 'uppercase',
-  },
-  overlay: {
-      padding: spacing[6],
-      backgroundColor: 'rgba(10,10,10,0.95)',
-      borderTopWidth: 1,
-      borderTopColor: 'rgba(255,255,255,0.1)',
-      height: 120,
-  },
-  overlayHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: spacing[4],
-    gap: spacing[2],
-  },
-  overlayTitle: {
-      color: '#FFF',
-      fontSize: 12,
-      textTransform: 'uppercase',
-      letterSpacing: 1,
-      fontWeight: '700',
-  },
-  chipScroll: {
-      flexDirection: 'row',
-  },
-  chip: {
-      borderWidth: 1,
-      borderRadius: 4, // More technical square look
-      paddingVertical: 4,
-      paddingHorizontal: 12,
-      marginRight: spacing[3],
-  },
-  chipText: {
-      fontSize: 11,
-      fontWeight: '600',
-      textTransform: 'uppercase',
-  },
-  nodeDetailContainer: {
-      flexDirection: 'row',
-      gap: spacing[6],
-  },
-  detailText: {
-      color: colors.textSecondary,
-      fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace', // Technical font
-      fontSize: 12,
-  }
-});

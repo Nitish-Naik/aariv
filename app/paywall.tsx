@@ -129,7 +129,7 @@ export default function PaywallScreen() {
                 <View style={styles.irisCore} />
             </View>
 
-            <Text style={styles.headline}>Let Iris run ahead, quietly.</Text>
+            <Text style={styles.headline}>Let Aariv run ahead, quietly.</Text>
             <Text style={styles.subHeadline}>No more notifications. More clarity.</Text>
             
             <View style={styles.irisIntroContainer}>

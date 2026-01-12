@@ -1,30 +1,58 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
+  Alert,
   ScrollView,
   StyleSheet,
   Switch,
   Text,
-  TextInput,
   TouchableOpacity,
-  View,
-  KeyboardAvoidingView,
-  Platform
+  View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../context/ThemeContext';
+import { getCurrentUser, signOut } from '../../services/auth';
 import { spacing, typography } from '../../theme';
+import type { User } from '../../types';
 
 export default function SettingsScreen() {
   const router = useRouter();
   const { colors, isDark, toggleTheme } = useTheme();
   
   // State
+  const [user, setUser] = useState<User | null>(null);
   const [operatingMode, setOperatingMode] = useState<'passive' | 'executive'>('passive');
   const [notifications, setNotifications] = useState(true);
 
   const styles = getStyles(colors, isDark);
+
+  useEffect(() => {
+    loadUser();
+  }, []);
+
+  const loadUser = async () => {
+    const currentUser = await getCurrentUser();
+    setUser(currentUser);
+  };
+
+  const handleLogout = () => {
+    Alert.alert(
+      "Sever Neural Link?",
+      "Disconnecting will pause all active context monitoring.",
+      [
+        { text: "Stay Connected", style: "cancel" },
+        { 
+          text: "Disconnect", 
+          style: "destructive", 
+          onPress: async () => {
+            await signOut();
+            router.replace('/login');
+          }
+        }
+      ]
+    );
+  };
 
   const renderModeCard = (mode: 'passive' | 'executive', title: string, desc: string, icon: string) => {
       const isActive = operatingMode === mode;
@@ -52,9 +80,25 @@ export default function SettingsScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Neural Protocols</Text>
-        <TouchableOpacity style={styles.profileBtn}>
-             <Ionicons name="person-circle" size={32} color={colors.textSecondary} />
+        <View style={{ flex: 1 }}>
+          <Text style={styles.greeting}>Protocols</Text>
+          <Text style={styles.briefing}>
+            Configure <Text style={styles.highlight}>neural weights</Text> and integration permissions.
+          </Text>
+        </View>
+        <TouchableOpacity style={styles.profileBtn} onPress={handleLogout}>
+             {user ? (
+               <View style={styles.avatarBadge}>
+                 <Text style={styles.avatarText}>
+                   {user.name 
+                     ? user.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() 
+                     : 'ID'}
+                 </Text>
+                 <View style={styles.statusDot} />
+               </View>
+             ) : (
+               <Ionicons name="person-circle" size={36} color={colors.textSecondary} />
+             )}
         </TouchableOpacity>
       </View>
 
@@ -66,13 +110,13 @@ export default function SettingsScreen() {
             {renderModeCard(
                 'passive', 
                 'Passive Mode', 
-                'Iris waits for commands. Acts only when explicitly asked. High control, zero risk.', 
+                'Aariv waits for commands. Acts only when explicitly asked. High control, zero risk.', 
                 'shield-checkmark'
             )}
             {renderModeCard(
                 'executive', 
                 'Executive Mode', 
-                'Iris acts proactively. Reschedules conflicts and drafts replies automatically.', 
+                'Aariv acts proactively. Reschedules conflicts and drafts replies automatically.', 
                 'flash'
             )}
         </View>
@@ -138,27 +182,6 @@ export default function SettingsScreen() {
         </TouchableOpacity>
 
       </ScrollView>
-
-      {/* Bottom Copilot Bar */}
-      {/* <KeyboardAvoidingView 
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
-          style={styles.copilotBarWrapper}
-      >
-          <View style={styles.copilotBar}>
-              <View style={styles.copilotInputContainer}>
-                  <Ionicons name="sparkles" size={20} color={colors.primary[500]} style={styles.copilotIcon} />
-                  <TextInput 
-                      style={styles.copilotInput}
-                      placeholder="Ask Copilot..."
-                      placeholderTextColor={isDark ? colors.textSecondary : colors.neutral[400]}
-                  />
-                  <TouchableOpacity style={styles.micButton}>
-                      <Ionicons name="mic" size={20} color={colors.text} />
-                  </TouchableOpacity>
-              </View>
-          </View>
-      </KeyboardAvoidingView> */}
     </SafeAreaView>
   );
 }
@@ -169,17 +192,57 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     backgroundColor: colors.background,
   },
   header: {
+    paddingHorizontal: spacing[6],
+    marginBottom: spacing[6],
+    paddingTop: spacing[8], // Matches Home Tab alignment
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: spacing[4],
+    alignItems: 'flex-start',
+    gap: spacing[4],
+    backgroundColor: colors.background,
   },
-  title: {
+  greeting: {
     ...typography.textStyles.h2,
     color: colors.text,
+    marginBottom: spacing[2],
+  },
+  briefing: {
+    ...typography.textStyles.body,
+    fontSize: 16,
+    color: colors.textSecondary,
+    lineHeight: 24,
+  },
+  highlight: {
+    color: colors.primary[500],
+    fontWeight: '600',
   },
   profileBtn: {
-      opacity: 0.8
+      // opacity: 0.8
+  },
+  avatarBadge: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: colors.primary[500],
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+  },
+  avatarText: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#FFF',
+  },
+  statusDot: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#22C55E', // Green-500
+    borderWidth: 2,
+    borderColor: colors.background,
   },
   scrollContent: {
       padding: spacing[4],
@@ -296,39 +359,5 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   subAction: {
       fontWeight: 'bold',
       color: colors.primary[500],
-  },
-  // Copilot Bar
-  copilotBarWrapper: {
-      position: 'absolute',
-      bottom: 0,
-      left: 0,
-      right: 0,
-      backgroundColor: isDark ? colors.surfaceElevated : '#FFFFFF',
-      borderTopWidth: 1,
-      borderTopColor: isDark ? colors.border : '#E2E8F0',
-  },
-  copilotBar: {
-      paddingHorizontal: spacing[4],
-      paddingVertical: spacing[3],
-      paddingBottom: Platform.OS === 'ios' ? spacing[6] : spacing[3],
-  },
-  copilotInputContainer: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: isDark ? '#2D3748' : '#F1F5F9',
-      borderRadius: 24,
-      paddingHorizontal: spacing[4],
-      height: 48,
-  },
-  copilotIcon: {
-      marginRight: spacing[2],
-  },
-  copilotInput: {
-      flex: 1,
-      color: colors.text,
-      ...typography.textStyles.body,
-  },
-  micButton: {
-      padding: spacing[1],
   },
 });

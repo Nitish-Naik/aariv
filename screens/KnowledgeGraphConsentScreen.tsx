@@ -2,16 +2,17 @@
  * Knowledge Graph Consent Screen - Consent for knowledge graph usage
  */
 
-import React, { useState } from 'react';
+import React from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
   ScrollView,
+  StyleSheet,
+  Text,
+  View,
 } from 'react-native';
-import { colors, spacing, typography } from '../theme';
-import { Card } from '../components/Card';
 import { Button } from '../components/Button';
+import { Card } from '../components/Card';
+import { useTheme } from '../context/ThemeContext';
+import { spacing, typography } from '../theme';
 
 interface KnowledgeGraphConsentScreenProps {
   onAccept: () => void;
@@ -22,8 +23,10 @@ interface KnowledgeGraphConsentScreenProps {
 export const KnowledgeGraphConsentScreen: React.FC<KnowledgeGraphConsentScreenProps> = ({
   onAccept,
   onDecline,
-  onBack,
 }) => {
+  const { colors, isDark } = useTheme();
+  const styles = getStyles(colors, isDark);
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.header}>
@@ -119,10 +122,10 @@ export const KnowledgeGraphConsentScreen: React.FC<KnowledgeGraphConsentScreenPr
   );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.light.background,
+    backgroundColor: colors.background,
   },
   content: {
     padding: spacing[4],
@@ -132,35 +135,40 @@ const styles = StyleSheet.create({
   },
   title: {
     ...typography.textStyles.h2,
-    color: colors.neutral[900],
+    color: colors.text,
     marginBottom: spacing[2],
   },
   subtitle: {
     ...typography.textStyles.body,
-    color: colors.neutral[600],
+    color: colors.textSecondary,
   },
   infoCard: {
     marginBottom: spacing[4],
+    backgroundColor: isDark ? colors.surfaceElevated : '#fff',
+    borderColor: colors.border,
   },
   infoTitle: {
     ...typography.textStyles.h4,
-    color: colors.neutral[900],
+    color: colors.text,
     marginBottom: spacing[3],
   },
   infoText: {
     ...typography.textStyles.body,
-    color: colors.neutral[700],
+    color: colors.textSecondary,
     lineHeight: 24,
   },
   featuresCard: {
     marginBottom: spacing[4],
+    backgroundColor: isDark ? colors.surfaceElevated : '#fff',
+    borderColor: colors.border,
   },
   featuresTitle: {
     ...typography.textStyles.h4,
-    color: colors.neutral[900],
+    color: colors.text,
     marginBottom: spacing[3],
   },
   featureList: {
+      gap: spacing[2],
   },
   featureItem: {
     flexDirection: 'row',
@@ -169,23 +177,25 @@ const styles = StyleSheet.create({
     ...typography.textStyles.body,
     color: colors.primary[500],
     fontWeight: typography.fontWeight.bold,
+    marginRight: spacing[2],
   },
   featureText: {
     ...typography.textStyles.body,
-    color: colors.neutral[700],
+    color: colors.textSecondary,
     flex: 1,
   },
   privacyCard: {
     marginBottom: spacing[6],
-    backgroundColor: colors.primary[50],
-    borderColor: colors.primary[200],
+    backgroundColor: isDark ? colors.primary[500] + '10' : colors.primary[50],
+    borderColor: isDark ? colors.primary[500] + '30' : colors.primary[200],
   },
   privacyTitle: {
     ...typography.textStyles.h4,
-    color: colors.neutral[900],
+    color: colors.text,
     marginBottom: spacing[3],
   },
   privacyList: {
+      gap: spacing[2],
   },
   privacyItem: {
     flexDirection: 'row',
@@ -194,14 +204,16 @@ const styles = StyleSheet.create({
     ...typography.textStyles.body,
     color: colors.primary[500],
     fontWeight: typography.fontWeight.bold,
+    marginRight: spacing[2],
   },
   privacyText: {
     ...typography.textStyles.body,
-    color: colors.neutral[700],
+    color: colors.textSecondary,
     flex: 1,
   },
   actions: {
     flexDirection: 'row',
+    gap: spacing[4],
     marginBottom: spacing[4],
   },
   button: {

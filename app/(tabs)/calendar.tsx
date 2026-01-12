@@ -5,6 +5,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -71,28 +72,20 @@ export default function CalendarTab() {
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header: Time Audit */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Agenda</Text>
-        <View style={styles.auditContainer}>
-            <View style={styles.auditItem}>
-                <Text style={styles.auditValue}>{meetingHours}h</Text>
-                <Text style={styles.auditLabel}>Meetings</Text>
-            </View>
-            <View style={styles.auditDivider} />
-            <View style={styles.auditItem}>
-                <Text style={[styles.auditValue, { color: colors.semantic.success }]}>{deepWorkHours}h</Text>
-                <Text style={styles.auditLabel}>Focus</Text>
-            </View>
-            <View style={styles.auditDivider} />
-            <View style={styles.auditItem}>
-                <Text style={[styles.auditValue, { color: colors.semantic.error }]}>{conflictCount}</Text>
-                <Text style={styles.auditLabel}>Conflicts</Text>
-            </View>
+        <View style={{ flex: 1 }}>
+            <Text style={styles.greeting}>Agenda</Text>
+            <Text style={styles.briefing}>
+                You have <Text style={styles.highlight}>{meetingHours}h meetings</Text> and <Text style={styles.highlight}>{deepWorkHours}h focus</Text> time.
+            </Text>
         </View>
+        <TouchableOpacity style={styles.headerIcon}>
+             <Ionicons name="calendar" size={24} color={colors.primary[500]} />
+        </TouchableOpacity>
       </View>
 
       <View style={styles.insightBanner}>
            <Ionicons name="alert-circle-outline" size={20} color={colors.semantic.warning} />
-           <Text style={styles.insightText}>Consider rescheduling "Design Review" to clear your afternoon.</Text>
+           <Text style={styles.insightText}>Consider rescheduling `&ldquo;`Design Review`&ldquo;` to clear your afternoon.</Text>
       </View>
 
       <ScrollView 
@@ -134,15 +127,35 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   },
   header: {
     paddingHorizontal: spacing[6],
-    paddingTop: spacing[4],
-    paddingBottom: spacing[4],
+    marginBottom: spacing[6],
+    paddingTop: spacing[8], // Matches Home Tab alignment
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
+    gap: spacing[4],
   },
-  headerTitle: {
+  greeting: {
     ...typography.textStyles.h2,
     color: colors.text,
+    marginBottom: spacing[2],
+  },
+  briefing: {
+    ...typography.textStyles.body,
+    fontSize: 16,
+    color: colors.textSecondary,
+    lineHeight: 24,
+  },
+  highlight: {
+    color: colors.primary[500],
+    fontWeight: '600',
+  },
+  headerIcon: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: isDark ? 'rgba(59, 130, 246, 0.15)' : '#EFF6FF',
+      alignItems: 'center',
+      justifyContent: 'center',
   },
   auditContainer: {
     flexDirection: 'row',
