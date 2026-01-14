@@ -11,35 +11,34 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarShowLabel: false, 
-
-        // "Invisible Floor" - Pure Minimalist
-        // No background, no borders, just icons floating.
-        // The ultimate "Quiet UI".
+        tabBarShowLabel: true, 
+        tabBarHideOnKeyboard: true,
         
         tabBarStyle: {
-          position: 'absolute',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          elevation: 0,
-          backgroundColor: isDark ? 'rgba(0,0,0,0.95)' : 'rgba(255,255,255,0.95)', // Slight transp for glass effect
+          backgroundColor: isDark ? '#000000' : '#FFFFFF',
           borderTopWidth: 0,
-          height: Platform.OS === 'ios' ? 85 : 65, // Standard height
-          paddingTop: 10,
-          paddingBottom: Platform.OS === 'ios' ? 25 : 10,
+          elevation: 0,
+          height: Platform.OS === 'ios' ? 88 : 60,
+          paddingTop: 8,
+          paddingBottom: Platform.OS === 'ios' ? 28 : 8,
         },
-        tabBarActiveTintColor: colors.primary[500], 
-        tabBarInactiveTintColor: colors.textTertiary,
+        tabBarLabelStyle: {
+          fontSize: 10,
+          fontWeight: '500',
+          marginTop: 4,
+        },
+        tabBarActiveTintColor: isDark ? '#FFFFFF' : colors.primary[500], 
+        tabBarInactiveTintColor: isDark ? '#888888' : '#94A3B8',
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
+          title: 'Home',
           tabBarIcon: ({ color, focused }) => (
             <Ionicons 
               name={focused ? "home" : "home-outline"} 
-              size={28} 
+              size={24} 
               color={color} 
             />
           ),
@@ -49,33 +48,43 @@ export default function TabLayout() {
       <Tabs.Screen
         name="calendar"
         options={{
+          title: 'Calendar',
           tabBarIcon: ({ color, focused }) => (
             <Ionicons 
               name={focused ? "calendar" : "calendar-outline"} 
-              size={28} 
+              size={24} 
               color={color} 
             />
           ),
         }}
       />
       
-      {/* Central "AI" Button - Clean, Static, Minimal */}
+      {/* Central "AI" Button - Inspired by screenshot Scan Button */}
       <Tabs.Screen
         name="assistant"
         options={{
-          tabBarIcon: ({ color, focused }) => (
+          title: '', // Hide text label for the center button
+          tabBarIcon: ({ focused }) => (
             <View style={{
-              width: 48,
-              height: 48,
-              borderRadius: 24,
-              backgroundColor: focused ? colors.primary[500] : (isDark ? '#333' : '#f0f0f0'),
-              justifyContent: 'center',
-              alignItems: 'center',
+                width: 56,
+                height: 56,
+                borderRadius: 28,
+                backgroundColor: colors.primary[500], // Primary colored circle (like the purple one)
+                justifyContent: 'center',
+                alignItems: 'center',
+                marginBottom: Platform.OS === 'ios' ? 30 : 20, // Float it up
+                shadowColor: colors.primary[500],
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.3,
+                shadowRadius: 8,
+                elevation: 4,
+                borderWidth: 4,
+                borderColor: isDark ? '#000000' : '#FFFFFF', // Border matches bg
             }}>
-               <Ionicons 
+                <Ionicons 
                     name="sparkles" 
-                    size={24} 
-                    color={focused ? "#FFFFFF" : colors.textSecondary} 
+                    size={26} 
+                    color="#FFFFFF" 
                 />
             </View>
           ),
@@ -85,10 +94,11 @@ export default function TabLayout() {
       <Tabs.Screen
         name="inbox"
         options={{
+          title: 'Inbox',
           tabBarIcon: ({ color, focused }) => (
             <Ionicons 
               name={focused ? "file-tray-full" : "file-tray-outline"} 
-              size={28} 
+              size={24} 
               color={color}
             />
           ),
@@ -98,10 +108,11 @@ export default function TabLayout() {
       <Tabs.Screen
         name="settings"
         options={{
+          title: 'Settings',
           tabBarIcon: ({ color, focused }) => (
             <Ionicons 
               name={focused ? "settings" : "settings-outline"} 
-              size={28} 
+              size={24} 
               color={color} 
             />
           ),

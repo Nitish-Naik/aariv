@@ -1,121 +1,291 @@
 import { Ionicons } from '@expo/vector-icons';
-import { format } from 'date-fns';
-import React from 'react';
+import { addDays, addMonths, format, getMonth, isSameDay, setMonth, startOfWeek, subMonths } from 'date-fns';
+import React, { useState } from 'react';
 import {
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View
+    Dimensions,
+    LayoutAnimation,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    UIManager,
+    View
 } from 'react-native';
+import { Calendar } from 'react-native-calendars';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../context/ThemeContext';
 import { spacing, typography } from '../../theme';
 import { MOCK_EVENTS } from '../../utils/mockData';
 
+if (Platform.OS === 'android') {
+  if (UIManager.setLayoutAnimationEnabledExperimental) {
+    UIManager.setLayoutAnimationEnabledExperimental(true);
+  }
+}
+
 export default function CalendarTab() {
   const { colors, isDark } = useTheme();
   const styles = getStyles(colors, isDark);
-  const events = MOCK_EVENTS;
+  
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [isMonthExpanded, setIsMonthExpanded] = useState(false);
+  
+  const toggleMonthView = () => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setIsMonthExpanded(!isMonthExpanded);
+  };
 
-  // AI-inferred stats
-  const meetingHours = 5;
-  const deepWorkHours = 2.5;
-  const conflictCount = 1;
+  // Re-calculate week days when selectedDate changes to keep it in view
+  const weekStart = startOfWeek(selectedDate, { weekStartsOn: 1 });
+  const weekDays = Array.from({ length: 7 }).map((_, i) => addDays(weekStart, i));
 
-  const renderTimeBlock = (hour: number) => {
-    const hourEvents = events.filter(e => e.startTime.getHours() === hour);
-    const isCurrentHour = new Date().getHours() === hour;
+  const events = MOCK_EVENTS; // In real app, filter by selectedDate
+  
+  // Filter events for the selected day (mock logic here)
+  const todayEvents = events.filter(e => isSameDay(e.startTime, selectedDate) || true); // Showing all for demo since MOCK_EVENTS are "today"
+
+  const renderTimeLine = () => {
+    // Render hours 6 AM to 11 PM
+    const hours = Array.from({ length: 18 }).map((_, i) => i + 6);
+    const now = new Date();
+    const currentHour = now.getHours();
+    const currentMinute = now.getMinutes();
 
     return (
-      <View key={hour} style={styles.timeRow}>
-        <View style={styles.timeLabelContainer}>
-           <Text style={[styles.timeLabel, isCurrentHour && styles.timeLabelActive]}>
-              {hour}:00
-           </Text>
-        </View>
-        
-        <View style={styles.timelineContent}>
-            {/* Grid Line */}
-            <View style={styles.gridLine} />
+      <ScrollView 
+        showsVerticalScrollIndicator={false} 
+        contentContainerStyle={{ paddingBottom: 120 }} // Space for TabBar
+      >
+        {hours.map((hour) => {
+            const hourEvents = todayEvents.filter(e => e.startTime.getHours() === hour);
+            const isPast = hour < currentHour;
             
-            {/* Events */}
-            {hourEvents.map((event, index) => (
-                <View 
-                    key={index} 
-                    style={[
-                        styles.eventCard, 
-                        { backgroundColor: event.color + '20', borderColor: event.color }
-                    ]}
-                >
-                     <View style={[styles.eventBar, { backgroundColor: event.color }]} />
-                     <View style={styles.eventDetails}>
-                        <Text style={styles.eventTitle} numberOfLines={1}>{event.title}</Text>
-                        <Text style={styles.eventTime}>{format(event.startTime, 'h:mm')} - {format(event.endTime, 'h:mm')}</Text>
-                     </View>
-                </View>
-            ))}
+            return (
+                <View key={hour} style={styles.timeRow}>
+                    {/* Time Column */}
+                    <View style={styles.timeLabelContainer}>
+                        <Text style={[
+                            styles.timeLabel, 
+                            hour === currentHour && styles.timeLabelActive
+                        ]}>
+                            {hour > 12 ? hour - 12 : hour} {hour >= 12 ? 'PM' : 'AM'}
+                        </Text>
+                    </View>
 
-            {/* AI Suggestion Injection at specific times (mock logic) */}
-            {hour === 14 && (
-                <View style={styles.aiSuggestion}>
-                    <Ionicons name="sparkles" size={14} color={colors.primary[400]} />
-                    <Text style={styles.aiSuggestionText}>Open slot: Ideal for clear-out</Text>
+                    {/* Content Column */}
+                    <View style={styles.gridCell}>
+                        {/* Horizontal Grid Line */}
+                        <View style={styles.gridLine} />
+                        
+                        {/* "Current Time" Indicator Line */}
+                        {hour === currentHour && isSameDay(selectedDate, now) && (
+                             <View style={[styles.currentTimeIndicator, { top: (currentMinute / 60) * 60 }]} >
+                                <View style={styles.currentTimeDot} />
+                                <View style={styles.currentTimeLine} />
+                             </View>
+                        )}
+
+                        {/* Events in this hour */}
+                        {hourEvents.map((event, idx) => (
+                            <View 
+                                key={idx}
+                                style={[
+                                    styles.eventCard,
+                                    { 
+                                        backgroundColor: isDark ? '#1E293B' : '#F8FAFC',
+                                        borderLeftColor: event.color 
+                                    }
+                                ]}
+                            >
+                                <View style={styles.eventContent}>
+                                    <Text style={styles.eventTitle} numberOfLines={1}>{event.title}</Text>
+                                    <Text style={styles.eventDuration}>
+                                        {format(event.startTime, 'h:mm')} - {format(event.endTime, 'h:mm')}
+                                    </Text>
+                                </View>
+                                {event.platform === 'google-calendar' && (
+                                    <Ionicons name="logo-google" size={14} color={colors.textTertiary} />
+                                )}
+                            </View>
+                        ))}
+                    </View>
                 </View>
-            )}
-        </View>
-      </View>
+            );
+        })}
+      </ScrollView>
     );
   };
 
   return (
+
     <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Header: Time Audit */}
+      
+      {/* Header */}
       <View style={styles.header}>
-        <View style={{ flex: 1 }}>
-            <Text style={styles.greeting}>Agenda</Text>
-            <Text style={styles.briefing}>
-                You have <Text style={styles.highlight}>{meetingHours}h meetings</Text> and <Text style={styles.highlight}>{deepWorkHours}h focus</Text> time.
-            </Text>
+        <View style={styles.headerTop}>
+            <TouchableOpacity>
+                <Ionicons name="menu" size={24} color={colors.text} />
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+                style={styles.monthSelector} 
+                onPress={toggleMonthView}
+            >
+                <Text style={styles.monthText}>{format(selectedDate, 'MMMM')}</Text>
+                <Ionicons 
+                    name={isMonthExpanded ? "chevron-up" : "chevron-down"} 
+                    size={16} 
+                    color={colors.textSecondary} 
+                />
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.profileButton}>
+                {/* Replaced Profile with Logo-like Icon to match inspiration */}
+                <Ionicons name="infinite" size={24} color={colors.primary} />
+            </TouchableOpacity>
         </View>
-        <TouchableOpacity style={styles.headerIcon}>
-             <Ionicons name="calendar" size={24} color={colors.primary[500]} />
-        </TouchableOpacity>
+
+        {/* Calendar / Date Strip */}
+        <View style={{ overflow: 'hidden' }}>
+            {isMonthExpanded ? (
+                <View style={styles.expandedCalendarContainer}>
+                    {/* Custom Calendar Header */}
+                    <View style={styles.calendarHeader}>
+                        <Text style={styles.calendarHeaderTitle}>
+                            {format(selectedDate, 'MMMM')}
+                        </Text>
+                        <View style={styles.calendarArrows}>
+                            <TouchableOpacity onPress={() => setSelectedDate(curr => subMonths(curr, 1))} style={styles.arrowBtn}>
+                                <Ionicons name="chevron-back" size={20} color={colors.textSecondary} />
+                            </TouchableOpacity>
+                            <TouchableOpacity onPress={() => setSelectedDate(curr => addMonths(curr, 1))} style={styles.arrowBtn}>
+                                <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+
+                    <Calendar
+                        current={format(selectedDate, 'yyyy-MM-dd')}
+                        key={format(selectedDate, 'yyyy-MM')} 
+                        onDayPress={(day: { dateString: string }) => {
+                            setSelectedDate(new Date(day.dateString));
+                            toggleMonthView();
+                        }}
+                        theme={{
+                            backgroundColor: 'transparent',
+                            calendarBackground: 'transparent',
+                            textSectionTitleColor: colors.textSecondary,
+                            selectedDayBackgroundColor: 'transparent', // We'll custom render or use standard but clean
+                            selectedDayTextColor: colors.primary,
+                            todayTextColor: colors.primary,
+                            dayTextColor: colors.text,
+                            textDisabledColor: colors.textTertiary,
+                            dotColor: colors.primary,
+                            arrowColor: colors.textSecondary,
+                            monthTextColor: colors.text,
+                            indicatorColor: colors.primary,
+                            textDayFontWeight: '500',
+                            textMonthFontWeight: 'bold',
+                            textDayHeaderFontWeight: '500',
+                            textDayFontSize: 14,
+                        }}
+                        markingType={'custom'}
+                        markedDates={{
+                            [format(selectedDate, 'yyyy-MM-dd')]: {
+                                customStyles: {
+                                    container: {
+                                        backgroundColor: 'transparent',
+                                        borderWidth: 1,
+                                        borderColor: colors.primary, // Square border like inspiration
+                                        borderRadius: 4, // Slightly rounded square
+                                    },
+                                    text: {
+                                        color: colors.text,
+                                        fontWeight: 'bold',
+                                    }
+                                }
+                            }
+                        }}
+                        renderHeader={() => null}
+                        hideArrows={true}
+                    />
+
+                    {/* Month Picker Strip */}
+                    <View style={styles.monthStripContainer}>
+                        <ScrollView 
+                            horizontal 
+                            showsHorizontalScrollIndicator={false}
+                            contentContainerStyle={styles.monthStripContent}
+                        >
+                            {['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'].map((m, idx) => {
+                                const isActive = getMonth(selectedDate) === idx;
+                                return (
+                                    <TouchableOpacity 
+                                        key={m} 
+                                        style={[styles.monthPill, isActive && styles.monthPillActive]}
+                                        onPress={() => setSelectedDate(d => setMonth(d, idx))}
+                                    >
+                                        <Text style={[styles.monthPillText, isActive && styles.monthPillTextActive]}>{m}</Text>
+                                    </TouchableOpacity>
+                                );
+                            })}
+                        </ScrollView>
+                    </View>
+                </View>
+            ) : (
+                <View style={styles.dateStrip}>
+                    {weekDays.map((date, index) => {
+                        const isSelected = isSameDay(date, selectedDate);
+                        const isToday = isSameDay(date, new Date());
+                        
+                        return (
+                            <TouchableOpacity 
+                                key={index} 
+                                style={[styles.dateItem, isSelected && styles.dateItemActive]}
+                                onPress={() => setSelectedDate(date)}
+                            >
+                                {isToday && !isSelected && (
+                                    <View style={styles.todayDot} />
+                                )}
+                                <Text style={[styles.dayName, isSelected && styles.dayNameActive]}>
+                                    {format(date, 'EEEEE')}
+                                </Text>
+                                <View style={[styles.dayNumberContainer, isSelected && styles.dayNumberContainerActive]}>
+                                    <Text style={[styles.dayNumber, isSelected && styles.dayNumberActive]}>
+                                        {format(date, 'd')}
+                                    </Text>
+                                </View>
+                            </TouchableOpacity>
+                        );
+                    })}
+                </View>
+            )}
+        </View>
       </View>
 
-      <View style={styles.insightBanner}>
-           <Ionicons name="alert-circle-outline" size={20} color={colors.semantic.warning} />
-           <Text style={styles.insightText}>Consider rescheduling `&ldquo;`Design Review`&ldquo;` to clear your afternoon.</Text>
-      </View>
+      {/* Main Timeline */}
+      {renderTimeLine()}
 
-      <ScrollView 
-        style={styles.scrollView} 
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 100 }} // Space for Copilot bar
-      >
-          {Array.from({ length: 14 }, (_, i) => i + 8).map(renderTimeBlock)}
-      </ScrollView>
+      {/* "Ask Iris" Input Bar (Floating) */}
+      {/* <View style={styles.copilotBarWrapper}>
+         <View style={styles.copilotBar}>
+            <View style={styles.copilotInputContainer}>
+                <TextInput 
+                    placeholder="Ask iris"
+                    placeholderTextColor={colors.textTertiary}
+                    style={styles.copilotInput}
+                />
+                <TouchableOpacity style={styles.sendButton}>
+                    <Ionicons name="send" size={18} color={isDark ? '#FFF' : '#000'} />
+                </TouchableOpacity>
+            </View>
+         </View>
+      </View> */}
 
-      {/* Bottom Copilot Bar */}
-      {/* <KeyboardAvoidingView 
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
-          style={styles.copilotBarWrapper}
-      >
-          <View style={styles.copilotBar}>
-              <View style={styles.copilotInputContainer}>
-                  <Ionicons name="sparkles" size={20} color={colors.primary[500]} style={styles.copilotIcon} />
-                  <TextInput 
-                      style={styles.copilotInput}
-                      placeholder="Ask Copilot..."
-                      placeholderTextColor={isDark ? colors.textSecondary : colors.neutral[400]}
-                  />
-                  <TouchableOpacity style={styles.micButtonSmall}>
-                      <Ionicons name="arrow-up-circle" size={24} color={colors.primary[500]} />
-                  </TouchableOpacity>
-              </View>
-          </View>
-      </KeyboardAvoidingView> */}
+
+
     </SafeAreaView>
   );
 }
@@ -126,108 +296,163 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     backgroundColor: colors.background,
   },
   header: {
-    paddingHorizontal: spacing[6],
-    marginBottom: spacing[6],
-    paddingTop: spacing[8], // Matches Home Tab alignment
+    paddingHorizontal: spacing[4],
+    paddingBottom: spacing[2],
+  },
+  headerTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    gap: spacing[4],
-  },
-  greeting: {
-    ...typography.textStyles.h2,
-    color: colors.text,
-    marginBottom: spacing[2],
-  },
-  briefing: {
-    ...typography.textStyles.body,
-    fontSize: 16,
-    color: colors.textSecondary,
-    lineHeight: 24,
-  },
-  highlight: {
-    color: colors.primary[500],
-    fontWeight: '600',
-  },
-  headerIcon: {
-      width: 44,
-      height: 44,
-      borderRadius: 22,
-      backgroundColor: isDark ? 'rgba(59, 130, 246, 0.15)' : '#EFF6FF',
-      alignItems: 'center',
-      justifyContent: 'center',
-  },
-  auditContainer: {
-    flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing[4],
-  },
-  auditItem: {
-    alignItems: 'center',
-  },
-  auditValue: {
-    ...typography.textStyles.body,
-    fontWeight: '700',
-    color: colors.text,
-  },
-  auditLabel: {
-    ...typography.textStyles.caption,
-    fontSize: 10,
-    color: colors.textTertiary,
-  },
-  auditDivider: {
-    width: 1,
-    height: 20,
-    backgroundColor: colors.border,
-  },
-
-  insightBanner: {
-    marginHorizontal: spacing[6],
     marginBottom: spacing[4],
-    padding: spacing[3],
-    backgroundColor: isDark ? 'rgba(245, 158, 11, 0.1)' : '#FFFBEB',
-    borderRadius: spacing[3],
+    marginTop: spacing[2],
+  },
+  monthSelector: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing[3],
-    borderWidth: 1,
-    borderColor: isDark ? 'rgba(245, 158, 11, 0.2)' : '#FEF3C7',
+    gap: 4,
   },
-  insightText: {
-    ...typography.textStyles.bodySmall,
+  monthText: {
+    fontSize: 16,
+    fontWeight: '600',
     color: colors.text,
-    flex: 1,
+  },
+  profileButton: {
+      padding: 4,
   },
 
-  scrollView: {
-    flex: 1,
+  // Expanded Calendar Styles
+  expandedCalendarContainer: {
+     paddingBottom: spacing[4],
   },
-  timeRow: {
-    flexDirection: 'row',
-    minHeight: 80,
+  calendarHeader: {
+     flexDirection: 'row',
+     justifyContent: 'space-between',
+     alignItems: 'center',
+     paddingHorizontal: spacing[2],
+     marginBottom: spacing[2],
   },
-  timeLabelContainer: {
-    width: 60,
-    alignItems: 'flex-end',
-    paddingRight: spacing[3],
-    paddingTop: 0,
+  calendarHeaderTitle: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: colors.text,
   },
-  timeLabel: {
-    ...typography.textStyles.caption,
-    color: colors.textTertiary,
-    fontSize: 12,
+  calendarArrows: {
+      flexDirection: 'row',
+      gap: spacing[2],
   },
-  timeLabelActive: {
-    color: colors.primary[500],
-    fontWeight: '700',
+  arrowBtn: {
+      padding: 4,
+      backgroundColor: isDark ? '#1E293B' : '#F1F5F9',
+      borderRadius: 20,
+  },
+  monthStripContainer: {
+      marginTop: spacing[2],
+      borderTopWidth: 1,
+      borderTopColor: isDark ? '#333' : '#eee',
+      paddingTop: spacing[3],
+  },
+  monthStripContent: {
+      paddingHorizontal: spacing[2],
+      gap: spacing[2],
+  },
+  monthPill: {
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+      borderRadius: 20,
+      backgroundColor: 'transparent',
+  },
+  monthPillActive: {
+      backgroundColor: isDark ? '#333' : '#E2E8F0',
+  },
+  monthPillText: {
+      fontSize: 13,
+      color: colors.textSecondary,
+      fontWeight: '500',
+  },
+  monthPillTextActive: {
+      color: colors.text,
+      fontWeight: '600',
   },
   
-  timelineContent: {
-    flex: 1,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    paddingRight: spacing[4],
-    paddingBottom: spacing[2],
+  // Date Strip
+  dateStrip: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      paddingBottom: spacing[2],
+  },
+  dateItem: {
+      alignItems: 'center',
+      gap: 6,
+      opacity: 0.6,
+      minWidth: 40,
+  },
+  dateItemActive: {
+      opacity: 1,
+  },
+  dayName: {
+      fontSize: 12,
+      color: colors.textSecondary,
+      fontWeight: '500',
+  },
+  dayNameActive: {
+      color: colors.primary[500],
+  },
+  dayNumberContainer: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: 'transparent',
+      borderWidth: 1.5,
+      borderColor: 'transparent',
+  },
+  dayNumberContainerActive: {
+      borderColor: colors.primary[500],
+      backgroundColor: isDark ? 'rgba(59, 130, 246, 0.1)' : '#EFF6FF',
+  },
+  dayNumber: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: colors.text,
+  },
+  dayNumberActive: {
+      color: colors.primary[500],
+  },
+  todayDot: {
+      position: 'absolute',
+      top: -4,
+      width: 4,
+      height: 4,
+      borderRadius: 2,
+      backgroundColor: colors.primary[500],
+  },
+
+  // Timeline
+  timeRow: {
+      flexDirection: 'row',
+      height: 60, // Height per hour block
+  },
+  timeLabelContainer: {
+      width: 60,
+      alignItems: 'center',
+      justifyContent: 'flex-start', // Align to grid line
+      paddingTop: -8, // Nudge up to center on line
+  },
+  timeLabel: {
+      fontSize: 12,
+      color: colors.textTertiary,
+      transform: [{ translateY: -8 }] // Center vertically on the line
+  },
+  timeLabelActive: {
+      color: colors.primary[500],
+      fontWeight: '600',
+  },
+  gridCell: {
+      flex: 1,
+      borderTopWidth: 0,
+      borderColor: isDark ? '#333' : '#eee',
+      position: 'relative',
   },
   gridLine: {
       position: 'absolute',
@@ -235,102 +460,100 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
       left: 0,
       right: 0,
       height: 1,
-      backgroundColor: colors.border,
+      backgroundColor: isDark ? '#222' : '#f5f5f5',
   },
   
-  eventCard: {
-      flex: 1,
-      marginTop: 2,
-      marginBottom: 2,
-      borderRadius: spacing[2],
-      borderLeftWidth: 3,
-      padding: spacing[2],
-      overflow: 'hidden',
-  },
-  eventBar: {
+  // Current Time Indicator
+  currentTimeIndicator: {
       position: 'absolute',
       left: 0,
-      top: 0,
-      bottom: 0,
-      width: 0, 
-  },
-  eventDetails: {
-      marginLeft: spacing[1],
-  },
-  eventTitle: {
-      ...typography.textStyles.bodySmall,
-      fontWeight: '600',
-      color: colors.text,
-  },
-  eventTime: {
-      ...typography.textStyles.caption,
-      color: colors.textSecondary,
-      marginTop: 2,
-  },
-
-  aiSuggestion: {
-      marginTop: spacing[2],
+      right: 0,
       flexDirection: 'row',
       alignItems: 'center',
-      gap: spacing[2],
-      paddingVertical: spacing[1],
-      paddingHorizontal: spacing[2],
-      backgroundColor: isDark ? 'rgba(59, 130, 246, 0.05)' : '#F0F9FF',
-      borderRadius: 4,
-      borderStyle: 'dashed',
-      borderWidth: 1,
-      borderColor: colors.primary[200],
+      zIndex: 10,
   },
-  aiSuggestionText: {
+  currentTimeDot: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      backgroundColor: colors.primary[500],
+      marginLeft: -4,
+      borderWidth: 2,
+      borderColor: isDark ? '#000' : '#fff',
+  },
+  currentTimeLine: {
+      flex: 1,
+      height: 1,
+      backgroundColor: colors.primary[500],
+  },
+
+  // Event Card
+  eventCard: {
+      position: 'absolute',
+      top: 2,
+      left: 0,
+      right: spacing[4],
+      bottom: 2,
+      backgroundColor: isDark ? '#1E293B' : '#F8FAFC',
+      borderRadius: 8,
+      padding: 8,
+      paddingHorizontal: 10,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      borderLeftWidth: 3,
+  },
+  eventContent: {
+      flex: 1,
+  },
+  eventTitle: {
+      fontSize: 13,
+      fontWeight: '600',
+      color: colors.text,
+      marginBottom: 2,
+  },
+  eventDuration: {
       fontSize: 11,
-      color: colors.primary[500],
-      fontStyle: 'italic',
+      color: colors.textSecondary,
   },
 
   // Copilot Bar
   copilotBarWrapper: {
       position: 'absolute',
-      bottom: 90, // Pushed UP to avoid Floating Tab Dock
-      left: 0,
-      right: 0,
-      alignItems: 'center',
-      zIndex: 100,
+      bottom: 100, // Adjusted for new tab bar
+      left: spacing[4],
+      right: spacing[4],
   },
   copilotBar: {
-      width: '90%', 
-      maxWidth: 400,
-      backgroundColor: isDark ? '#1E293B' : '#FFFFFF',
-      borderRadius: 30,
-      padding: 6,
+      backgroundColor: isDark ? '#111' : '#fff',
+      borderRadius: 25,
       borderWidth: 1,
-      borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
-      
+      borderColor: isDark ? '#333' : '#eee',
+      paddingHorizontal: 6,
+      paddingVertical: 4,
       shadowColor: "#000",
       shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.25,
-      shadowRadius: 8,
-      elevation: 8,
+      shadowOpacity: 0.1,
+      shadowRadius: 10,
+      elevation: 5,
   },
   copilotInputContainer: {
       flexDirection: 'row',
       alignItems: 'center',
-      paddingHorizontal: spacing[3],
       height: 44,
-  },
-  copilotIcon: {
-      marginRight: spacing[2],
-      opacity: 0.8
+      paddingHorizontal: 12,
   },
   copilotInput: {
       flex: 1,
       color: colors.text,
-      ...typography.textStyles.body,
       fontSize: 15,
   },
-  micButtonSmall: {
-      padding: spacing[2],
-      backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F1F5F9',
-      borderRadius: 100,
+  sendButton: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      backgroundColor: isDark ? '#333' : '#f0f0f0',
+      alignItems: 'center',
+      justifyContent: 'center',
   },
-});
 
+});

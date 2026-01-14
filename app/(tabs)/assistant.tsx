@@ -1,31 +1,131 @@
 import { Ionicons } from '@expo/vector-icons';
-import { format } from 'date-fns';
+import { useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  FlatList,
-  KeyboardAvoidingView,
-  Platform,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    FlatList,
+    Keyboard,
+    KeyboardAvoidingView,
+    Modal,
+    Platform,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View
 } from 'react-native';
-import { Button } from '../../components/Button';
-import { Card } from '../../components/Card';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../context/ThemeContext';
-import { borderRadius, spacing, typography } from '../../theme';
+import { spacing } from '../../theme';
 import { ChatMessage } from '../../types';
-import { MOCK_MESSAGES } from '../../utils/mockData';
+
+// Extended type for UI demo purposes
+interface RichChatMessage extends ChatMessage {
+  type?: 'text' | 'action_review' | 'options' | 'suggestions';
+  data?: any;
+}
+
+const INITIAL_MESSAGES: RichChatMessage[] = [
+  {
+      id: '1',
+      role: 'assistant',
+      content: 'Good evening Money, how can I help you today?',
+      timestamp: new Date(Date.now() - 1000 * 60 * 60),
+      type: 'suggestions',
+      data: {
+          options: [
+              // We'll simulate double-icons by passing an array in 'icon' if desired, 
+              // for now let's just use colored backgrounds and specific icons to match the look
+              { 
+                  icon: 'logo-reddit', 
+                  label: "Reply to Reddit's email about the freelance web developer", 
+                  color: '#FF4500',
+                  secondaryIcon: 'mail'
+              },
+              { 
+                  icon: 'calendar', 
+                  label: 'Schedule a reminder for Wine Time tomorrow at 10:00 AM', 
+                  color: '#FBBC04',
+                  secondaryIcon: 'location-sharp' // Just simulating the dual-icon look
+              },
+              { 
+                  icon: 'mail', 
+                  label: 'Find time to follow up with ByteByteGo about the LLM guide', 
+                  color: '#4285F4',
+                  secondaryIcon: 'logo-google'
+              },
+          ]
+      }
+  },
+  {
+      id: '2',
+      role: 'user',
+      content: 'Tomorrow morning I want 🍷 at 10 am',
+      timestamp: new Date(Date.now() - 1000 * 60 * 55),
+  },
+  {
+      id: '3',
+      role: 'assistant',
+      content: 'Your calendar is clear for tomorrow morning. Would you like me to create an event titled "Wine" or something similar at 10 AM tomorrow?',
+      timestamp: new Date(Date.now() - 1000 * 60 * 54),
+      type: 'options',
+      data: {
+        title: 'Would you like me to create a calendar event for tomorrow at 10 AM?',
+        options: [
+            { label: 'Yes, create "Wine Tasting"', subtext: 'A 1-hour event at 10 AM tomorrow' },
+            { label: 'Yes, create "Wine Time"', subtext: 'A 1-hour event at 10 AM tomorrow' },
+            { label: 'No thanks', subtext: "I'll handle it myself" },
+        ]
+      }
+  },
+  {
+      id: '4',
+      role: 'user',
+      content: 'Yes, create "Wine Time"',
+      timestamp: new Date(Date.now() - 1000 * 60 * 53),
+  },
+  {
+      id: '5',
+      role: 'assistant',
+      content: '',
+      timestamp: new Date(),
+      type: 'action_review',
+      data: {
+          status: 'pending', // pending, success, cancelled
+          action: {
+              type: 'create_event',
+              icon: 'calendar',
+              title: 'Create Event',
+              details: {
+                  Event: 'Wine Time',
+                  Start: 'January 13, 2026 at 10:00 AM',
+                  Duration: '1 hour',
+                  Location: 'Not specified',
+                  Attendees: 'None'
+              }
+          }
+      }
+  }
+];
 
 export default function AssistantTab() {
-  const [messages, setMessages] = useState<ChatMessage[]>(MOCK_MESSAGES);
+  const router = useRouter();
+  const [messages, setMessages] = useState<RichChatMessage[]>(INITIAL_MESSAGES);
   const [inputText, setInputText] = useState('');
+  const [isAccountModalVisible, setAccountModalVisible] = useState(false);
+  const [isKeyboardVisible, setKeyboardVisible] = useState(false);
   const flatListRef = useRef<FlatList>(null);
   const { colors, isDark } = useTheme();
   
-  // Dynamic styles
-  const styles = getStyles(colors, isDark);
+  const styles = getStyles(colors, isDark, isKeyboardVisible);
+
+  useEffect(() => {
+    const showSubscription = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow', () => setKeyboardVisible(true));
+    const hideSubscription = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide', () => setKeyboardVisible(false));
+    return () => {
+        showSubscription.remove();
+        hideSubscription.remove();
+    };
+  }, []);
 
   useEffect(() => {
     if (messages.length > 0) {
@@ -37,318 +137,747 @@ export default function AssistantTab() {
 
   const handleSend = () => {
     if (inputText.trim()) {
-      const newUserMsg: ChatMessage = {
+      const newUserMsg: RichChatMessage = {
         id: Date.now().toString(),
         role: 'user',
         content: inputText.trim(),
         timestamp: new Date(),
       };
-      setMessages([...messages, newUserMsg]);
+      setMessages(prev => [...prev, newUserMsg]);
       setInputText('');
-      
-      // Mock response
-      setTimeout(() => {
-        const aiMsg: ChatMessage = {
-          id: (Date.now() + 1).toString(),
-          role: 'assistant',
-          content: "I'm processing your request. As a mock, I can't really do much yet!",
-          timestamp: new Date(),
-        };
-        setMessages(prev => [...prev, aiMsg]);
-      }, 1000);
     }
   };
 
-  const handleApproveAction = (actionId: string) => {
-    alert(`Approved action ${actionId}`);
-  };
-
-  const renderMessage = ({ item }: { item: ChatMessage }) => {
+  const renderMessage = ({ item }: { item: RichChatMessage }) => {
     const isUser = item.role === 'user';
-
-    return (
-      <View
-        style={[
-          styles.messageContainer,
-          isUser ? styles.userMessageContainer : styles.assistantMessageContainer,
-        ]}
-      >
-        <Card
-          style={[
-            styles.messageCard,
-            isUser ? styles.userMessageCard : styles.assistantMessageCard,
-          ]}
-          padding={3}
-        >
-          <Text style={[styles.messageText, isUser && styles.userMessageText]}>{item.content}</Text>
-          <Text style={[styles.messageTime, isUser && styles.userMessageTime]}>
-            {format(item.timestamp, 'h:mm a')}
-          </Text>
-
-          {/* Suggestions */}
-          {item.suggestions && item.suggestions.length > 0 && (
-            <View style={styles.suggestions}>
-              {item.suggestions.map((suggestion, idx) => (
-                <TouchableOpacity
-                  key={idx}
-                  style={styles.suggestionButton}
-                  onPress={() => setInputText(suggestion)}
-                >
-                  <Text style={styles.suggestionText}>{suggestion}</Text>
-                </TouchableOpacity>
-              ))}
+    
+    // 1. Text Message (User or Assistant)
+    if (!item.type || item.type === 'text') {
+        if (!item.content) return null; // Skip empty container messages
+        return (
+            <View style={[
+                styles.messageRow, 
+                isUser ? styles.messageRowUser : styles.messageRowAssistant
+            ]}>
+                {!isUser && (
+                    <View style={styles.avatar}>
+                        <Ionicons name="infinite" size={16} color={colors.primary[500]} />
+                    </View>
+                )}
+                <View style={{ alignItems: isUser ? 'flex-end' : 'flex-start', maxWidth: '85%' }}>
+                    <View style={[
+                        styles.bubble, 
+                        isUser ? styles.bubbleUser : styles.bubbleAssistant
+                    ]}>
+                        <Text style={[
+                            styles.messageText, 
+                            isUser ? styles.messageTextUser : styles.messageTextAssistant
+                        ]}>
+                            {item.content}
+                        </Text>
+                    </View>
+                     <Text style={styles.timestamp}>
+                       {item.role === 'user' ? 'Just now' : ''}
+                     </Text>
+                </View>
             </View>
-          )}
+        );
+    }
 
-          {/* Action items */}
-          {item.actions && item.actions.length > 0 && (
-            <View style={styles.actions}>
-              {item.actions.map((action) => (
-                <Card key={action.id} style={styles.actionCard} padding={3}>
-                  <Text style={styles.actionTitle}>{action.title}</Text>
-                  <Text style={styles.actionDescription}>
-                    {action.description}
-                  </Text>
-                  <Button
-                    title="Approve"
-                    onPress={() => handleApproveAction(action.id)}
-                    size="small"
-                  />
-                </Card>
-              ))}
+    // 2. Suggestions List
+    if (item.type === 'suggestions') {
+        return (
+            <View style={styles.messageBlock}>
+                <View style={styles.messageRowAssistant}>
+                    <View style={styles.avatar}>
+                        <Ionicons name="infinite" size={16} color={colors.primary[500]} />
+                    </View>
+                    <View style={styles.bubbleAssistant}>
+                        <Text style={styles.messageTextAssistant}>{item.content}</Text>
+                    </View>
+                </View>
+                
+                {/* Vertical Stack of Suggestions */}
+                <View style={[styles.suggestionBlock, { width: '100%' }]}>
+                    {item.data.options.map((opt: any, idx: number) => (
+                        <TouchableOpacity key={idx} style={styles.suggestionCard}>
+                             {/* Emulate the dual-icon badge look from screenshot 2 */}
+                             <View style={{ flexDirection: 'row', marginRight: 12 }}>
+                                 {/* Primary Icon (Square) */}
+                                 <View style={{ 
+                                     width: 24, height: 24, 
+                                     backgroundColor: isDark ? '#222' : '#EFF6FF', 
+                                     alignItems: 'center', justifyContent: 'center',
+                                     borderRadius: 6,
+                                     zIndex: 2,
+                                 }}>
+                                    <Ionicons name={opt.icon} size={14} color={opt.color} />
+                                </View>
+                                {/* Secondary Icon (Offset) */}
+                                {opt.secondaryIcon && (
+                                     <View style={{ 
+                                         width: 24, height: 24, 
+                                         backgroundColor: isDark ? '#333' : '#DBEAFE', 
+                                         alignItems: 'center', justifyContent: 'center',
+                                         borderRadius: 6,
+                                         marginLeft: -10, // Overlap
+                                         zIndex: 1,
+                                     }}>
+                                        <Ionicons name={opt.secondaryIcon} size={12} color={colors.textSecondary} />
+                                    </View>
+                                )}
+                             </View>
+                             
+                            <Text style={styles.suggestionText}>{opt.label}</Text>
+                        </TouchableOpacity>
+                    ))}
+                </View>
             </View>
-          )}
-        </Card>
-      </View>
-    );
+        );
+    }
+
+    // 3. Choice Options (Vertical)
+    if (item.type === 'options') {
+        return (
+            <View style={styles.messageBlock}>
+                 <View style={styles.messageRowAssistant}>
+                     <View style={styles.avatar}>
+                        <Ionicons name="infinite" size={16} color={colors.primary[500]} />
+                     </View>
+                     <View style={styles.bubbleAssistant}>
+                         <Text style={styles.messageTextAssistant}>{item.content}</Text>
+                     </View>
+                 </View>
+
+                 <View style={styles.optionsContainer}>
+                     <Text style={styles.optionsTitle}>{item.data.title}</Text>
+                     {item.data.options.map((opt: any, idx: number) => (
+                         <TouchableOpacity key={idx} style={styles.optionButton}>
+                             <Text style={styles.optionLabel}>{opt.label}</Text>
+                             {opt.subtext && <Text style={styles.optionSubtext}>{opt.subtext}</Text>}
+                         </TouchableOpacity>
+                     ))}
+                     <TouchableOpacity style={styles.optionButtonInput}>
+                         <Text style={styles.optionLabelDim}>Other: Input here</Text>
+                     </TouchableOpacity>
+                 </View>
+            </View>
+        );
+    }
+
+    // 4. Action Confirmation Card
+    if (item.type === 'action_review') {
+        return (
+            <View style={styles.messageBlock}>
+                 <View style={styles.messageRowAssistant}>
+                     <View style={styles.avatar}>
+                        <Ionicons name="infinite" size={16} color={colors.primary[500]} />
+                     </View>
+                 </View>
+                <View style={styles.actionCardWrapper}>
+                     <View style={styles.actionHeader}>
+                         <Ionicons name="settings-outline" size={16} color={colors.text} />
+                         <Text style={styles.actionHeaderText}>Action Confirmation Required</Text>
+                         <Ionicons name="checkmark" size={16} color={colors.semantic.success} />
+                     </View>
+                 
+                 <View style={styles.actionBody}>
+                     <Text style={styles.actionSectionTitle}>Review Actions</Text>
+                     
+                     <View style={styles.actionItemCard}>
+                         <View style={styles.actionItemHeader}>
+                             <View style={[styles.actionIcon, { backgroundColor: colors.semantic.warning }]}>
+                                 <Ionicons name="calendar" size={14} color="#FFF" />
+                             </View>
+                             <Text style={styles.actionItemTitle}>{item.data.action.title}</Text>
+                         </View>
+                         
+                         <View style={styles.actionItemDetails}>
+                             {Object.entries(item.data.action.details).map(([key, value]) => (
+                                 <View key={key} style={styles.detailRow}>
+                                     <Text style={styles.detailLabel}>{key}:</Text>
+                                     <Text style={styles.detailValue}>{String(value)}</Text>
+                                 </View>
+                             ))}
+                         </View>
+                     </View>
+
+                     <View style={styles.actionButtons}>
+                         <TouchableOpacity style={styles.actionButtonSecondary}>
+                             <Text style={styles.actionButtonTextSecondary}>Cancel</Text>
+                         </TouchableOpacity>
+                         <TouchableOpacity style={styles.actionButtonPrimary}>
+                             <Text style={styles.actionButtonTextPrimary}>Create</Text>
+                         </TouchableOpacity>
+                     </View>
+                </View>
+            </View>
+            </View>
+        );
+    }
+    return null;
+
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      style={styles.container}
-      // keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0} 
-      // Simplified: Since the input is already raised, we might need less offset
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 10 : 0}
-    >
+    <SafeAreaView style={styles.container} edges={['top']}>
+      {/* Header */}
       <View style={styles.header}>
-        <View style={{ flex: 1 }}>
-            <Text style={styles.greeting}>Meet Aariv</Text>
-            <Text style={styles.briefing}>
-                 Context active. <Text style={styles.highlight}>Listening...</Text> for logic commands.
-            </Text>
+        <View style={styles.headerLeft}>
+             <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+                 <Ionicons name="arrow-back" size={24} color={colors.text} />
+             </TouchableOpacity>
+             <Ionicons name="infinite" size={28} color={colors.primary[500]} style={styles.logo} />
         </View>
-        <TouchableOpacity style={styles.headerIcon}>
-             <Ionicons name="hardware-chip" size={24} color={colors.primary[500]} />
+        
+        <TouchableOpacity style={styles.userDropdown} onPress={() => setAccountModalVisible(true)}>
+             <Text style={styles.username}>moneybeast733</Text>
+             <Ionicons name="chevron-down" size={14} color={colors.textSecondary} />
+        </TouchableOpacity>
+
+        <TouchableOpacity>
+            <Text style={styles.clearText}>Clear</Text>
         </TouchableOpacity>
       </View>
 
-      <FlatList
-        ref={flatListRef}
-        data={messages}
-        keyExtractor={(item) => item.id}
-        renderItem={renderMessage}
-        contentContainerStyle={styles.listContent}
-      />
-
-      {/* Floating Input Bar */}
-      <View style={styles.inputWrapper}>
-        <View style={styles.inputContainer}>
-          <TextInput
-            style={styles.input}
-            placeholder="Message Aariv..."
-            value={inputText}
-            onChangeText={setInputText}
-            placeholderTextColor={colors.textTertiary}
-            returnKeyType="send"
-            onSubmitEditing={handleSend}
-            selectionColor={colors.primary[500]}
+      {/* Main Content Wrapper handling Keyboard */}
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior="padding"
+      >
+          {/* Chat List */}
+          <FlatList
+            ref={flatListRef}
+            data={messages}
+            style={{ flex: 1 }}
+            keyExtractor={(item) => item.id}
+            renderItem={renderMessage}
+            contentContainerStyle={styles.listContent}
+            showsVerticalScrollIndicator={false}
+            keyboardDismissMode="on-drag"
+            keyboardShouldPersistTaps="handled"
           />
-          <TouchableOpacity
-            style={[
-              styles.sendButton,
-              !inputText.trim() && styles.sendButtonDisabled,
-            ]}
-            onPress={handleSend}
-            disabled={!inputText.trim()}
-          >
-            <Ionicons 
-              name={inputText.trim() ? "arrow-up" : "mic"} 
-              size={20} 
-              color={inputText.trim() ? '#FFF' : colors.textTertiary} 
-            />
-          </TouchableOpacity>
+
+          {/* Input Area */}
+          <View style={styles.inputContainer}>
+            {/* Context Suggestion Chip (Shows when input is empty) */}
+            {inputText.length === 0 && (
+                <TouchableOpacity style={styles.contextChip}>
+                    <Ionicons name="bulb-outline" size={16} color={colors.primary[500]} />
+                    <Text style={styles.contextChipText}>Suggest actions</Text>
+                </TouchableOpacity>
+            )}
+
+            <View style={styles.inputWrapper}>
+               <TextInput
+                  style={styles.input}
+                  placeholder="Message Aariv..."
+                  placeholderTextColor={colors.textTertiary}
+                  value={inputText}
+                  onChangeText={setInputText}
+                  onSubmitEditing={handleSend}
+                  multiline // Allow multiline for better UX
+               />
+               <TouchableOpacity 
+                    style={[styles.micButton, inputText.length > 0 && styles.sendButtonActive]} 
+                    onPress={handleSend}
+               >
+                   <Ionicons 
+                        name={inputText ? "arrow-up" : "mic"} 
+                        size={20} 
+                        color={inputText ? (isDark ? '#000' : '#FFF') : colors.text} 
+                   />
+               </TouchableOpacity>
+            </View>
+          </View>
+      </KeyboardAvoidingView>
+
+      {/* Account Selection Modal */}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={isAccountModalVisible}
+        onRequestClose={() => setAccountModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+                <View style={styles.modalHeader}>
+                    <Text style={styles.modalTitle}>Select Account</Text>
+                    <TouchableOpacity onPress={() => setAccountModalVisible(false)} style={styles.closeButton}>
+                        <Ionicons name="close" size={20} color={colors.textSecondary} />
+                    </TouchableOpacity>
+                </View>
+
+                <TouchableOpacity style={styles.accountItemActive}>
+                    <View style={[styles.accountItemLeftBar, { backgroundColor: colors.primary[500] }]} />
+                    <View style={styles.accountInfo}>
+                        <Text style={styles.accountEmail}>moneybeast733@gmail...</Text>
+                        <View style={styles.primaryBadge}>
+                            <Text style={styles.primaryBadgeText}>PRIMARY</Text>
+                        </View>
+                    </View>
+                    <Ionicons name="checkmark-circle" size={20} color={colors.text} />
+                </TouchableOpacity>
+
+                <TouchableOpacity style={styles.addAccountButton}>
+                    <Ionicons name="add-circle-outline" size={20} color={colors.text} />
+                    <Text style={styles.addAccountText}>Add Another Account</Text>
+                </TouchableOpacity>
+            </View>
         </View>
-      </View>
-    </KeyboardAvoidingView>
+      </Modal>
+    </SafeAreaView>
   );
 }
 
-const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
+const getStyles = (colors: any, isDark: boolean, isKeyboardVisible: boolean) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: colors.background, // Use theme background
   },
   header: {
-    padding: spacing[6],
-    paddingTop: spacing[12] + 20, // Manual safe area adjustment for top-alignment
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    gap: spacing[4],
+    alignItems: 'center',
+    paddingHorizontal: spacing[4],
+    paddingVertical: spacing[3],
     backgroundColor: colors.background,
+    borderBottomWidth: 1,
+    borderBottomColor: isDark ? '#1A1A1A' : '#E5E5E5',
   },
-  greeting: {
-    ...typography.textStyles.h2,
-    color: colors.text,
-    marginBottom: spacing[2],
+  headerLeft: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
   },
-  briefing: {
-    ...typography.textStyles.body,
-    fontSize: 16,
-    color: colors.textSecondary,
-    lineHeight: 24,
+  backButton: {
+      padding: 4,
   },
-  highlight: {
-    color: colors.primary[500],
-    fontWeight: '600',
+  logo: {
+      // 
   },
-  headerIcon: {
-      width: 44,
-      height: 44,
-      borderRadius: 22,
-      backgroundColor: isDark ? 'rgba(59, 130, 246, 0.15)' : '#EFF6FF',
+  userDropdown: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      backgroundColor: isDark ? '#1A1A1A' : '#F5F5F5',
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 20,
+      borderWidth: 1,
+      borderColor: isDark ? '#333' : '#E0E0E0',
+  },
+  username: {
+      fontSize: 13,
+      fontWeight: '600',
+      color: colors.text,
+  },
+  clearText: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      fontWeight: '500',
+  },
+
+  listContent: {
+    padding: spacing[4],
+    paddingBottom: 140, // Reduced from 180 to fit tighter visually while still clearing input
+    gap: 24, 
+  },
+  
+  // Message Common
+  messageRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    marginBottom: 4,
+  },
+  messageRowUser: {
+    justifyContent: 'flex-end',
+    flexDirection: 'column',
+    alignItems: 'flex-end',
+  },
+  messageRowAssistant: {
+    justifyContent: 'flex-start',
+    gap: 8,
+  },
+  messageBlock: {
+      gap: 12,
+  },
+  avatar: {
+      width: 24,
+      height: 24,
+      borderRadius: 12,
+      backgroundColor: 'transparent',
       alignItems: 'center',
       justifyContent: 'center',
   },
-  listContent: {
-    padding: spacing[4],
-    paddingBottom: 180, // Increased to clear the floating input + tab bar
-  },
-  messageContainer: {
-    marginBottom: spacing[4],
-    maxWidth: '85%',
-  },
-  userMessageContainer: {
-    alignSelf: 'flex-end',
-  },
-  assistantMessageContainer: {
-    alignSelf: 'flex-start',
-  },
-  messageCard: {
-    borderRadius: spacing[4],
-    borderWidth: 0, // Cleaner look without borders
-    backgroundColor: 'transparent', // Override default card bg
-  },
-  userMessageCard: {
-    backgroundColor: 'transparent',
-  },
-  assistantMessageCard: {
-    backgroundColor: 'transparent',
-  },
-  messageText: {
-    ...typography.textStyles.body,
-    fontSize: 16,
-    color: colors.text, // For assistant
-  },
-  userMessageText: {
-    color: colors.text, // User text also adaptive, or white if we do a bubble
-    textAlign: 'right', // User right aligned
-  },
-  messageTime: {
-    ...typography.textStyles.caption,
-    color: colors.textTertiary,
-    marginTop: spacing[1],
-    alignSelf: 'flex-start',
-    fontSize: 10,
-  },
-  userMessageTime: {
-    alignSelf: 'flex-end',
-  },
-  suggestions: {
-    marginTop: spacing[2],
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing[2],
-  },
-  suggestionButton: {
-    paddingHorizontal: spacing[3],
-    paddingVertical: spacing[2],
-    backgroundColor: colors.surfaceElevated,
-    borderRadius: borderRadius.full,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  suggestionText: {
-    ...typography.textStyles.caption,
-    color: colors.text,
-  },
-  actions: {
-    marginTop: spacing[3],
-  },
-  actionCard: {
-    backgroundColor: colors.surfaceElevated,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: spacing[2],
-    marginBottom: spacing[2],
-  },
-  actionTitle: {
-    ...typography.textStyles.bodySmall,
-    fontWeight: typography.fontWeight.bold,
-    marginBottom: spacing[1],
-    color: colors.text,
-  },
-  actionDescription: {
-    ...typography.textStyles.caption,
-    color: colors.textSecondary,
-    marginBottom: spacing[2],
+  avatarText: {
+      display: 'none', 
   },
   
-  // Floating Input Styling
-  inputWrapper: {
+  // Bubbles
+  bubble: {
+    padding: 12,
+    borderRadius: 20,
+  },
+  bubbleUser: {
+    backgroundColor: isDark ? '#262626' : '#eff6ff', // Dark gray / Light blue for user
+    borderBottomRightRadius: 4,
+  },
+  bubbleAssistant: {
+    backgroundColor: 'transparent',
+    paddingLeft: 0,
+  },
+  messageText: {
+    fontSize: 16,
+    lineHeight: 24,
+  },
+  messageTextUser: {
+    color: colors.text, 
+    textAlign: 'right',
+  },
+  messageTextAssistant: {
+    color: colors.text,
+  },
+  timestamp: {
+      fontSize: 11,
+      color: colors.textTertiary,
+      marginTop: 4,
+  },
+
+  // Suggestions (Vertical Stack now)
+  suggestionBlock: {
+      marginTop: 8,
+      gap: 8, 
+  },
+  suggestionCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: isDark ? '#111' : '#F8FAFC',
+      paddingHorizontal: 16,
+      paddingVertical: 14,
+      borderRadius: 24, // Rounder pills like screenshot
+      borderWidth: 1,
+      borderColor: isDark ? '#333' : '#E2E8F0',
+      width: '100%', 
+  },
+  suggestionText: {
+      color: colors.text,
+      fontSize: 13,
+      fontWeight: '500',
+      flex: 1, // Allow text to wrap
+      lineHeight: 18,
+  },
+  
+  // Options (Vertical Choice)
+  optionsContainer: {
+      backgroundColor: isDark ? '#0F0F0F' : '#F8FAFC',
+      borderWidth: 1,
+      borderColor: isDark ? '#222' : '#E2E8F0',
+      borderRadius: 20,
+      padding: 16,
+      marginLeft: 32, 
+      gap: 8,
+      width: '85%',
+  },
+  optionsTitle: {
+      color: colors.text,
+      fontSize: 15,
+      marginBottom: 8,
+      lineHeight: 22,
+  },
+  optionButton: {
+      backgroundColor: isDark ? '#1C1C1C' : '#FFFFFF',
+      padding: 14,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: isDark ? 'transparent' : '#E2E8F0',
+  },
+  optionButtonInput: {
+      backgroundColor: isDark ? '#111' : '#F1F5F9',
+      padding: 14,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: isDark ? '#222' : '#E2E8F0',
+  },
+  optionLabel: {
+      color: colors.text,
+      fontSize: 14,
+      fontWeight: '500',
+  },
+  optionLabelDim: {
+      color: colors.textTertiary,
+      fontSize: 14,
+  },
+  optionSubtext: {
+      color: colors.textSecondary,
+      fontSize: 12,
+      marginTop: 2,
+  },
+
+  // Action Review Card
+  actionCardWrapper: {
+      backgroundColor: isDark ? '#0A0A0A' : '#FFFFFF',
+      borderRadius: 20,
+      borderWidth: 1,
+      borderColor: isDark ? '#222' : '#E2E8F0',
+      overflow: 'hidden',
+      marginTop: 0,
+      marginLeft: 32, 
+      width: '85%',
+  },
+  actionHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      padding: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: isDark ? '#222' : '#E5E5E5',
+      backgroundColor: isDark ? '#0F0F0F' : '#F8FAFC',
+  },
+  actionHeaderText: {
+      color: colors.text,
+      fontSize: 14,
+      fontWeight: '600',
+      flex: 1,
+      marginLeft: 10,
+  },
+  actionBody: {
+      padding: 16,
+  },
+  actionSectionTitle: {
+      color: colors.text,
+      fontSize: 14,
+      fontWeight: '600',
+      marginBottom: 12,
+  },
+  actionItemCard: {
+      backgroundColor: isDark ? '#171717' : '#F1F5F9',
+      borderRadius: 12,
+      padding: 16,
+      marginBottom: 16,
+  },
+  actionItemHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 12,
+      gap: 10,
+  },
+  actionIcon: {
+      width: 24,
+      height: 24,
+      borderRadius: 4,
+      alignItems: 'center',
+      justifyContent: 'center',
+  },
+  actionItemTitle: {
+      color: colors.text,
+      fontWeight: '600',
+      fontSize: 15,
+  },
+  actionItemDetails: {
+      gap: 8,
+  },
+  detailRow: {
+      flexDirection: 'row',
+  },
+  detailLabel: {
+      color: colors.textSecondary,
+      fontSize: 13,
+      width: 80,
+  },
+  detailValue: {
+      color: colors.text,
+      fontSize: 13,
+      flex: 1,
+  },
+  actionButtons: {
+      flexDirection: 'row',
+      gap: 12,
+  },
+  actionButtonSecondary: {
+      flex: 1,
+      backgroundColor: isDark ? '#1C1C1C' : '#FFF',
+      paddingVertical: 12,
+      borderRadius: 10,
+      alignItems: 'center',
+      borderWidth: 1,
+      borderColor: isDark ? 'transparent' : '#E2E8F0',
+  },
+  actionButtonTextSecondary: {
+      color: colors.textSecondary,
+      fontWeight: '600',
+  },
+  actionButtonPrimary: {
+      flex: 1,
+      backgroundColor: colors.primary[500],
+      paddingVertical: 12,
+      borderRadius: 10,
+      alignItems: 'center',
+  },
+  actionButtonTextPrimary: {
+     color: '#FFF',
+     fontWeight: '600',
+  },
+
+  // Input
+  inputContainer: {
     position: 'absolute',
-    bottom: 90, // Raised above the Floating Tab Dock (which is ~80px height including margin)
+    bottom: 0,
     left: 0,
     right: 0,
-    padding: spacing[4],
-    paddingBottom: spacing[4],
-    // Remove background blocking to keep it airy, or keep minimal
-    backgroundColor: 'transparent',
+    padding: 16,
+    paddingBottom: isKeyboardVisible 
+        ? 16 
+        : (Platform.OS === 'ios' ? 20 : 10), // Minimal padding as standard tabs already handle bottom spacing
+    backgroundColor: 'transparent', 
+    zIndex: 100,
   },
-  inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.surfaceElevated,
-    borderRadius: borderRadius.full,
-    padding: spacing[2],
-    paddingLeft: spacing[4],
-    borderWidth: 1,
-    borderColor: colors.border,
-    // Add shadow to separate from content
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
+  contextChip: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      alignSelf: 'flex-start',
+      backgroundColor: isDark ? '#222' : '#FFF',
+      paddingHorizontal: 12,
+      paddingVertical: 4, // Reduced height
+      borderRadius: 20,
+      borderWidth: 1,
+      borderColor: isDark ? '#333' : '#E2E8F0',
+      marginBottom: 12, // Reduced space
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.15,
+      shadowRadius: 4,
+      elevation: 3,
+      gap: 6,
+  },
+  contextChipText: {
+      fontSize: 13, // Slightly smaller text
+      color: colors.text,
+      fontWeight: '500',
+  },
+  inputWrapper: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: isDark ? '#222' : '#F1F5F9', // Darker gray bg like screenshot
+      borderRadius: 24, // Slightly reduced radius
+      paddingHorizontal: 4, // Reduced padding
+      paddingVertical: 4, // Reduced padding
+      borderWidth: 0, // No border for cleaner look
   },
   input: {
     flex: 1,
-    ...typography.textStyles.body,
-    fontSize: 16,
+    fontSize: 15,
     color: colors.text,
-    marginRight: spacing[2],
-    height: 40,
+    paddingHorizontal: 12, // Reduced horizontal padding
+    paddingVertical: 8, // Reduced vertical padding
+    height: 40, // Height Reduced (was 48)
   },
-  sendButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.primary[500],
-    alignItems: 'center',
-    justifyContent: 'center',
+  micButton: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: 'transparent', // Transparent by default
+      alignItems: 'center',
+      justifyContent: 'center',
   },
-  sendButtonDisabled: {
-    backgroundColor: colors.surface,
+  sendButtonActive: {
+      backgroundColor: isDark ? '#FFF' : '#000', // White/Black circle when active
+  },
+
+  // Modal
+  modalOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: 20,
+  },
+  modalContent: {
+      width: '100%',
+      backgroundColor: isDark ? '#111' : '#FFF',
+      borderRadius: 24,
+      padding: 20,
+      borderWidth: 1,
+      borderColor: isDark ? '#222' : '#E2E8F0',
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 10 },
+      shadowOpacity: 0.25,
+      shadowRadius: 20,
+      elevation: 10,
+  },
+  modalHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 20,
+  },
+  modalTitle: {
+      fontSize: 18,
+      fontWeight: '600',
+      color: colors.text,
+  },
+  closeButton: {
+      padding: 4,
+      backgroundColor: isDark ? '#222' : '#F1F5F9',
+      borderRadius: 12,
+  },
+  accountItemActive: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: isDark ? '#1A1A1A' : '#F8FAFC',
+      borderRadius: 16,
+      padding: 16,
+      borderWidth: 1,
+      borderColor: isDark ? '#333' : '#E2E8F0',
+      marginBottom: 12,
+      position: 'relative',
+      overflow: 'hidden',
+  },
+  accountItemLeftBar: {
+      position: 'absolute',
+      left: 0,
+      top: 0,
+      bottom: 0,
+      width: 4,
+  },
+  accountInfo: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+      marginLeft: 8, 
+  },
+  accountEmail: {
+      color: colors.text,
+      fontSize: 14,
+      fontWeight: '500',
+  },
+  primaryBadge: {
+      backgroundColor: isDark ? '#333' : '#E2E8F0',
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+      borderRadius: 6,
+  },
+  primaryBadgeText: {
+      color: colors.textSecondary,
+      fontSize: 10,
+      fontWeight: '700',
+      letterSpacing: 0.5,
+  },
+  addAccountButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: 16,
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: isDark ? '#333' : '#E2E8F0',
+      gap: 8,
+      borderStyle: 'dashed',
+  },
+  addAccountText: {
+      color: colors.text,
+      fontSize: 14,
+      fontWeight: '500',
   },
 });
