@@ -2,20 +2,21 @@
  * Connect Platforms Screen - Manage platform connections
  */
 
+import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Alert,
+    Alert,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
-import { colors, spacing, typography } from '../theme';
-import { Card } from '../components/Card';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { PlatformIcon } from '../components/PlatformIcon';
-import { Button } from '../components/Button';
-import type { PlatformConnection, Platform } from '../types';
+import { useTheme } from '../context/ThemeContext';
+import { borderRadius, spacing } from '../theme'; // Import colors here for types if needed, but we use usage
+import type { Platform, PlatformConnection } from '../types';
 
 interface ConnectPlatformsScreenProps {
   connections: PlatformConnection[];
@@ -30,13 +31,15 @@ export const ConnectPlatformsScreen: React.FC<ConnectPlatformsScreenProps> = ({
   onDisconnect,
   onBack,
 }) => {
+  const { colors, isDark } = useTheme();
+  const styles = getStyles(colors, isDark);
   const [connecting, setConnecting] = useState<Platform | null>(null);
 
   const handleConnect = async (platform: Platform) => {
     try {
       setConnecting(platform);
       await onConnect(platform);
-      Alert.alert('Success', `${platform} connected successfully`);
+      // Alert handled by caller usually
     } catch (error: any) {
       Alert.alert('Connection Error', error.message || 'Failed to connect');
     } finally {
@@ -56,7 +59,6 @@ export const ConnectPlatformsScreen: React.FC<ConnectPlatformsScreenProps> = ({
           onPress: async () => {
             try {
               await onDisconnect(platform);
-              Alert.alert('Success', `${platform} disconnected`);
             } catch (error: any) {
               Alert.alert('Error', error.message || 'Failed to disconnect');
             }
@@ -67,143 +69,167 @@ export const ConnectPlatformsScreen: React.FC<ConnectPlatformsScreenProps> = ({
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={onBack} style={styles.backButton}>
-          <Text style={styles.backButtonText}>← Back</Text>
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text style={styles.title}>Connect Platforms</Text>
       </View>
 
       <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
         <Text style={styles.description}>
-          Connect your platforms to unify context and enable actions. All connections
-          are encrypted and stored securely.
+          Connect your platforms to unify context and enable actions. 
+          All connections are encrypted and stored securely.
         </Text>
 
-        {connections.map((connection) => (
-          <Card key={connection.id} style={styles.platformCard}>
-            <View style={styles.platformHeader}>
-              <PlatformIcon platform={connection.platform} size={48} />
-              <View style={styles.platformInfo}>
-                <Text style={styles.platformName}>{connection.name}</Text>
-                <Text style={styles.platformStatus}>
-                  {connection.connected ? 'Connected' : 'Not connected'}
-                </Text>
-              </View>
-            </View>
+        <View style={styles.grid}>
+            {connections.map((connection) => {
+              const isConnected = connection.connected;
+              const isLoading = connecting === connection.platform;
+              
+              return (
+                <View key={connection.id} style={styles.card}>
+                  <View style={styles.cardHeader}>
+                     <PlatformIcon platform={connection.platform} size={40} />
+                     <View style={styles.cardInfo}>
+                         <Text style={styles.cardTitle}>{connection.name}</Text>
+                         <View style={styles.statusRow}>
+                             <View style={[styles.statusDot, { backgroundColor: isConnected ? colors.semantic.success : colors.neutral[400] }]} />
+                             <Text style={styles.statusText}>
+                                 {isConnected ? 'Sync Active' : 'Not Connected'}
+                             </Text>
+                         </View>
+                     </View>
+                  </View>
 
-            {connection.connected && (
-              <View style={styles.permissions}>
-                <Text style={styles.permissionsTitle}>Permissions:</Text>
-                {connection.permissions.map((perm, idx) => (
-                  <Text key={idx} style={styles.permission}>
-                    • {perm}
-                  </Text>
-                ))}
-              </View>
-            )}
-
-            <View style={styles.actions}>
-              {connection.connected ? (
-                <Button
-                  title="Disconnect"
-                  onPress={() => handleDisconnect(connection.platform)}
-                  variant="outline"
-                  size="medium"
-                />
-              ) : (
-                <Button
-                  title={
-                    connecting === connection.platform
-                      ? 'Connecting...'
-                      : 'Connect'
-                  }
-                  onPress={() => handleConnect(connection.platform)}
-                  loading={connecting === connection.platform}
-                  size="medium"
-                />
-              )}
-            </View>
-          </Card>
-        ))}
+                  <TouchableOpacity 
+                    style={[
+                        styles.actionButton, 
+                        isConnected ? styles.actionButtonOutline : styles.actionButtonPrimary,
+                        isLoading && { opacity: 0.7 }
+                    ]}
+                    onPress={() => isConnected ? handleDisconnect(connection.platform) : handleConnect(connection.platform)}
+                    disabled={isLoading}
+                  >
+                      {isLoading ? (
+                          <Text style={[styles.actionButtonText, isConnected && { color: colors.text }]}>...</Text>
+                      ) : (
+                          <Text style={[styles.actionButtonText, isConnected ? { color: colors.text } : { color: '#FFF' }]}>
+                              {isConnected ? 'Manage' : 'Connect'}
+                          </Text>
+                      )}
+                  </TouchableOpacity>
+                </View>
+              );
+            })}
+        </View>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.light.background,
+    backgroundColor: colors.background,
   },
   header: {
-    padding: spacing[4],
+    paddingHorizontal: spacing[4],
+    paddingVertical: spacing[4],
+    flexDirection: 'row',
+    alignItems: 'center',
     borderBottomWidth: 1,
-    borderBottomColor: colors.light.border,
+    borderBottomColor: isDark ? colors.neutral[800] : colors.neutral[200],
   },
   backButton: {
-    marginBottom: spacing[2],
-  },
-  backButtonText: {
-    ...typography.textStyles.body,
-    color: colors.primary[500],
+    marginRight: spacing[4],
+    padding: 4,
   },
   title: {
-    ...typography.textStyles.h2,
-    color: colors.neutral[900],
+    fontSize: 20,
+    fontWeight: '700',
+    color: colors.text,
   },
   content: {
     flex: 1,
   },
   contentContainer: {
     padding: spacing[4],
+    paddingBottom: spacing[8],
   },
   description: {
-    ...typography.textStyles.body,
-    color: colors.neutral[600],
+    fontSize: 15,
+    color: colors.textSecondary,
     marginBottom: spacing[6],
-    lineHeight: 24,
+    lineHeight: 22,
   },
-  platformCard: {
-    marginBottom: spacing[4],
+  grid: {
+      gap: spacing[4],
   },
-  platformHeader: {
+  card: {
+    backgroundColor: isDark ? colors.neutral[900] : '#FFF',
+    borderRadius: borderRadius.lg,
+    padding: spacing[4],
+    borderWidth: 1,
+    borderColor: isDark ? colors.neutral[800] : colors.neutral[200],
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: spacing[4],
+    justifyContent: 'space-between',
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: isDark ? 0.3 : 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
-  platformInfo: {
-    flex: 1,
+  cardHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing[3],
+      flex: 1,
   },
-  platformName: {
-    ...typography.textStyles.h4,
-    color: colors.neutral[900],
-    marginBottom: spacing[1],
+  cardInfo: {
+      justifyContent: 'center',
   },
-  platformStatus: {
-    ...typography.textStyles.bodySmall,
-    color: colors.neutral[500],
+  cardTitle: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: colors.text,
+      marginBottom: 2,
   },
-  permissions: {
-    marginBottom: spacing[4],
-    paddingTop: spacing[4],
-    borderTopWidth: 1,
-    borderTopColor: colors.light.border,
+  statusRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
   },
-  permissionsTitle: {
-    ...typography.textStyles.bodySmall,
-    color: colors.neutral[700],
-    marginBottom: spacing[2],
-    fontWeight: typography.fontWeight.semibold,
+  statusDot: {
+      width: 6,
+      height: 6,
+      borderRadius: 3,
   },
-  permission: {
-    ...typography.textStyles.bodySmall,
-    color: colors.neutral[600],
-    marginBottom: spacing[1],
+  statusText: {
+      fontSize: 13,
+      color: colors.textSecondary,
   },
-  actions: {
-    marginTop: spacing[2],
+  actionButton: {
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+      borderRadius: 20,
+      minWidth: 80,
+      alignItems: 'center',
+  },
+  actionButtonPrimary: {
+      backgroundColor: colors.primary[500],
+  },
+  actionButtonOutline: {
+      backgroundColor: 'transparent',
+      borderWidth: 1,
+      borderColor: isDark ? colors.neutral[700] : colors.neutral[300],
+  },
+  actionButtonText: {
+      fontSize: 13,
+      fontWeight: '600',
   },
 });
 

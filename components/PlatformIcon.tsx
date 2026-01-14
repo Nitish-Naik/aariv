@@ -3,7 +3,7 @@
  */
 
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { colors } from '../theme';
 import type { Platform } from '../types';
 
@@ -20,13 +20,14 @@ const platformConfig: Record<Platform, { color: string; label: string }> = {
   linear: { color: colors.platforms.linear, label: 'L' },
   discord: { color: colors.platforms.discord, label: 'D' },
   maps: { color: colors.platforms.maps, label: 'M' },
+  github: { color: colors.platforms.github, label: 'GH' },
 };
 
 export const PlatformIcon: React.FC<PlatformIconProps> = ({
   platform,
   size = 40,
 }) => {
-  const config = platformConfig[platform];
+  const config = platformConfig[platform] || { color: colors.neutral[500], label: '?' };
   
   return (
     <View

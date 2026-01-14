@@ -1,44 +1,103 @@
 import { Ionicons } from "@expo/vector-icons";
+import { format } from "date-fns";
 import { useRouter } from "expo-router";
-import React from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
-  KeyboardAvoidingView,
-  Platform,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Card } from "../../components/Card";
 import { useTheme } from "../../context/ThemeContext";
+import { api } from "../../services/api";
+import { getCurrentUser } from "../../services/auth";
 import { borderRadius, spacing, typography } from "../../theme";
-import { MOCK_ACTIONS } from "../../utils/mockData";
+import { MOCK_ACTIONS, MOCK_EVENTS, MOCK_INBOX_ITEMS } from "../../utils/mockData";
 
 export default function HomeTab() {
   const router = useRouter();
   const { colors, isDark } = useTheme();
   const styles = getStyles(colors, isDark);
+  
+  const [briefing, setBriefing] = useState<{
+    greeting: string;
+    summary: string;
+    counts: { meetings: number; emails: number };
+  } | null>(null);
 
-  const pendingActions = MOCK_ACTIONS;
+  const [actions, setActions] = useState(MOCK_ACTIONS);
+  const [refreshing, setRefreshing] = useState(false);
+  const [stats, setStats] = useState({
+    pendingActions: MOCK_ACTIONS.length,
+    unreadMessages: MOCK_INBOX_ITEMS.filter(item => item.unread).length,
+    todayMeetings: MOCK_EVENTS.length,
+    completedToday: 0,
+  });
+
+  const fetchBriefing = useCallback(async () => {
+        try {
+            const user = await getCurrentUser();
+            if (user) {
+                // If the user has just logged in, this might take a second to warm up
+                // In production, we'd cache this or use SWR/Tanstack Query
+                const data = await api.get(`/dashboard/briefing?userId=${user.id}`);
+                setBriefing(data);
+                if (data.actions && Array.isArray(data.actions)) {
+                    setActions(data.actions.map((a: any) => ({
+                        id: a.id,
+                        title: a.title,
+                        subtitle: a.subtitle,
+                        type: a.type,
+                        status: 'pending',
+                        priority: a.priority || 'medium',
+                        data: a.data
+                    })));
+                }
+            }
+        } catch (e) {
+            console.log("Failed to fetch briefing", e);
+        }
+    }, []);
+
+  useEffect(() => {
+    fetchBriefing();
+  }, [fetchBriefing]);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await fetchBriefing();
+    setRefreshing(false);
+  }, [fetchBriefing]);
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
       <ScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary[500]} />
+        }
       >
         {/* Morning Briefing */}
         <View style={styles.header}>
           <View style={{ flex: 1 }}>
-            <Text style={styles.greeting}>Good Morning</Text>
+            <Text style={styles.greeting}>{briefing?.greeting || "Good Morning"}</Text>
             <Text style={styles.briefing}>
-              You have{" "}
-              <Text style={styles.highlight}>3 overlapping meetings</Text> and{" "}
-              <Text style={styles.highlight}>1 urgent email</Text> from Nitish
-              requiring attention.
+              {briefing ? (
+                 <Text style={{ lineHeight: 28 }}>
+                     {briefing.summary.split(/(\d+)/).map((part, i) => 
+                        /\d+/.test(part) ? <Text key={i} style={styles.highlight}>{part}</Text> : part
+                     )}
+                 </Text>
+              ) : (
+                <Text>
+                  You have <Text style={styles.highlight}>...</Text> meetings and <Text style={styles.highlight}>...</Text> emails.
+                </Text>
+              )}
             </Text>
           </View>
           <TouchableOpacity
@@ -46,6 +105,45 @@ export default function HomeTab() {
             style={styles.micButton}
           >
             <Ionicons name="mic" size={24} color={colors.primary[500]} />
+          </TouchableOpacity>
+        </View>
+
+        {/* Quick Stats */}
+        <View style={styles.statsContainer}>
+          <TouchableOpacity
+            style={styles.statCard}
+            onPress={() => router.push("/zen-mode")}
+            activeOpacity={0.7}
+          >
+            <View style={[styles.statIconContainer, { backgroundColor: isDark ? "rgba(59, 130, 246, 0.15)" : "#EFF6FF" }]}>
+              <Ionicons name="checkmark-circle-outline" size={24} color={colors.primary[500]} />
+            </View>
+            <Text style={styles.statValue}>{stats.pendingActions}</Text>
+            <Text style={styles.statLabel}>Pending</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.statCard}
+            onPress={() => router.push("/inbox")}
+            activeOpacity={0.7}
+          >
+            <View style={[styles.statIconContainer, { backgroundColor: isDark ? "rgba(239, 68, 68, 0.15)" : "#FEE2E2" }]}>
+              <Ionicons name="mail-unread-outline" size={24} color={colors.semantic.error} />
+            </View>
+            <Text style={styles.statValue}>{stats.unreadMessages}</Text>
+            <Text style={styles.statLabel}>Unread</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.statCard}
+            onPress={() => router.push("/calendar")}
+            activeOpacity={0.7}
+          >
+            <View style={[styles.statIconContainer, { backgroundColor: isDark ? "rgba(16, 185, 129, 0.15)" : "#D1FAE5" }]}>
+              <Ionicons name="calendar-outline" size={24} color={colors.semantic.success} />
+            </View>
+            <Text style={styles.statValue}>{stats.todayMeetings}</Text>
+            <Text style={styles.statLabel}>Meetings</Text>
           </TouchableOpacity>
         </View>
 
@@ -63,10 +161,10 @@ export default function HomeTab() {
                 color={colors.primary[500]}
               />
             </View>
-            <View>
+            <View style={{ flex: 1 }}>
               <Text style={styles.zenTitle}>Daily Review</Text>
               <Text style={styles.zenSubtitle}>
-                {pendingActions.length} decisions pending
+                {actions.length} decisions waiting for your approval
               </Text>
             </View>
           </View>
@@ -78,6 +176,34 @@ export default function HomeTab() {
             />
           </View>
         </TouchableOpacity>
+
+        {/* Today's Schedule */}
+        {MOCK_EVENTS.length > 0 && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Today's Schedule</Text>
+              <TouchableOpacity onPress={() => router.push("/calendar")}>
+                <Text style={styles.seeAllText}>View All</Text>
+              </TouchableOpacity>
+            </View>
+            <Card style={styles.scheduleCard}>
+              {MOCK_EVENTS.slice(0, 3).map((event, index) => (
+                <View key={event.id}>
+                  <View style={styles.eventItem}>
+                    <View style={[styles.eventDot, { backgroundColor: event.color || colors.primary[500] }]} />
+                    <View style={styles.eventContent}>
+                      <Text style={styles.eventTitle}>{event.title}</Text>
+                      <Text style={styles.eventTime}>
+                        {format(event.startTime, "h:mm a")} - {format(event.endTime, "h:mm a")}
+                      </Text>
+                    </View>
+                  </View>
+                  {index < MOCK_EVENTS.slice(0, 3).length - 1 && <View style={styles.divider} />}
+                </View>
+              ))}
+            </Card>
+          </View>
+        )}
 
         {/* Integration Status Hub */}
         <View style={styles.section}>
@@ -265,14 +391,57 @@ const getStyles = (colors: any, isDark: boolean) =>
       padding: spacing[2],
     },
 
+    // Quick Stats
+    statsContainer: {
+      flexDirection: "row",
+      gap: spacing[3],
+      marginBottom: spacing[6],
+    },
+    statCard: {
+      flex: 1,
+      backgroundColor: colors.surface,
+      borderRadius: borderRadius.lg,
+      padding: spacing[4],
+      alignItems: "center",
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    statIconContainer: {
+      width: 48,
+      height: 48,
+      borderRadius: 24,
+      alignItems: "center",
+      justifyContent: "center",
+      marginBottom: spacing[2],
+    },
+    statValue: {
+      ...typography.textStyles.h3,
+      color: colors.text,
+      marginBottom: spacing[1],
+    },
+    statLabel: {
+      ...typography.textStyles.caption,
+      color: colors.textSecondary,
+    },
+
     // Integration Status
     section: {
       marginBottom: spacing[8],
     },
+    sectionHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: spacing[4],
+    },
     sectionTitle: {
       ...typography.textStyles.h4,
       color: colors.text,
-      marginBottom: spacing[4],
+    },
+    seeAllText: {
+      ...typography.textStyles.bodySmall,
+      color: colors.primary[500],
+      fontWeight: "600",
     },
     statusCard: {
       padding: 0,
@@ -316,6 +485,39 @@ const getStyles = (colors: any, isDark: boolean) =>
       height: 1,
       backgroundColor: colors.border,
       marginHorizontal: spacing[4],
+    },
+
+    // Schedule
+    scheduleCard: {
+      padding: 0,
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+      overflow: "hidden",
+    },
+    eventItem: {
+      flexDirection: "row",
+      alignItems: "center",
+      padding: spacing[4],
+    },
+    eventDot: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      marginRight: spacing[3],
+    },
+    eventContent: {
+      flex: 1,
+    },
+    eventTitle: {
+      ...typography.textStyles.body,
+      color: colors.text,
+      fontWeight: "500",
+      marginBottom: spacing[1],
+    },
+    eventTime: {
+      ...typography.textStyles.caption,
+      color: colors.textSecondary,
     },
 
     // Nudges

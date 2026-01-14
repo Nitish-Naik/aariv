@@ -2,13 +2,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
-  Alert,
-  ScrollView,
-  StyleSheet,
-  Switch,
-  Text,
-  TouchableOpacity,
-  View
+    Alert,
+    ScrollView,
+    StyleSheet,
+    Switch,
+    Text,
+    TouchableOpacity,
+    View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../context/ThemeContext';
@@ -147,6 +147,15 @@ export default function SettingsScreen() {
                      <Text style={styles.rowSubtitle}>Manage integrations & capabilities</Text>
                  </View>
                  <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />
+             </TouchableOpacity>
+        </View>
+
+        {/* CONFIGURATION */}
+        <Text style={styles.sectionLabel}>CONFIGURATION</Text>
+        <View style={styles.card}>
+             <TouchableOpacity style={styles.row} onPress={() => router.push('/connect-platforms')}>
+                 <Text style={styles.rowTitle}>Connected Apps</Text>
+                 <Ionicons name="chevron-forward" size={20} color={colors.neutral[400]} />
              </TouchableOpacity>
         </View>
 

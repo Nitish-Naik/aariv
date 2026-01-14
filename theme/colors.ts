@@ -79,6 +79,7 @@ export const colors = {
     linear: '#5E6AD2',
     discord: '#5865F2',
     maps: '#34A853',
+    github: '#24292e',
   },
 };
 

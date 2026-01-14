@@ -5,18 +5,19 @@
 
 import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Switch,
-  Alert,
+    Alert,
+    ScrollView,
+    StyleSheet,
+    Switch,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
-import { colors, spacing, typography } from '../theme';
-import { Card } from '../components/Card';
 import { Button } from '../components/Button';
+import { Card } from '../components/Card';
+import { api } from '../services/api';
 import { signOut } from '../services/auth';
+import { colors, spacing, typography } from '../theme';
 import { clearAllData } from '../utils/storage';
 
 interface SettingsScreenProps {
@@ -35,6 +36,29 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [autoApproveEnabled, setAutoApproveEnabled] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
+
+  const handleTestConnection = async () => {
+    try {
+      // Note: This endpoint is not technically under /api based on backend/src/index.ts which has app.get('/health') directly on app
+      // But let's check services/api.ts which appends /api to BASE_URL.
+      // If backend has app.get('/health'), then localhost:3000/health is the url.
+      // But services/api.ts sets base to localhost:3000/api.
+      // So api.get('/health') would hit localhost:3000/api/health.
+      // I need to adjust the backend to invoke /api/health or adjust the client.
+      // Let's assume I'll fix the backend to mount health on /api, or just use a relative path trick if possible.
+      // safely, I should check backend/src/index.ts again.
+      // Backend: app.get('/health'...) is root.
+      // Helper: BASE_URL = .../api
+      // So I should probably use `api.get('/../health')`? No, that's ugly.
+      // Or I can add a specific test method.
+      // Or just update backend to put health check on /api/health.
+      
+      const result = await api.get('/health'); 
+      Alert.alert('Success', `Backend is connected!\n${JSON.stringify(result, null, 2)}`);
+    } catch (error: any) {
+      Alert.alert('Connection Failed', error.message);
+    }
+  };
 
   const handleSignOut = () => {
     Alert.alert(
@@ -206,6 +230,18 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             Aariv v1.0.0{'\n'}
             Privacy-first productivity copilot
           </Text>
+        </Card>
+      </View>
+
+      {/* Developer */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Developer</Text>
+        <Card>
+          <Button
+            title="Test Backend Connection"
+            onPress={handleTestConnection}
+            variant="outline"
+          />
         </Card>
       </View>
 

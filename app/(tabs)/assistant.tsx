@@ -15,6 +15,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../context/ThemeContext';
+import { api } from '../../services/api';
+import { getCurrentUser } from '../../services/auth';
 import { spacing } from '../../theme';
 import { ChatMessage } from '../../types';
 
@@ -109,8 +111,17 @@ const INITIAL_MESSAGES: RichChatMessage[] = [
 
 export default function AssistantTab() {
   const router = useRouter();
-  const [messages, setMessages] = useState<RichChatMessage[]>(INITIAL_MESSAGES);
+  const [messages, setMessages] = useState<RichChatMessage[]>([
+      {
+          id: 'welcome',
+          role: 'assistant',
+          content: 'Hello! I am your AI assistant. How can I help you today?',
+          timestamp: new Date(),
+          type: 'text'
+      }
+  ]);
   const [inputText, setInputText] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const [isAccountModalVisible, setAccountModalVisible] = useState(false);
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
   const flatListRef = useRef<FlatList>(null);
@@ -135,16 +146,66 @@ export default function AssistantTab() {
     }
   }, [messages.length]);
 
-  const handleSend = () => {
-    if (inputText.trim()) {
-      const newUserMsg: RichChatMessage = {
+  const handleActionInteraction = (messageId: string, action: 'confirm' | 'cancel') => {
+      setMessages(prev => prev.map(msg => {
+          if (msg.id === messageId && msg.type === 'action_review') {
+              return {
+                  ...msg,
+                  data: {
+                      ...msg.data,
+                      status: action === 'confirm' ? 'success' : 'cancelled' // content updated to reflect state
+                  }
+              };
+          }
+          return msg;
+      }));
+  };
+
+  const handleSend = async () => {
+    if (!inputText.trim()) return;
+
+    const userMsg: RichChatMessage = {
         id: Date.now().toString(),
         role: 'user',
         content: inputText.trim(),
         timestamp: new Date(),
-      };
-      setMessages(prev => [...prev, newUserMsg]);
-      setInputText('');
+    };
+
+    setMessages(prev => [...prev, userMsg]);
+    setInputText('');
+    setIsLoading(true);
+
+    try {
+        const user = await getCurrentUser();
+        if (!user) {
+             throw new Error("You must be logged in.");
+        }
+
+        const response = await api.post('/chat', {
+            userId: user.id,
+            message: userMsg.content
+        });
+        
+        const assistantMsg: RichChatMessage = {
+            id: (Date.now() + 1).toString(),
+            role: 'assistant',
+            content: response.content || "Action processed.",
+            timestamp: new Date(),
+            type: response.type || 'text',
+            data: response.data
+        };
+        
+        setMessages(prev => [...prev, assistantMsg]);
+    } catch (e: any) {
+        setMessages(prev => [...prev, {
+            id: Date.now().toString(),
+            role: 'assistant',
+            content: "Error: " + (e.message || "Failed to connect"),
+            timestamp: new Date(),
+            type: 'text'
+        }]);
+    } finally {
+        setIsLoading(false);
     }
   };
 
@@ -267,6 +328,9 @@ export default function AssistantTab() {
 
     // 4. Action Confirmation Card
     if (item.type === 'action_review') {
+        const isActionCompleted = item.data.status === 'success';
+        const isActionCancelled = item.data.status === 'cancelled';
+        
         return (
             <View style={styles.messageBlock}>
                  <View style={styles.messageRowAssistant}>
@@ -274,11 +338,13 @@ export default function AssistantTab() {
                         <Ionicons name="infinite" size={16} color={colors.primary[500]} />
                      </View>
                  </View>
-                <View style={styles.actionCardWrapper}>
+                <View style={[styles.actionCardWrapper, isActionCancelled && { opacity: 0.6 }]}>
                      <View style={styles.actionHeader}>
                          <Ionicons name="settings-outline" size={16} color={colors.text} />
-                         <Text style={styles.actionHeaderText}>Action Confirmation Required</Text>
-                         <Ionicons name="checkmark" size={16} color={colors.semantic.success} />
+                         <Text style={styles.actionHeaderText}>
+                             {isActionCompleted ? 'Action Completed' : (isActionCancelled ? 'Action Dismissed' : 'Action Executed')}
+                         </Text>
+                         {isActionCompleted && <Ionicons name="checkmark" size={16} color={colors.semantic.success} />}
                      </View>
                  
                  <View style={styles.actionBody}>
@@ -286,30 +352,38 @@ export default function AssistantTab() {
                      
                      <View style={styles.actionItemCard}>
                          <View style={styles.actionItemHeader}>
-                             <View style={[styles.actionIcon, { backgroundColor: colors.semantic.warning }]}>
-                                 <Ionicons name="calendar" size={14} color="#FFF" />
+                             <View style={[styles.actionIcon, { backgroundColor: isActionCancelled ? colors.neutral[400] : colors.semantic.warning }]}>
+                                 <Ionicons name={item.data.action.icon || "calendar"} size={14} color="#FFF" />
                              </View>
                              <Text style={styles.actionItemTitle}>{item.data.action.title}</Text>
                          </View>
                          
                          <View style={styles.actionItemDetails}>
-                             {Object.entries(item.data.action.details).map(([key, value]) => (
+                             {item.data.action.details && Object.entries(item.data.action.details).map(([key, value]) => (
                                  <View key={key} style={styles.detailRow}>
                                      <Text style={styles.detailLabel}>{key}:</Text>
-                                     <Text style={styles.detailValue}>{String(value)}</Text>
+                                     <Text style={styles.detailValue} numberOfLines={2}>{String(value)}</Text>
                                  </View>
                              ))}
                          </View>
                      </View>
 
-                     <View style={styles.actionButtons}>
-                         <TouchableOpacity style={styles.actionButtonSecondary}>
-                             <Text style={styles.actionButtonTextSecondary}>Cancel</Text>
-                         </TouchableOpacity>
-                         <TouchableOpacity style={styles.actionButtonPrimary}>
-                             <Text style={styles.actionButtonTextPrimary}>Create</Text>
-                         </TouchableOpacity>
-                     </View>
+                     {!isActionCompleted && !isActionCancelled && (
+                         <View style={styles.actionButtons}>
+                             <TouchableOpacity 
+                                style={styles.actionButtonSecondary}
+                                onPress={() => handleActionInteraction(item.id, 'cancel')}
+                             >
+                                 <Text style={styles.actionButtonTextSecondary}>Dismiss</Text>
+                             </TouchableOpacity>
+                             <TouchableOpacity 
+                                style={styles.actionButtonPrimary}
+                                onPress={() => handleActionInteraction(item.id, 'confirm')}
+                             >
+                                 <Text style={styles.actionButtonTextPrimary}>Done</Text>
+                             </TouchableOpacity>
+                         </View>
+                     )}
                 </View>
             </View>
             </View>

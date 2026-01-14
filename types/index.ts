@@ -9,7 +9,8 @@ export type Platform =
   | 'notion'
   | 'linear'
   | 'discord'
-  | 'maps';
+  | 'maps'
+  | 'github';
 
 export interface PlatformConnection {
   id: string;
