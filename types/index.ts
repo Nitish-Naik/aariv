@@ -2,15 +2,15 @@
  * Type definitions for Aariv app
  */
 
-export type Platform = 
-  | 'gmail'
-  | 'google-calendar'
-  | 'slack'
-  | 'notion'
-  | 'linear'
-  | 'discord'
-  | 'maps'
-  | 'github';
+export type Platform =
+  | "gmail"
+  | "google-calendar"
+  | "slack"
+  | "notion"
+  | "linear"
+  | "discord"
+  | "maps"
+  | "github";
 
 export interface PlatformConnection {
   id: string;
@@ -24,13 +24,20 @@ export interface PlatformConnection {
 
 export interface ActionItem {
   id: string;
-  type: 'email' | 'calendar' | 'slack' | 'notion' | 'linear' | 'discord' | 'maps';
+  type:
+    | "email"
+    | "calendar"
+    | "slack"
+    | "notion"
+    | "linear"
+    | "discord"
+    | "maps";
   title: string;
   description: string;
   platform: Platform;
   proposedAt: Date;
   expiresAt: Date;
-  status: 'pending' | 'approved' | 'rejected' | 'expired' | 'executed';
+  status: "pending" | "approved" | "rejected" | "expired" | "executed";
   metadata?: Record<string, any>;
   requiresApproval: boolean;
 }
@@ -55,12 +62,12 @@ export interface InboxItem {
   preview: string;
   receivedAt: Date;
   unread: boolean;
-  priority?: 'low' | 'medium' | 'high';
+  priority?: "low" | "medium" | "high";
 }
 
 export interface KnowledgeGraphNode {
   id: string;
-  type: 'pattern' | 'preference' | 'ritual' | 'cadence';
+  type: "pattern" | "preference" | "ritual" | "cadence";
   label: string;
   description: string;
   createdAt: Date;
@@ -75,14 +82,14 @@ export interface User {
   name: string;
   avatar?: string;
   googleId: string;
+  subscriptionTier?: "free" | "pro";
 }
 
 export interface ChatMessage {
   id: string;
-  role: 'user' | 'assistant';
+  role: "user" | "assistant";
   content: string;
   timestamp: Date;
   suggestions?: string[];
   actions?: ActionItem[];
 }
-

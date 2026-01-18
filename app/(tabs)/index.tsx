@@ -1,7 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
+import { useFocusEffect } from "@react-navigation/native";
 import { format } from "date-fns";
 import { useRouter } from "expo-router";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useState } from "react";
 import {
     ActivityIndicator,
     RefreshControl,
@@ -9,7 +10,7 @@ import {
     StyleSheet,
     Text,
     TouchableOpacity,
-    View
+    View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Card } from "../../components/Card";
@@ -23,7 +24,7 @@ export default function HomeTab() {
   const router = useRouter();
   const { colors, isDark } = useTheme();
   const styles = getStyles(colors, isDark);
-  
+
   const [events, setEvents] = useState<any[]>([]);
   const [briefing, setBriefing] = useState<{
     greeting: string;
@@ -34,6 +35,7 @@ export default function HomeTab() {
   const [actions, setActions] = useState<any[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [missingConnections, setMissingConnections] = useState<string[]>([]);
 
   // Computed stats from real data
   const stats = {
@@ -43,43 +45,69 @@ export default function HomeTab() {
     completedToday: 0,
   };
 
+  const checkConnections = async (userId: string) => {
+    try {
+      const res = await api.get(`/integrations?userId=${userId}`);
+      const connectedApps = (res.integrations || [])
+        .filter((i: any) => i.status === "ACTIVE" || i.status === "CONNECTED")
+        .map((i: any) => i.appName.toLowerCase());
+
+      const missing = [];
+      if (!connectedApps.some((a: string) => a.includes("gmail")))
+        missing.push("Gmail");
+      if (!connectedApps.some((a: string) => a.includes("calendar")))
+        missing.push("Google Calendar");
+      setMissingConnections(missing);
+    } catch (e) {
+      console.log("Failed to check connections", e);
+    }
+  };
+
   const fetchBriefing = useCallback(async () => {
-        try {
-            const user = await getCurrentUser();
-            if (user) {
-                const data = await api.get(`/dashboard/briefing?userId=${user.id}`);
-                setBriefing(data);
-                
-                if (data.actions && Array.isArray(data.actions)) {
-                    setActions(data.actions.map((a: any) => ({
-                        id: a.id,
-                        title: a.title,
-                        subtitle: a.subtitle,
-                        type: a.type,
-                        status: 'pending',
-                        priority: a.priority || 'medium',
-                        data: a.data
-                    })));
-                }
+    try {
+      const user = await getCurrentUser();
+      if (user) {
+        // Parallel fetch for speed
+        checkConnections(user.id);
+        const data = await api.get(`/dashboard/briefing?userId=${user.id}`);
+        setBriefing(data);
 
-                if (data.events && Array.isArray(data.events)) {
-                    setEvents(data.events.map((e: any) => ({
-                         ...e,
-                         startTime: new Date(e.startTime),
-                         endTime: new Date(e.endTime)
-                    })));
-                }
-            }
-        } catch (e) {
-            console.log("Failed to fetch briefing", e);
-        } finally {
-            setLoading(false);
+        if (data.actions && Array.isArray(data.actions)) {
+          setActions(
+            data.actions.map((a: any) => ({
+              id: a.id,
+              title: a.title,
+              subtitle: a.subtitle,
+              type: a.type,
+              status: "pending",
+              priority: a.priority || "medium",
+              data: a.data,
+            })),
+          );
         }
-    }, []);
 
-  useEffect(() => {
-    fetchBriefing();
-  }, [fetchBriefing]);
+        if (data.events && Array.isArray(data.events)) {
+          setEvents(
+            data.events.map((e: any) => ({
+              ...e,
+              startTime: new Date(e.startTime),
+              endTime: new Date(e.endTime),
+            })),
+          );
+        }
+      }
+    } catch (e) {
+      console.log("Failed to fetch briefing", e);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchBriefing();
+    }, [fetchBriefing]),
+  );
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -93,23 +121,36 @@ export default function HomeTab() {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
         refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary[500]} />
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.primary[500]}
+          />
         }
       >
         {/* Morning Briefing */}
         <View style={styles.header}>
           <View style={{ flex: 1 }}>
-            <Text style={styles.greeting}>{briefing?.greeting || "Good Morning"}</Text>
+            <Text style={styles.greeting}>
+              {briefing?.greeting || "Good Morning"}
+            </Text>
             <Text style={styles.briefing}>
               {briefing ? (
-                 <Text style={{ lineHeight: 28 }}>
-                     {briefing.summary.split(/(\d+)/).map((part, i) => 
-                        /\d+/.test(part) ? <Text key={i} style={styles.highlight}>{part}</Text> : part
-                     )}
-                 </Text>
+                <Text style={{ lineHeight: 28 }}>
+                  {briefing.summary.split(/(\d+)/).map((part, i) =>
+                    /\d+/.test(part) ? (
+                      <Text key={i} style={styles.highlight}>
+                        {part}
+                      </Text>
+                    ) : (
+                      part
+                    ),
+                  )}
+                </Text>
               ) : (
                 <Text>
-                  You have <Text style={styles.highlight}>...</Text> meetings and <Text style={styles.highlight}>...</Text> emails.
+                  You have <Text style={styles.highlight}>...</Text> meetings
+                  and <Text style={styles.highlight}>...</Text> emails.
                 </Text>
               )}
             </Text>
@@ -122,6 +163,73 @@ export default function HomeTab() {
           </TouchableOpacity>
         </View>
 
+        {/* Missing Connections CTA */}
+        {missingConnections.length > 0 && (
+          <TouchableOpacity
+            style={{
+              backgroundColor: isDark ? "#1F2937" : "#FFF5F5",
+              borderRadius: 16,
+              padding: 16,
+              marginBottom: 24,
+              borderWidth: 1,
+              borderColor: isDark ? "#374151" : "#FED7D7",
+              flexDirection: "row",
+              alignItems: "center",
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.05,
+              shadowRadius: 8,
+              elevation: 2,
+            }}
+            onPress={() => router.push("/connect-platforms")}
+            activeOpacity={0.9}
+          >
+            <View
+              style={{
+                width: 48,
+                height: 48,
+                borderRadius: 12,
+                backgroundColor: isDark ? "rgba(239, 68, 68, 0.2)" : "#FFF5F5",
+                alignItems: "center",
+                justifyContent: "center",
+                marginRight: 16,
+              }}
+            >
+              <Ionicons
+                name="alert-circle"
+                size={28}
+                color={isDark ? "#F87171" : "#F56565"}
+              />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text
+                style={{
+                  fontSize: 16,
+                  fontWeight: "700",
+                  color: isDark ? "#F3F4F6" : "#C53030",
+                  marginBottom: 4,
+                }}
+              >
+                Setup Required
+              </Text>
+              <Text
+                style={{
+                  fontSize: 14,
+                  color: isDark ? "#9CA3AF" : "#718096",
+                  lineHeight: 20,
+                }}
+              >
+                Connect {missingConnections[0]} to activate your assistant.
+              </Text>
+            </View>
+            <Ionicons
+              name="chevron-forward"
+              size={20}
+              color={isDark ? "#6B7280" : "#A0AEC0"}
+            />
+          </TouchableOpacity>
+        )}
+
         {/* Quick Stats */}
         <View style={styles.statsContainer}>
           <TouchableOpacity
@@ -129,8 +237,21 @@ export default function HomeTab() {
             onPress={() => router.push("/zen-mode")}
             activeOpacity={0.7}
           >
-            <View style={[styles.statIconContainer, { backgroundColor: isDark ? "rgba(59, 130, 246, 0.15)" : "#EFF6FF" }]}>
-              <Ionicons name="checkmark-circle-outline" size={24} color={colors.primary[500]} />
+            <View
+              style={[
+                styles.statIconContainer,
+                {
+                  backgroundColor: isDark
+                    ? "rgba(59, 130, 246, 0.15)"
+                    : "#EFF6FF",
+                },
+              ]}
+            >
+              <Ionicons
+                name="checkmark-circle-outline"
+                size={24}
+                color={colors.primary[500]}
+              />
             </View>
             <Text style={styles.statValue}>{stats.pendingActions}</Text>
             <Text style={styles.statLabel}>Pending</Text>
@@ -141,8 +262,21 @@ export default function HomeTab() {
             onPress={() => router.push("/inbox")}
             activeOpacity={0.7}
           >
-            <View style={[styles.statIconContainer, { backgroundColor: isDark ? "rgba(239, 68, 68, 0.15)" : "#FEE2E2" }]}>
-              <Ionicons name="mail-unread-outline" size={24} color={colors.semantic.error} />
+            <View
+              style={[
+                styles.statIconContainer,
+                {
+                  backgroundColor: isDark
+                    ? "rgba(239, 68, 68, 0.15)"
+                    : "#FEE2E2",
+                },
+              ]}
+            >
+              <Ionicons
+                name="mail-unread-outline"
+                size={24}
+                color={colors.semantic.error}
+              />
             </View>
             <Text style={styles.statValue}>{stats.unreadMessages}</Text>
             <Text style={styles.statLabel}>Unread</Text>
@@ -153,8 +287,21 @@ export default function HomeTab() {
             onPress={() => router.push("/calendar")}
             activeOpacity={0.7}
           >
-            <View style={[styles.statIconContainer, { backgroundColor: isDark ? "rgba(16, 185, 129, 0.15)" : "#D1FAE5" }]}>
-              <Ionicons name="calendar-outline" size={24} color={colors.semantic.success} />
+            <View
+              style={[
+                styles.statIconContainer,
+                {
+                  backgroundColor: isDark
+                    ? "rgba(16, 185, 129, 0.15)"
+                    : "#D1FAE5",
+                },
+              ]}
+            >
+              <Ionicons
+                name="calendar-outline"
+                size={24}
+                color={colors.semantic.success}
+              />
             </View>
             <Text style={styles.statValue}>{stats.todayMeetings}</Text>
             <Text style={styles.statLabel}>Meetings</Text>
@@ -201,25 +348,46 @@ export default function HomeTab() {
             </View>
             <Card style={styles.scheduleCard}>
               {loading ? (
-                  <ActivityIndicator color={colors.primary[500]} style={{ padding: spacing[4] }} />
+                <ActivityIndicator
+                  color={colors.primary[500]}
+                  style={{ padding: spacing[4] }}
+                />
               ) : (
                 events.slice(0, 3).map((event, index) => (
-                    <View key={event.id}>
+                  <View key={event.id}>
                     <View style={styles.eventItem}>
-                        <View style={[styles.eventDot, { backgroundColor: event.color || colors.primary[500] }]} />
-                        <View style={styles.eventContent}>
+                      <View
+                        style={[
+                          styles.eventDot,
+                          {
+                            backgroundColor: event.color || colors.primary[500],
+                          },
+                        ]}
+                      />
+                      <View style={styles.eventContent}>
                         <Text style={styles.eventTitle}>{event.title}</Text>
                         <Text style={styles.eventTime}>
-                            {format(event.startTime, "h:mm a")} - {format(event.endTime, "h:mm a")}
+                          {format(event.startTime, "h:mm a")} -{" "}
+                          {format(event.endTime, "h:mm a")}
                         </Text>
-                        </View>
+                      </View>
                     </View>
-                    {index < events.slice(0, 3).length - 1 && <View style={styles.divider} />}
-                    </View>
+                    {index < events.slice(0, 3).length - 1 && (
+                      <View style={styles.divider} />
+                    )}
+                  </View>
                 ))
               )}
               {!loading && events.length === 0 && (
-                  <Text style={{ textAlign: 'center', color: colors.textSecondary, padding: spacing[4] }}>No events scheduled</Text>
+                <Text
+                  style={{
+                    textAlign: "center",
+                    color: colors.textSecondary,
+                    padding: spacing[4],
+                  }}
+                >
+                  No events scheduled
+                </Text>
               )}
             </Card>
           </View>
@@ -300,29 +468,33 @@ export default function HomeTab() {
         </View>
 
         {/* Highlights / Insights */}
-        {((briefing?.highlights && briefing.highlights.length > 0) || loading) && (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Highlights</Text>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.nudgeScroll}
-          >
-             {loading ? (
-                 <Card style={[styles.nudgeCard, { width: 250, justifyContent: 'center' }]}>
-                     <ActivityIndicator color={colors.primary[500]} />
-                 </Card>
-             ) : (
+        {((briefing?.highlights && briefing.highlights.length > 0) ||
+          loading) && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Highlights</Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.nudgeScroll}
+            >
+              {loading ? (
+                <Card
+                  style={[
+                    styles.nudgeCard,
+                    { width: 250, justifyContent: "center" },
+                  ]}
+                >
+                  <ActivityIndicator color={colors.primary[500]} />
+                </Card>
+              ) : (
                 briefing?.highlights?.map((highlight, index) => (
-                    <Card key={index} style={styles.nudgeCard}>
-                    <Text style={styles.nudgeText}>
-                        {highlight}
-                    </Text>
-                    </Card>
+                  <Card key={index} style={styles.nudgeCard}>
+                    <Text style={styles.nudgeText}>{highlight}</Text>
+                  </Card>
                 ))
-             )}
-          </ScrollView>
-        </View>
+              )}
+            </ScrollView>
+          </View>
         )}
 
         <View style={{ height: 100 }} />

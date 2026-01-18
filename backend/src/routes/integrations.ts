@@ -1,12 +1,19 @@
-import { Router } from 'express';
-import { connectIntegration, listIntegrations } from '../controllers/integrationsController';
+import { Router } from "express";
+import {
+    connectIntegration,
+    disconnectIntegration,
+    listIntegrations,
+} from "../controllers/integrationsController";
 
 const router = Router();
 
 // GET /api/integrations?userId=...
-router.get('/', listIntegrations);
+router.get("/", listIntegrations);
 
 // POST /api/integrations/connect
-router.post('/connect', connectIntegration);
+router.post("/connect", connectIntegration);
+
+// POST /api/integrations/disconnect
+router.post("/disconnect", disconnectIntegration);
 
 export default router;

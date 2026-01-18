@@ -1,5 +1,5 @@
 {
-  "name": "my-mobile-app",
+  "name": "aariv",
   "main": "expo-router/entry",
   "version": "1.0.0",
   "scripts": {
@@ -21,6 +21,7 @@
     "@react-navigation/stack": "^7.6.13",
     "date-fns": "^4.1.0",
     "expo": "~54.0.31",
+    "expo-auth-session": "^7.0.10",
     "expo-av": "~16.0.8",
     "expo-calendar": "~15.0.8",
     "expo-constants": "~18.0.13",
