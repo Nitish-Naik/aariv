@@ -1,15 +1,18 @@
 import { createClient } from '@supabase/supabase-js';
 import { config } from './env';
 
-if (!config.supabaseUrl || !config.supabaseServiceRoleKey) {
-  throw new Error('Missing Supabase URL or Service Role Key in environment variables');
+// Make Supabase optional for prototype to prevent crash
+const supabaseUrl = config.supabaseUrl || "https://placeholder.supabase.co";
+const supabaseKey = config.supabaseServiceRoleKey || "placeholder";
+
+if (!config.supabaseUrl) {
+  console.warn("WARN: Missing Supabase URL. DB sync will be disabled.");
 }
 
-// We use the Service Role Key for the backend to have admin access (bypass RLS)
-// Be careful with this client and only use it for trusted backend operations.
-export const supabase = createClient(config.supabaseUrl, config.supabaseServiceRoleKey, {
+export const supabase = createClient(supabaseUrl, supabaseKey, {
   auth: {
     autoRefreshToken: false,
     persistSession: false,
   },
 });
+

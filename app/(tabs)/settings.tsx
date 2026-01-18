@@ -13,7 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../context/ThemeContext';
 import { getCurrentUser, signOut } from '../../services/auth';
-import { spacing, typography } from '../../theme';
+import { borderRadius, spacing, typography } from '../../theme';
 import type { User } from '../../types';
 
 export default function SettingsScreen() {
@@ -322,8 +322,9 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   row: {
       flexDirection: 'row',
       alignItems: 'center',
-      padding: 16,
-      gap: 12
+      padding: spacing[4],
+      gap: spacing[3],
+      minHeight: 44, // Ensure touch target size
   },
   rowIcon: {
       width: 32,
@@ -345,16 +346,16 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   divider: {
       height: 1,
       backgroundColor: colors.border,
-      marginLeft: 60, // Align with text
+      marginLeft: spacing[15], // Align with text (32 icon + 12 gap + 16 padding)
   },
   // Sub Card
   subCard: {
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
-      padding: 20,
+      padding: spacing[5],
       backgroundColor: isDark ? '#1E293B' : '#F1F5F9',
-      borderRadius: 16,
+      borderRadius: borderRadius.xl,
   },
   subTitle: {
       fontWeight: 'bold',
@@ -363,7 +364,7 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   subDesc: {
       fontSize: 12,
       color: colors.textSecondary,
-      marginTop: 2,
+      marginTop: spacing[0.5],
   },
   subAction: {
       fontWeight: 'bold',

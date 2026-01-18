@@ -9,6 +9,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { useTheme } from '../context/ThemeContext';
@@ -28,7 +29,8 @@ export const KnowledgeGraphConsentScreen: React.FC<KnowledgeGraphConsentScreenPr
   const styles = getStyles(colors, isDark);
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
       <View style={styles.header}>
         <Text style={styles.title}>Knowledge Graph</Text>
         <Text style={styles.subtitle}>
@@ -119,6 +121,7 @@ export const KnowledgeGraphConsentScreen: React.FC<KnowledgeGraphConsentScreenPr
         />
       </View>
     </ScrollView>
+    </SafeAreaView>
   );
 };
 
@@ -126,6 +129,9 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  scrollView: {
+    flex: 1,
   },
   content: {
     padding: spacing[4],

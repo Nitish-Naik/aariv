@@ -1,67 +1,199 @@
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Alert, Animated, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { SwipeCard } from '../components/SwipeCard';
 import { useTheme } from '../context/ThemeContext';
+import { api } from '../services/api';
+import { getCurrentUser } from '../services/auth';
 import { spacing, typography } from '../theme';
-import { MOCK_ACTIONS } from '../utils/mockData';
+
+const Toast = ({ message, visible, styles }: { message: string, visible: boolean, styles: any }) => {
+    const opacity = useRef(new Animated.Value(0)).current;
+
+    useEffect(() => {
+        if (visible) {
+            Animated.timing(opacity, {
+                toValue: 1,
+                duration: 300,
+                useNativeDriver: true
+            }).start();
+        } else {
+            Animated.timing(opacity, {
+                toValue: 0,
+                duration: 300,
+                useNativeDriver: true
+            }).start();
+        }
+    }, [visible]);
+
+    if (!visible && (opacity as any)._value === 0) return null;
+
+    return (
+        <Animated.View style={[styles.toastContainer, { opacity }]}>
+            <Ionicons name="checkmark-circle" size={24} color="#4ADE80" />
+            <Text style={styles.toastText}>{message}</Text>
+        </Animated.View>
+    );
+};
 
 export default function ZenModeScreen() {
   const router = useRouter();
   const { colors, isDark } = useTheme();
   const styles = getStyles(colors, isDark);
   
-  const [actions, setActions] = useState(MOCK_ACTIONS);
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [actions, setActions] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [processedCount, setProcessedCount] = useState(0);
+
+  // Toast State
+  const [toastMsg, setToastMsg] = useState("");
+  const [toastVisible, setToastVisible] = useState(false);
+
+  const showToast = (msg: string) => {
+      setToastMsg(msg);
+      setToastVisible(true);
+      setTimeout(() => setToastVisible(false), 3000);
+  };
+
+  useEffect(() => {
+    fetchActions();
+  }, []);
+
+  const fetchActions = async () => {
+    try {
+        const user = await getCurrentUser();
+        if (user) {
+            // We reuse the briefing endpoint which returns 'actions'
+            const data = await api.get(`/dashboard/briefing?userId=${user.id}`);
+            if (data.actions && Array.isArray(data.actions)) {
+                setActions(data.actions.map((a: any) => ({
+                    id: a.id,
+                    title: a.title,
+                    subtitle: a.subtitle,
+                    type: a.type,
+                    status: 'pending',
+                    priority: a.priority || 'medium',
+                    data: a.data
+                })));
+            }
+        }
+    } catch (e) {
+        console.log("Failed to load actions", e);
+    } finally {
+        setLoading(false);
+    }
+  };
+
+  const executeAction = async (action: any) => {
+      try {
+          const user = await getCurrentUser();
+          if (!user) return;
+
+          // Haptic Feedback for Immediate Satisfaction
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          
+          if (action.type === 'email') {
+             showToast("Drafting reply...");
+          } else if (action.type === 'calendar') {
+             showToast("Updating calendar...");
+          } else {
+             showToast("Action initiated");
+          }
+
+          await api.post('/actions/execute', {
+              userId: user.id,
+              actionType: action.type === 'calendar' ? 'CALENDAR_ACTION' : 'DRAFT_REPLY',
+              actionData: action.data
+          });
+          
+          showToast("Done!"); // Update toast on completion
+          
+      } catch (e) {
+          console.error("Action failed", e);
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+          Alert.alert("Error", "Failed to execute action.");
+      }
+  };
 
   const handleSwipe = (direction: 'left' | 'right') => {
-    // In a real app, we would perform an API call here (approve/reject)
-    // For now, we just move to the next item
-    setTimeout(() => {
-        setActions((prev) => prev.filter((_, i) => i !== currentIndex));
-        // Reset index isn't strictly necessary since we filter, but if we were keeping array
-        // and moving index, we would. Here we remove the item at index 0 effectively.
-        // Actually, since we remove it, the next item becomes index 0.
-        // But wait, `currentIndex` state is used? No, let's just use the first item in the array.
-    }, 200);
+    const currentAction = actions[0];
+    
+    // 1. Remove from list immediately (Optimistic)
+    setActions((prev) => prev.slice(1));
+    setProcessedCount(c => c + 1);
+
+    // 2. Perform Backend Action if Right Swipe (Approve)
+    if (direction === 'right') {
+        executeAction(currentAction);
+    }
   };
   
   // We always render the first item in the array
   const currentAction = actions[0];
 
+  // Animation for the empty state checkmark
+  const scaleAnim = useRef(new Animated.Value(0.8)).current;
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (actions.length === 0 && !loading) {
+        Animated.parallel([
+            Animated.spring(scaleAnim, {
+                toValue: 1,
+                friction: 6,
+                useNativeDriver: true
+            }),
+            Animated.timing(fadeAnim, {
+                toValue: 1,
+                duration: 500,
+                useNativeDriver: true
+            })
+        ]).start();
+    }
+  }, [actions.length, loading]);
+
   const renderEmptyState = () => (
-    <View style={styles.emptyContainer}>
-        <View style={styles.emptyIconContainer}>
-            <Ionicons name="checkmark-circle" size={64} color={colors.semantic.success} />
-        </View>
+    <Animated.View style={[styles.emptyContainer, { opacity: fadeAnim }]}>
+        <Animated.View style={[styles.emptyIconContainer, { transform: [{ scale: scaleAnim }] }]}>
+            <Ionicons name="checkmark-circle" size={80} color={colors.semantic.success} />
+        </Animated.View>
         <Text style={styles.emptyTitle}>All Caught Up</Text>
         <Text style={styles.emptySubtitle}>You've reviewed all pending items for today.</Text>
         
         <View style={styles.statsContainer}>
             <View style={styles.statItem}>
-                <Text style={styles.statValue}>12</Text>
-                <Text style={styles.statLabel}>Approved</Text>
-            </View>
-            <View style={styles.statDivider} />
-            <View style={styles.statItem}>
-                <Text style={styles.statValue}>5</Text>
-                <Text style={styles.statLabel}>Deferred</Text>
+                <Text style={styles.statValue}>{processedCount}</Text>
+                <Text style={styles.statLabel}>Completed</Text>
             </View>
         </View>
 
-        <View style={styles.closeButtonContainer}>
-            <Text onPress={() => router.back()} style={styles.closeButtonText}>Return/Home</Text>
-        </View>
-    </View>
+        <TouchableOpacity 
+            style={styles.returnButton} 
+            onPress={() => router.back()}
+        >
+            <Text style={styles.returnButtonText}>Return Home</Text>
+        </TouchableOpacity>
+    </Animated.View>
   );
+  
+  if (loading) {
+      return (
+          <View style={[styles.container, { justifyContent: 'center', alignItems: 'center'}]}>
+              <ActivityIndicator size="large" color={colors.primary[500]} />
+          </View>
+      );
+  }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-            <Ionicons onPress={() => router.back()} name="close" size={28} color={colors.textSecondary} />
+            <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+                <Ionicons name="arrow-back" size={24} color={colors.text} />
+            </TouchableOpacity>
         </View>
         <Text style={styles.headerTitle}>Review Queue</Text>
         <View style={styles.headerRight}>
@@ -99,11 +231,38 @@ export default function ZenModeScreen() {
           </View>
       )}
 
+      <Toast message={toastMsg} visible={toastVisible} styles={styles} />
+
     </SafeAreaView>
   );
 }
 
 const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
+  toastContainer: {
+      position: 'absolute',
+      bottom: spacing[8],
+      left: spacing[6],
+      right: spacing[6],
+      backgroundColor: colors.surface,
+      padding: spacing[4],
+      borderRadius: 16,
+      flexDirection: 'row',
+      alignItems: 'center',
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.1,
+      shadowRadius: 12,
+      elevation: 5,
+      borderWidth: 1,
+      borderColor: colors.border,
+      zIndex: 100,
+  },
+  toastText: {
+      ...typography.textStyles.body,
+      fontWeight: '600',
+      marginLeft: spacing[3],
+      color: colors.text,
+  },
   container: {
     flex: 1,
     backgroundColor: colors.background,
@@ -113,10 +272,18 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: spacing[6],
-    paddingVertical: spacing[4],
+    paddingTop: spacing[8],
+    paddingBottom: spacing[4],
   },
   headerLeft: {
-      width: 40,
+      minWidth: 44, // Ensure touch target size
+  },
+  backButton: {
+      padding: spacing[2],
+      minWidth: 44,
+      minHeight: 44,
+      alignItems: 'center',
+      justifyContent: 'center',
   },
   headerRight: {
       width: 40,
@@ -223,17 +390,16 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
       color: colors.textSecondary,
       marginTop: 2,
   },
-  statDivider: {
-      width: 1,
-      backgroundColor: colors.border,
+  returnButton: {
+    backgroundColor: colors.primary[500],
+    paddingVertical: spacing[3],
+    paddingHorizontal: spacing[8],
+    borderRadius: 24,
+    marginTop: spacing[4],
   },
-  closeButtonContainer: {
-      marginTop: spacing[4],
-  },
-  closeButtonText: {
-      color: colors.primary[500],
-      fontSize: 16,
-      fontWeight: '600',
+  returnButtonText: {
+    color: '#FFF',
+    fontWeight: '600',
+    fontSize: 16,
   }
-
 });

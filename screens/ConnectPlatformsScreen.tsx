@@ -3,8 +3,10 @@
  */
 
 import { Ionicons } from '@expo/vector-icons';
+import { format } from 'date-fns';
 import React, { useState } from 'react';
 import {
+    ActivityIndicator,
     Alert,
     ScrollView,
     StyleSheet,
@@ -15,14 +17,16 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { PlatformIcon } from '../components/PlatformIcon';
 import { useTheme } from '../context/ThemeContext';
-import { borderRadius, spacing } from '../theme'; // Import colors here for types if needed, but we use usage
+import { borderRadius, spacing, typography } from '../theme';
 import type { Platform, PlatformConnection } from '../types';
 
 interface ConnectPlatformsScreenProps {
   connections: PlatformConnection[];
   onConnect: (platform: Platform) => Promise<void>;
   onDisconnect: (platform: Platform) => Promise<void>;
-  onBack: () => void;
+  onBack?: () => void; // Optional now
+  actionLabel?: string;
+  onAction?: () => void;
 }
 
 export const ConnectPlatformsScreen: React.FC<ConnectPlatformsScreenProps> = ({
@@ -30,6 +34,8 @@ export const ConnectPlatformsScreen: React.FC<ConnectPlatformsScreenProps> = ({
   onConnect,
   onDisconnect,
   onBack,
+  actionLabel,
+  onAction,
 }) => {
   const { colors, isDark } = useTheme();
   const styles = getStyles(colors, isDark);
@@ -68,21 +74,45 @@ export const ConnectPlatformsScreen: React.FC<ConnectPlatformsScreenProps> = ({
     );
   };
 
+  const connectedCount = connections.filter(c => c.connected).length;
+  const totalCount = connections.length;
+
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={onBack} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color={colors.text} />
-        </TouchableOpacity>
-        <Text style={styles.title}>Connect Platforms</Text>
+        {onBack ? (
+            <TouchableOpacity onPress={onBack} style={styles.backButton}>
+              <Ionicons name="arrow-back" size={24} color={colors.text} />
+            </TouchableOpacity>
+        ) : (
+            <View style={{ width: 44 }} /> // Spacer
+        )}
+        
+        <View style={{ flex: 1, alignItems: 'center' }}>
+          <Text style={styles.title}>Connect Platforms</Text>
+          <Text style={styles.subtitle}>{connectedCount} of {totalCount} connected</Text>
+        </View>
+
+        {actionLabel && onAction ? (
+             <TouchableOpacity onPress={onAction} style={styles.actionButton}>
+                <Text style={styles.actionButtonText}>{actionLabel}</Text>
+             </TouchableOpacity>
+        ) : (
+             <View style={{ width: 44 }} /> // Spacer
+        )}
       </View>
 
       <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
-        <Text style={styles.description}>
-          Connect your platforms to unify context and enable actions. 
-          All connections are encrypted and stored securely.
-        </Text>
+        <View style={styles.infoCard}>
+          <Ionicons name="shield-checkmark" size={24} color={colors.primary[500]} />
+          <View style={{ flex: 1, marginLeft: spacing[3] }}>
+            <Text style={styles.infoTitle}>Secure & Encrypted</Text>
+            <Text style={styles.infoText}>
+              All connections are encrypted and stored securely. You control what data is shared.
+            </Text>
+          </View>
+        </View>
 
         <View style={styles.grid}>
             {connections.map((connection) => {
@@ -90,9 +120,11 @@ export const ConnectPlatformsScreen: React.FC<ConnectPlatformsScreenProps> = ({
               const isLoading = connecting === connection.platform;
               
               return (
-                <View key={connection.id} style={styles.card}>
+                <View key={connection.id} style={[styles.card, isConnected && styles.cardConnected]}>
                   <View style={styles.cardHeader}>
-                     <PlatformIcon platform={connection.platform} size={40} />
+                     <View style={[styles.iconWrapper, isConnected && styles.iconWrapperConnected]}>
+                       <PlatformIcon platform={connection.platform} size={32} />
+                     </View>
                      <View style={styles.cardInfo}>
                          <Text style={styles.cardTitle}>{connection.name}</Text>
                          <View style={styles.statusRow}>
@@ -100,6 +132,11 @@ export const ConnectPlatformsScreen: React.FC<ConnectPlatformsScreenProps> = ({
                              <Text style={styles.statusText}>
                                  {isConnected ? 'Sync Active' : 'Not Connected'}
                              </Text>
+                             {isConnected && connection.connectedAt && (
+                               <Text style={styles.connectedDate}>
+                                 • Connected {format(new Date(connection.connectedAt), 'MMM d')}
+                               </Text>
+                             )}
                          </View>
                      </View>
                   </View>
@@ -108,17 +145,28 @@ export const ConnectPlatformsScreen: React.FC<ConnectPlatformsScreenProps> = ({
                     style={[
                         styles.actionButton, 
                         isConnected ? styles.actionButtonOutline : styles.actionButtonPrimary,
-                        isLoading && { opacity: 0.7 }
+                        isLoading && styles.actionButtonLoading
                     ]}
                     onPress={() => isConnected ? handleDisconnect(connection.platform) : handleConnect(connection.platform)}
                     disabled={isLoading}
+                    activeOpacity={0.7}
                   >
                       {isLoading ? (
-                          <Text style={[styles.actionButtonText, isConnected && { color: colors.text }]}>...</Text>
+                          <View style={styles.loadingContainer}>
+                            <ActivityIndicator size="small" color={isConnected ? colors.text : '#FFF'} />
+                          </View>
                       ) : (
-                          <Text style={[styles.actionButtonText, isConnected ? { color: colors.text } : { color: '#FFF' }]}>
-                              {isConnected ? 'Manage' : 'Connect'}
-                          </Text>
+                          <>
+                            <Ionicons 
+                              name={isConnected ? "checkmark-circle" : "add-circle-outline"} 
+                              size={16} 
+                              color={isConnected ? colors.text : '#FFF'} 
+                              style={{ marginRight: 4 }}
+                            />
+                            <Text style={[styles.actionButtonText, isConnected ? { color: colors.text } : { color: '#FFF' }]}>
+                                {isConnected ? 'Connected' : 'Connect'}
+                            </Text>
+                          </>
                       )}
                   </TouchableOpacity>
                 </View>
@@ -136,21 +184,37 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     backgroundColor: colors.background,
   },
   header: {
-    paddingHorizontal: spacing[4],
-    paddingVertical: spacing[4],
+    paddingHorizontal: spacing[6],
+    paddingTop: spacing[8],
+    paddingBottom: spacing[4],
     flexDirection: 'row',
     alignItems: 'center',
     borderBottomWidth: 1,
-    borderBottomColor: isDark ? colors.neutral[800] : colors.neutral[200],
+    borderBottomColor: colors.border,
   },
   backButton: {
     marginRight: spacing[4],
     padding: 4,
   },
   title: {
-    fontSize: 20,
-    fontWeight: '700',
+    ...typography.textStyles.h3,
     color: colors.text,
+    marginBottom: 2,
+  },
+  subtitle: {
+    ...typography.textStyles.caption,
+    color: colors.textSecondary,
+  },
+  actionButton: {
+      paddingHorizontal: spacing[3],
+      paddingVertical: spacing[2],
+      backgroundColor: colors.primary[500],
+      borderRadius: borderRadius.md,
+  },
+  actionButtonText: {
+      color: '#FFF',
+      fontWeight: '600',
+      fontSize: 14,
   },
   content: {
     flex: 1,
@@ -159,21 +223,36 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     padding: spacing[4],
     paddingBottom: spacing[8],
   },
-  description: {
-    fontSize: 15,
-    color: colors.textSecondary,
+  infoCard: {
+    flexDirection: 'row',
+    backgroundColor: isDark ? colors.neutral[900] : colors.primary[50],
+    borderRadius: borderRadius.lg,
+    padding: spacing[4],
     marginBottom: spacing[6],
-    lineHeight: 22,
+    borderWidth: 1,
+    borderColor: isDark ? colors.neutral[800] : colors.primary[200],
+    alignItems: 'flex-start',
+  },
+  infoTitle: {
+    ...typography.textStyles.body,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: 4,
+  },
+  infoText: {
+    ...typography.textStyles.bodySmall,
+    color: colors.textSecondary,
+    lineHeight: 20,
   },
   grid: {
       gap: spacing[4],
   },
   card: {
-    backgroundColor: isDark ? colors.neutral[900] : '#FFF',
+    backgroundColor: colors.surface,
     borderRadius: borderRadius.lg,
-    padding: spacing[4],
+    padding: spacing[5],
     borderWidth: 1,
-    borderColor: isDark ? colors.neutral[800] : colors.neutral[200],
+    borderColor: colors.border,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -183,11 +262,26 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     shadowRadius: 8,
     elevation: 2,
   },
+  cardConnected: {
+    borderColor: colors.primary[200],
+    backgroundColor: isDark ? colors.primary[950] : colors.primary[50],
+  },
   cardHeader: {
       flexDirection: 'row',
       alignItems: 'center',
       gap: spacing[3],
       flex: 1,
+  },
+  iconWrapper: {
+    width: 56,
+    height: 56,
+    borderRadius: borderRadius.lg,
+    backgroundColor: isDark ? colors.neutral[800] : colors.neutral[100],
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  iconWrapperConnected: {
+    backgroundColor: isDark ? colors.primary[900] : colors.primary[100],
   },
   cardInfo: {
       justifyContent: 'center',
@@ -209,15 +303,28 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
       borderRadius: 3,
   },
   statusText: {
-      fontSize: 13,
+      ...typography.textStyles.bodySmall,
       color: colors.textSecondary,
   },
+  connectedDate: {
+      ...typography.textStyles.caption,
+      color: colors.textTertiary,
+      marginLeft: 4,
+  },
   actionButton: {
-      paddingHorizontal: 16,
-      paddingVertical: 8,
-      borderRadius: 20,
-      minWidth: 80,
+      paddingHorizontal: spacing[4],
+      paddingVertical: spacing[2],
+      borderRadius: borderRadius.full,
+      minWidth: 100,
+      flexDirection: 'row',
       alignItems: 'center',
+      justifyContent: 'center',
+  },
+  actionButtonLoading: {
+      opacity: 0.7,
+  },
+  loadingContainer: {
+      paddingVertical: 2,
   },
   actionButtonPrimary: {
       backgroundColor: colors.primary[500],

@@ -16,7 +16,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../context/ThemeContext';
-import { spacing, typography } from '../theme';
+import { borderRadius, spacing, typography } from '../theme';
 import { MOCK_BUNDLES, MOCK_TOOLKITS, Toolkit, ToolkitBundle } from '../utils/mockToolkits';
 
 export default function ToolkitsScreen() {
@@ -128,7 +128,7 @@ export default function ToolkitsScreen() {
                                             name={scope.riskLevel === 'critical' || scope.riskLevel === 'high' ? 'warning' : 'checkmark-circle'} 
                                             size={20} 
                                             color={getRiskColor(scope.riskLevel, isDark)} 
-                                            style={{ marginRight: 12 }}
+                                            style={{ marginRight: spacing[3] }}
                                         />
                                         <View style={{ flex: 1 }}>
                                             <Text style={styles.scopeLabel}>{scope.label}</Text>
@@ -237,7 +237,7 @@ export default function ToolkitsScreen() {
                 </TouchableOpacity>
             </View>
 
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: spacing[25] }}>
                 {/* Search */}
                 <View style={styles.searchContainer}>
                     <Ionicons name="search" size={20} color={colors.neutral[400]} style={styles.searchIcon} />
@@ -334,8 +334,9 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     header: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: spacing[6], // lg
-        paddingVertical: spacing[4],   // md
+        paddingHorizontal: spacing[6],
+        paddingTop: spacing[8],
+        paddingBottom: spacing[4],
         justifyContent: 'space-between',
     },
     backButton: {
@@ -361,7 +362,7 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: isDark ? colors.surface : '#F1F5F9',
-        borderRadius: 12,
+        borderRadius: borderRadius.md,
         paddingHorizontal: spacing[4], // md
         height: 48,
         borderWidth: 1,
@@ -386,7 +387,7 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     catChip: {
         paddingHorizontal: spacing[6], // lg
         paddingVertical: spacing[1] + 2, // xs + 2
-        borderRadius: 20,
+        borderRadius: borderRadius.xl,
         backgroundColor: isDark ? colors.surface : '#E2E8F0',
         marginRight: spacing[2], // sm
         borderWidth: 1,
@@ -418,7 +419,7 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     bundleCard: {
         width: 280,
         backgroundColor: isDark ? '#1E293B' : '#FFF',
-        borderRadius: 16,
+        borderRadius: borderRadius.lg,
         padding: spacing[6], // lg
         borderWidth: 1,
         borderColor: isDark ? colors.border : '#E2E8F0',
@@ -434,8 +435,8 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     savingsTag: {
         backgroundColor: isDark ? 'rgba(34, 197, 94, 0.2)' : '#DCFCE7',
         paddingHorizontal: spacing[2], // sm
-        paddingVertical: 2,
-        borderRadius: 4,
+        paddingVertical: spacing[0.5],
+        borderRadius: borderRadius.sm,
     },
     savingsText: {
         color: isDark ? '#4ADE80' : '#15803D',
@@ -447,7 +448,7 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
         ...typography.textStyles.h3,
         color: colors.text,
         fontSize: 18,
-        marginBottom: 4,
+        marginBottom: spacing[1],
     },
     bundleDesc: {
         ...typography.textStyles.bodySmall, // body2
@@ -473,7 +474,7 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: isDark ? '#1E1E1E' : '#FFFFFF',
-        borderRadius: 16,
+        borderRadius: borderRadius.lg,
         padding: spacing[4], // md
         borderWidth: 1,
         borderColor: isDark ? '#333' : '#E2E8F0',
@@ -481,7 +482,7 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     iconContainer: {
         width: 48,
         height: 48,
-        borderRadius: 12,
+        borderRadius: borderRadius.md,
         backgroundColor: isDark ? '#2D3748' : '#F8FAFC',
         justifyContent: 'center',
         alignItems: 'center',
@@ -494,7 +495,7 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     cardHeader: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 4,
+        marginBottom: spacing[1],
     },
     cardTitle: {
         ...typography.textStyles.h3,
@@ -504,9 +505,9 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     },
     premiumTag: {
         backgroundColor: isDark ? '#F59E0B20' : '#FEF3C7',
-        paddingHorizontal: 6,
-        paddingVertical: 2,
-        borderRadius: 4,
+        paddingHorizontal: spacing[1.5],
+        paddingVertical: spacing[0.5],
+        borderRadius: borderRadius.sm,
     },
     premiumText: {
         fontSize: 10,
@@ -521,7 +522,7 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     actionButton: {
         paddingHorizontal: spacing[4], // md
         paddingVertical: spacing[1] + 2, // xs+2
-        borderRadius: 20,
+        borderRadius: borderRadius.xl,
         borderWidth: 1,
     },
     actionButtonActive: {
@@ -562,7 +563,7 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     modalIconBg: {
         width: 64,
         height: 64,
-        borderRadius: 32,
+        borderRadius: borderRadius.xxl,
         backgroundColor: isDark ? '#2D3748' : '#F1F5F9',
         justifyContent: 'center',
         alignItems: 'center',
@@ -577,7 +578,7 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
         ...typography.textStyles.bodySmall, // body2
         color: colors.neutral[500], // gray[500]
         textTransform: 'uppercase',
-        marginTop: 4,
+        marginTop: spacing[1],
         letterSpacing: 1,
     },
     sectionLabel: {
@@ -598,16 +599,16 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
         ...typography.textStyles.body, // body1
         fontWeight: 'bold',
         color: colors.text,
-        marginBottom: 2,
+        marginBottom: spacing[0.5],
     },
     scopeDesc: {
         ...typography.textStyles.caption,
         color: colors.neutral[500], // gray[500]
     },
     riskTag: {
-        paddingHorizontal: 6,
-        paddingVertical: 2,
-        borderRadius: 4,
+        paddingHorizontal: spacing[1.5],
+        paddingVertical: spacing[0.5],
+        borderRadius: borderRadius.sm,
         marginLeft: spacing[2], // sm
     },
     riskText: {
@@ -632,7 +633,7 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     cancelBtn: {
         flex: 1,
         padding: spacing[4], // md
-        borderRadius: 12,
+        borderRadius: borderRadius.md,
         backgroundColor: isDark ? '#333' : '#F1F5F9',
         alignItems: 'center',
     },
@@ -643,7 +644,7 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     confirmBtn: {
         flex: 1,
         padding: spacing[4], // md
-        borderRadius: 12,
+        borderRadius: borderRadius.md,
         backgroundColor: colors.primary[500],
         alignItems: 'center',
     },
@@ -670,7 +671,7 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: isDark ? '#2D3748' : '#F1F5F9',
-        borderRadius: 24,
+        borderRadius: borderRadius.xl,
         paddingHorizontal: spacing[4],
         height: 48,
     },

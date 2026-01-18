@@ -7,10 +7,10 @@ import {
     StyleSheet,
     Text,
     TextInput,
+    TouchableOpacity,
     View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Button } from '../components/Button';
 import { PlatformIcon } from '../components/PlatformIcon';
 import { useTheme } from '../context/ThemeContext';
 import { borderRadius, spacing, typography } from '../theme';
@@ -21,6 +21,7 @@ interface EditActionScreenProps {
   platform?: string;
   onSave: (title: string, description: string) => void;
   onCancel: () => void;
+  isLoading?: boolean;
 }
 
 export const EditActionScreen: React.FC<EditActionScreenProps> = ({
@@ -29,6 +30,7 @@ export const EditActionScreen: React.FC<EditActionScreenProps> = ({
   platform = 'gmail',
   onSave,
   onCancel,
+  isLoading = false,
 }) => {
   const { colors, isDark } = useTheme();
   const styles = getStyles(colors, isDark);
@@ -37,9 +39,9 @@ export const EditActionScreen: React.FC<EditActionScreenProps> = ({
   const [description, setDescription] = useState(initialDescription);
 
   return (
-    <SafeAreaView style={styles.container} edges={['bottom']}>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <View style={styles.header}>
-         <View>
+         <View style={{ flex: 1 }}>
             <Text style={styles.headerTitle}>Refine Action</Text>
             <Text style={styles.headerSubtitle}>Edit the drafted response or logic.</Text>
          </View>
@@ -56,7 +58,7 @@ export const EditActionScreen: React.FC<EditActionScreenProps> = ({
       <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
         
         <View style={styles.inputGroup}>
-            <Text style={styles.label}>Action Intent</Text>
+            <Text style={styles.label}>ACTION INTENT</Text>
             <TextInput
               style={styles.input}
               value={title}
@@ -67,7 +69,7 @@ export const EditActionScreen: React.FC<EditActionScreenProps> = ({
         </View>
 
         <View style={styles.inputGroup}>
-            <Text style={styles.label}>Content / Details</Text>
+            <Text style={styles.label}>CONTENT / DETAILS</Text>
             <TextInput
               style={[styles.input, styles.textArea]}
               value={description}
@@ -86,17 +88,21 @@ export const EditActionScreen: React.FC<EditActionScreenProps> = ({
       </ScrollView>
 
       <View style={styles.footer}>
-        <Button
-          title="Discard"
+        <TouchableOpacity
+          style={styles.discardButton}
           onPress={onCancel}
-          variant="outline"
-          style={styles.cancelButton}
-        />
-        <Button
-          title="Save Changes"
+          activeOpacity={0.7}
+        >
+          <Text style={styles.discardButtonText}>Discard</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.saveButton, isLoading && { opacity: 0.7 }]}
           onPress={() => onSave(title, description)}
-          style={styles.saveButton}
-        />
+          activeOpacity={0.8}
+          disabled={isLoading}
+        >
+          <Text style={styles.saveButtonText}>{isLoading ? 'Saving...' : 'Save Changes'}</Text>
+        </TouchableOpacity>
       </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -109,10 +115,10 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     backgroundColor: colors.background,
   },
   header: {
-    padding: spacing[6],
-    paddingTop: spacing[4],
+    paddingHorizontal: spacing[6],
+    paddingTop: spacing[8],
+    paddingBottom: spacing[4],
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'flex-start',
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
@@ -129,18 +135,19 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   platformBadge: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 6,
+      gap: spacing[2],
       backgroundColor: colors.surfaceElevated,
-      paddingHorizontal: 10,
-      paddingVertical: 6,
-      borderRadius: 20,
+      paddingHorizontal: spacing[3],
+      paddingVertical: spacing[2],
+      borderRadius: borderRadius.full,
       borderWidth: 1,
       borderColor: colors.border,
   },
   platformName: {
-      fontSize: 10,
-      fontWeight: 'bold',
+      fontSize: 11,
+      fontWeight: '700',
       color: colors.textSecondary,
+      letterSpacing: 0.5,
   },
   content: {
     flex: 1,
@@ -153,14 +160,15 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
       gap: spacing[2],
   },
   label: {
-      fontSize: 12,
+      fontSize: 11,
       fontWeight: '700',
       color: colors.textSecondary,
       textTransform: 'uppercase',
-      letterSpacing: 0.5,
+      letterSpacing: 1,
+      marginBottom: spacing[2],
   },
   input: {
-      backgroundColor: colors.surface,
+      backgroundColor: isDark ? colors.neutral[900] : colors.neutral[100],
       borderWidth: 1,
       borderColor: colors.border,
       borderRadius: borderRadius.lg,
@@ -168,9 +176,10 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
       color: colors.text,
       fontSize: 16,
       ...typography.textStyles.body,
+      minHeight: 48,
   },
   textArea: {
-      minHeight: 200,
+      minHeight: 120,
   },
   aiHint: {
       flexDirection: 'row',
@@ -192,11 +201,32 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     gap: spacing[4],
     backgroundColor: colors.background,
   },
-  cancelButton: {
-      flex: 1,
-      borderColor: colors.border,
+  discardButton: {
+    flex: 1,
+    backgroundColor: isDark ? colors.neutral[900] : colors.neutral[200],
+    paddingVertical: spacing[3],
+    borderRadius: borderRadius.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  discardButtonText: {
+    ...typography.textStyles.button,
+    color: colors.text,
+    fontWeight: '600',
   },
   saveButton: {
-      flex: 2,
+    flex: 2,
+    backgroundColor: colors.primary[500],
+    paddingVertical: spacing[3],
+    borderRadius: borderRadius.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  saveButtonText: {
+    ...typography.textStyles.button,
+    color: '#FFFFFF',
+    fontWeight: '600',
   },
 });

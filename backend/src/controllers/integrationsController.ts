@@ -1,7 +1,7 @@
 import { OpenAIToolSet } from 'composio-core';
 import { Request, Response } from 'express';
 import { config } from '../config/env';
-import { supabase } from '../config/supabase';
+// import { supabase } from '../config/supabase'; // Disabled for prototype simplicity
 
 const toolset = new OpenAIToolSet({
     apiKey: config.composioApiKey,
@@ -21,25 +21,14 @@ export const listIntegrations = async (req: Request, res: Response) => {
     const entity = await toolset.client.getEntity(userIdStr);
     const connections = await entity.getConnections();
 
-    // 2. Sync to Supabase Database
-    const upsertPromises = connections.map((conn: any) => {
-        // Composio returns specific appNames (e.g. 'google-calendar', 'gmail')
-        // We map these to our table structure
-        return supabase.from('user_integrations').upsert({
-            user_id: userIdStr,
-            platform: conn.appName,
-            status: conn.status,
-            connected_at: conn.createdAt ? new Date(conn.createdAt).toISOString() : new Date().toISOString(),
-            updated_at: new Date().toISOString()
-        }, { onConflict: 'user_id, platform' });
-    });
-
-    await Promise.all(upsertPromises);
+    /* 
+    // 2. Sync to Supabase Database (Optional for V1)
+    if (config.supabaseUrl) {
+        ...
+    }
+    */
 
     // 3. Return combined/db result
-    // We can just return the Composio result as it's fresh, 
-    // or fetch from DB to be 100% sure what's persisted. 
-    // For now, mapping the live Composio data is fastest and accurate.
     const integrations = connections.map((conn: any) => ({
       id: conn.id,
       appName: conn.appName,
@@ -54,6 +43,7 @@ export const listIntegrations = async (req: Request, res: Response) => {
     res.status(500).json({ error: error.message });
   }
 };
+
 
 export const connectIntegration = async (req: Request, res: Response) => {
   try {

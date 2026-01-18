@@ -3,12 +3,13 @@ import { format } from "date-fns";
 import { useRouter } from "expo-router";
 import React, { useCallback, useEffect, useState } from "react";
 import {
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View
+    ActivityIndicator,
+    RefreshControl,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Card } from "../../components/Card";
@@ -16,36 +17,39 @@ import { useTheme } from "../../context/ThemeContext";
 import { api } from "../../services/api";
 import { getCurrentUser } from "../../services/auth";
 import { borderRadius, spacing, typography } from "../../theme";
-import { MOCK_ACTIONS, MOCK_EVENTS, MOCK_INBOX_ITEMS } from "../../utils/mockData";
+// import { MOCK_ACTIONS, MOCK_EVENTS, MOCK_INBOX_ITEMS } from "../../utils/mockData";
 
 export default function HomeTab() {
   const router = useRouter();
   const { colors, isDark } = useTheme();
   const styles = getStyles(colors, isDark);
   
+  const [events, setEvents] = useState<any[]>([]);
   const [briefing, setBriefing] = useState<{
     greeting: string;
     summary: string;
     counts: { meetings: number; emails: number };
   } | null>(null);
 
-  const [actions, setActions] = useState(MOCK_ACTIONS);
+  const [actions, setActions] = useState<any[]>([]);
   const [refreshing, setRefreshing] = useState(false);
-  const [stats, setStats] = useState({
-    pendingActions: MOCK_ACTIONS.length,
-    unreadMessages: MOCK_INBOX_ITEMS.filter(item => item.unread).length,
-    todayMeetings: MOCK_EVENTS.length,
+  const [loading, setLoading] = useState(true);
+
+  // Computed stats from real data
+  const stats = {
+    pendingActions: actions.length,
+    unreadMessages: briefing?.counts?.emails || 0,
+    todayMeetings: briefing?.counts?.meetings || events.length,
     completedToday: 0,
-  });
+  };
 
   const fetchBriefing = useCallback(async () => {
         try {
             const user = await getCurrentUser();
             if (user) {
-                // If the user has just logged in, this might take a second to warm up
-                // In production, we'd cache this or use SWR/Tanstack Query
                 const data = await api.get(`/dashboard/briefing?userId=${user.id}`);
                 setBriefing(data);
+                
                 if (data.actions && Array.isArray(data.actions)) {
                     setActions(data.actions.map((a: any) => ({
                         id: a.id,
@@ -57,9 +61,19 @@ export default function HomeTab() {
                         data: a.data
                     })));
                 }
+
+                if (data.events && Array.isArray(data.events)) {
+                    setEvents(data.events.map((e: any) => ({
+                         ...e,
+                         startTime: new Date(e.startTime),
+                         endTime: new Date(e.endTime)
+                    })));
+                }
             }
         } catch (e) {
             console.log("Failed to fetch briefing", e);
+        } finally {
+            setLoading(false);
         }
     }, []);
 
@@ -168,17 +182,16 @@ export default function HomeTab() {
               </Text>
             </View>
           </View>
-          <View style={styles.zenArrow}>
-            <Ionicons
-              name="arrow-forward"
-              size={24}
-              color={colors.textTertiary}
-            />
-          </View>
+          <Ionicons
+            name="chevron-forward"
+            size={24}
+            color={colors.textTertiary}
+            style={styles.zenArrow}
+          />
         </TouchableOpacity>
 
         {/* Today's Schedule */}
-        {MOCK_EVENTS.length > 0 && (
+        {(events.length > 0 || loading) && (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Today's Schedule</Text>
@@ -187,20 +200,27 @@ export default function HomeTab() {
               </TouchableOpacity>
             </View>
             <Card style={styles.scheduleCard}>
-              {MOCK_EVENTS.slice(0, 3).map((event, index) => (
-                <View key={event.id}>
-                  <View style={styles.eventItem}>
-                    <View style={[styles.eventDot, { backgroundColor: event.color || colors.primary[500] }]} />
-                    <View style={styles.eventContent}>
-                      <Text style={styles.eventTitle}>{event.title}</Text>
-                      <Text style={styles.eventTime}>
-                        {format(event.startTime, "h:mm a")} - {format(event.endTime, "h:mm a")}
-                      </Text>
+              {loading ? (
+                  <ActivityIndicator color={colors.primary[500]} style={{ padding: spacing[4] }} />
+              ) : (
+                events.slice(0, 3).map((event, index) => (
+                    <View key={event.id}>
+                    <View style={styles.eventItem}>
+                        <View style={[styles.eventDot, { backgroundColor: event.color || colors.primary[500] }]} />
+                        <View style={styles.eventContent}>
+                        <Text style={styles.eventTitle}>{event.title}</Text>
+                        <Text style={styles.eventTime}>
+                            {format(event.startTime, "h:mm a")} - {format(event.endTime, "h:mm a")}
+                        </Text>
+                        </View>
                     </View>
-                  </View>
-                  {index < MOCK_EVENTS.slice(0, 3).length - 1 && <View style={styles.divider} />}
-                </View>
-              ))}
+                    {index < events.slice(0, 3).length - 1 && <View style={styles.divider} />}
+                    </View>
+                ))
+              )}
+              {!loading && events.length === 0 && (
+                  <Text style={{ textAlign: 'center', color: colors.textSecondary, padding: spacing[4] }}>No events scheduled</Text>
+              )}
             </Card>
           </View>
         )}
@@ -279,26 +299,31 @@ export default function HomeTab() {
           </Card>
         </View>
 
-        {/* Quick Tips */}
+        {/* Highlights / Insights */}
+        {((briefing?.highlights && briefing.highlights.length > 0) || loading) && (
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Insights</Text>
+          <Text style={styles.sectionTitle}>Highlights</Text>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
             style={styles.nudgeScroll}
           >
-            <Card style={styles.nudgeCard}>
-              <Text style={styles.nudgeText}>
-                You spend 45% of your time in recurring meetings.
-              </Text>
-            </Card>
-            <Card style={styles.nudgeCard}>
-              <Text style={styles.nudgeText}>
-                Fridays are your most productive coding days.
-              </Text>
-            </Card>
+             {loading ? (
+                 <Card style={[styles.nudgeCard, { width: 250, justifyContent: 'center' }]}>
+                     <ActivityIndicator color={colors.primary[500]} />
+                 </Card>
+             ) : (
+                briefing?.highlights?.map((highlight, index) => (
+                    <Card key={index} style={styles.nudgeCard}>
+                    <Text style={styles.nudgeText}>
+                        {highlight}
+                    </Text>
+                    </Card>
+                ))
+             )}
           </ScrollView>
         </View>
+        )}
 
         <View style={{ height: 100 }} />
       </ScrollView>
@@ -388,7 +413,7 @@ const getStyles = (colors: any, isDark: boolean) =>
       color: colors.textSecondary,
     },
     zenArrow: {
-      padding: spacing[2],
+      marginLeft: spacing[0],
     },
 
     // Quick Stats

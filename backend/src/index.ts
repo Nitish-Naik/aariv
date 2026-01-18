@@ -1,10 +1,15 @@
 import cors from 'cors';
 import express, { Request, Response } from 'express';
 import { config } from './config/env';
+import actionRoutes from './routes/actions';
 import authRoutes from './routes/auth';
+import calendarRoutes from './routes/calendar';
 import chatRoutes from './routes/chat';
 import dashboardRoutes from './routes/dashboard';
+import inboxRoutes from './routes/inbox';
 import integrationRoutes from './routes/integrations';
+import knowledgeRoutes from './routes/knowledge';
+import voiceRoutes from './routes/voice';
 
 const app = express();
 
@@ -17,6 +22,13 @@ app.use('/api/auth', authRoutes);
 app.use('/api/integrations', integrationRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/inbox', inboxRoutes);
+app.use('/api/calendar', calendarRoutes);
+app.use('/api/actions', actionRoutes);
+
+app.use('/api/voice', voiceRoutes);
+app.use('/api/knowledge', knowledgeRoutes);
+
 
 // Callback Route for Composio/OAuth
 app.get('/api/callback', (req: Request, res: Response) => {

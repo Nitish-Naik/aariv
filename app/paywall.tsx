@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../context/ThemeContext';
-import { spacing, typography } from '../theme';
+import { borderRadius, spacing, typography } from '../theme';
 
 const { width } = Dimensions.get('window');
 
@@ -205,7 +205,7 @@ export default function PaywallScreen() {
             By continuing, you agree to Terms & Privacy. You stay in control. Always.
         </Text>
         
-        <View style={{height: 40}} /> 
+        <View style={{height: spacing[10]}} /> 
       </ScrollView>
     </SafeAreaView>
   );
@@ -222,7 +222,7 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   header: {
     alignItems: 'center',
     marginBottom: spacing[8],
-    marginTop: spacing[2],
+    paddingTop: spacing[8],
   },
   closeButton: {
     position: 'absolute',
@@ -230,6 +230,10 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     right: 0,
     padding: spacing[2],
     zIndex: 10,
+    minWidth: 44,
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   irisContainer: {
     width: 80,
@@ -242,7 +246,7 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   irisOrb: {
     width: 60,
     height: 60,
-    borderRadius: 30,
+      borderRadius: borderRadius.xxl,
     backgroundColor: colors.primary[500],
     shadowColor: colors.primary[400],
     shadowOffset: { width: 0, height: 0 },
@@ -277,7 +281,7 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
       backgroundColor: isDark ? 'rgba(30, 41, 59, 0.5)' : colors.neutral[100], 
       paddingHorizontal: spacing[4],
       paddingVertical: spacing[2],
-      borderRadius: 20,
+      borderRadius: borderRadius.xl,
       borderWidth: 1,
       borderColor: isDark ? 'transparent' : colors.neutral[200],
   },

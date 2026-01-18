@@ -6,8 +6,8 @@ export default function LoginRoute() {
   const router = useRouter();
 
   const handleLoginSuccess = () => {
-    // Navigate strictly to tabs, bypassing onboarding for now
-    router.replace('/(tabs)');
+    // Navigate to onboarding
+    router.replace('/onboarding');
   };
 
   return <LoginScreen onLoginSuccess={handleLoginSuccess} />;

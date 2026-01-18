@@ -17,7 +17,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../context/ThemeContext';
 import { api } from '../../services/api';
 import { getCurrentUser } from '../../services/auth';
-import { spacing } from '../../theme';
+import { borderRadius, spacing } from '../../theme';
 import { ChatMessage } from '../../types';
 
 // Extended type for UI demo purposes
@@ -28,98 +28,17 @@ interface RichChatMessage extends ChatMessage {
 
 const INITIAL_MESSAGES: RichChatMessage[] = [
   {
-      id: '1',
+      id: 'welcome',
       role: 'assistant',
-      content: 'Good evening Money, how can I help you today?',
-      timestamp: new Date(Date.now() - 1000 * 60 * 60),
-      type: 'suggestions',
-      data: {
-          options: [
-              // We'll simulate double-icons by passing an array in 'icon' if desired, 
-              // for now let's just use colored backgrounds and specific icons to match the look
-              { 
-                  icon: 'logo-reddit', 
-                  label: "Reply to Reddit's email about the freelance web developer", 
-                  color: '#FF4500',
-                  secondaryIcon: 'mail'
-              },
-              { 
-                  icon: 'calendar', 
-                  label: 'Schedule a reminder for Wine Time tomorrow at 10:00 AM', 
-                  color: '#FBBC04',
-                  secondaryIcon: 'location-sharp' // Just simulating the dual-icon look
-              },
-              { 
-                  icon: 'mail', 
-                  label: 'Find time to follow up with ByteByteGo about the LLM guide', 
-                  color: '#4285F4',
-                  secondaryIcon: 'logo-google'
-              },
-          ]
-      }
-  },
-  {
-      id: '2',
-      role: 'user',
-      content: 'Tomorrow morning I want 🍷 at 10 am',
-      timestamp: new Date(Date.now() - 1000 * 60 * 55),
-  },
-  {
-      id: '3',
-      role: 'assistant',
-      content: 'Your calendar is clear for tomorrow morning. Would you like me to create an event titled "Wine" or something similar at 10 AM tomorrow?',
-      timestamp: new Date(Date.now() - 1000 * 60 * 54),
-      type: 'options',
-      data: {
-        title: 'Would you like me to create a calendar event for tomorrow at 10 AM?',
-        options: [
-            { label: 'Yes, create "Wine Tasting"', subtext: 'A 1-hour event at 10 AM tomorrow' },
-            { label: 'Yes, create "Wine Time"', subtext: 'A 1-hour event at 10 AM tomorrow' },
-            { label: 'No thanks', subtext: "I'll handle it myself" },
-        ]
-      }
-  },
-  {
-      id: '4',
-      role: 'user',
-      content: 'Yes, create "Wine Time"',
-      timestamp: new Date(Date.now() - 1000 * 60 * 53),
-  },
-  {
-      id: '5',
-      role: 'assistant',
-      content: '',
+      content: 'Hello! I am your AI assistant. Connect your apps (Gmail, Calendar) and I can help you manage your digital life.',
       timestamp: new Date(),
-      type: 'action_review',
-      data: {
-          status: 'pending', // pending, success, cancelled
-          action: {
-              type: 'create_event',
-              icon: 'calendar',
-              title: 'Create Event',
-              details: {
-                  Event: 'Wine Time',
-                  Start: 'January 13, 2026 at 10:00 AM',
-                  Duration: '1 hour',
-                  Location: 'Not specified',
-                  Attendees: 'None'
-              }
-          }
-      }
+      type: 'text'
   }
 ];
 
 export default function AssistantTab() {
   const router = useRouter();
-  const [messages, setMessages] = useState<RichChatMessage[]>([
-      {
-          id: 'welcome',
-          role: 'assistant',
-          content: 'Hello! I am your AI assistant. How can I help you today?',
-          timestamp: new Date(),
-          type: 'text'
-      }
-  ]);
+  const [messages, setMessages] = useState<RichChatMessage[]>(INITIAL_MESSAGES);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isAccountModalVisible, setAccountModalVisible] = useState(false);
@@ -162,7 +81,11 @@ export default function AssistantTab() {
   };
 
   const handleSend = async () => {
-    if (!inputText.trim()) return;
+    if (!inputText.trim()) {
+        // Navigate to Voice Mode if input is empty (Mic button pressed)
+        router.push('/voice-mode');
+        return;
+    }
 
     const userMsg: RichChatMessage = {
         id: Date.now().toString(),
@@ -371,6 +294,20 @@ export default function AssistantTab() {
                      {!isActionCompleted && !isActionCancelled && (
                          <View style={styles.actionButtons}>
                              <TouchableOpacity 
+                                style={[styles.actionButtonSecondary, { marginRight: 8 }]}
+                                onPress={() => router.push({
+                                    pathname: "/edit-action",
+                                    params: { 
+                                        platform: item.data.action.icon?.replace('logo-', '') || 'generic',
+                                        title: item.data.action.title,
+                                        description: JSON.stringify(item.data.action.details, null, 2),
+                                        id: item.id
+                                    }
+                                })}
+                             >
+                                 <Text style={styles.actionButtonTextSecondary}>Edit</Text>
+                             </TouchableOpacity>
+                             <TouchableOpacity 
                                 style={styles.actionButtonSecondary}
                                 onPress={() => handleActionInteraction(item.id, 'cancel')}
                              >
@@ -513,11 +450,12 @@ const getStyles = (colors: any, isDark: boolean, isKeyboardVisible: boolean) => 
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: spacing[4],
-    paddingVertical: spacing[3],
+    paddingHorizontal: spacing[6],
+    paddingTop: spacing[8],
+    paddingBottom: spacing[4],
     backgroundColor: colors.background,
     borderBottomWidth: 1,
-    borderBottomColor: isDark ? '#1A1A1A' : '#E5E5E5',
+    borderBottomColor: colors.border,
   },
   headerLeft: {
       flexDirection: 'row',
@@ -864,13 +802,13 @@ const getStyles = (colors: any, isDark: boolean, isKeyboardVisible: boolean) => 
       backgroundColor: 'rgba(0, 0, 0, 0.5)',
       justifyContent: 'center',
       alignItems: 'center',
-      padding: 20,
+      padding: spacing[5],
   },
   modalContent: {
       width: '100%',
       backgroundColor: isDark ? '#111' : '#FFF',
-      borderRadius: 24,
-      padding: 20,
+      borderRadius: borderRadius.xl,
+      padding: spacing[5],
       borderWidth: 1,
       borderColor: isDark ? '#222' : '#E2E8F0',
       shadowColor: "#000",
@@ -883,7 +821,7 @@ const getStyles = (colors: any, isDark: boolean, isKeyboardVisible: boolean) => 
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
-      marginBottom: 20,
+      marginBottom: spacing[5],
   },
   modalTitle: {
       fontSize: 18,
@@ -918,8 +856,8 @@ const getStyles = (colors: any, isDark: boolean, isKeyboardVisible: boolean) => 
       flex: 1,
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 10,
-      marginLeft: 8, 
+      gap: spacing[2.5],
+      marginLeft: spacing[2], 
   },
   accountEmail: {
       color: colors.text,
@@ -928,9 +866,9 @@ const getStyles = (colors: any, isDark: boolean, isKeyboardVisible: boolean) => 
   },
   primaryBadge: {
       backgroundColor: isDark ? '#333' : '#E2E8F0',
-      paddingHorizontal: 6,
-      paddingVertical: 2,
-      borderRadius: 6,
+      paddingHorizontal: spacing[1.5],
+      paddingVertical: spacing[0.5],
+      borderRadius: borderRadius.sm,
   },
   primaryBadgeText: {
       color: colors.textSecondary,
@@ -942,12 +880,13 @@ const getStyles = (colors: any, isDark: boolean, isKeyboardVisible: boolean) => 
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
-      padding: 16,
-      borderRadius: 16,
+      padding: spacing[4],
+      borderRadius: borderRadius.xl,
       borderWidth: 1,
       borderColor: isDark ? '#333' : '#E2E8F0',
-      gap: 8,
+      gap: spacing[2],
       borderStyle: 'dashed',
+      minHeight: 44, // Ensure touch target size
   },
   addAccountText: {
       color: colors.text,

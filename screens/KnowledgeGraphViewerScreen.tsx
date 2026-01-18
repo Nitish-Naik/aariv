@@ -116,7 +116,7 @@ export const KnowledgeGraphViewerScreen: React.FC<KnowledgeGraphViewerScreenProp
                       ? colors.semantic.warning
                       : colors.semantic.success
                 }
-                style={{ marginRight: 4 }}
+                style={{ marginRight: spacing[1] }}
             />
             <Text
               style={[
@@ -138,7 +138,7 @@ export const KnowledgeGraphViewerScreen: React.FC<KnowledgeGraphViewerScreenProp
           </View>
           {isExpired && (
             <View style={styles.expiredBadge}>
-                <Ionicons name="alert-circle-outline" size={12} color={colors.semantic.error} style={{ marginRight: 4 }}/>
+                <Ionicons name="alert-circle-outline" size={12} color={colors.semantic.error} style={{ marginRight: spacing[1] }}/>
                 <Text style={styles.expiredLabel}>EXPIRED</Text>
             </View>
           )}
@@ -151,13 +151,13 @@ export const KnowledgeGraphViewerScreen: React.FC<KnowledgeGraphViewerScreenProp
 
         <View style={styles.nodeMetaContainer}>
             <View style={styles.nodeMeta}>
-                <Ionicons name="calendar-outline" size={12} color={colors.textTertiary} style={{ marginRight: 4 }}/>
+                <Ionicons name="calendar-outline" size={12} color={colors.textTertiary} style={{ marginRight: spacing[1] }}/>
                 <Text style={styles.nodeMetaText}>
                     Created: {format(node.createdAt, 'MMM d, yyyy')}
                 </Text>
             </View>
             <View style={styles.nodeMeta}>
-                <Ionicons name="hourglass-outline" size={12} color={colors.textTertiary} style={{ marginRight: 4 }}/>
+                <Ionicons name="hourglass-outline" size={12} color={colors.textTertiary} style={{ marginRight: spacing[1] }}/>
                 <Text style={styles.nodeMetaText}>
                     Expires: {format(node.expiresAt, 'MMM d, yyyy')}
                 </Text>
@@ -166,7 +166,7 @@ export const KnowledgeGraphViewerScreen: React.FC<KnowledgeGraphViewerScreenProp
 
         {node.connections.length > 0 && (
           <View style={styles.connections}>
-            <Ionicons name="git-merge-outline" size={14} color={colors.textSecondary} style={{ marginRight: 6 }}/>
+            <Ionicons name="git-merge-outline" size={14} color={colors.textSecondary} style={{ marginRight: spacing[1.5] }}/>
             <Text style={styles.connectionsLabel}>
               Connected to {node.connections.length} node(s)
             </Text>
@@ -177,7 +177,7 @@ export const KnowledgeGraphViewerScreen: React.FC<KnowledgeGraphViewerScreenProp
           style={styles.deleteButton}
           onPress={() => onDeleteNode(node.id)}
         >
-            <Ionicons name="trash-outline" size={16} color={colors.semantic.error} style={{ marginRight: 6 }}/>
+            <Ionicons name="trash-outline" size={16} color={colors.semantic.error} style={{ marginRight: spacing[1.5] }}/>
             <Text style={styles.deleteButtonText}>Remove Node</Text>
         </TouchableOpacity>
       </Card>
@@ -262,7 +262,7 @@ export const KnowledgeGraphViewerScreen: React.FC<KnowledgeGraphViewerScreenProp
                         name={getNodeIcon(type)} 
                         size={14} 
                         color={filter === type ? '#FFF' : colors.textSecondary} 
-                        style={{ marginRight: 6 }}
+                        style={{ marginRight: spacing[1.5] }}
                     />
                     <Text
                         style={[

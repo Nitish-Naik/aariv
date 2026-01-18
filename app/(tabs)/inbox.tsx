@@ -1,87 +1,123 @@
 import { Ionicons } from "@expo/vector-icons";
-import { format } from "date-fns";
 import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
-  FlatList,
-  KeyboardAvoidingView,
-  Platform,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    FlatList,
+    RefreshControl,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Card } from "../../components/Card";
 import { PlatformIcon } from "../../components/PlatformIcon";
 import { useTheme } from "../../context/ThemeContext";
+import { api } from "../../services/api";
+import { getCurrentUser } from "../../services/auth";
 import { borderRadius, spacing, typography } from "../../theme";
-import { MOCK_INBOX_ITEMS } from "../../utils/mockData";
+// import { MOCK_INBOX_ITEMS } from "../../utils/mockData";
+
+interface InboxItem {
+    id: string;
+    threadId?: string;
+    sender: string;
+    subject: string;
+    snippet: string;
+    time: string;
+    unread: boolean;
+    priority: "high" | "low";
+    actionRequired: boolean;
+    suggestedAction?: string;
+}
 
 export default function PriorityTab() {
   const router = useRouter();
-  const [filter, setFilter] = useState<"high_priority" | "all">(
-    "high_priority"
-  );
-  const items = MOCK_INBOX_ITEMS;
+  const [filter, setFilter] = useState<"high_priority" | "all">("high_priority");
+  const [messages, setMessages] = useState<InboxItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  
   const { colors, isDark } = useTheme();
   const styles = getStyles(colors, isDark);
 
-  const priorityItems = items.slice(0, 3);
-  const displayItems = filter === "high_priority" ? priorityItems : items;
+  // const priorityItems = items.slice(0, 3);
+  // const displayItems = filter === "high_priority" ? priorityItems : items;
+
+  const fetchInbox = useCallback(async () => {
+       try {
+           const user = await getCurrentUser();
+           if (user) {
+               // Pass filter to backend if needed, or filter client side.
+               // Backend agent is prompted based on filter, so passing it is good.
+               const data = await api.get(`/inbox?userId=${user.id}&filter=${filter}`);
+               if (data.messages) {
+                   setMessages(data.messages);
+               }
+           }
+       } catch (e) {
+           console.log("Failed to fetch inbox", e);
+       } finally {
+           setLoading(false);
+       }
+  }, [filter]);
+
+  useEffect(() => {
+      fetchInbox();
+  }, [fetchInbox]);
+
+  const onRefresh = async () => {
+      setRefreshing(true);
+      await fetchInbox();
+      setRefreshing(false);
+  };
 
   const renderItem = ({
     item,
     index,
   }: {
-    item: (typeof items)[0];
+    item: InboxItem;
     index: number;
   }) => {
-    // SIMULATED AI INTELLIGENCE
-    // In a real app, this comes from the backend.
-    const isActionable = filter === "high_priority";
-    const suggestedAction =
-      index === 0
-        ? "Drafted reply: 'Confirmed for 2pm'"
-        : index === 1
-        ? "Added to Calendar: Nov 19 @ 10am"
-        : "Review required: Legal Contract";
-    const actionType =
-      index === 0 ? "reply" : index === 1 ? "calendar" : "alert";
-
+    // Real Data Rendering
+    const isActionable = item.actionRequired;
+    const suggestedAction = item.suggestedAction;
+    const actionType = item.suggestedAction?.toLowerCase().includes("calendar") ? "calendar" : "reply";
+    
     return (
       <Card
         // Different visual treatment for priority cards to reduce scanning effort
         style={[styles.messageCard, isActionable && styles.actionCard]}
         padding={0} // Custom padding handling
       >
-        <View style={styles.cardInner}>
+        <TouchableOpacity style={styles.cardInner} onPress={() => {}}>
           {/* 1. Header: Quick Context (Who & When) */}
           <View style={styles.messageHeader}>
             <View style={styles.senderInfo}>
-              <PlatformIcon platform={item.platform} size={16} />
-              <Text style={styles.sender}>{item.from}</Text>
+              <PlatformIcon platform={'gmail'} size={16} />
+              <Text style={styles.sender}>{item.sender}</Text>
             </View>
-            <Text style={styles.time}>{format(item.receivedAt, "h:mm a")}</Text>
+            <Text style={styles.time}>{item.time}</Text>
           </View>
 
           {/* 2. Content: Focused Subject */}
           <Text style={styles.subject} numberOfLines={1}>
             {item.subject}
           </Text>
+          <Text style={{ ...typography.caption, color: colors.textTertiary, marginTop: 4, paddingHorizontal: 16 }} numberOfLines={2}>
+              {item.snippet}
+          </Text>
 
           {/* 3. DECISION LAYER (The Mental Load Reducer) */}
-          {isActionable ? (
+          {isActionable && suggestedAction ? (
             <View style={styles.actionBlock}>
               <View style={styles.aiReasoning}>
                 <Ionicons
                   name={
-                    actionType === "reply"
-                      ? "return-up-back"
-                      : actionType === "calendar"
+                    actionType === "calendar"
                       ? "calendar"
-                      : "alert-circle"
+                      : "return-up-back"
                   }
                   size={14}
                   color={colors.primary[500]}
@@ -97,40 +133,26 @@ export default function PriorityTab() {
                       pathname: "/edit-action",
                       params: {
                         id: item.id,
-                        title:
-                          actionType === "reply"
-                            ? `Reply to ${item.from}`
-                            : item.subject,
-                        description: suggestedAction
-                          .replace(
-                            /^Drafted reply: '|^Added to Calendar: /g,
-                            ""
-                          )
-                          .replace(/'$/, ""),
-                        platform: item.platform,
+                        title: item.subject,
+                        description: suggestedAction,
+                        platform: 'gmail',
                       },
                     })
                   }
                 >
-                  <Text style={styles.actionTextSecondary}>Edit</Text>
+                  <Text style={styles.actionButtonTextSecondary}>Edit</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.actionButtonPrimary}>
-                  <Text style={styles.actionTextPrimary}>
-                    {actionType === "reply"
-                      ? "Send"
-                      : actionType === "calendar"
-                      ? "Confirm"
-                      : "Resolve"}
+                  <Text style={styles.actionButtonTextPrimary}>
+                    {actionType === "reply" ? "Send" : "Approve"}
                   </Text>
                 </TouchableOpacity>
               </View>
             </View>
           ) : (
-            <Text style={styles.preview} numberOfLines={2}>
-              {item.preview}
-            </Text>
+             <View style={{ marginBottom: 16 }} />
           )}
-        </View>
+        </TouchableOpacity>
       </Card>
     );
   };
@@ -181,11 +203,22 @@ export default function PriorityTab() {
       </View>
 
       <FlatList
-        data={displayItems}
+        data={messages}
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary[500]} />
+        }
+        ListEmptyComponent={() => (
+            !loading ? (
+            <View style={{ alignItems: "center", marginTop: 40 }}>
+                <Ionicons name="mail-open-outline" size={48} color={colors.textTertiary} />
+                <Text style={{ color: colors.textSecondary, marginTop: 16 }}>No messages found</Text>
+            </View>
+            ) : <ActivityIndicator style={{marginTop: 40}} color={colors.primary[500]} />
+        )}
       />
 
       {/* Floating Copilot Bar (Improved for Visual Lightness) */}
@@ -298,7 +331,7 @@ const getStyles = (colors: any, isDark: boolean) =>
       backgroundColor: isDark ? "#0F172A" : "#FFFFFF",
     },
     cardInner: {
-      padding: 16,
+      padding: spacing[4],
     },
     messageHeader: {
       flexDirection: "row",
@@ -334,13 +367,13 @@ const getStyles = (colors: any, isDark: boolean) =>
 
     // DECISION LAYER STYLES (Mental Load Reducers)
     actionBlock: {
-      marginTop: 4,
+      marginTop: spacing[1],
     },
     aiReasoning: {
       flexDirection: "row",
       alignItems: "center",
-      gap: 6,
-      marginBottom: 12,
+      gap: spacing[1.5],
+      marginBottom: spacing[3],
     },
     aiReasoningText: {
       fontSize: 13,
@@ -349,23 +382,25 @@ const getStyles = (colors: any, isDark: boolean) =>
     },
     quickActions: {
       flexDirection: "row",
-      gap: 8,
+      gap: spacing[2],
     },
     actionButtonPrimary: {
       backgroundColor: colors.primary[500],
-      paddingVertical: 8,
-      paddingHorizontal: 16,
-      borderRadius: 8,
+      paddingVertical: spacing[2],
+      paddingHorizontal: spacing[4],
+      borderRadius: borderRadius.md,
       flex: 1,
       alignItems: "center",
+      minHeight: 44, // Ensure touch target size
     },
     actionButtonSecondary: {
       backgroundColor: isDark ? "#1E293B" : "#F1F5F9",
-      paddingVertical: 8,
-      paddingHorizontal: 16,
-      borderRadius: 8,
+      paddingVertical: spacing[2],
+      paddingHorizontal: spacing[4],
+      borderRadius: borderRadius.md,
       flex: 1,
       alignItems: "center",
+      minHeight: 44, // Ensure touch target size
     },
     actionTextPrimary: {
       color: "#FFFFFF",

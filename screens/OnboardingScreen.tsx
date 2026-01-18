@@ -1,10 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import React, { useRef, useState } from 'react';
-import { Animated, Dimensions, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { Alert, Animated, Dimensions, Linking, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../context/ThemeContext';
+import { api } from '../services/api';
+import { getCurrentUser } from '../services/auth';
 import { spacing } from '../theme';
+import type { Platform, PlatformConnection } from '../types';
+import { ConnectPlatformsScreen } from './ConnectPlatformsScreen';
 
 const { width } = Dimensions.get('window');
 
@@ -38,14 +42,11 @@ const ONBOARDING_DATA = [
     },
     {
         id: '3',
-        title: 'Let\'s start with your calendar.',
-        lines: [
-            'I\'ll use it to understand your day',
-            'and suggest better timing — nothing more.'
-        ],
-        icon: 'calendar-outline',
-        cta: 'Connect Google Calendar',
-        secondaryCta: 'I\'ll do this later' // Text link
+        title: 'Connect Your World',
+        lines: [],
+        icon: 'planet-outline',
+        cta: 'Finish Setup', // Used by the main footer button
+        custom: true
     }
 ];
 
@@ -53,33 +54,128 @@ export default function OnboardingScreen() {
     const router = useRouter();
     const { colors, isDark } = useTheme();
     // Force dark mode for onboarding to match "11 PM friendly" vibe
-    const styles = getStyles(colors, true); 
-    
+    const styles = getStyles(colors, true);
+
     const [currentIndex, setCurrentIndex] = useState(0);
     const scrollX = useRef(new Animated.Value(0)).current;
     const slidesRef = useRef<Animated.FlatList<any>>(null);
+
+    // -- Connection Logic --
+    const [connectionsLoading, setConnectionsLoading] = useState(true);
+    const [connections, setConnections] = useState<PlatformConnection[]>([]);
+    const [userId, setUserId] = useState<string | null>(null);
+
+    const SUPPORTED_PLATFORMS: { id: Platform; name: string; icon: string }[] = [
+        { id: 'gmail', name: 'Gmail', icon: 'logo-google' },
+        { id: 'google-calendar', name: 'Google Calendar', icon: 'calendar' },
+        // Showing fewer for onboarding to reduce friction, or all? Let's show all.
+        { id: 'slack', name: 'Slack', icon: 'logo-slack' },
+    ];
+
+    const fetchConnections = useCallback(async () => {
+        try {
+            setConnectionsLoading(true);
+            const user = await getCurrentUser();
+            if (!user) {
+                setConnectionsLoading(false);
+                return;
+            }
+            setUserId(user.id);
+
+            const response = await api.get(`/integrations?userId=${user.id}`);
+            const activeIntegrations = response.integrations || [];
+
+            const mappedConnections: PlatformConnection[] = SUPPORTED_PLATFORMS.map(p => {
+                const found = activeIntegrations.find((i: any) => {
+                    const backendName = (i.appName || '').toLowerCase();
+                    const uiId = p.id.toLowerCase();
+                    if (uiId === 'google-calendar' && backendName === 'google_calendar') return true;
+                    return backendName === uiId;
+                });
+
+                const status = (found?.status || '').toUpperCase();
+                const isConnected = found && (status === 'ACTIVE' || status === 'CONNECTED');
+
+                return {
+                    id: found?.id || `local-${p.id}`,
+                    platform: p.id,
+                    name: p.name,
+                    icon: p.icon,
+                    connected: !!isConnected,
+                    connectedAt: found?.connectedAt ? new Date(found.connectedAt) : undefined,
+                    permissions: []
+                };
+            });
+
+            setConnections(mappedConnections);
+        } catch (error) {
+            console.log('Failed to load connections', error);
+            // Don't alert in onboarding, just show empty/disconnected state
+        } finally {
+            setConnectionsLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        if (currentIndex === 2) { // When reaching the last slide
+            fetchConnections();
+        }
+    }, [currentIndex, fetchConnections]);
+
+    const handleConnect = async (platform: Platform) => {
+        if (!userId) return;
+        try {
+            const response = await api.post('/integrations/connect', {
+                userId,
+                appName: platform
+            });
+            if (response.url) {
+                const supported = await Linking.canOpenURL(response.url);
+                if (supported) {
+                    await Linking.openURL(response.url);
+                }
+            }
+        } catch (error: any) {
+            Alert.alert('Connection Error', error.message || 'Failed to connect');
+        }
+    };
+
+    // Stub for disconnect if needed
+    const handleDisconnect = async (platform: Platform) => {
+        Alert.alert('Disconnect', 'Please manage disconnections in Settings later.');
+    }
 
     const handleNext = () => {
         if (currentIndex < ONBOARDING_DATA.length - 1) {
             slidesRef.current?.scrollToIndex({ index: currentIndex + 1 });
         } else {
-            // Action for the final button (Google Calendar Connect)
-            // In a real flow, this would trigger auth
-            // For now, we go to the "Today Prepared" screen (which is our main tabs)
             router.replace('/(tabs)');
         }
     };
 
     const handleSkip = () => {
-        // "I'll do this later"
         router.replace('/(tabs)');
     };
 
     const renderItem = ({ item, index }: { item: typeof ONBOARDING_DATA[0], index: number }) => {
+        if (item.custom) {
+            return (
+                <View style={{ width, flex: 1 }}>
+                    <ConnectPlatformsScreen
+                        connections={connections}
+                        onConnect={handleConnect}
+                        onDisconnect={handleDisconnect}
+                        // Hide back since we are in onboarding wizard
+                        onBack={undefined}
+                    />
+                </View>
+            );
+        }
+
         return (
-            <View style={{ width, alignItems: 'center', justifyContent: 'center', padding: spacing[6] }}>
+            <View style={{ width, flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing[6] }}>
                 <View style={styles.iconContainer}>
-                    <Ionicons name={item.icon as any} size={48} color={colors.primary[400]} style={{ opacity: 0.8 }} />
+                    <Ionicons name={item.icon as any} size={width < 380 ? 36 : 48} color={colors.primary[400]} style={{ opacity: 0.8 }} />
                 </View>
 
                 <Text style={styles.title}>{item.title}</Text>
@@ -142,8 +238,8 @@ export default function OnboardingScreen() {
                     })}
                 </View>
 
-                <TouchableOpacity 
-                    style={styles.primaryButton} 
+                <TouchableOpacity
+                    style={styles.primaryButton}
                     onPress={handleNext}
                     activeOpacity={0.8}
                 >
@@ -151,9 +247,9 @@ export default function OnboardingScreen() {
                 </TouchableOpacity>
 
                 {currentIndex === ONBOARDING_DATA.length - 1 && (
-                     <TouchableOpacity onPress={handleSkip} style={styles.secondaryButton}>
-                        <Text style={styles.secondaryButtonText}>I`&apos;`ll do this later</Text>
-                     </TouchableOpacity>
+                    <TouchableOpacity onPress={handleSkip} style={styles.secondaryButton}>
+                        <Text style={styles.secondaryButtonText}>I'll do this later</Text>
+                    </TouchableOpacity>
                 )}
             </View>
         </SafeAreaView>
@@ -166,7 +262,7 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
         backgroundColor: '#000000', // Quiet Black
     },
     title: {
-        fontSize: 28,
+        fontSize: width < 380 ? 24 : 28,
         fontWeight: '600',
         color: '#FFFFFF',
         textAlign: 'center',
@@ -174,9 +270,9 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
         letterSpacing: -0.5,
     },
     iconContainer: {
-        width: 80,
-        height: 80,
-        borderRadius: 40,
+        width: width < 380 ? 60 : 80,
+        height: width < 380 ? 60 : 80,
+        borderRadius: width < 380 ? 30 : 40,
         backgroundColor: 'rgba(255,255,255,0.05)',
         alignItems: 'center',
         justifyContent: 'center',
@@ -187,10 +283,10 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
         marginBottom: spacing[6],
     },
     lineText: {
-        fontSize: 18,
+        fontSize: width < 380 ? 16 : 18,
         color: '#9CA3AF', // Gray-400
         textAlign: 'center',
-        lineHeight: 28,
+        lineHeight: width < 380 ? 24 : 28,
         fontWeight: '400',
     },
     badgesContainer: {
@@ -198,6 +294,7 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
         gap: spacing[3],
         justifyContent: 'center',
         marginTop: spacing[2],
+        flexWrap: 'wrap', // Prevent truncation on small screens
     },
     badge: {
         flexDirection: 'row',
@@ -212,7 +309,7 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
         fontSize: 12,
         color: '#9CA3AF',
     },
-    
+
     // Footer
     footer: {
         padding: spacing[6],

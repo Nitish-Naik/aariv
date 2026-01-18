@@ -1,14 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
 import { addDays, addMonths, format, getMonth, isSameDay, setMonth, startOfWeek, subMonths } from 'date-fns';
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
-    Dimensions,
+    ActivityIndicator,
     LayoutAnimation,
     Platform,
+    RefreshControl,
     ScrollView,
     StyleSheet,
     Text,
-    TextInput,
     TouchableOpacity,
     UIManager,
     View
@@ -16,13 +16,26 @@ import {
 import { Calendar } from 'react-native-calendars';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../context/ThemeContext';
-import { spacing, typography } from '../../theme';
-import { MOCK_EVENTS } from '../../utils/mockData';
+import { api } from '../../services/api';
+import { getCurrentUser } from '../../services/auth';
+import { spacing } from '../../theme';
+// import { MOCK_EVENTS } from '../../utils/mockData';
 
 if (Platform.OS === 'android') {
   if (UIManager.setLayoutAnimationEnabledExperimental) {
     UIManager.setLayoutAnimationEnabledExperimental(true);
   }
+}
+
+interface CalendarEvent {
+    id: string;
+    title: string;
+    description?: string;
+    startTime: Date;
+    endTime: Date;
+    location?: string;
+    attendees?: string[];
+    color?: string;
 }
 
 export default function CalendarTab() {
@@ -31,22 +44,64 @@ export default function CalendarTab() {
   
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [isMonthExpanded, setIsMonthExpanded] = useState(false);
+  const [events, setEvents] = useState<CalendarEvent[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   
   const toggleMonthView = () => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setIsMonthExpanded(!isMonthExpanded);
   };
 
+  const fetchEvents = useCallback(async () => {
+      try {
+          const user = await getCurrentUser();
+          if (user) {
+              // Fetch events for the selected day (approx range)
+              // Ideally fetch whole month but for prototype day/week is safer for tokens
+              const start = new Date(selectedDate);
+              start.setHours(0, 0, 0, 0);
+              const end = new Date(selectedDate);
+              end.setHours(23, 59, 59, 999);
+              
+              const data = await api.get(`/calendar?userId=${user.id}&timeMin=${start.toISOString()}&timeMax=${end.toISOString()}`);
+              
+              if (data.events) {
+                  setEvents(data.events.map((e: any) => ({
+                      ...e,
+                      startTime: new Date(e.startTime),
+                      endTime: new Date(e.endTime)
+                  })));
+              }
+          }
+      } catch (e) {
+          console.error("Failed to fetch calendar", e);
+      } finally {
+          setLoading(false);
+      }
+  }, [selectedDate]);
+
+  useEffect(() => {
+      fetchEvents();
+  }, [fetchEvents]);
+
+  const onRefresh = async () => {
+      setRefreshing(true);
+      await fetchEvents();
+      setRefreshing(false);
+  };
+
   // Re-calculate week days when selectedDate changes to keep it in view
   const weekStart = startOfWeek(selectedDate, { weekStartsOn: 1 });
   const weekDays = Array.from({ length: 7 }).map((_, i) => addDays(weekStart, i));
 
-  const events = MOCK_EVENTS; // In real app, filter by selectedDate
+  // const events = MOCK_EVENTS; // In real app, filter by selectedDate
   
-  // Filter events for the selected day (mock logic here)
-  const todayEvents = events.filter(e => isSameDay(e.startTime, selectedDate) || true); // Showing all for demo since MOCK_EVENTS are "today"
+  // Filter events for the selected day
+  const todayEvents = events; // Since we fetch exactly for this range
 
   const renderTimeLine = () => {
+
     // Render hours 6 AM to 11 PM
     const hours = Array.from({ length: 18 }).map((_, i) => i + 6);
     const now = new Date();
@@ -57,7 +112,18 @@ export default function CalendarTab() {
       <ScrollView 
         showsVerticalScrollIndicator={false} 
         contentContainerStyle={{ paddingBottom: 120 }} // Space for TabBar
+        refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary[500]} />
+        }
       >
+        {loading && !refreshing && (
+             <ActivityIndicator style={{ padding: 20 }} color={colors.primary[500]} />
+        )}
+        {!loading && todayEvents.length === 0 && (
+            <View style={{ padding: 40, alignItems: 'center' }}>
+                <Text style={{ color: colors.textTertiary }}>No events for this day</Text>
+            </View>
+        )}
         {hours.map((hour) => {
             const hourEvents = todayEvents.filter(e => e.startTime.getHours() === hour);
             const isPast = hour < currentHour;
@@ -304,12 +370,15 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: spacing[4],
-    marginTop: spacing[2],
+    marginTop: spacing[8],
   },
   monthSelector: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: spacing[1],
+    minHeight: 44, // Ensure touch target size
+    paddingHorizontal: spacing[2],
+    paddingVertical: spacing[1],
   },
   monthText: {
     fontSize: 16,
@@ -382,9 +451,10 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   },
   dateItem: {
       alignItems: 'center',
-      gap: 6,
+      gap: spacing[1.5],
       opacity: 0.6,
-      minWidth: 40,
+      minWidth: 44, // Ensure touch target size
+      paddingVertical: spacing[1],
   },
   dateItemActive: {
       opacity: 1,
