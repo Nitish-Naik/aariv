@@ -4,16 +4,17 @@ import { format } from "date-fns";
 import { useRouter } from "expo-router";
 import React, { useCallback, useState } from "react";
 import {
-    ActivityIndicator,
-    RefreshControl,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Card } from "../../components/Card";
+import { WebContainer } from "../../components/WebContainer";
 import { useTheme } from "../../context/ThemeContext";
 import { api } from "../../services/api";
 import { getCurrentUser } from "../../services/auth";
@@ -128,376 +129,378 @@ export default function HomeTab() {
           />
         }
       >
-        {/* Morning Briefing */}
-        <View style={styles.header}>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.greeting}>
-              {briefing?.greeting || "Good Morning"}
-            </Text>
-            <Text style={styles.briefing}>
-              {briefing ? (
-                <Text style={{ lineHeight: 28 }}>
-                  {briefing.summary.split(/(\d+)/).map((part, i) =>
-                    /\d+/.test(part) ? (
-                      <Text key={i} style={styles.highlight}>
-                        {part}
-                      </Text>
-                    ) : (
-                      part
-                    ),
-                  )}
-                </Text>
-              ) : (
-                <Text>
-                  You have <Text style={styles.highlight}>...</Text> meetings
-                  and <Text style={styles.highlight}>...</Text> emails.
-                </Text>
-              )}
-            </Text>
+        <WebContainer>
+          {/* Morning Briefing */}
+          <View style={styles.header}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.greeting}>
+                {briefing?.greeting || "Good Morning"}
+              </Text>
+              <Text style={styles.briefing}>
+                {briefing ? (
+                  <Text style={{ lineHeight: 28 }}>
+                    {briefing.summary.split(/(\d+)/).map((part, i) =>
+                      /\d+/.test(part) ? (
+                        <Text key={i} style={styles.highlight}>
+                          {part}
+                        </Text>
+                      ) : (
+                        part
+                      ),
+                    )}
+                  </Text>
+                ) : (
+                  <Text>
+                    You have <Text style={styles.highlight}>...</Text> meetings
+                    and <Text style={styles.highlight}>...</Text> emails.
+                  </Text>
+                )}
+              </Text>
+            </View>
+            <TouchableOpacity
+              onPress={() => router.push("/voice-mode")}
+              style={styles.micButton}
+            >
+              <Ionicons name="mic" size={24} color={colors.primary[500]} />
+            </TouchableOpacity>
           </View>
-          <TouchableOpacity
-            onPress={() => router.push("/voice-mode")}
-            style={styles.micButton}
-          >
-            <Ionicons name="mic" size={24} color={colors.primary[500]} />
-          </TouchableOpacity>
-        </View>
 
-        {/* Missing Connections CTA */}
-        {missingConnections.length > 0 && (
+          {/* Missing Connections CTA */}
+          {missingConnections.length > 0 && (
+            <TouchableOpacity
+              style={{
+                backgroundColor: isDark ? "#1F2937" : "#FFF5F5",
+                borderRadius: 16,
+                padding: 16,
+                marginBottom: 24,
+                borderWidth: 1,
+                borderColor: isDark ? "#374151" : "#FED7D7",
+                flexDirection: "row",
+                alignItems: "center",
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.05,
+                shadowRadius: 8,
+                elevation: 2,
+              }}
+              onPress={() => router.push("/connect-platforms")}
+              activeOpacity={0.9}
+            >
+              <View
+                style={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: 12,
+                  backgroundColor: isDark ? "rgba(239, 68, 68, 0.2)" : "#FFF5F5",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginRight: 16,
+                }}
+              >
+                <Ionicons
+                  name="alert-circle"
+                  size={28}
+                  color={isDark ? "#F87171" : "#F56565"}
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text
+                  style={{
+                    fontSize: 16,
+                    fontWeight: "700",
+                    color: isDark ? "#F3F4F6" : "#C53030",
+                    marginBottom: 4,
+                  }}
+                >
+                  Setup Required
+                </Text>
+                <Text
+                  style={{
+                    fontSize: 14,
+                    color: isDark ? "#9CA3AF" : "#718096",
+                    lineHeight: 20,
+                  }}
+                >
+                  Connect {missingConnections[0]} to activate your assistant.
+                </Text>
+              </View>
+              <Ionicons
+                name="chevron-forward"
+                size={20}
+                color={isDark ? "#6B7280" : "#A0AEC0"}
+              />
+            </TouchableOpacity>
+          )}
+
+          {/* Quick Stats */}
+          <View style={styles.statsContainer}>
+            <TouchableOpacity
+              style={styles.statCard}
+              onPress={() => router.push("/zen-mode")}
+              activeOpacity={0.7}
+            >
+              <View
+                style={[
+                  styles.statIconContainer,
+                  {
+                    backgroundColor: isDark
+                      ? "rgba(59, 130, 246, 0.15)"
+                      : "#EFF6FF",
+                  },
+                ]}
+              >
+                <Ionicons
+                  name="checkmark-circle-outline"
+                  size={24}
+                  color={colors.primary[500]}
+                />
+              </View>
+              <Text style={styles.statValue}>{stats.pendingActions}</Text>
+              <Text style={styles.statLabel}>Pending</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.statCard}
+              onPress={() => router.push("/inbox")}
+              activeOpacity={0.7}
+            >
+              <View
+                style={[
+                  styles.statIconContainer,
+                  {
+                    backgroundColor: isDark
+                      ? "rgba(239, 68, 68, 0.15)"
+                      : "#FEE2E2",
+                  },
+                ]}
+              >
+                <Ionicons
+                  name="mail-unread-outline"
+                  size={24}
+                  color={colors.semantic.error}
+                />
+              </View>
+              <Text style={styles.statValue}>{stats.unreadMessages}</Text>
+              <Text style={styles.statLabel}>Unread</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.statCard}
+              onPress={() => router.push("/calendar")}
+              activeOpacity={0.7}
+            >
+              <View
+                style={[
+                  styles.statIconContainer,
+                  {
+                    backgroundColor: isDark
+                      ? "rgba(16, 185, 129, 0.15)"
+                      : "#D1FAE5",
+                  },
+                ]}
+              >
+                <Ionicons
+                  name="calendar-outline"
+                  size={24}
+                  color={colors.semantic.success}
+                />
+              </View>
+              <Text style={styles.statValue}>{stats.todayMeetings}</Text>
+              <Text style={styles.statLabel}>Meetings</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Zen Mode / Review Queue Main CTA */}
           <TouchableOpacity
-            style={{
-              backgroundColor: isDark ? "#1F2937" : "#FFF5F5",
-              borderRadius: 16,
-              padding: 16,
-              marginBottom: 24,
-              borderWidth: 1,
-              borderColor: isDark ? "#374151" : "#FED7D7",
-              flexDirection: "row",
-              alignItems: "center",
-              shadowColor: "#000",
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.05,
-              shadowRadius: 8,
-              elevation: 2,
-            }}
-            onPress={() => router.push("/connect-platforms")}
+            style={styles.zenModeCard}
+            onPress={() => router.push("/zen-mode")}
             activeOpacity={0.9}
           >
-            <View
-              style={{
-                width: 48,
-                height: 48,
-                borderRadius: 12,
-                backgroundColor: isDark ? "rgba(239, 68, 68, 0.2)" : "#FFF5F5",
-                alignItems: "center",
-                justifyContent: "center",
-                marginRight: 16,
-              }}
-            >
-              <Ionicons
-                name="alert-circle"
-                size={28}
-                color={isDark ? "#F87171" : "#F56565"}
-              />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text
-                style={{
-                  fontSize: 16,
-                  fontWeight: "700",
-                  color: isDark ? "#F3F4F6" : "#C53030",
-                  marginBottom: 4,
-                }}
-              >
-                Setup Required
-              </Text>
-              <Text
-                style={{
-                  fontSize: 14,
-                  color: isDark ? "#9CA3AF" : "#718096",
-                  lineHeight: 20,
-                }}
-              >
-                Connect {missingConnections[0]} to activate your assistant.
-              </Text>
+            <View style={styles.zenContent}>
+              <View style={styles.zenIconContainer}>
+                <Ionicons
+                  name="documents-outline"
+                  size={32}
+                  color={colors.primary[500]}
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.zenTitle}>Daily Review</Text>
+                <Text style={styles.zenSubtitle}>
+                  {actions.length} decisions waiting for your approval
+                </Text>
+              </View>
             </View>
             <Ionicons
               name="chevron-forward"
-              size={20}
-              color={isDark ? "#6B7280" : "#A0AEC0"}
+              size={24}
+              color={colors.textTertiary}
+              style={styles.zenArrow}
             />
           </TouchableOpacity>
-        )}
 
-        {/* Quick Stats */}
-        <View style={styles.statsContainer}>
-          <TouchableOpacity
-            style={styles.statCard}
-            onPress={() => router.push("/zen-mode")}
-            activeOpacity={0.7}
-          >
-            <View
-              style={[
-                styles.statIconContainer,
-                {
-                  backgroundColor: isDark
-                    ? "rgba(59, 130, 246, 0.15)"
-                    : "#EFF6FF",
-                },
-              ]}
-            >
-              <Ionicons
-                name="checkmark-circle-outline"
-                size={24}
-                color={colors.primary[500]}
-              />
-            </View>
-            <Text style={styles.statValue}>{stats.pendingActions}</Text>
-            <Text style={styles.statLabel}>Pending</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.statCard}
-            onPress={() => router.push("/inbox")}
-            activeOpacity={0.7}
-          >
-            <View
-              style={[
-                styles.statIconContainer,
-                {
-                  backgroundColor: isDark
-                    ? "rgba(239, 68, 68, 0.15)"
-                    : "#FEE2E2",
-                },
-              ]}
-            >
-              <Ionicons
-                name="mail-unread-outline"
-                size={24}
-                color={colors.semantic.error}
-              />
-            </View>
-            <Text style={styles.statValue}>{stats.unreadMessages}</Text>
-            <Text style={styles.statLabel}>Unread</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.statCard}
-            onPress={() => router.push("/calendar")}
-            activeOpacity={0.7}
-          >
-            <View
-              style={[
-                styles.statIconContainer,
-                {
-                  backgroundColor: isDark
-                    ? "rgba(16, 185, 129, 0.15)"
-                    : "#D1FAE5",
-                },
-              ]}
-            >
-              <Ionicons
-                name="calendar-outline"
-                size={24}
-                color={colors.semantic.success}
-              />
-            </View>
-            <Text style={styles.statValue}>{stats.todayMeetings}</Text>
-            <Text style={styles.statLabel}>Meetings</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Zen Mode / Review Queue Main CTA */}
-        <TouchableOpacity
-          style={styles.zenModeCard}
-          onPress={() => router.push("/zen-mode")}
-          activeOpacity={0.9}
-        >
-          <View style={styles.zenContent}>
-            <View style={styles.zenIconContainer}>
-              <Ionicons
-                name="documents-outline"
-                size={32}
-                color={colors.primary[500]}
-              />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.zenTitle}>Daily Review</Text>
-              <Text style={styles.zenSubtitle}>
-                {actions.length} decisions waiting for your approval
-              </Text>
-            </View>
-          </View>
-          <Ionicons
-            name="chevron-forward"
-            size={24}
-            color={colors.textTertiary}
-            style={styles.zenArrow}
-          />
-        </TouchableOpacity>
-
-        {/* Today's Schedule */}
-        {(events.length > 0 || loading) && (
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Today's Schedule</Text>
-              <TouchableOpacity onPress={() => router.push("/calendar")}>
-                <Text style={styles.seeAllText}>View All</Text>
-              </TouchableOpacity>
-            </View>
-            <Card style={styles.scheduleCard}>
-              {loading ? (
-                <ActivityIndicator
-                  color={colors.primary[500]}
-                  style={{ padding: spacing[4] }}
-                />
-              ) : (
-                events.slice(0, 3).map((event, index) => (
-                  <View key={event.id}>
-                    <View style={styles.eventItem}>
-                      <View
-                        style={[
-                          styles.eventDot,
-                          {
-                            backgroundColor: event.color || colors.primary[500],
-                          },
-                        ]}
-                      />
-                      <View style={styles.eventContent}>
-                        <Text style={styles.eventTitle}>{event.title}</Text>
-                        <Text style={styles.eventTime}>
-                          {format(event.startTime, "h:mm a")} -{" "}
-                          {format(event.endTime, "h:mm a")}
-                        </Text>
+          {/* Today's Schedule */}
+          {(events.length > 0 || loading) && (
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Today's Schedule</Text>
+                <TouchableOpacity onPress={() => router.push("/calendar")}>
+                  <Text style={styles.seeAllText}>View All</Text>
+                </TouchableOpacity>
+              </View>
+              <Card style={styles.scheduleCard}>
+                {loading ? (
+                  <ActivityIndicator
+                    color={colors.primary[500]}
+                    style={{ padding: spacing[4] }}
+                  />
+                ) : (
+                  events.slice(0, 3).map((event, index) => (
+                    <View key={event.id}>
+                      <View style={styles.eventItem}>
+                        <View
+                          style={[
+                            styles.eventDot,
+                            {
+                              backgroundColor: event.color || colors.primary[500],
+                            },
+                          ]}
+                        />
+                        <View style={styles.eventContent}>
+                          <Text style={styles.eventTitle}>{event.title}</Text>
+                          <Text style={styles.eventTime}>
+                            {format(event.startTime, "h:mm a")} -{" "}
+                            {format(event.endTime, "h:mm a")}
+                          </Text>
+                        </View>
                       </View>
+                      {index < events.slice(0, 3).length - 1 && (
+                        <View style={styles.divider} />
+                      )}
                     </View>
-                    {index < events.slice(0, 3).length - 1 && (
-                      <View style={styles.divider} />
-                    )}
-                  </View>
-                ))
-              )}
-              {!loading && events.length === 0 && (
+                  ))
+                )}
+                {!loading && events.length === 0 && (
+                  <Text
+                    style={{
+                      textAlign: "center",
+                      color: colors.textSecondary,
+                      padding: spacing[4],
+                    }}
+                  >
+                    No events scheduled
+                  </Text>
+                )}
+              </Card>
+            </View>
+          )}
+
+          {/* Integration Status Hub */}
+          <View style={styles.section}>
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <Text style={styles.sectionTitle}>System Status</Text>
+              <TouchableOpacity onPress={() => router.push("/toolkits")}>
                 <Text
                   style={{
-                    textAlign: "center",
-                    color: colors.textSecondary,
-                    padding: spacing[4],
+                    color: colors.primary[500],
+                    fontSize: 13,
+                    fontWeight: "600",
+                    marginBottom: spacing[4],
                   }}
                 >
-                  No events scheduled
+                  + Add Toolkit
                 </Text>
-              )}
+              </TouchableOpacity>
+            </View>
+            <Card style={styles.statusCard}>
+              <View style={styles.statusItem}>
+                <View style={styles.statusLeft}>
+                  <Ionicons
+                    name="mail-outline"
+                    size={20}
+                    color={colors.textSecondary}
+                  />
+                  <Text style={styles.statusText}>Gmail Indexing</Text>
+                </View>
+                <Text style={styles.statusValue}>Complete</Text>
+              </View>
+
+              <View style={styles.divider} />
+
+              <View style={styles.statusItem}>
+                <View style={styles.statusLeft}>
+                  <Ionicons
+                    name="logo-slack"
+                    size={20}
+                    color={colors.textSecondary}
+                  />
+                  <Text style={styles.statusText}>Slack Channels</Text>
+                </View>
+                <View style={styles.statusRight}>
+                  <View
+                    style={[
+                      styles.dot,
+                      { backgroundColor: colors.semantic.warning },
+                    ]}
+                  />
+                  <Text style={styles.statusValue}>Reading...</Text>
+                </View>
+              </View>
+
+              <View style={styles.divider} />
+
+              <View style={styles.statusItem}>
+                <View style={styles.statusLeft}>
+                  <Ionicons
+                    name="calendar-outline"
+                    size={20}
+                    color={colors.textSecondary}
+                  />
+                  <Text style={styles.statusText}>Calendar Optimize</Text>
+                </View>
+                <Text style={styles.statusValue}>Active</Text>
+              </View>
             </Card>
           </View>
-        )}
 
-        {/* Integration Status Hub */}
-        <View style={styles.section}>
-          <View
-            style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
-            <Text style={styles.sectionTitle}>System Status</Text>
-            <TouchableOpacity onPress={() => router.push("/toolkits")}>
-              <Text
-                style={{
-                  color: colors.primary[500],
-                  fontSize: 13,
-                  fontWeight: "600",
-                  marginBottom: spacing[4],
-                }}
-              >
-                + Add Toolkit
-              </Text>
-            </TouchableOpacity>
-          </View>
-          <Card style={styles.statusCard}>
-            <View style={styles.statusItem}>
-              <View style={styles.statusLeft}>
-                <Ionicons
-                  name="mail-outline"
-                  size={20}
-                  color={colors.textSecondary}
-                />
-                <Text style={styles.statusText}>Gmail Indexing</Text>
-              </View>
-              <Text style={styles.statusValue}>Complete</Text>
-            </View>
-
-            <View style={styles.divider} />
-
-            <View style={styles.statusItem}>
-              <View style={styles.statusLeft}>
-                <Ionicons
-                  name="logo-slack"
-                  size={20}
-                  color={colors.textSecondary}
-                />
-                <Text style={styles.statusText}>Slack Channels</Text>
-              </View>
-              <View style={styles.statusRight}>
-                <View
-                  style={[
-                    styles.dot,
-                    { backgroundColor: colors.semantic.warning },
-                  ]}
-                />
-                <Text style={styles.statusValue}>Reading...</Text>
-              </View>
-            </View>
-
-            <View style={styles.divider} />
-
-            <View style={styles.statusItem}>
-              <View style={styles.statusLeft}>
-                <Ionicons
-                  name="calendar-outline"
-                  size={20}
-                  color={colors.textSecondary}
-                />
-                <Text style={styles.statusText}>Calendar Optimize</Text>
-              </View>
-              <Text style={styles.statusValue}>Active</Text>
-            </View>
-          </Card>
-        </View>
-
-        {/* Highlights / Insights */}
-        {((briefing?.highlights && briefing.highlights.length > 0) ||
-          loading) && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Highlights</Text>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={styles.nudgeScroll}
-            >
-              {loading ? (
-                <Card
-                  style={[
-                    styles.nudgeCard,
-                    { width: 250, justifyContent: "center" },
-                  ]}
+          {/* Highlights / Insights */}
+          {((briefing?.highlights && briefing.highlights.length > 0) ||
+            loading) && (
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Highlights</Text>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  style={styles.nudgeScroll}
                 >
-                  <ActivityIndicator color={colors.primary[500]} />
-                </Card>
-              ) : (
-                briefing?.highlights?.map((highlight, index) => (
-                  <Card key={index} style={styles.nudgeCard}>
-                    <Text style={styles.nudgeText}>{highlight}</Text>
-                  </Card>
-                ))
-              )}
-            </ScrollView>
-          </View>
-        )}
+                  {loading ? (
+                    <Card
+                      style={[
+                        styles.nudgeCard,
+                        { width: 250, justifyContent: "center" },
+                      ]}
+                    >
+                      <ActivityIndicator color={colors.primary[500]} />
+                    </Card>
+                  ) : (
+                    briefing?.highlights?.map((highlight, index) => (
+                      <Card key={index} style={styles.nudgeCard}>
+                        <Text style={styles.nudgeText}>{highlight}</Text>
+                      </Card>
+                    ))
+                  )}
+                </ScrollView>
+              </View>
+            )}
 
-        <View style={{ height: 100 }} />
+          <View style={{ height: 100 }} />
+        </WebContainer>
       </ScrollView>
     </SafeAreaView>
   );

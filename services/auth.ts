@@ -54,3 +54,27 @@ export async function isSignedIn(): Promise<boolean> {
   const user = await getCurrentUser();
   return !!user;
 }
+
+/**
+ * Delete account
+ */
+export async function deleteAccount(userId: string): Promise<void> {
+  try {
+    const response = await api.delete("/auth/delete", {
+      data: { userId } // Send body with DELETE request
+    });
+
+    // Clear local storage regardless of backend result for safety
+    await signOut();
+
+    if (response.error) {
+      throw new Error(response.error);
+    }
+  } catch (error) {
+    console.error("Delete Account Failed:", error);
+    // Still clear local data
+    await signOut();
+    throw error;
+  }
+}
+

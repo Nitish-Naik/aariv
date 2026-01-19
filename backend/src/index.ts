@@ -33,20 +33,14 @@ app.use("/api/webhooks", webhookRoutes);
 
 // Callback Route for Composio/OAuth
 app.get("/api/callback", (req: Request, res: Response) => {
-  // Attempt to redirect back to app using deep link
-  // Scheme defined in app.json: "aariv"
-  const html = `
-      <html>
-        <body>
-          <h1>Connection Successful!</h1>
-          <p>You can close this window and return to the app.</p>
-          <script>
-            // Try to open the app
-            setTimeout(function() {
-                window.location.href = "aariv://";
-      </html>
-    `;
-  res.send(html);
+  const { status, connectedAccountId } = req.query;
+
+  // Redirect back to the app with the status and ID
+  // This allows the app to know the integration was successful
+  const deepLink = `aariv://?status=${status}&connectedAccountId=${connectedAccountId}`;
+
+  console.log(`Redirecting to: ${deepLink}`);
+  res.redirect(deepLink);
 });
 
 // Health Check Route

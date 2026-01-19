@@ -1,6 +1,6 @@
 // app/connect-platforms.tsx
 import { useFocusEffect } from '@react-navigation/native';
-import { useRouter } from 'expo-router';
+import { useNavigation, useRouter } from 'expo-router'; // Added useNavigation
 import React, { useCallback, useState } from 'react';
 import { ActivityIndicator, Alert, Linking, View } from 'react-native';
 import { ConnectPlatformsScreen } from '../screens/ConnectPlatformsScreen';
@@ -10,6 +10,7 @@ import type { Platform, PlatformConnection } from '../types';
 
 export default function ConnectPlatformsRoute() {
   const router = useRouter();
+  const navigation = useNavigation(); // Hook for navigation history
   const [loading, setLoading] = useState(true);
   const [connections, setConnections] = useState<PlatformConnection[]>([]);
   const [userId, setUserId] = useState<string | null>(null);
@@ -19,7 +20,7 @@ export default function ConnectPlatformsRoute() {
     { id: 'gmail', name: 'Gmail', icon: 'logo-google' },
     { id: 'google-calendar', name: 'Google Calendar', icon: 'calendar' },
     { id: 'slack', name: 'Slack', icon: 'logo-slack' },
-    { id: 'github', name: 'GitHub', icon: 'logo-github' }, 
+    { id: 'github', name: 'GitHub', icon: 'logo-github' },
     { id: 'linear', name: 'Linear', icon: 'list' },
     { id: 'notion', name: 'Notion', icon: 'document-text' },
   ];
@@ -42,13 +43,13 @@ export default function ConnectPlatformsRoute() {
       // 2. Map to UI model
       const mappedConnections: PlatformConnection[] = SUPPORTED_PLATFORMS.map(p => {
         const found = activeIntegrations.find((i: any) => {
-            const backendName = (i.appName || '').toLowerCase();
-            const uiId = p.id.toLowerCase();
-            
-            // Handle google-calendar vs google_calendar mismatch
-            if (uiId === 'google-calendar' && backendName === 'google_calendar') return true;
-            
-            return backendName === uiId;
+          const backendName = (i.appName || '').toLowerCase();
+          const uiId = p.id.toLowerCase();
+
+          // Handle google-calendar vs google_calendar mismatch
+          if (uiId === 'google-calendar' && backendName === 'google_calendar') return true;
+
+          return backendName === uiId;
         });
 
         const status = (found?.status || '').toUpperCase();
@@ -61,7 +62,7 @@ export default function ConnectPlatformsRoute() {
           icon: p.icon,
           connected: !!isConnected,
           connectedAt: found?.connectedAt ? new Date(found.connectedAt) : undefined,
-          permissions: [] 
+          permissions: []
         };
       });
 
@@ -98,7 +99,7 @@ export default function ConnectPlatformsRoute() {
           // 3. Polling or manual refresh would happen on return
           // ideally we use WebBrowser.openAuthSessionAsync for better UX
         } else {
-            Alert.alert("Error", "Can't open this URL: " + response.url);
+          Alert.alert("Error", "Can't open this URL: " + response.url);
         }
       } else {
         Alert.alert('Error', 'No connection URL returned');
@@ -110,8 +111,16 @@ export default function ConnectPlatformsRoute() {
   };
 
   const handleDisconnect = async (platform: Platform) => {
-      // TODO: Implement disconnect endpoint in backend
-      Alert.alert('Info', 'Disconnecting is not yet implemented in backend.');
+    // TODO: Implement disconnect endpoint in backend
+    Alert.alert('Info', 'Disconnecting is not yet implemented in backend.');
+  };
+
+  const handleBack = () => {
+    if (navigation.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/');
+    }
   };
 
   if (loading && connections.length === 0) {
@@ -127,7 +136,7 @@ export default function ConnectPlatformsRoute() {
       connections={connections}
       onConnect={handleConnect}
       onDisconnect={handleDisconnect}
-      onBack={() => router.back()}
+      onBack={handleBack}
     />
   );
 }

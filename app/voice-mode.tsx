@@ -136,14 +136,21 @@ export default function VoiceModeScreen() {
 
     const startRecording = async () => {
         try {
+            // Unload cleanup to prevent "Only one Recording object" error
+            if (recording.current) {
+                await recording.current.stopAndUnloadAsync();
+                recording.current = null;
+            }
+
             // Interruptibility: Stop AI if talking
             if (sound.current) {
-                await sound.current.stopAndUnloadAsync();
+                await sound.current.stopAsync();
+                await sound.current.unloadAsync();
                 sound.current = null;
                 setIsPlaying(false);
             }
 
-            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            // await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
             // Prepare
             await Audio.setAudioModeAsync({
@@ -168,6 +175,7 @@ export default function VoiceModeScreen() {
 
         } catch (err) {
             console.error("Failed to start recording", err);
+            Alert.alert("Microphone Error", "Failed to access microphone.");
         }
     };
 
@@ -196,9 +204,14 @@ export default function VoiceModeScreen() {
 
             if (uri) {
                 await sendAudioToBackend(uri);
+            } else {
+                console.warn("No audio URI found");
+                setIsProcessing(false);
+                setTranscript("Tap to speak");
             }
         } catch (error) {
             console.error("Stop recording failed", error);
+            setIsProcessing(false);
         }
     };
 

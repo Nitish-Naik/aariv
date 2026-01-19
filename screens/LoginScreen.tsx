@@ -3,6 +3,7 @@
  */
 
 import { Ionicons } from "@expo/vector-icons";
+import { makeRedirectUri } from "expo-auth-session";
 import * as Google from "expo-auth-session/providers/google";
 import { useRouter } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
@@ -51,15 +52,14 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
   // 2. Google Auth Hook
   // TODO: REPLACE THESE CLIENT IDs WITH YOUR OWN FROM GOOGLE CLOUD CONSOLE
   const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
-    webClientId:
-      "292920205050-qciahrobol5kpe0g6ved1c1fkaedr4i6.apps.googleusercontent.com",
+    // webClientId: "292920205050-qciahrobol5kpe0g6ved1c1fkaedr4i6.apps.googleusercontent.com",
     iosClientId:
       "292920205050-qciahrobol5kpe0g6ved1c1fkaedr4i6.apps.googleusercontent.com",
     androidClientId:
-      "292920205050-qciahrobol5kpe0g6ved1c1fkaedr4i6.apps.googleusercontent.com",
+      "292920205050-js8f0ht6agdicetsuplqij2qtiuim2fu.apps.googleusercontent.com",
     redirectUri: Platform.select({
       web: undefined, // Auto-detect for web (localhost)
-      default: "https://auth.expo.io/@nitishrathod/aariv", // Use proxy for native
+      default: makeRedirectUri(), // Use valid proxy generator for native
     }),
   });
 

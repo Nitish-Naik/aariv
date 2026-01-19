@@ -2,14 +2,14 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
-    Alert,
-    Animated,
-    Dimensions,
-    Linking,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Alert,
+  Animated,
+  Dimensions,
+  Linking,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTheme } from "../context/ThemeContext";
@@ -75,9 +75,8 @@ export default function OnboardingScreen() {
   const [userId, setUserId] = useState<string | null>(null);
 
   const SUPPORTED_PLATFORMS: { id: Platform; name: string; icon: string }[] = [
-    { id: "gmail", name: "Gmail", icon: "logo-google" },
-    { id: "google-calendar", name: "Google Calendar", icon: "calendar" },
-    // Showing fewer for onboarding to reduce friction, or all? Let's show all.
+    { id: "gmail", name: "Google Account", icon: "logo-google" },
+    // { id: "google-calendar", name: "Google Calendar", icon: "calendar" }, // Hidden: Included in Google Account
     { id: "slack", name: "Slack", icon: "logo-slack" },
   ];
 
