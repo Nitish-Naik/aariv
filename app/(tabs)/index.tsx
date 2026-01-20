@@ -4,13 +4,13 @@ import { format } from "date-fns";
 import { useRouter } from "expo-router";
 import React, { useCallback, useState } from "react";
 import {
-  ActivityIndicator,
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    RefreshControl,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Card } from "../../components/Card";
@@ -37,6 +37,7 @@ export default function HomeTab() {
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [missingConnections, setMissingConnections] = useState<string[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   // Computed stats from real data
   const stats = {
@@ -66,39 +67,46 @@ export default function HomeTab() {
 
   const fetchBriefing = useCallback(async () => {
     try {
+      setError(null);
       const user = await getCurrentUser();
-      if (user) {
-        // Parallel fetch for speed
-        checkConnections(user.id);
-        const data = await api.get(`/dashboard/briefing?userId=${user.id}`);
-        setBriefing(data);
-
-        if (data.actions && Array.isArray(data.actions)) {
-          setActions(
-            data.actions.map((a: any) => ({
-              id: a.id,
-              title: a.title,
-              subtitle: a.subtitle,
-              type: a.type,
-              status: "pending",
-              priority: a.priority || "medium",
-              data: a.data,
-            })),
-          );
-        }
-
-        if (data.events && Array.isArray(data.events)) {
-          setEvents(
-            data.events.map((e: any) => ({
-              ...e,
-              startTime: new Date(e.startTime),
-              endTime: new Date(e.endTime),
-            })),
-          );
-        }
+      if (!user) {
+        throw new Error("You are signed out. Please log in again.");
       }
-    } catch (e) {
+      // Parallel fetch for speed
+      checkConnections(user.id);
+      const data = await api.get(`/dashboard/briefing?userId=${user.id}`);
+      setBriefing(data);
+
+      if (data.actions && Array.isArray(data.actions)) {
+        setActions(
+          data.actions.map((a: any) => ({
+            id: a.id,
+            title: a.title,
+            subtitle: a.subtitle,
+            type: a.type,
+            status: "pending",
+            priority: a.priority || "medium",
+            data: a.data,
+          })),
+        );
+      } else {
+        setActions([]);
+      }
+
+      if (data.events && Array.isArray(data.events)) {
+        setEvents(
+          data.events.map((e: any) => ({
+            ...e,
+            startTime: new Date(e.startTime),
+            endTime: new Date(e.endTime),
+          })),
+        );
+      } else {
+        setEvents([]);
+      }
+    } catch (e: any) {
       console.log("Failed to fetch briefing", e);
+      setError(e?.message || "Failed to load dashboard");
     } finally {
       setLoading(false);
     }
@@ -130,6 +138,16 @@ export default function HomeTab() {
         }
       >
         <WebContainer>
+        {error && (
+          <View style={{ backgroundColor: isDark ? "#40202a" : "#fff5f5", borderRadius: 14, padding: 12, marginBottom: 12 }}>
+            <Text style={{ color: colors.text, marginBottom: 4 }}>Could not load your briefing.</Text>
+            <Text style={{ color: colors.textSecondary, marginBottom: 8 }}>{error}</Text>
+            <TouchableOpacity onPress={fetchBriefing} style={{ flexDirection: "row", alignItems: "center" }}>
+              <Ionicons name="refresh" size={16} color={colors.primary[500]} />
+              <Text style={{ color: colors.primary[500], marginLeft: 6 }}>Retry</Text>
+            </TouchableOpacity>
+          </View>
+        )}
           {/* Morning Briefing */}
           <View style={styles.header}>
             <View style={{ flex: 1 }}>

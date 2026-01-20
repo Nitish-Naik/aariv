@@ -1,6 +1,9 @@
 import cors from "cors";
 import express, { Request, Response } from "express";
 import { config } from "./config/env";
+import { logger } from "./utils/logger";
+import { registerJobHandlers } from "./utils/queue";
+import { apiRateLimiter, authRateLimiter, chatRateLimiter, webhookRateLimiter } from "./middleware/rateLimiter";
 import actionRoutes from "./routes/actions";
 import authRoutes from "./routes/auth";
 import calendarRoutes from "./routes/calendar";
@@ -9,6 +12,8 @@ import dashboardRoutes from "./routes/dashboard";
 import inboxRoutes from "./routes/inbox";
 import integrationRoutes from "./routes/integrations";
 import knowledgeRoutes from "./routes/knowledge";
+import toolkitsRoutes from "./routes/toolkits";
+import triggersRoutes from "./routes/triggers";
 import voiceRoutes from "./routes/voice";
 import webhookRoutes from "./routes/webhooks";
 
@@ -18,10 +23,28 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Request logging
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    logger.http(req.method, req.path, res.statusCode, duration);
+  });
+  next();
+});
+
+// Apply rate limiting to all API routes
+app.use("/api", apiRateLimiter);
+
+// Register background job handlers
+registerJobHandlers();
+
 // Routes
-app.use("/api/auth", authRoutes);
+app.use("/api/auth", authRateLimiter, authRoutes);
 app.use("/api/integrations", integrationRoutes);
-app.use("/api/chat", chatRoutes);
+app.use("/api/toolkits", toolkitsRoutes);
+app.use("/api/chat", chatRateLimiter, chatRoutes);
+app.use("/api/triggers", webhookRateLimiter, triggersRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/inbox", inboxRoutes);
 app.use("/api/calendar", calendarRoutes);
@@ -45,15 +68,42 @@ app.get("/api/callback", (req: Request, res: Response) => {
 
 // Health Check Route
 app.get("/api/health", (req: Request, res: Response) => {
-  res.status(200).json({
+  const healthcheck = {
     status: "ok",
     timestamp: new Date().toISOString(),
     service: "aariv-backend",
-  });
+    version: "1.0.0",
+    uptime: process.uptime(),
+    environment: config.nodeEnv,
+    checks: {
+      openai: !!config.openaiApiKey,
+      composio: !!config.composioApiKey,
+      supabase: !!config.supabaseUrl,
+    },
+  };
+  
+  res.status(200).json(healthcheck);
 });
 
 // Start Server
-app.listen(config.port, () => {
-  console.log(`Server is running on port ${config.port}`);
-  console.log(`Environment: ${process.env.NODE_ENV || "development"}`);
+const PORT = config.port;
+const server = app.listen(PORT, () => {
+  logger.info(`🚀 Server running on port ${PORT}`);
+  logger.info(`📦 Environment: ${config.nodeEnv}`);
+  logger.info(`🔑 OpenAI: ${config.openaiApiKey ? '✓' : '✗'}`);
+  logger.info(`🔑 Composio: ${config.composioApiKey ? '✓' : '✗'}`);
+  logger.info(`💾 Supabase: ${config.supabaseUrl ? '✓' : '✗'}`);
+  logger.info(`📚 API Docs: http://localhost:${PORT}/api/docs`);
+});
+
+// Export app for testing
+export default app;
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  logger.info('SIGTERM received, closing server gracefully');
+  server.close(() => {
+    logger.info('Server closed');
+    process.exit(0);
+  });
 });

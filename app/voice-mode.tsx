@@ -226,12 +226,11 @@ export default function VoiceModeScreen() {
 
             const formData = new FormData();
             // React Native specific: { uri, type, name }
-            // @ts-ignore
             formData.append('audio', {
                 uri,
                 type: 'audio/m4a', // or audio/mp4 depending on preset
                 name: 'voice_command.m4a'
-            });
+            } as any); // FormData in React Native accepts { uri, type, name } objects
             formData.append('userId', user.id);
 
             const finalUrl = `${API_URL || 'http://localhost:3000/api'}/voice/chat`;

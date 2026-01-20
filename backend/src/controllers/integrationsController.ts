@@ -140,19 +140,17 @@ export const disconnectIntegration = async (req: Request, res: Response) => {
 
     // Deleting the connection
     // Updated for Composio SDK v0.5.x
-    // The previous method was incorrect. The correct pattern often involves filtering connections and deleting via ID,
-    // or using a specific manage method.
-    // For V0.5, 'deleteConnection' might be directly on 'connectedAccounts' or we might need to use the REST API if the SDK method is missing.
     try {
+      // Type assertion for Composio SDK client which has dynamic API
+      const client = toolset.client as any;
+      
       // Attempt 1: Check if 'connectedAccounts' namespace exists and has delete
-      // @ts-ignore
       if (
-        toolset.client.connectedAccounts &&
-        typeof toolset.client.connectedAccounts.delete === "function"
+        client.connectedAccounts &&
+        typeof client.connectedAccounts.delete === "function"
       ) {
-        // @ts-ignore
         // Composio SDK expects object with connectedAccountId not string
-        await toolset.client.connectedAccounts.delete({
+        await client.connectedAccounts.delete({
           connectedAccountId: targetConnection.id,
         });
       } else {

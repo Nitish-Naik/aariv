@@ -47,6 +47,7 @@ export default function CalendarTab() {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+    const [error, setError] = useState<string | null>(null);
   
   const toggleMonthView = () => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -55,27 +56,28 @@ export default function CalendarTab() {
 
   const fetchEvents = useCallback(async () => {
       try {
+          setError(null);
           const user = await getCurrentUser();
-          if (user) {
-              // Fetch events for the selected day (approx range)
-              // Ideally fetch whole month but for prototype day/week is safer for tokens
-              const start = new Date(selectedDate);
-              start.setHours(0, 0, 0, 0);
-              const end = new Date(selectedDate);
-              end.setHours(23, 59, 59, 999);
-              
-              const data = await api.get(`/calendar?userId=${user.id}&timeMin=${start.toISOString()}&timeMax=${end.toISOString()}`);
-              
-              if (data.events) {
-                  setEvents(data.events.map((e: any) => ({
-                      ...e,
-                      startTime: new Date(e.startTime),
-                      endTime: new Date(e.endTime)
-                  })));
-              }
+          if (!user) {
+              throw new Error("You are signed out. Please log in again.");
           }
-      } catch (e) {
+          // Fetch events for the selected day (approx range)
+          const start = new Date(selectedDate);
+          start.setHours(0, 0, 0, 0);
+          const end = new Date(selectedDate);
+          end.setHours(23, 59, 59, 999);
+          
+          const data = await api.get(`/calendar?userId=${user.id}&timeMin=${start.toISOString()}&timeMax=${end.toISOString()}`);
+          
+          const normalized = Array.isArray(data.events) ? data.events : [];
+          setEvents(normalized.map((e: any) => ({
+              ...e,
+              startTime: new Date(e.startTime),
+              endTime: new Date(e.endTime)
+          })));
+      } catch (e: any) {
           console.error("Failed to fetch calendar", e);
+          setError(e?.message || "Failed to load calendar");
       } finally {
           setLoading(false);
       }
@@ -119,7 +121,17 @@ export default function CalendarTab() {
         {loading && !refreshing && (
              <ActivityIndicator style={{ padding: 20 }} color={colors.primary[500]} />
         )}
-        {!loading && todayEvents.length === 0 && (
+        {!loading && error && (
+            <View style={{ padding: 16, alignItems: 'center' }}>
+                <Ionicons name="warning" size={32} color={colors.textTertiary} />
+                <Text style={{ color: colors.textSecondary, marginTop: 8 }}>Could not load events.</Text>
+                <TouchableOpacity onPress={fetchEvents} style={{ marginTop: 8, flexDirection: 'row', alignItems: 'center' }}>
+                    <Ionicons name="refresh" size={16} color={colors.primary[500]} />
+                    <Text style={{ color: colors.primary[500], marginLeft: 6 }}>Retry</Text>
+                </TouchableOpacity>
+            </View>
+        )}
+        {!loading && !error && todayEvents.length === 0 && (
             <View style={{ padding: 40, alignItems: 'center' }}>
                 <Text style={{ color: colors.textTertiary }}>No events for this day</Text>
             </View>

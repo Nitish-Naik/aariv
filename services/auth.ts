@@ -5,6 +5,7 @@
 import type { User } from "../types";
 import { getUserData, storeUserData } from "../utils/storage";
 import { api } from "./api";
+import { ensureValidToken, storeToken, storeGoogleIdToken } from "./tokenManager";
 
 export interface AuthResult {
   user: User;
@@ -21,7 +22,8 @@ export async function signInWithGoogle(idToken: string): Promise<AuthResult> {
 
     if (response.user && response.token) {
       await storeUserData("user", response.user);
-      await storeUserData("token", response.token); // Store session token
+      await storeToken(response.token); // Store with expiry tracking
+      await storeGoogleIdToken(idToken); // Store for refresh
       return response;
     } else {
       throw new Error("Invalid response from server");
@@ -33,11 +35,23 @@ export async function signInWithGoogle(idToken: string): Promise<AuthResult> {
 }
 
 /**
- * Mock sign out
+ * Ensure token is valid before API calls
+ */
+export async function ensureAuth(): Promise<void> {
+  const validToken = await ensureValidToken();
+  if (!validToken) {
+    throw new Error("Session expired. Please log in again.");
+  }
+}
+
+/**
+ * Sign out
  */
 export async function signOut(): Promise<void> {
   await storeUserData("user", null);
   await storeUserData("token", null);
+  await storeUserData("token_exp", null);
+  await storeUserData("google_id_token", null);
 }
 
 /**

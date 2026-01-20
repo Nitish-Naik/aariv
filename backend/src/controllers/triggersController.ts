@@ -1,6 +1,8 @@
 import { OpenAIToolSet } from "composio-core";
 import { Request, Response } from "express";
 import { config } from "../config/env";
+import { queue } from "../utils/queue";
+import { logger } from "../utils/logger";
 
 const toolset = new OpenAIToolSet({
   apiKey: config.composioApiKey,
@@ -23,10 +25,10 @@ export const handleWebhook = async (req: Request, res: Response) => {
 
     if (triggerName === "GMAIL_NEW_MESSAGE") {
       const messageId = payload.payload?.id;
-      console.log(`[Trigger] New Email detected! ID: ${messageId}`);
+      logger.info(`New Email detected: ${messageId}`);
 
-      // TODO: Trigger an AI analysis of this new email
-      // await internalQueue.add('analyze_email', { messageId });
+      // Queue for async analysis
+      await queue.add('analyze_email', { messageId, userId: payload.payload?.userId });
     }
 
     res.json({ status: "received" });
