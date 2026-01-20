@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
     Alert,
     FlatList,
@@ -16,6 +16,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../context/ThemeContext';
+import { api } from '../services/api';
+import { getCurrentUser } from '../services/auth';
 import { borderRadius, spacing, typography } from '../theme';
 import { MOCK_BUNDLES, MOCK_TOOLKITS, Toolkit, ToolkitBundle } from '../utils/mockToolkits';
 
@@ -27,20 +29,56 @@ export default function ToolkitsScreen() {
     // State
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCategory, setSelectedCategory] = useState<string>('All');
+    const [toolkits, setToolkits] = useState<Toolkit[]>(MOCK_TOOLKITS);
+    const [bundles, setBundles] = useState<ToolkitBundle[]>(MOCK_BUNDLES);
     const [installedIds, setInstalledIds] = useState<Set<string>>(new Set(['1', '2', '6', '11']));
     const [modalVisible, setModalVisible] = useState(false);
     const [pendingToolkit, setPendingToolkit] = useState<Toolkit | null>(null);
+    const [loading, setLoading] = useState(true);
+
+    // Fetch real toolkits on mount
+    useEffect(() => {
+        const fetchToolkits = async () => {
+            try {
+                const user = await getCurrentUser();
+                if (!user) throw new Error("Not signed in");
+                
+                const [toolkitsRes, bundlesRes] = await Promise.all([
+                    api.get(`/toolkits?userId=${user.id}`),
+                    api.get('/toolkits/bundles'),
+                ]);
+                
+                if (toolkitsRes.toolkits) setToolkits(toolkitsRes.toolkits);
+                if (bundlesRes.bundles) setBundles(bundlesRes.bundles);
+                
+                // Update installed from connected status
+                const installed = new Set<string>();
+                if (Array.isArray(toolkitsRes.toolkits)) {
+                    toolkitsRes.toolkits.forEach((t: Toolkit) => {
+                        if (t.connected) installed.add(t.id);
+                    });
+                    setInstalledIds(installed);
+                }
+            } catch (e) {
+                console.log("Failed to fetch toolkits, using defaults", e);
+                // Fallback to mocks already set
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchToolkits();
+    }, []);
 
     const categories = ['All', 'Productivity', 'Development', 'Communication', 'Finance', 'Design', 'Social'];
 
     const filteredToolkits = useMemo(() => {
-        return MOCK_TOOLKITS.filter(item => {
+        return toolkits.filter(item => {
             const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
                                   item.description.toLowerCase().includes(searchQuery.toLowerCase());
             const matchesCategory = selectedCategory === 'All' || item.category === selectedCategory;
             return matchesSearch && matchesCategory;
         });
-    }, [searchQuery, selectedCategory]);
+    }, [searchQuery, selectedCategory, toolkits]);
 
     // Handlers
     const initiateConnection = (toolkit: Toolkit) => {

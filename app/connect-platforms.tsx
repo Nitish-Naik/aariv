@@ -111,8 +111,17 @@ export default function ConnectPlatformsRoute() {
   };
 
   const handleDisconnect = async (platform: Platform) => {
-    // TODO: Implement disconnect endpoint in backend
-    Alert.alert('Info', 'Disconnecting is not yet implemented in backend.');
+    try {
+      await api.post('/integrations/disconnect', { 
+        userId: user.id, 
+        appName: platform.appName 
+      });
+      Alert.alert('Success', `${platform.name} disconnected`);
+      // Refresh connections
+      fetchConnections();
+    } catch (error: any) {
+      Alert.alert('Error', error?.message || 'Failed to disconnect platform');
+    }
   };
 
   const handleBack = () => {

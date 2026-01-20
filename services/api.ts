@@ -1,18 +1,28 @@
 // services/api.ts
 import { Platform } from 'react-native';
 
-// Use your machine's local IP address. 
+// Prefer env-driven API base for all platforms. Fallback to LAN/IP hints for local dev.
+const ENV_API_URL = process.env.EXPO_PUBLIC_API_URL;
+
+// Use your machine's local IP address if no env is set.
 // For Android Emulator, you can often use '10.0.2.2' if running locally on the same machine.
-// Or use the LAN IP found in the Expo start logs (e.g., 10.112.50.3).
-const LOCAL_IP = '10.112.50.3';
-export const API_URL = Platform.select({
+const LOCAL_IP = '10.0.2.2';
+
+const fallbackBase = Platform.select({
   ios: `http://${LOCAL_IP}:3000/api`,
   android: `http://${LOCAL_IP}:3000/api`,
   default: 'http://localhost:3000/api',
 });
 
-// Helper to handle API errors
+export const API_URL = ENV_API_URL ? ENV_API_URL.replace(/\/$/, '') : fallbackBase;
+
+// Helper to handle API errors and token expiry
 async function handleResponse(response: Response) {
+  if (response.status === 401) {
+    // Token expired or invalid; sign out
+    await signOut();
+    throw new Error("Session expired. Please log in again.");
+  }
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
     throw new Error(errorData.error || `Request failed with status ${response.status}`);

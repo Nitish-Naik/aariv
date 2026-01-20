@@ -1,6 +1,7 @@
 import { OpenAIToolSet } from 'composio-core';
 import { Request, Response } from 'express';
 import OpenAI from 'openai';
+import { z } from 'zod';
 import { config } from '../config/env';
 
 const openai = new OpenAI({
@@ -13,11 +14,16 @@ const toolset = new OpenAIToolSet({
 
 export const handleChat = async (req: Request, res: Response) => {
   try {
-    const { userId, message } = req.body;
+        const parsed = z.object({
+                userId: z.string().min(3, 'Missing userId'),
+                message: z.string().min(1, 'Missing message')
+        }).safeParse(req.body);
 
-    if (!userId || !message) {
-      return res.status(400).json({ error: 'Missing userId or message' });
-    }
+        if (!parsed.success) {
+            return res.status(400).json({ error: parsed.error.issues[0]?.message || 'Invalid payload' });
+        }
+
+        const { userId, message } = parsed.data;
 
     console.log(`Processing chat for user: ${userId}`);
 

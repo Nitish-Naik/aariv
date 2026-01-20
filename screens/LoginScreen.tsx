@@ -9,17 +9,17 @@ import { useRouter } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
 import React, { useEffect, useRef, useState } from "react";
 import {
-  Alert,
-  Animated,
-  Dimensions,
-  Easing,
-  Image,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    Alert,
+    Animated,
+    Dimensions,
+    Easing,
+    Image,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTheme } from "../context/ThemeContext";
@@ -50,7 +50,8 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
   const fadeAnimButton = useRef(new Animated.Value(0)).current;
 
   // 2. Google Auth Hook
-  // TODO: REPLACE THESE CLIENT IDs WITH YOUR OWN FROM GOOGLE CLOUD CONSOLE
+  // Google OAuth client IDs from Google Cloud Console
+  // Configured in app.json and match the credentials set up per SETUP_GOOGLE_AUTH.md
   const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
     // webClientId: "292920205050-qciahrobol5kpe0g6ved1c1fkaedr4i6.apps.googleusercontent.com",
     iosClientId:

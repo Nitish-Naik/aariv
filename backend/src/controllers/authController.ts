@@ -1,6 +1,7 @@
 import { OpenAIToolSet } from "composio-core";
 import { Request, Response } from "express";
 import { OAuth2Client } from "google-auth-library";
+import { z } from "zod";
 import { config } from "../config/env";
 import { supabase } from "../config/supabase";
 
@@ -16,11 +17,15 @@ const client = new OAuth2Client(
 
 export const googleLogin = async (req: Request, res: Response) => {
   try {
-    const { idToken } = req.body;
+    const parsed = z
+      .object({ idToken: z.string().min(10, "Missing or invalid idToken") })
+      .safeParse(req.body);
 
-    if (!idToken) {
-      return res.status(400).json({ error: "Missing idToken" });
+    if (!parsed.success) {
+      return res.status(400).json({ error: parsed.error.issues[0]?.message || "Invalid payload" });
     }
+
+    const { idToken } = parsed.data;
 
     let payload: any;
 
@@ -52,6 +57,9 @@ export const googleLogin = async (req: Request, res: Response) => {
     }
 
     const { sub: googleId, email, name, picture } = payload;
+    if (!googleId || !email) {
+      return res.status(401).json({ error: "Invalid Google profile" });
+    }
     const userId = googleId; // Use Google ID as our primary User ID (simple for V1)
 
     console.log(`Logging in user: ${email} (${userId})`);

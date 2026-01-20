@@ -38,6 +38,7 @@ export default function PriorityTab() {
   const [messages, setMessages] = useState<InboxItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   
   const { colors, isDark } = useTheme();
   const styles = getStyles(colors, isDark);
@@ -46,21 +47,20 @@ export default function PriorityTab() {
   // const displayItems = filter === "high_priority" ? priorityItems : items;
 
   const fetchInbox = useCallback(async () => {
-       try {
+         try {
+           setError(null);
            const user = await getCurrentUser();
-           if (user) {
-               // Pass filter to backend if needed, or filter client side.
-               // Backend agent is prompted based on filter, so passing it is good.
-               const data = await api.get(`/inbox?userId=${user.id}&filter=${filter}`);
-               if (data.messages) {
-                   setMessages(data.messages);
-               }
+           if (!user) {
+             throw new Error("You are signed out. Please log in again.");
            }
-       } catch (e) {
+           const data = await api.get(`/inbox?userId=${user.id}&filter=${filter}`);
+           setMessages(Array.isArray(data.messages) ? data.messages : []);
+         } catch (e: any) {
            console.log("Failed to fetch inbox", e);
-       } finally {
+           setError(e?.message || "Failed to load inbox");
+         } finally {
            setLoading(false);
-       }
+         }
   }, [filter]);
 
   useEffect(() => {
@@ -176,6 +176,17 @@ export default function PriorityTab() {
         </TouchableOpacity>
       </View>
 
+      {error && (
+        <View style={{ padding: 12, borderRadius: 12, backgroundColor: isDark ? "#40202a" : "#fff5f5", marginBottom: 12 }}>
+          <Text style={{ color: colors.text, marginBottom: 4 }}>Could not load inbox.</Text>
+          <Text style={{ color: colors.textSecondary, marginBottom: 8 }}>{error}</Text>
+          <TouchableOpacity onPress={fetchInbox} style={{ flexDirection: "row", alignItems: "center" }}>
+            <Ionicons name="refresh" size={16} color={colors.primary[500]} />
+            <Text style={{ color: colors.primary[500], marginLeft: 6 }}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
       <View style={styles.filterTabs}>
         <TouchableOpacity
           style={[styles.tab, filter === "high_priority" && styles.activeTab]}
@@ -212,12 +223,19 @@ export default function PriorityTab() {
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary[500]} />
         }
         ListEmptyComponent={() => (
-            !loading ? (
-            <View style={{ alignItems: "center", marginTop: 40 }}>
-                <Ionicons name="mail-open-outline" size={48} color={colors.textTertiary} />
-                <Text style={{ color: colors.textSecondary, marginTop: 16 }}>No messages found</Text>
-            </View>
-            ) : <ActivityIndicator style={{marginTop: 40}} color={colors.primary[500]} />
+            loading ? (
+              <ActivityIndicator style={{marginTop: 40}} color={colors.primary[500]} />
+            ) : error ? (
+              <View style={{ alignItems: "center", marginTop: 40 }}>
+                <Ionicons name="warning" size={48} color={colors.textTertiary} />
+                <Text style={{ color: colors.textSecondary, marginTop: 16 }}>Could not load inbox.</Text>
+              </View>
+            ) : (
+              <View style={{ alignItems: "center", marginTop: 40 }}>
+                  <Ionicons name="mail-open-outline" size={48} color={colors.textTertiary} />
+                  <Text style={{ color: colors.textSecondary, marginTop: 16 }}>No messages found</Text>
+              </View>
+            )
         )}
       />
 

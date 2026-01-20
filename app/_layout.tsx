@@ -1,6 +1,10 @@
 import { Stack } from 'expo-router';
+import React, { useEffect } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { ErrorBoundary } from '../components/ErrorBoundary';
 import { ThemeProvider, useTheme } from '../context/ThemeContext';
+import { registerBackgroundSync } from '../services/backgroundSync';
+import { registerForPushNotifications, scheduleDailyBriefing, useNotificationHandler } from '../services/notifications';
 
 function ThemedStack() {
   const { colors, isDark } = useTheme();
@@ -66,11 +70,31 @@ function ThemedStack() {
 }
 
 export default function RootLayout() {
+  // Set up notifications and background sync on app start
+  useEffect(() => {
+    const setup = async () => {
+      // Request notification permissions and register for push
+      await registerForPushNotifications();
+      
+      // Schedule daily briefing notification (8 AM)
+      await scheduleDailyBriefing(8, 0);
+      
+      // Register background sync task
+      await registerBackgroundSync();
+    };
+    setup();
+  }, []);
+
+  // Handle notification taps
+  useNotificationHandler();
+
   return (
-    <SafeAreaProvider>
-      <ThemeProvider>
-        <ThemedStack />
-      </ThemeProvider>
-    </SafeAreaProvider>
+    <ErrorBoundary>
+      <SafeAreaProvider>
+        <ThemeProvider>
+          <ThemedStack />
+        </ThemeProvider>
+      </SafeAreaProvider>
+    </ErrorBoundary>
   );
 }
