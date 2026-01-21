@@ -43,7 +43,13 @@ export const googleLogin = async (req: Request, res: Response) => {
       try {
         const ticket = await client.verifyIdToken({
           idToken,
-          audience: process.env.GOOGLE_CLIENT_ID,
+          audience: [
+            process.env.GOOGLE_CLIENT_ID || "",
+            // Android Client ID
+            "292920205050-js8f0ht6agdicetsuplqij2qtiuim2fu.apps.googleusercontent.com",
+            // iOS Client ID (optional explicitly, but good practice)
+            "292920205050-qciahrobol5kpe0g6ved1c1fkaedr4i6.apps.googleusercontent.com",
+          ],
         });
         payload = ticket.getPayload();
       } catch (verifyError) {

@@ -2,22 +2,36 @@
  * Notifications service for Aariv
  * Handles push notification setup and scheduling
  */
-import * as Notifications from "expo-notifications";
 import { useEffect, useState } from "react";
 
+// Safely import expo-notifications to avoid crashes if native module is missing
+let Notifications: any;
+try {
+  Notifications = require("expo-notifications");
+} catch (error) {
+  console.warn("expo-notifications module could not be loaded:", error);
+}
+
 // Configure notification behavior
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
-  }),
-});
+if (Notifications && Notifications.setNotificationHandler) {
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowAlert: true,
+      shouldPlaySound: true,
+      shouldSetBadge: true,
+    }),
+  });
+}
 
 /**
  * Request notification permissions and get push token
  */
 export async function registerForPushNotifications(): Promise<string | null> {
+  if (!Notifications) {
+    console.warn("Notifications module not available, skipping registration");
+    return null;
+  }
+
   try {
     // Get existing permissions
     const { status: existingStatus } = await Notifications.getPermissionsAsync();
@@ -42,6 +56,7 @@ export async function registerForPushNotifications(): Promise<string | null> {
     return token.data;
   } catch (error) {
     console.error("Error registering for notifications:", error);
+    // Continue execution even if notifications fail (e.g. in simulator)
     return null;
   }
 }
@@ -54,6 +69,8 @@ export async function sendLocalNotification(
   body: string,
   delaySeconds = 5,
 ) {
+  if (!Notifications) return;
+
   try {
     await Notifications.scheduleNotificationAsync({
       content: {
@@ -72,13 +89,14 @@ export async function sendLocalNotification(
  * Hook to handle notification responses (when user taps notification)
  */
 export function useNotificationHandler() {
-  const [lastNotification, setLastNotification] = useState<
-    Notifications.Notification | undefined
-  >();
+  // Use 'any' specifically to avoid type reference issues if imports fail
+  const [lastNotification, setLastNotification] = useState<any>();
 
   useEffect(() => {
+    if (!Notifications || !Notifications.addNotificationResponseReceivedListener) return;
+
     const subscription = Notifications.addNotificationResponseReceivedListener(
-      (response) => {
+      (response: any) => {
         setLastNotification(response.notification);
         // Handle deep linking or action based on notification.request.content.data
         const deepLink = response.notification.request.content.data?.deepLink;
@@ -98,6 +116,8 @@ export function useNotificationHandler() {
  * Schedule daily briefing notification
  */
 export async function scheduleDailyBriefing(hour = 8, minute = 0) {
+  if (!Notifications) return;
+
   try {
     const trigger = new Date();
     trigger.setHours(hour, minute, 0);

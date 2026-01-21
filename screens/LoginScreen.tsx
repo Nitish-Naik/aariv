@@ -3,28 +3,39 @@
  */
 
 import { Ionicons } from "@expo/vector-icons";
-import { makeRedirectUri } from "expo-auth-session";
-import * as Google from "expo-auth-session/providers/google";
 import { useRouter } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
 import React, { useEffect, useRef, useState } from "react";
 import {
-    Alert,
-    Animated,
-    Dimensions,
-    Easing,
-    Image,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Alert,
+  Animated,
+  Dimensions,
+  Easing,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTheme } from "../context/ThemeContext";
 import { signInWithGoogle } from "../services/auth";
 import { spacing } from "../theme";
+
+// Safely import Google Signin to avoid crash if native module is missing
+let GoogleSignin: any;
+let statusCodes: any;
+let isErrorWithCode: any;
+
+try {
+  const googleSigninModule = require("@react-native-google-signin/google-signin");
+  GoogleSignin = googleSigninModule.GoogleSignin;
+  statusCodes = googleSigninModule.statusCodes;
+  isErrorWithCode = googleSigninModule.isErrorWithCode;
+} catch (e) {
+  console.warn("GoogleSignin native module not found. Rebuild required.");
+}
 
 // 1. Required for web browser redirect
 WebBrowser.maybeCompleteAuthSession();
@@ -49,20 +60,21 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
   const fadeAnimText = useRef(new Animated.Value(0)).current;
   const fadeAnimButton = useRef(new Animated.Value(0)).current;
 
-  // 2. Google Auth Hook
-  // Google OAuth client IDs from Google Cloud Console
-  // Configured in app.json and match the credentials set up per SETUP_GOOGLE_AUTH.md
-  const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
-    // webClientId: "292920205050-qciahrobol5kpe0g6ved1c1fkaedr4i6.apps.googleusercontent.com",
-    iosClientId:
-      "292920205050-qciahrobol5kpe0g6ved1c1fkaedr4i6.apps.googleusercontent.com",
-    androidClientId:
-      "292920205050-js8f0ht6agdicetsuplqij2qtiuim2fu.apps.googleusercontent.com",
-    redirectUri: Platform.select({
-      web: undefined, // Auto-detect for web (localhost)
-      default: makeRedirectUri(), // Use valid proxy generator for native
-    }),
-  });
+  // Initialize Native Google Sign-In
+  useEffect(() => {
+    if (GoogleSignin) {
+      try {
+        GoogleSignin.configure({
+          // Web Client ID is required for the ID Token returned to the backend
+          webClientId: "292920205050-qciahrobol5kpe0g6ved1c1fkaedr4i6.apps.googleusercontent.com",
+          // Offline access to get a refresh token if needed
+          offlineAccess: true,
+        });
+      } catch (e) {
+        console.error("GoogleSignin configure failed", e);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     Animated.stagger(200, [
@@ -87,18 +99,6 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
     ]).start();
   }, []);
 
-  // 3. Handle Auth Response
-  useEffect(() => {
-
-
-    if (response?.type === "success") {
-      const { id_token } = response.params;
-      handleBackendLogin(id_token!);
-    } else if (response?.type === "error") {
-      Alert.alert("Sign In Error", "Google Sign-In failed.");
-    }
-  }, [response]);
-
   const handleBackendLogin = async (idToken: string) => {
     try {
       setLoading(true);
@@ -115,19 +115,45 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
   };
 
   const onSignInPress = async () => {
-    // DEV BYPASS: If no client IDs are set, promptAsync() might fail or do nothing in some envs.
-    // If you are testing in Emulator without keys, you can force a mock token login here by uncommenting:
-
-    // return handleBackendLogin("mock-id-token");
-
-    if (!request) {
+    if (!GoogleSignin) {
       Alert.alert(
-        "Configuration Error",
-        "Google Auth is not ready. Check Client IDs.",
+        "Setup Required",
+        "Google Sign-In native module is missing.\nPlease rebuild the app:\nnpx expo run:android"
       );
       return;
     }
-    promptAsync();
+
+    try {
+      setLoading(true);
+      await GoogleSignin.hasPlayServices();
+      const userInfo = await GoogleSignin.signIn();
+
+      const idToken = userInfo.data?.idToken;
+      if (idToken) {
+        await handleBackendLogin(idToken);
+      } else {
+        throw new Error("No ID token present");
+      }
+    } catch (error: any) {
+      setLoading(false);
+      if (isErrorWithCode && isErrorWithCode(error)) {
+        switch (error.code) {
+          case statusCodes.SIGN_IN_CANCELLED:
+            // user cancelled the login flow
+            break;
+          case statusCodes.IN_PROGRESS:
+            // operation (e.g. sign in) is in progress already
+            break;
+          case statusCodes.PLAY_SERVICES_NOT_AVAILABLE:
+            Alert.alert("Error", "Google Play Services not available or outdated.");
+            break;
+          default:
+            Alert.alert("Sign In Error", error.message);
+        }
+      } else {
+        Alert.alert("Sign In Error", "An unexpected error occurred.");
+      }
+    }
   };
 
   const handleLegalPress = (type: "terms" | "privacy") => {

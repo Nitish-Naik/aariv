@@ -52,7 +52,7 @@ export const getBriefing = async (req: Request, res: Response) => {
     1. **Calendar**: Fetch events for the next 24 hours. (If specific app is needed, fallback to 'google_calendar')
     2. **Gmail**: Fetch unread emails from the last 24 hours. 
        - USE QUERY: "is:unread newer_than:1d category:primary"
-       - FETCH LIMIT: Top 15 emails to ensure coverage.
+       - FETCH LIMIT: Top 10 emails to ensure coverage.
        - Focus on "important" emails (from humans, not newsletters).
 
     ERROR HANDLING:
@@ -132,15 +132,23 @@ export const getBriefing = async (req: Request, res: Response) => {
           const toolCall = msg.tool_calls[i];
           const output = toolOutputs[i];
 
+          let toolOutputContent =
+            output !== undefined && output !== null
+              ? typeof output === "string"
+                ? output
+                : JSON.stringify(output)
+              : "{}";
+
+          // Truncate to avoid context limit errors (approx. 25k tokens)
+          const MAX_CHARS = 100000;
+          if (toolOutputContent.length > MAX_CHARS) {
+            toolOutputContent = toolOutputContent.substring(0, MAX_CHARS) + "\n...[Output truncated due to length limits]...";
+          }
+
           messages.push({
             role: "tool",
             tool_call_id: toolCall.id,
-            content:
-              output !== undefined && output !== null
-                ? typeof output === "string"
-                  ? output
-                  : JSON.stringify(output)
-                : "{}",
+            content: toolOutputContent,
           });
         }
       } else {

@@ -180,7 +180,7 @@ export default function ToolkitsScreen() {
                                         </View>
                                         <View style={[styles.riskTag, { backgroundColor: getRiskColor(scope.riskLevel, isDark) + '20' }]}>
                                             <Text style={[styles.riskText, { color: getRiskColor(scope.riskLevel, isDark) }]}>
-                                                {scope.riskLevel.toUpperCase()}
+                                                {scope.riskLevel ? scope.riskLevel.toUpperCase() : 'INFO'}
                                             </Text>
                                         </View>
                                     </View>
