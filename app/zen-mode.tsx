@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Animated, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { SwipeCard } from '../components/SwipeCard';
@@ -58,11 +58,9 @@ export default function ZenModeScreen() {
         setTimeout(() => setToastVisible(false), 3000);
     };
 
-    useEffect(() => {
-        fetchActions();
-    }, []);
 
-    const fetchActions = async () => {
+
+    const fetchActions = useCallback(async () => {
         try {
             const user = await getCurrentUser();
             if (user) {
@@ -82,12 +80,16 @@ export default function ZenModeScreen() {
                     })));
                 }
             }
-        } catch (e) {
-            console.log("Failed to load actions", e);
+        } catch (_e) {
+            console.log("Failed to load actions", _e);
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
+
+    useEffect(() => {
+        fetchActions();
+    }, [fetchActions]);
 
     const executeAction = async (action: any) => {
         try {
@@ -155,7 +157,7 @@ export default function ZenModeScreen() {
                 })
             ]).start();
         }
-    }, [actions.length, loading]);
+    }, [actions.length, loading, scaleAnim, fadeAnim]);
 
     const renderEmptyState = () => (
         <Animated.View style={[styles.emptyContainer, { opacity: fadeAnim }]}>
@@ -163,7 +165,7 @@ export default function ZenModeScreen() {
                 <Ionicons name="checkmark-circle" size={80} color={colors.semantic.success} />
             </Animated.View>
             <Text style={styles.emptyTitle}>All Caught Up</Text>
-            <Text style={styles.emptySubtitle}>You've reviewed all pending items for today.</Text>
+            <Text style={styles.emptySubtitle}>You&apos;ve reviewed all pending items for today.</Text>
 
             <View style={styles.statsContainer}>
                 <View style={styles.statItem}>

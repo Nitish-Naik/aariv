@@ -25,7 +25,7 @@ export default function ConnectPlatformsRoute() {
     { id: 'notion', name: 'Notion', icon: 'document-text' },
   ];
 
-  const fetchConnections = async () => {
+  const fetchConnections = useCallback(async () => {
     try {
       setLoading(true);
       const user = await getCurrentUser();
@@ -73,12 +73,12 @@ export default function ConnectPlatformsRoute() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
       fetchConnections();
-    }, [])
+    }, [fetchConnections])
   );
 
   const handleConnect = async (platform: Platform) => {
@@ -111,12 +111,14 @@ export default function ConnectPlatformsRoute() {
   };
 
   const handleDisconnect = async (platform: Platform) => {
+    if (!userId) return;
     try {
-      await api.post('/integrations/disconnect', { 
-        userId: user.id, 
-        appName: platform.appName 
+      await api.post('/integrations/disconnect', {
+        userId,
+        appName: platform
       });
-      Alert.alert('Success', `${platform.name} disconnected`);
+      const platformName = SUPPORTED_PLATFORMS.find(p => p.id === platform)?.name || platform;
+      Alert.alert('Success', `${platformName} disconnected`);
       // Refresh connections
       fetchConnections();
     } catch (error: any) {

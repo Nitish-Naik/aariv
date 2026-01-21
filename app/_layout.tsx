@@ -7,11 +7,11 @@ import { registerBackgroundSync } from '../services/backgroundSync';
 import { registerForPushNotifications, scheduleDailyBriefing, useNotificationHandler } from '../services/notifications';
 
 function ThemedStack() {
-  const { colors, isDark } = useTheme();
-  
+  const { colors } = useTheme();
+
   return (
-    <Stack 
-      screenOptions={{ 
+    <Stack
+      screenOptions={{
         headerShown: false,
         contentStyle: {
           backgroundColor: colors.background,
@@ -36,7 +36,7 @@ function ThemedStack() {
           backgroundColor: colors.background,
         },
       }} />
-      <Stack.Screen name="paywall" options={{ 
+      <Stack.Screen name="paywall" options={{
         presentation: 'modal',
         animation: 'slide_from_bottom',
         gestureEnabled: true,
@@ -75,10 +75,10 @@ export default function RootLayout() {
     const setup = async () => {
       // Request notification permissions and register for push
       await registerForPushNotifications();
-      
+
       // Schedule daily briefing notification (8 AM)
       await scheduleDailyBriefing(8, 0);
-      
+
       // Register background sync task
       await registerBackgroundSync();
     };

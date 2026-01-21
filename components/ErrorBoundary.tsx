@@ -35,7 +35,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
     console.error('ErrorBoundary caught an error:', error, errorInfo);
-    
+
     // Call optional error handler
     this.props.onError?.(error, errorInfo);
 
@@ -63,7 +63,7 @@ export class ErrorBoundary extends Component<Props, State> {
           <Ionicons name="alert-circle-outline" size={80} color="#EF4444" />
           <Text style={styles.title}>Oops! Something went wrong</Text>
           <Text style={styles.message}>
-            We're sorry for the inconvenience. The error has been logged and we'll fix it soon.
+            We&apos;re sorry for the inconvenience. The error has been logged and we&apos;ll fix it soon.
           </Text>
           {__DEV__ && this.state.error && (
             <View style={styles.errorDetails}>

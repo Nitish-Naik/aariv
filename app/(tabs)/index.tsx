@@ -4,13 +4,13 @@ import { format } from "date-fns";
 import { useRouter } from "expo-router";
 import React, { useCallback, useState } from "react";
 import {
-    ActivityIndicator,
-    RefreshControl,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Card } from "../../components/Card";
@@ -138,16 +138,16 @@ export default function HomeTab() {
         }
       >
         <WebContainer>
-        {error && (
-          <View style={{ backgroundColor: isDark ? "#40202a" : "#fff5f5", borderRadius: 14, padding: 12, marginBottom: 12 }}>
-            <Text style={{ color: colors.text, marginBottom: 4 }}>Could not load your briefing.</Text>
-            <Text style={{ color: colors.textSecondary, marginBottom: 8 }}>{error}</Text>
-            <TouchableOpacity onPress={fetchBriefing} style={{ flexDirection: "row", alignItems: "center" }}>
-              <Ionicons name="refresh" size={16} color={colors.primary[500]} />
-              <Text style={{ color: colors.primary[500], marginLeft: 6 }}>Retry</Text>
-            </TouchableOpacity>
-          </View>
-        )}
+          {error && (
+            <View style={{ backgroundColor: isDark ? "#40202a" : "#fff5f5", borderRadius: 14, padding: 12, marginBottom: 12 }}>
+              <Text style={{ color: colors.text, marginBottom: 4 }}>Could not load your briefing.</Text>
+              <Text style={{ color: colors.textSecondary, marginBottom: 8 }}>{error}</Text>
+              <TouchableOpacity onPress={fetchBriefing} style={{ flexDirection: "row", alignItems: "center" }}>
+                <Ionicons name="refresh" size={16} color={colors.primary[500]} />
+                <Text style={{ color: colors.primary[500], marginLeft: 6 }}>Retry</Text>
+              </TouchableOpacity>
+            </View>
+          )}
           {/* Morning Briefing */}
           <View style={styles.header}>
             <View style={{ flex: 1 }}>
@@ -361,7 +361,7 @@ export default function HomeTab() {
           {(events.length > 0 || loading) && (
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>Today's Schedule</Text>
+                <Text style={styles.sectionTitle}>Today&apos;s Schedule</Text>
                 <TouchableOpacity onPress={() => router.push("/calendar")}>
                   <Text style={styles.seeAllText}>View All</Text>
                 </TouchableOpacity>

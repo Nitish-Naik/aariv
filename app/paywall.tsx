@@ -2,21 +2,20 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
 import {
-    Animated,
-    Dimensions,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Switch,
-    Text,
-    TouchableOpacity,
-    View,
+  Animated,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Switch,
+  Text,
+  TouchableOpacity,
+  View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTheme } from "../context/ThemeContext";
 import { borderRadius, spacing, typography } from "../theme";
 
-const { width } = Dimensions.get("window");
+
 
 const TIERS = [
   {
@@ -100,7 +99,7 @@ export default function PaywallScreen() {
       ]),
     );
     breathe.start();
-  }, []);
+  }, [fadeAnim, scaleAnim]);
 
   return (
     <SafeAreaView style={styles.container}>

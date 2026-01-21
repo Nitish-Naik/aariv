@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Audio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Alert,
     Animated,
@@ -80,18 +80,10 @@ export default function VoiceModeScreen() {
     }, []);
 
     // Waveform Animation Logic
-    useEffect(() => {
-        if (isPlaying) {
-            startPlaybackWaveform();
-        } else if (!isRecording) {
-            // Stop if neither recording nor playing (idle/processing)
-            // Note: recording handles its own animation via metering callback
-            stopWaveform();
-        }
-    }, [isPlaying, isRecording]);
+
 
     // Helper to animate bars randomly for AI playback (simulated voice activity)
-    const startPlaybackWaveform = () => {
+    const startPlaybackWaveform = useCallback(() => {
         const animations = barHeights.map((anim) => {
             return Animated.loop(
                 Animated.sequence([
@@ -109,17 +101,17 @@ export default function VoiceModeScreen() {
             );
         });
         Animated.parallel(animations).start();
-    };
+    }, [barHeights]);
 
-    const stopWaveform = () => {
+    const stopWaveform = useCallback(() => {
         barHeights.forEach(anim => {
             anim.stopAnimation();
             anim.setValue(10);
         });
-    };
+    }, [barHeights]);
 
     // Helper to animate bars based on level (0-160 approx range for metering usually -160 to 0)
-    const updateWaveform = (metering: number) => {
+    const updateWaveform = useCallback((metering: number) => {
         // Metering is usually -160 (silence) to 0 (loud)
         // Normalize to 0-1
         const level = Math.max(0, (metering + 160) / 160);
@@ -132,7 +124,17 @@ export default function VoiceModeScreen() {
             });
         });
         Animated.parallel(animations).start();
-    };
+    }, [barHeights]);
+
+    useEffect(() => {
+        if (isPlaying) {
+            startPlaybackWaveform();
+        } else if (!isRecording) {
+            // Stop if neither recording nor playing (idle/processing)
+            // Note: recording handles its own animation via metering callback
+            stopWaveform();
+        }
+    }, [isPlaying, isRecording, startPlaybackWaveform, stopWaveform]);
 
     const startRecording = async () => {
         try {
@@ -343,7 +345,7 @@ export default function VoiceModeScreen() {
                 {/* Dynamic Transcription */}
                 <View style={styles.transcriptContainer}>
                     <Text style={styles.transcriptText}>
-                        "{transcript}"
+                        &quot;{transcript}&quot;
                     </Text>
                     {reply ? <Text style={styles.replyText}>{reply}</Text> : null}
                 </View>

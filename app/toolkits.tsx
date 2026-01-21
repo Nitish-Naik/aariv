@@ -25,7 +25,7 @@ export default function ToolkitsScreen() {
     const router = useRouter();
     const { colors, isDark } = useTheme();
     const styles = getStyles(colors, isDark);
-    
+
     // State
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCategory, setSelectedCategory] = useState<string>('All');
@@ -34,7 +34,7 @@ export default function ToolkitsScreen() {
     const [installedIds, setInstalledIds] = useState<Set<string>>(new Set(['1', '2', '6', '11']));
     const [modalVisible, setModalVisible] = useState(false);
     const [pendingToolkit, setPendingToolkit] = useState<Toolkit | null>(null);
-    const [loading, setLoading] = useState(true);
+    const [_loading, setLoading] = useState(true);
 
     // Fetch real toolkits on mount
     useEffect(() => {
@@ -42,15 +42,15 @@ export default function ToolkitsScreen() {
             try {
                 const user = await getCurrentUser();
                 if (!user) throw new Error("Not signed in");
-                
+
                 const [toolkitsRes, bundlesRes] = await Promise.all([
                     api.get(`/toolkits?userId=${user.id}`),
                     api.get('/toolkits/bundles'),
                 ]);
-                
+
                 if (toolkitsRes.toolkits) setToolkits(toolkitsRes.toolkits);
                 if (bundlesRes.bundles) setBundles(bundlesRes.bundles);
-                
+
                 // Update installed from connected status
                 const installed = new Set<string>();
                 if (Array.isArray(toolkitsRes.toolkits)) {
@@ -73,8 +73,8 @@ export default function ToolkitsScreen() {
 
     const filteredToolkits = useMemo(() => {
         return toolkits.filter(item => {
-            const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                                  item.description.toLowerCase().includes(searchQuery.toLowerCase());
+            const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                item.description.toLowerCase().includes(searchQuery.toLowerCase());
             const matchesCategory = selectedCategory === 'All' || item.category === selectedCategory;
             return matchesSearch && matchesCategory;
         });
@@ -85,12 +85,14 @@ export default function ToolkitsScreen() {
         if (installedIds.has(toolkit.id)) {
             // Disconnect flow remains simple
             Alert.alert("Sever Neural Link", `Disconnect ${toolkit.name}?`, [
-                { text: "Cancel", style: "cancel"},
-                { text: "Disconnect", style: "destructive", onPress: () => {
-                    const newSet = new Set(installedIds);
-                    newSet.delete(toolkit.id);
-                    setInstalledIds(newSet);
-                }}
+                { text: "Cancel", style: "cancel" },
+                {
+                    text: "Disconnect", style: "destructive", onPress: () => {
+                        const newSet = new Set(installedIds);
+                        newSet.delete(toolkit.id);
+                        setInstalledIds(newSet);
+                    }
+                }
             ]);
         } else {
             // New "Permission Handshake" flow
@@ -117,23 +119,27 @@ export default function ToolkitsScreen() {
         }
 
         Alert.alert(
-            `Activate ${bundle.title}?`, 
+            `Activate ${bundle.title}?`,
             `This will connect ${potential.length} new tools. Review permissions in next step?`,
             [
-                { text: "Detailed Review", onPress: () => {
-                    // In a real app, queue them up. Here we just pick the first one for demo
-                    const firstId = potential[0];
-                    const toolkit = MOCK_TOOLKITS.find(t => t.id === firstId);
-                    if (toolkit) {
-                        setPendingToolkit(toolkit);
-                        setModalVisible(true);
+                {
+                    text: "Detailed Review", onPress: () => {
+                        // In a real app, queue them up. Here we just pick the first one for demo
+                        const firstId = potential[0];
+                        const toolkit = MOCK_TOOLKITS.find(t => t.id === firstId);
+                        if (toolkit) {
+                            setPendingToolkit(toolkit);
+                            setModalVisible(true);
+                        }
                     }
-                }},
-                { text: "Trust & Connect All", style: "default", onPress: () => {
-                   const newSet = new Set(installedIds);
-                   potential.forEach(id => newSet.add(id));
-                   setInstalledIds(newSet);
-                }}
+                },
+                {
+                    text: "Trust & Connect All", style: "default", onPress: () => {
+                        const newSet = new Set(installedIds);
+                        potential.forEach(id => newSet.add(id));
+                        setInstalledIds(newSet);
+                    }
+                }
             ]
         );
     };
@@ -162,10 +168,10 @@ export default function ToolkitsScreen() {
                                 <Text style={styles.sectionLabel}>REQUESTED ACCESS</Text>
                                 {pendingToolkit.scopes?.map(scope => (
                                     <View key={scope.id} style={styles.scopeItem}>
-                                        <Ionicons 
-                                            name={scope.riskLevel === 'critical' || scope.riskLevel === 'high' ? 'warning' : 'checkmark-circle'} 
-                                            size={20} 
-                                            color={getRiskColor(scope.riskLevel, isDark)} 
+                                        <Ionicons
+                                            name={scope.riskLevel === 'critical' || scope.riskLevel === 'high' ? 'warning' : 'checkmark-circle'}
+                                            size={20}
+                                            color={getRiskColor(scope.riskLevel, isDark)}
                                             style={{ marginRight: spacing[3] }}
                                         />
                                         <View style={{ flex: 1 }}>
@@ -220,13 +226,13 @@ export default function ToolkitsScreen() {
 
     const renderToolkitItem = ({ item }: { item: Toolkit }) => {
         const isInstalled = installedIds.has(item.id);
-        
+
         return (
             <View style={styles.card}>
                 <View style={styles.iconContainer}>
                     <Ionicons name={item.icon as any} size={24} color={isDark ? '#FFF' : colors.primary[600]} />
                 </View>
-                
+
                 <View style={styles.cardContent}>
                     <View style={styles.cardHeader}>
                         <Text style={styles.cardTitle}>{item.name}</Text>
@@ -239,9 +245,9 @@ export default function ToolkitsScreen() {
                     <Text style={styles.cardDesc} numberOfLines={2}>{item.description}</Text>
                 </View>
 
-                <TouchableOpacity 
+                <TouchableOpacity
                     style={[
-                        styles.actionButton, 
+                        styles.actionButton,
                         isInstalled ? styles.actionButtonActive : styles.actionButtonInactive
                     ]}
                     onPress={() => initiateConnection(item)}
@@ -260,7 +266,7 @@ export default function ToolkitsScreen() {
     return (
         <SafeAreaView style={styles.container} edges={['top']}>
             <PermissionHandshakeModal />
-            
+
             {/* Header */}
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
@@ -279,7 +285,7 @@ export default function ToolkitsScreen() {
                 {/* Search */}
                 <View style={styles.searchContainer}>
                     <Ionicons name="search" size={20} color={colors.neutral[400]} style={styles.searchIcon} />
-                    <TextInput 
+                    <TextInput
                         style={styles.searchInput}
                         placeholder="Search capabilities..."
                         placeholderTextColor={colors.neutral[400]}
@@ -291,8 +297,8 @@ export default function ToolkitsScreen() {
                 {/* Categories */}
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.hScroll} contentContainerStyle={styles.hScrollContent}>
                     {categories.map((cat) => (
-                        <TouchableOpacity 
-                            key={cat} 
+                        <TouchableOpacity
+                            key={cat}
                             style={[styles.catChip, selectedCategory === cat && styles.catChipActive]}
                             onPress={() => setSelectedCategory(cat)}
                         >
@@ -307,8 +313,8 @@ export default function ToolkitsScreen() {
                 {searchQuery === '' && selectedCategory === 'All' && (
                     <View style={styles.section}>
                         <Text style={styles.sectionTitle}>Smart Bundles</Text>
-                        <FlatList 
-                            data={MOCK_BUNDLES}
+                        <FlatList
+                            data={bundles}
                             renderItem={renderBundleItem}
                             keyExtractor={item => item.id}
                             horizontal
@@ -331,7 +337,7 @@ export default function ToolkitsScreen() {
             </ScrollView>
 
             {/* Bottom Copilot Bar */}
-            <KeyboardAvoidingView 
+            <KeyboardAvoidingView
                 behavior={Platform.OS === "ios" ? "padding" : "height"}
                 keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
                 style={styles.copilotBarWrapper}
@@ -339,7 +345,7 @@ export default function ToolkitsScreen() {
                 <View style={styles.copilotBar}>
                     <View style={styles.copilotInputContainer}>
                         <Ionicons name="sparkles" size={20} color={colors.primary[500]} style={styles.copilotIcon} />
-                        <TextInput 
+                        <TextInput
                             style={styles.copilotInput}
                             placeholder="Ask Copilot regarding these tools..."
                             placeholderTextColor={isDark ? colors.neutral[500] : colors.neutral[400]}

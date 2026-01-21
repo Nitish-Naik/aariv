@@ -15,10 +15,10 @@ export default function PrivacyPolicyScreen() {
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-             <Ionicons name="arrow-back" size={24} color={colors.text} />
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Privacy Policy</Text>
-        <View style={{ width: 24 }} /> 
+        <View style={{ width: 24 }} />
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
@@ -118,8 +118,8 @@ export default function PrivacyPolicyScreen() {
 
         <Section title="9. Contact">
           <Text style={styles.paragraph}>Questions or concerns?</Text>
-          <TouchableOpacity onPress={() => {/* In real app, open email */}}>
-              <Text style={styles.link}>privacy@aariv.app</Text>
+          <TouchableOpacity onPress={() => {/* In real app, open email */ }}>
+            <Text style={styles.link}>privacy@aariv.app</Text>
           </TouchableOpacity>
         </Section>
 
@@ -131,30 +131,30 @@ export default function PrivacyPolicyScreen() {
 
 // Helper Components for consistency
 const Section = ({ title, children }: { title: string, children: React.ReactNode }) => {
-    const { colors, isDark } = useTheme();
-    return (
-        <View style={{ marginBottom: 32 }}>
-            <Text style={{ 
-                fontSize: 18, 
-                fontWeight: '700', 
-                color: isDark ? '#FFFFFF' : '#111827',
-                marginBottom: 12 
-            }}>
-                {title}
-            </Text>
-            {children}
-        </View>
-    );
+  const { isDark } = useTheme();
+  return (
+    <View style={{ marginBottom: 32 }}>
+      <Text style={{
+        fontSize: 18,
+        fontWeight: '700',
+        color: isDark ? '#FFFFFF' : '#111827',
+        marginBottom: 12
+      }}>
+        {title}
+      </Text>
+      {children}
+    </View>
+  );
 };
 
 const Bullet = ({ children }: { children: string }) => {
-    const { colors } = useTheme();
-    return (
-        <View style={{ flexDirection: 'row', marginBottom: 8, paddingLeft: 8 }}>
-            <Text style={{ color: colors.textSecondary, marginRight: 8 }}>•</Text>
-            <Text style={{ color: colors.textSecondary, fontSize: 15, lineHeight: 24, flex: 1 }}>{children}</Text>
-        </View>
-    );
+  const { colors } = useTheme();
+  return (
+    <View style={{ flexDirection: 'row', marginBottom: 8, paddingLeft: 8 }}>
+      <Text style={{ color: colors.textSecondary, marginRight: 8 }}>•</Text>
+      <Text style={{ color: colors.textSecondary, fontSize: 15, lineHeight: 24, flex: 1 }}>{children}</Text>
+    </View>
+  );
 };
 
 const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
@@ -184,30 +184,30 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     padding: 24,
   },
   lastUpdated: {
-      fontSize: 14,
-      color: colors.textSecondary,
-      marginBottom: 32,
-      fontStyle: 'italic',
+    fontSize: 14,
+    color: colors.textSecondary,
+    marginBottom: 32,
+    fontStyle: 'italic',
   },
   paragraph: {
-      fontSize: 15,
-      lineHeight: 24,
-      color: colors.textSecondary,
-      marginBottom: 12,
+    fontSize: 15,
+    lineHeight: 24,
+    color: colors.textSecondary,
+    marginBottom: 12,
   },
   subHeader: {
-      fontSize: 16,
-      fontWeight: '600',
-      color: colors.text,
-      marginBottom: 8,
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: 8,
   },
   highlight: {
-      color: isDark ? '#6EE7B7' : '#059669', // Mint brand color
-      fontWeight: '500',
+    color: isDark ? '#6EE7B7' : '#059669', // Mint brand color
+    fontWeight: '500',
   },
   link: {
-      color: isDark ? '#6EE7B7' : '#059669',
-      textDecorationLine: 'underline',
-      fontSize: 15,
+    color: isDark ? '#6EE7B7' : '#059669',
+    textDecorationLine: 'underline',
+    fontSize: 15,
   }
 });
