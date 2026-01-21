@@ -34,7 +34,7 @@ export default function ToolkitsScreen() {
     const [installedIds, setInstalledIds] = useState<Set<string>>(new Set(['1', '2', '6', '11']));
     const [modalVisible, setModalVisible] = useState(false);
     const [pendingToolkit, setPendingToolkit] = useState<Toolkit | null>(null);
-    const [_loading, setLoading] = useState(true);
+    const [, setLoading] = useState(true);
 
     // Fetch real toolkits on mount
     useEffect(() => {

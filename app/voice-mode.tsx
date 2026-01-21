@@ -61,6 +61,7 @@ export default function VoiceModeScreen() {
         );
         breathe.start();
 
+
         // Permissions
         (async () => {
             const { status } = await Audio.requestPermissionsAsync();

@@ -16,7 +16,7 @@ export default function Index() {
         } else {
           router.replace('/login');
         }
-      } catch (_e) {
+      } catch {
         router.replace('/login');
       } finally {
         setIsLoading(false);
@@ -24,7 +24,7 @@ export default function Index() {
     };
 
     checkAuth();
-  }, []);
+  }, [router]);
 
   if (isLoading) {
     return (

@@ -40,7 +40,7 @@ export default function AssistantTab() {
     const router = useRouter();
     const [messages, setMessages] = useState<RichChatMessage[]>(INITIAL_MESSAGES);
     const [inputText, setInputText] = useState('');
-    const [_isLoading, setIsLoading] = useState(false);
+    const [, setIsLoading] = useState(false);
     const [isAccountModalVisible, setAccountModalVisible] = useState(false);
     const [isKeyboardVisible, setKeyboardVisible] = useState(false);
     const flatListRef = useRef<FlatList>(null);

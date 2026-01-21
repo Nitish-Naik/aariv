@@ -27,7 +27,7 @@ const Toast = ({ message, visible, styles }: { message: string, visible: boolean
                 useNativeDriver: true
             }).start();
         }
-    }, [visible]);
+    }, [visible, opacity]);
 
     if (!visible && (opacity as any)._value === 0) return null;
 

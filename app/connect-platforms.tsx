@@ -7,6 +7,15 @@ import { ConnectPlatformsScreen } from '../screens/ConnectPlatformsScreen';
 import { api } from '../services/api';
 import { getCurrentUser } from '../services/auth';
 import type { Platform, PlatformConnection } from '../types';
+// List of supported platforms in our UI
+const SUPPORTED_PLATFORMS: { id: Platform; name: string; icon: string }[] = [
+  { id: 'gmail', name: 'Gmail', icon: 'logo-google' },
+  { id: 'google-calendar', name: 'Google Calendar', icon: 'calendar' },
+  { id: 'slack', name: 'Slack', icon: 'logo-slack' },
+  { id: 'github', name: 'GitHub', icon: 'logo-github' },
+  { id: 'linear', name: 'Linear', icon: 'list' },
+  { id: 'notion', name: 'Notion', icon: 'document-text' },
+];
 
 export default function ConnectPlatformsRoute() {
   const router = useRouter();
@@ -15,15 +24,7 @@ export default function ConnectPlatformsRoute() {
   const [connections, setConnections] = useState<PlatformConnection[]>([]);
   const [userId, setUserId] = useState<string | null>(null);
 
-  // List of supported platforms in our UI
-  const SUPPORTED_PLATFORMS: { id: Platform; name: string; icon: string }[] = [
-    { id: 'gmail', name: 'Gmail', icon: 'logo-google' },
-    { id: 'google-calendar', name: 'Google Calendar', icon: 'calendar' },
-    { id: 'slack', name: 'Slack', icon: 'logo-slack' },
-    { id: 'github', name: 'GitHub', icon: 'logo-github' },
-    { id: 'linear', name: 'Linear', icon: 'list' },
-    { id: 'notion', name: 'Notion', icon: 'document-text' },
-  ];
+
 
   const fetchConnections = useCallback(async () => {
     try {
