@@ -1,4 +1,4 @@
-import { useRouter } from 'expo-router';
+import { useRouter, useSegments } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import { isSignedIn } from '../services/auth';
@@ -6,25 +6,29 @@ import { isSignedIn } from '../services/auth';
 export default function Index() {
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
+  const segments = useSegments();
 
   useEffect(() => {
     const checkAuth = async () => {
       try {
         const signedIn = await isSignedIn();
+        const isOnLogin = segments[0] === 'login';
         if (signedIn) {
           router.replace('/(tabs)');
-        } else {
+        } else if (!isOnLogin) {
           router.replace('/login');
         }
       } catch {
-        router.replace('/login');
+        if (segments[0] !== 'login') {
+          router.replace('/login');
+        }
       } finally {
         setIsLoading(false);
       }
     };
 
     checkAuth();
-  }, [router]);
+  }, [router, segments]);
 
   if (isLoading) {
     return (

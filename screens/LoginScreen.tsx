@@ -18,6 +18,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTheme } from "../context/ThemeContext";
+import { supabase } from "../services/supabaseClient";
 // import { signInWithGoogle } from "../services/auth";
 import { spacing } from "../theme";
 
@@ -38,15 +39,44 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
   const { colors } = useTheme();
 
   const styles = getStyles();
-
-
+  // Logout handler (for dev/testing)
+  const handleLogout = async () => {
+    // Clear Supabase session
+    await supabase.auth.signOut();
+    // Optionally clear any local storage/session state if used
+    // Redirect to login screen
+    router.replace('/login');
+  };
 
   // Animation Refs
   const fadeAnimLogo = useRef(new Animated.Value(0)).current;
   const fadeAnimText = useRef(new Animated.Value(0)).current;
   const fadeAnimButton = useRef(new Animated.Value(0)).current;
 
-  // Native Google Sign-In removed
+  // Check for Supabase session on mount
+  const [session, setSession] = useState<any>(null);
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase.auth.getSession();
+      setSession(data?.session);
+      if (data?.session?.user) {
+        onLoginSuccess();
+      }
+    })();
+  }, []);
+
+  // Listen for Supabase auth state changes
+  useEffect(() => {
+    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
+      setSession(session);
+      if (session?.user) {
+        onLoginSuccess();
+      }
+    });
+    return () => {
+      listener?.subscription?.unsubscribe();
+    };
+  }, []);
 
   useEffect(() => {
     Animated.stagger(200, [
@@ -71,16 +101,29 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
     ]).start();
   }, []);
 
-  const handleDummyLogin = async () => {
+  const handleSupabaseLogin = async () => {
     setLoading(true);
-    setTimeout(() => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: 'https://probable-lamp-7v5x54r65q7rhw4g-8081.app.github.dev'
+        }
+      });
+      if (error) {
+        window.alert(error.message || "Google sign-in failed.");
+      } else {
+        // Supabase will redirect, so no need to call onLoginSuccess here
+      }
+    } catch (error: any) {
+      window.alert(error.message || "Failed to authenticate with Google.");
+    } finally {
       setLoading(false);
-      onLoginSuccess();
-    }, 1000); // Simulate network delay
+    }
   };
 
   const onSignInPress = async () => {
-    await handleDummyLogin();
+    await handleSupabaseLogin();
   };
 
   const handleLegalPress = (type: "terms" | "privacy") => {
@@ -196,9 +239,19 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
               {loading ? (
                 <Text style={styles.googleButtonText}>Signing in...</Text>
               ) : (
-                <Text style={styles.googleButtonText}>Continue (Dummy Sign-In)</Text>
+                <Text style={styles.googleButtonText}>Continue With Google</Text>
               )}
             </TouchableOpacity>
+            {/* Logout button only if logged in */}
+            {session?.user && (
+              <TouchableOpacity
+                style={[styles.googleButton, { backgroundColor: '#6B7280', marginTop: 8 }]}
+                onPress={handleLogout}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.googleButtonText}>Logout</Text>
+              </TouchableOpacity>
+            )}
             <Text style={styles.cardTagline}>
               Private by design.
               {/* You stay in control. */}
@@ -224,6 +277,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
   );
 };
 
+// StyleSheet definition for LoginScreen
 const getStyles = () =>
   StyleSheet.create({
     container: {
@@ -261,7 +315,6 @@ const getStyles = () =>
       fontWeight: "400",
       marginTop: spacing[2],
     },
-
     // Bottom Section
     bottomSection: {
       padding: spacing[6],
