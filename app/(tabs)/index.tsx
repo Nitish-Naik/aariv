@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import { format } from "date-fns";
 import { useRouter } from "expo-router";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   RefreshControl,
@@ -19,12 +19,23 @@ import { useTheme } from "../../context/ThemeContext";
 import { api } from "../../services/api";
 import { getCurrentUser } from "../../services/auth";
 import { borderRadius, spacing, typography } from "../../theme";
-// import { MOCK_ACTIONS, MOCK_EVENTS, MOCK_INBOX_ITEMS } from "../../utils/mockData";
+
 
 export default function HomeTab() {
   const router = useRouter();
   const { colors, isDark } = useTheme();
   const styles = getStyles(colors, isDark);
+
+  const [user, setUser] = useState<any>(null);
+  useEffect(() => {
+    (async () => {
+      setUser(await getCurrentUser());
+    })();
+  }, []);
+
+  if (!user) {
+    return null;
+  }
 
   const [events, setEvents] = useState<any[]>([]);
   const [briefing, setBriefing] = useState<{
@@ -32,20 +43,11 @@ export default function HomeTab() {
     summary: string;
     counts: { meetings: number; emails: number };
   } | null>(null);
-
   const [actions, setActions] = useState<any[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [missingConnections, setMissingConnections] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
-
-  // Computed stats from real data
-  const stats = {
-    pendingActions: actions.length,
-    unreadMessages: briefing?.counts?.emails || 0,
-    todayMeetings: briefing?.counts?.meetings || events.length,
-    completedToday: 0,
-  };
 
   const checkConnections = async (userId: string) => {
     try {
@@ -66,6 +68,7 @@ export default function HomeTab() {
   };
 
   const fetchBriefing = useCallback(async () => {
+    if (!user) return;
     try {
       setError(null);
       const user = await getCurrentUser();
@@ -110,19 +113,22 @@ export default function HomeTab() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [user]);
 
   useFocusEffect(
     useCallback(() => {
-      fetchBriefing();
-    }, [fetchBriefing]),
+      if (user) {
+        fetchBriefing();
+      }
+    }, [fetchBriefing, user]),
   );
 
   const onRefresh = useCallback(async () => {
+    if (!user) return;
     setRefreshing(true);
     await fetchBriefing();
     setRefreshing(false);
-  }, [fetchBriefing]);
+  }, [fetchBriefing, user]);
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>

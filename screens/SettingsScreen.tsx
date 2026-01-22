@@ -5,18 +5,21 @@
 
 import React, { useState } from 'react';
 import {
-    Alert,
-    ScrollView,
-    StyleSheet,
-    Switch,
-    Text,
-    TouchableOpacity,
-    View,
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
+// Use Supabase JS client and Expo Router navigation
+import { useRouter } from 'expo-router';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { api } from '../services/api';
-import { signOut } from '../services/auth';
+import { signOut as appSignOut } from '../services/auth';
+import { supabase } from '../services/supabaseClient';
 import { colors, spacing, typography } from '../theme';
 import { clearAllData } from '../utils/storage';
 
@@ -33,6 +36,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   onNavigateToKeyVault,
   onNavigateToKnowledgeGraph,
 }) => {
+  const router = useRouter();
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [autoApproveEnabled, setAutoApproveEnabled] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
@@ -60,27 +64,51 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
     }
   };
 
-  const handleSignOut = () => {
-    Alert.alert(
-      'Sign Out',
-      'Are you sure you want to sign out? (Mock - for UI review only)',
-      [
-        { text: 'Cancel', style: 'cancel' },
+  const handleSignOut = async () => {
+    try {
+      await supabase.auth.signOut();
+      await appSignOut(); // Clear local storage and tokens
+      Alert.alert('Signed out', 'You have been signed out.', [
         {
-          text: 'Sign Out',
-          style: 'destructive',
+          text: 'OK',
+          onPress: () => router.replace('/'), // Go to root, which will redirect to /login
+        },
+      ]);
+    } catch (error: any) {
+      Alert.alert('Sign out failed', error.message || 'Could not sign out.');
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    // Delete user from Supabase
+    const { data: user } = await supabase.auth.getUser();
+    if (!user) {
+      Alert.alert('Error', 'No user found.');
+      return;
+    }
+    try {
+      // await api.delete(`/users/${user.id}`); // If you have a backend endpoint
+      // For Supabase, you need admin access to delete users
+      Alert.alert('Account deletion', 'Account deletion is not supported directly from the app. Please contact support.', [
+        {
+          text: 'OK',
           onPress: async () => {
-            try {
-              await signOut();
-              await clearAllData();
-              onSignOut();
-            } catch (error: any) {
-              Alert.alert('Error', error.message || 'Failed to sign out');
-            }
+            await supabase.auth.signOut();
+            await appSignOut();
+            router.replace('/'); // Go to root, which will redirect to /login
           },
         },
-      ]
-    );
+      ]);
+    } catch (error) {
+      Alert.alert('Failed to delete account.', error.message || 'Could not delete account.');
+    }
+    // Optionally sign out after deletion
+    try {
+      await supabase.auth.signOut();
+      router.replace('/login');
+    } catch (error: any) {
+      Alert.alert('Sign out failed', error.message || 'Could not sign out after deletion.');
+    }
   };
 
   const handleClearCache = () => {
@@ -252,6 +280,15 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           onPress={handleSignOut}
           variant="outline"
           style={styles.signOutButton}
+        />
+      </View>
+
+      {/* Delete Account */}
+      <View style={styles.section}>
+        <Button
+          title="Delete Account"
+          onPress={handleDeleteAccount}
+          variant="outline"
         />
       </View>
     </ScrollView>
