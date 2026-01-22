@@ -2,10 +2,11 @@
  * Authentication service - Real implementation using backend
  */
 
+import * as AuthSession from "expo-auth-session";
 import type { User } from "../types";
 import { getUserData, storeUserData } from "../utils/storage";
 import { api } from "./api";
-import { ensureValidToken, storeToken, storeGoogleIdToken } from "./tokenManager";
+import { ensureValidToken, storeGoogleIdToken, storeToken } from "./tokenManager";
 
 export interface AuthResult {
   user: User;
@@ -14,16 +15,31 @@ export interface AuthResult {
 
 /**
  * Sign in with Google ID Token (received from Frontend Google SDK)
- * @param idToken The Identity Token from Google Sign-In
+ * @param idToken The Identity Token from Google Sign-In (mobile only)
  */
-export async function signInWithGoogle(idToken: string): Promise<AuthResult> {
+export async function signInWithGoogle(): Promise<AuthResult> {
+  // Only support web OAuth for now
+  const redirectUri = AuthSession.makeRedirectUri({
+    web: window.location.origin
+  });
+  const clientId = "YOUR_GOOGLE_WEB_CLIENT_ID.apps.googleusercontent.com"; // TODO: Replace with your client ID
+  const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=id_token&scope=openid%20profile%20email&nonce=randomnonce`;
+  const result = await AuthSession.promptAsync({ url: authUrl, redirectUri });
+
+  if (result.type === "success" && result.params && result.params.id_token) {
+    return await signInWithGoogleBackend(result.params.id_token);
+  } else {
+    throw new Error("Google sign-in failed on web");
+  }
+}
+
+async function signInWithGoogleBackend(idToken: string): Promise<AuthResult> {
   try {
     const response = await api.post("/auth/google", { idToken });
-
     if (response.user && response.token) {
       await storeUserData("user", response.user);
-      await storeToken(response.token); // Store with expiry tracking
-      await storeGoogleIdToken(idToken); // Store for refresh
+      await storeToken(response.token);
+      await storeGoogleIdToken(idToken);
       return response;
     } else {
       throw new Error("Invalid response from server");

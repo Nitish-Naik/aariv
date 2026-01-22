@@ -7,35 +7,21 @@ import { useRouter } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
 import React, { useEffect, useRef, useState } from "react";
 import {
-  Alert,
   Animated,
   Dimensions,
   Easing,
-  Image,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTheme } from "../context/ThemeContext";
-import { signInWithGoogle } from "../services/auth";
+// import { signInWithGoogle } from "../services/auth";
 import { spacing } from "../theme";
 
-// Safely import Google Signin to avoid crash if native module is missing
-let GoogleSignin: any;
-let statusCodes: any;
-let isErrorWithCode: any;
-
-try {
-  const googleSigninModule = require("@react-native-google-signin/google-signin");
-  GoogleSignin = googleSigninModule.GoogleSignin;
-  statusCodes = googleSigninModule.statusCodes;
-  isErrorWithCode = googleSigninModule.isErrorWithCode;
-} catch (e) {
-  console.warn("GoogleSignin native module not found. Rebuild required.");
-}
+// Google native sign-in removed; only web OAuth supported
 
 // 1. Required for web browser redirect
 WebBrowser.maybeCompleteAuthSession();
@@ -60,21 +46,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
   const fadeAnimText = useRef(new Animated.Value(0)).current;
   const fadeAnimButton = useRef(new Animated.Value(0)).current;
 
-  // Initialize Native Google Sign-In
-  useEffect(() => {
-    if (GoogleSignin) {
-      try {
-        GoogleSignin.configure({
-          // Web Client ID is required for the ID Token returned to the backend
-          webClientId: "292920205050-qciahrobol5kpe0g6ved1c1fkaedr4i6.apps.googleusercontent.com",
-          // Offline access to get a refresh token if needed
-          offlineAccess: true,
-        });
-      } catch (e) {
-        console.error("GoogleSignin configure failed", e);
-      }
-    }
-  }, []);
+  // Native Google Sign-In removed
 
   useEffect(() => {
     Animated.stagger(200, [
@@ -99,61 +71,16 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
     ]).start();
   }, []);
 
-  const handleBackendLogin = async (idToken: string) => {
-    try {
-      setLoading(true);
-      await signInWithGoogle(idToken);
-      onLoginSuccess();
-    } catch (error: any) {
-      Alert.alert(
-        "Login Server Error",
-        error.message || "Failed to authenticate with backend.",
-      );
-    } finally {
+  const handleDummyLogin = async () => {
+    setLoading(true);
+    setTimeout(() => {
       setLoading(false);
-    }
+      onLoginSuccess();
+    }, 1000); // Simulate network delay
   };
 
   const onSignInPress = async () => {
-    if (!GoogleSignin) {
-      Alert.alert(
-        "Setup Required",
-        "Google Sign-In native module is missing.\nPlease rebuild the app:\nnpx expo run:android"
-      );
-      return;
-    }
-
-    try {
-      setLoading(true);
-      await GoogleSignin.hasPlayServices();
-      const userInfo = await GoogleSignin.signIn();
-
-      const idToken = userInfo.data?.idToken;
-      if (idToken) {
-        await handleBackendLogin(idToken);
-      } else {
-        throw new Error("No ID token present");
-      }
-    } catch (error: any) {
-      setLoading(false);
-      if (isErrorWithCode && isErrorWithCode(error)) {
-        switch (error.code) {
-          case statusCodes.SIGN_IN_CANCELLED:
-            // user cancelled the login flow
-            break;
-          case statusCodes.IN_PROGRESS:
-            // operation (e.g. sign in) is in progress already
-            break;
-          case statusCodes.PLAY_SERVICES_NOT_AVAILABLE:
-            Alert.alert("Error", "Google Play Services not available or outdated.");
-            break;
-          default:
-            Alert.alert("Sign In Error", error.message);
-        }
-      } else {
-        Alert.alert("Sign In Error", "An unexpected error occurred.");
-      }
-    }
+    await handleDummyLogin();
   };
 
   const handleLegalPress = (type: "terms" | "privacy") => {
@@ -267,19 +194,9 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
               disabled={loading}
             >
               {loading ? (
-                <Text style={styles.googleButtonText}>Connecting...</Text>
+                <Text style={styles.googleButtonText}>Signing in...</Text>
               ) : (
-                <>
-                  <Image
-                    source={{
-                      uri: "https://logos-world.net/wp-content/uploads/2020/09/Google-Symbol.png",
-                    }}
-                    style={{ width: 20, height: 20, marginRight: 12 }}
-                  />
-                  <Text style={styles.googleButtonText}>
-                    Continue with Google
-                  </Text>
-                </>
+                <Text style={styles.googleButtonText}>Continue (Dummy Sign-In)</Text>
               )}
             </TouchableOpacity>
             <Text style={styles.cardTagline}>
