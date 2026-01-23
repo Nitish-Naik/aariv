@@ -1,24 +1,25 @@
 /**
  * Token management: refresh, validation, expiry
  */
-import { getUserData, storeUserData } from "../utils/storage";
+import { jwtDecode } from "jwt-decode";
+import { getEncryptedToken, storeEncryptedToken, removeToken } from "../utils/storage";
+import { getUserData, storeUserData } from "../utils/storage"; // Keep for non-sensitive data if needed
 
 interface TokenPayload {
   exp?: number;
   iat?: number;
   sub?: string;
+  [key: string]: any;
 }
 
 /**
- * Decode JWT (basic client-side decode, no validation)
+ * Decode JWT safely
  */
 export function decodeToken(token: string): TokenPayload | null {
   try {
-    const parts = token.split(".");
-    if (parts.length !== 3) return null;
-    const decoded = JSON.parse(atob(parts[1]));
-    return decoded;
-  } catch {
+    return jwtDecode<TokenPayload>(token);
+  } catch (error) {
+    console.error("Failed to decode token:", error);
     return null;
   }
 }
@@ -37,7 +38,9 @@ export function isTokenExpired(token: string, bufferSeconds = 60): boolean {
  * Get stored token
  */
 export async function getStoredToken(): Promise<string | null> {
-  return getUserData("token");
+  // Use SecureStore (via storage util)
+  // We use 'session' as the platform key for the main auth token
+  return getEncryptedToken("session");
 }
 
 /**
@@ -49,7 +52,9 @@ export async function ensureValidToken(): Promise<string | null> {
 
   if (isTokenExpired(token)) {
     // Attempt refresh using stored Google ID token
-    const idToken = await getUserData("google_id_token");
+    // We also move google_id_token to SecureStore for safety
+    const idToken = await getEncryptedToken("google_id_token");
+    
     if (!idToken) {
       console.warn("Token expired and no refresh token available. Re-login required.");
       return null;
@@ -58,6 +63,9 @@ export async function ensureValidToken(): Promise<string | null> {
     try {
       // Re-authenticate with Google token
       const { api } = await import("./api");
+      // Note: This call might fail if api.post itself calls ensureValidToken (circular dependency).
+      // However, api.post usually just calls getStoredToken. 
+      // We should ensure api.ts doesn't call ensureValidToken automatically for the refresh endpoint.
       const response = await api.post("/auth/google", { idToken });
       
       if (response.user && response.token) {
@@ -79,16 +87,23 @@ export async function ensureValidToken(): Promise<string | null> {
  * Store a new token with expiry tracking
  */
 export async function storeToken(token: string): Promise<void> {
-  await storeUserData("token", token);
+  await storeEncryptedToken("session", token);
   const payload = decodeToken(token);
-  if (payload?.exp) {
-    await storeUserData("token_exp", String(payload.exp));
-  }
+  // We can still keep expiry in Async storage for quick access if needed, 
+  // but decoding is fast enough.
 }
 
 /**
  * Store Google ID token for refresh
  */
 export async function storeGoogleIdToken(idToken: string): Promise<void> {
-  await storeUserData("google_id_token", idToken);
+  await storeEncryptedToken("google_id_token", idToken);
+}
+
+/**
+ * Clear all auth tokens
+ */
+export async function clearTokens(): Promise<void> {
+    await removeToken("session");
+    await removeToken("google_id_token");
 }

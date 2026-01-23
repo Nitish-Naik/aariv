@@ -3,108 +3,212 @@
  */
 
 import * as AuthSession from "expo-auth-session";
+
+import * as WebBrowser from "expo-web-browser";
+
+import { supabase } from "./supabaseClient"; 
+
 import type { User } from "../types";
-import { getUserData, storeUserData } from "../utils/storage";
-import { api } from "./api";
-import { ensureValidToken, storeGoogleIdToken, storeToken } from "./tokenManager";
+
+
 
 export interface AuthResult {
+
   user: User;
-  token: string;
+
+  session: any;
+
 }
+
+
+
+// Ensure WebBrowser can handle redirects
+
+WebBrowser.maybeCompleteAuthSession();
+
+
 
 /**
- * Sign in with Google ID Token (received from Frontend Google SDK)
- * @param idToken The Identity Token from Google Sign-In (mobile only)
+
+ * Sign in with Google using Supabase Auth
+
  */
-export async function signInWithGoogle(): Promise<AuthResult> {
-  // Only support web OAuth for now
-  const redirectUri = AuthSession.makeRedirectUri({
-    web: window.location.origin
-  });
-  const clientId = "YOUR_GOOGLE_WEB_CLIENT_ID.apps.googleusercontent.com"; // TODO: Replace with your client ID
-  const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=id_token&scope=openid%20profile%20email&nonce=randomnonce`;
-  const result = await AuthSession.promptAsync({ url: authUrl, redirectUri });
 
-  if (result.type === "success" && result.params && result.params.id_token) {
-    return await signInWithGoogleBackend(result.params.id_token);
-  } else {
-    throw new Error("Google sign-in failed on web");
-  }
-}
+export async function signInWithGoogle(): Promise<void> {
 
-async function signInWithGoogleBackend(idToken: string): Promise<AuthResult> {
   try {
-    const response = await api.post("/auth/google", { idToken });
-    if (response.user && response.token) {
-      await storeUserData("user", response.user);
-      await storeToken(response.token);
-      await storeGoogleIdToken(idToken);
-      return response;
-    } else {
-      throw new Error("Invalid response from server");
-    }
-  } catch (error) {
-    console.error("Sign In Failed:", error);
-    throw error;
-  }
-}
 
-/**
- * Ensure token is valid before API calls
- */
-export async function ensureAuth(): Promise<void> {
-  const validToken = await ensureValidToken();
-  if (!validToken) {
-    throw new Error("Session expired. Please log in again.");
-  }
-}
+    const redirectUri = AuthSession.makeRedirectUri({
 
-/**
- * Sign out
- */
-export async function signOut(): Promise<void> {
-  await storeUserData("user", null);
-  await storeUserData("token", null);
-  await storeUserData("token_exp", null);
-  await storeUserData("google_id_token", null);
-}
+        scheme: 'aariv',
 
-/**
- * Get current user from storage
- */
-export async function getCurrentUser(): Promise<User | null> {
-  return getUserData("user");
-}
+        path: 'auth/callback'
 
-/**
- * Check if user is signed in
- */
-export async function isSignedIn(): Promise<boolean> {
-  const user = await getCurrentUser();
-  return !!user;
-}
-
-/**
- * Delete account
- */
-export async function deleteAccount(userId: string): Promise<void> {
-  try {
-    const response = await api.delete("/auth/delete", {
-      data: { userId } // Send body with DELETE request
     });
 
-    // Clear local storage regardless of backend result for safety
+
+
+    const { data, error } = await supabase.auth.signInWithOAuth({
+
+      provider: 'google',
+
+      options: {
+
+        redirectTo: redirectUri,
+
+        skipBrowserRedirect: true,
+
+      },
+
+    });
+
+
+
+    if (error) throw error;
+
+    if (!data.url) throw new Error("No OAuth URL returned from Supabase");
+
+
+
+    const result = await WebBrowser.openAuthSessionAsync(data.url, redirectUri);
+
+
+
+    if (result.type !== "success") {
+
+        throw new Error("Sign in cancelled");
+
+    }
+
+
+
+    // Parse session from URL
+
+    const params = new URLSearchParams(result.url.split("#")[1]);
+
+    const accessToken = params.get("access_token");
+
+    const refreshToken = params.get("refresh_token");
+
+
+
+    if (accessToken && refreshToken) {
+
+        await supabase.auth.setSession({
+
+            access_token: accessToken,
+
+            refresh_token: refreshToken,
+
+        });
+
+    }
+
+
+
+  } catch (error: any) {
+
+    console.error("Supabase Login Failed:", error);
+
+    throw error;
+
+  }
+
+}
+
+
+
+/**
+
+ * Sign out
+
+ */
+
+export async function signOut(): Promise<void> {
+
+  await supabase.auth.signOut();
+
+}
+
+
+
+/**
+
+ * Get current user from Supabase session
+
+ */
+
+export async function getCurrentUser(): Promise<User | null> {
+
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) return null;
+
+
+
+  return {
+
+    id: user.id,
+
+    email: user.email!,
+
+    name: user.user_metadata?.full_name || user.email!.split('@')[0],
+
+    avatar: user.user_metadata?.avatar_url,
+
+    googleId: user.app_metadata?.provider === 'google' ? user.identities?.[0]?.id || '' : '',
+
+  };
+
+}
+
+
+
+/**
+
+ * Check if user is signed in
+
+ */
+
+export async function isSignedIn(): Promise<boolean> {
+
+  const { data: { session } } = await supabase.auth.getSession();
+
+  return !!session;
+
+}
+
+
+
+/**
+
+ * Delete account
+
+ */
+
+export async function deleteAccount(): Promise<void> {
+
+  try {
+
+    // In a real app, you might want to call a backend function to clean up user data
+
+    // before calling supabase.auth.signOut() or using the admin API to delete.
+
+    // For now, we just sign out.
+
     await signOut();
 
-    if (response.error) {
-      throw new Error(response.error);
-    }
   } catch (error) {
+
     console.error("Delete Account Failed:", error);
-    // Still clear local data
+
     await signOut();
+
     throw error;
+
   }
+
 }
+
+
 

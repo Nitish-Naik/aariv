@@ -2,6 +2,7 @@ import { Stack } from "expo-router";
 import React, { useEffect } from "react";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { ErrorBoundary } from "../components/ErrorBoundary";
+import { AuthProvider } from "../context/AuthContext";
 import { ThemeProvider, useTheme } from "../context/ThemeContext";
 import {
     registerForPushNotifications,
@@ -122,9 +123,11 @@ export default function RootLayout() {
   return (
     <ErrorBoundary>
       <SafeAreaProvider>
-        <ThemeProvider>
-          <ThemedStack />
-        </ThemeProvider>
+        <AuthProvider>
+          <ThemeProvider>
+            <ThemedStack />
+          </ThemeProvider>
+        </AuthProvider>
       </SafeAreaProvider>
     </ErrorBoundary>
   );

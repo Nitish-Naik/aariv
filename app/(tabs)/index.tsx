@@ -21,22 +21,13 @@ import { getCurrentUser } from "../../services/auth";
 import { borderRadius, spacing, typography } from "../../theme";
 
 
+
 export default function HomeTab() {
   const router = useRouter();
   const { colors, isDark } = useTheme();
   const styles = getStyles(colors, isDark);
 
   const [user, setUser] = useState<any>(null);
-  useEffect(() => {
-    (async () => {
-      setUser(await getCurrentUser());
-    })();
-  }, []);
-
-  if (!user) {
-    return null;
-  }
-
   const [events, setEvents] = useState<any[]>([]);
   const [briefing, setBriefing] = useState<{
     greeting: string;
@@ -48,6 +39,23 @@ export default function HomeTab() {
   const [loading, setLoading] = useState(true);
   const [missingConnections, setMissingConnections] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      setUser(await getCurrentUser());
+    })();
+  }, []);
+
+  if (!user) {
+    // Instead of returning before hooks, show a loading indicator
+    return (
+      <SafeAreaView style={styles.container} edges={["top"]}>
+        <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+          <ActivityIndicator size="large" color={colors.primary[500]} />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   const checkConnections = async (userId: string) => {
     try {

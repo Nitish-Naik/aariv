@@ -17,12 +17,10 @@ import {
   View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useAuth } from "../context/AuthContext"; // Use Auth Context
 import { useTheme } from "../context/ThemeContext";
-import { supabase } from "../services/supabaseClient";
-// import { signInWithGoogle } from "../services/auth";
+import { signInWithGoogle } from "../services/auth";
 import { spacing } from "../theme";
-
-// Google native sign-in removed; only web OAuth supported
 
 // 1. Required for web browser redirect
 WebBrowser.maybeCompleteAuthSession();
@@ -37,46 +35,15 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const { colors } = useTheme();
+  // Get signIn from context to update global state
+  const { signIn: contextSignIn } = useAuth();
 
   const styles = getStyles();
-  // Logout handler (for dev/testing)
-  const handleLogout = async () => {
-    // Clear Supabase session
-    await supabase.auth.signOut();
-    // Optionally clear any local storage/session state if used
-    // Redirect to login screen
-    router.replace('/login');
-  };
 
   // Animation Refs
   const fadeAnimLogo = useRef(new Animated.Value(0)).current;
   const fadeAnimText = useRef(new Animated.Value(0)).current;
   const fadeAnimButton = useRef(new Animated.Value(0)).current;
-
-  // Check for Supabase session on mount
-  const [session, setSession] = useState<any>(null);
-  useEffect(() => {
-    (async () => {
-      const { data } = await supabase.auth.getSession();
-      setSession(data?.session);
-      if (data?.session?.user) {
-        onLoginSuccess();
-      }
-    })();
-  }, []);
-
-  // Listen for Supabase auth state changes
-  useEffect(() => {
-    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
-      setSession(session);
-      if (session?.user) {
-        onLoginSuccess();
-      }
-    });
-    return () => {
-      listener?.subscription?.unsubscribe();
-    };
-  }, []);
 
   useEffect(() => {
     Animated.stagger(200, [
@@ -101,29 +68,17 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
     ]).start();
   }, []);
 
-  const handleSupabaseLogin = async () => {
+  const handleGoogleLogin = async () => {
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: 'https://probable-lamp-7v5x54r65q7rhw4g-8081.app.github.dev'
-        }
-      });
-      if (error) {
-        window.alert(error.message || "Google sign-in failed.");
-      } else {
-        // Supabase will redirect, so no need to call onLoginSuccess here
-      }
+      // Perform Auth via Supabase
+      // AuthContext will detect the session change and handle state/redirection
+      await signInWithGoogle();
     } catch (error: any) {
-      window.alert(error.message || "Failed to authenticate with Google.");
+      alert(error.message || "Failed to authenticate with Google.");
     } finally {
       setLoading(false);
     }
-  };
-
-  const onSignInPress = async () => {
-    await handleSupabaseLogin();
   };
 
   const handleLegalPress = (type: "terms" | "privacy") => {
@@ -232,7 +187,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
 
             <TouchableOpacity
               style={styles.googleButton}
-              onPress={onSignInPress}
+              onPress={handleGoogleLogin}
               activeOpacity={0.8}
               disabled={loading}
             >
@@ -242,19 +197,9 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
                 <Text style={styles.googleButtonText}>Continue With Google</Text>
               )}
             </TouchableOpacity>
-            {/* Logout button only if logged in */}
-            {session?.user && (
-              <TouchableOpacity
-                style={[styles.googleButton, { backgroundColor: '#6B7280', marginTop: 8 }]}
-                onPress={handleLogout}
-                activeOpacity={0.8}
-              >
-                <Text style={styles.googleButtonText}>Logout</Text>
-              </TouchableOpacity>
-            )}
+
             <Text style={styles.cardTagline}>
               Private by design.
-              {/* You stay in control. */}
             </Text>
           </View>
 
