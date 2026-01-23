@@ -219,9 +219,9 @@ export default function HomeTab() {
               <Text style={styles.greeting}>{personalizedGreeting}</Text>
               <Text style={styles.briefing}>
                 {actions.length > 0 ? (
-                  <Text>Here's what's waiting for you</Text>
+                  <Text>Here&apos;s what&apos;s waiting for you</Text>
                 ) : (
-                  <Text>You're all caught up 🎉</Text>
+                  <Text>You&apos;re all caught up 🎉</Text>
                 )}
               </Text>
             </View>
@@ -254,7 +254,7 @@ export default function HomeTab() {
               <Ionicons name="checkmark-circle" size={64} color={colors.semantic.success} />
               <Text style={styles.emptyTitle}>All Caught Up</Text>
               <Text style={styles.emptySubtitle}>
-                You've reviewed everything for today.{'\n'}Nice work!
+                You&apos;ve reviewed everything for today.{'\n'}Nice work!
               </Text>
             </View>
           )}
