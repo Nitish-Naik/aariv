@@ -2,18 +2,19 @@
  * Execution Status Screen - View action execution status
  */
 
+import { format } from 'date-fns';
 import React from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
   ScrollView,
+  StyleSheet,
+  Text,
+  View,
 } from 'react-native';
-import { colors, spacing, typography } from '../theme';
 import { Card } from '../components/Card';
 import { PlatformIcon } from '../components/PlatformIcon';
+import { useTheme } from '../context/ThemeContext';
+import { spacing, typography } from '../theme';
 import type { ActionItem } from '../types';
-import { format } from 'date-fns';
 
 interface ExecutionStatusScreenProps {
   action: ActionItem;
@@ -24,18 +25,21 @@ export const ExecutionStatusScreen: React.FC<ExecutionStatusScreenProps> = ({
   action,
   onBack,
 }) => {
+  const { colors, isDark } = useTheme();
+  const styles = getStyles(colors, isDark);
+
   const getStatusColor = () => {
     switch (action.status) {
       case 'approved':
-        return colors.action.approve;
+        return colors.semantic.success;
       case 'rejected':
-        return colors.action.reject;
+        return colors.semantic.error;
       case 'executed':
-        return colors.action.approve;
+        return colors.semantic.success;
       case 'expired':
-        return colors.action.neutral;
+        return colors.textTertiary;
       default:
-        return colors.action.pending;
+        return colors.semantic.warning;
     }
   };
 
@@ -134,25 +138,26 @@ export const ExecutionStatusScreen: React.FC<ExecutionStatusScreenProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.light.background,
+    backgroundColor: colors.background,
   },
   header: {
     padding: spacing[4],
     borderBottomWidth: 1,
-    borderBottomColor: colors.light.border,
+    borderBottomColor: colors.border,
   },
   title: {
     ...typography.textStyles.h2,
-    color: colors.neutral[900],
+    color: colors.text,
   },
   content: {
     flex: 1,
   },
   contentContainer: {
     padding: spacing[4],
+    paddingBottom: 120,
   },
   statusCard: {
     marginBottom: spacing[4],
@@ -160,13 +165,14 @@ const styles = StyleSheet.create({
   statusHeader: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: spacing[4],
   },
   statusInfo: {
     flex: 1,
   },
   statusLabel: {
     ...typography.textStyles.bodySmall,
-    color: colors.neutral[600],
+    color: colors.textSecondary,
     marginBottom: spacing[2],
   },
   statusBadge: {
@@ -184,24 +190,24 @@ const styles = StyleSheet.create({
   },
   detailsTitle: {
     ...typography.textStyles.h4,
-    color: colors.neutral[900],
+    color: colors.text,
     marginBottom: spacing[3],
   },
   detailRow: {
     flexDirection: 'row',
     paddingVertical: spacing[2],
     borderBottomWidth: 1,
-    borderBottomColor: colors.light.border,
+    borderBottomColor: colors.border,
   },
   detailLabel: {
     ...typography.textStyles.bodySmall,
-    color: colors.neutral[600],
+    color: colors.textSecondary,
     fontWeight: typography.fontWeight.semibold,
     width: 100,
   },
   detailValue: {
     ...typography.textStyles.bodySmall,
-    color: colors.neutral[900],
+    color: colors.text,
     flex: 1,
   },
   metadataCard: {

@@ -1,39 +1,43 @@
 // services/api.ts
-import Constants from 'expo-constants';
-import { Platform } from 'react-native';
-import { signOut } from './auth';
-import { supabase } from './supabaseClient';
+import Constants from "expo-constants";
+import { Platform } from "react-native";
+import { signOut } from "./auth";
+import { supabase } from "./supabaseClient";
 
-// Prefer env-driven API base for all platforms. 
+// Prefer env-driven API base for all platforms.
 const ENV_API_URL = process.env.EXPO_PUBLIC_API_URL;
 
 // Dynamically determine host for development
 const getDevHost = () => {
-    if (Constants.expoConfig?.hostUri) {
-        return Constants.expoConfig.hostUri.split(':')[0];
-    }
-    return 'localhost';
+  if (Constants.expoConfig?.hostUri) {
+    return Constants.expoConfig.hostUri.split(":")[0];
+  }
+  return "localhost";
 };
 
 const DEV_HOST = getDevHost();
 
 const fallbackBase = Platform.select({
   ios: `http://${DEV_HOST}:3000/api`,
-  android: `http://${DEV_HOST}:3000/api`, // Expo automatically handles the host mapping often, but using the IP is safest
-  default: 'http://localhost:3000/api',
+  android: `http://${DEV_HOST}:3000/api`,
+  default: "https://aariv-backend.vercel.app/api", // Use Vercel backend as default for production
 });
 
-export const API_URL = ENV_API_URL ? ENV_API_URL.replace(/\/$/, '') : fallbackBase;
+export const API_URL = ENV_API_URL
+  ? ENV_API_URL.replace(/\/$/, "")
+  : fallbackBase;
 
 // Helper to get auth headers from Supabase
 async function getAuthHeaders(): Promise<HeadersInit> {
-  const { data: { session } } = await supabase.auth.getSession();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
   const headers: HeadersInit = {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   };
 
   if (session?.access_token) {
-    headers['Authorization'] = `Bearer ${session.access_token}`;
+    headers["Authorization"] = `Bearer ${session.access_token}`;
   }
 
   return headers;
@@ -49,7 +53,11 @@ async function handleResponse(response: Response, endpoint: string) {
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.message || errorData.error || `Request failed with status ${response.status}`);
+    throw new Error(
+      errorData.message ||
+        errorData.error ||
+        `Request failed with status ${response.status}`,
+    );
   }
 
   return response.json();
@@ -71,12 +79,19 @@ export const api = {
       clearTimeout(timeoutId);
       return handleResponse(response, endpoint);
     } catch (error: any) {
-      if (error.name === 'AbortError') {
-        throw new Error('Request timeout. Please try again.');
+      if (error.name === "AbortError") {
+        throw new Error("Request timeout. Please try again.");
       }
-      if (error.message?.includes('Network request failed') || error.message?.includes('Failed to fetch')) {
-          console.warn(`API Connection Error: Could not reach ${API_URL}${endpoint}. Is the backend server running?`);
-          throw new Error("Could not connect to server. Please check your internet connection or try again later.");
+      if (
+        error.message?.includes("Network request failed") ||
+        error.message?.includes("Failed to fetch")
+      ) {
+        console.warn(
+          `API Connection Error: Could not reach ${API_URL}${endpoint}. Is the backend server running?`,
+        );
+        throw new Error(
+          "Could not connect to server. Please check your internet connection or try again later.",
+        );
       }
       console.error(`GET ${endpoint} failed:`, error);
       throw error;
@@ -90,7 +105,7 @@ export const api = {
       const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
 
       const response = await fetch(`${API_URL}${endpoint}`, {
-        method: 'POST',
+        method: "POST",
         headers,
         body: JSON.stringify(body),
         signal: controller.signal,
@@ -99,12 +114,17 @@ export const api = {
       clearTimeout(timeoutId);
       return handleResponse(response, endpoint);
     } catch (error: any) {
-      if (error.name === 'AbortError') {
-        throw new Error('Request timeout. Please try again.');
+      if (error.name === "AbortError") {
+        throw new Error("Request timeout. Please try again.");
       }
-      if (error.message?.includes('Network request failed') || error.message?.includes('Failed to fetch')) {
-          console.warn(`API Connection Error: Could not reach ${API_URL}${endpoint}. Is the backend server running?`);
-          throw new Error("Could not connect to server. Is the backend running?");
+      if (
+        error.message?.includes("Network request failed") ||
+        error.message?.includes("Failed to fetch")
+      ) {
+        console.warn(
+          `API Connection Error: Could not reach ${API_URL}${endpoint}. Is the backend server running?`,
+        );
+        throw new Error("Could not connect to server. Is the backend running?");
       }
       console.error(`POST ${endpoint} failed:`, error);
       throw error;
@@ -118,7 +138,7 @@ export const api = {
       const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
 
       const response = await fetch(`${API_URL}${endpoint}`, {
-        method: 'DELETE',
+        method: "DELETE",
         headers,
         body: options?.data ? JSON.stringify(options.data) : undefined,
         signal: controller.signal,
@@ -127,12 +147,11 @@ export const api = {
       clearTimeout(timeoutId);
       return handleResponse(response, endpoint);
     } catch (error: any) {
-      if (error.name === 'AbortError') {
-        throw new Error('Request timeout. Please try again.');
+      if (error.name === "AbortError") {
+        throw new Error("Request timeout. Please try again.");
       }
       console.error(`DELETE ${endpoint} failed:`, error);
       throw error;
     }
   },
 };
-

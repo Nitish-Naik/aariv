@@ -2,18 +2,19 @@
  * Team Hub Screen - Team updates and collaboration
  */
 
+import { format } from 'date-fns';
 import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
   FlatList,
+  StyleSheet,
+  Text,
   TouchableOpacity,
+  View,
 } from 'react-native';
-import { colors, spacing, typography } from '../theme';
 import { Card } from '../components/Card';
 import { PlatformIcon } from '../components/PlatformIcon';
-import { format } from 'date-fns';
+import { useTheme } from '../context/ThemeContext';
+import { spacing, typography } from '../theme';
 
 interface TeamUpdate {
   id: string;
@@ -38,6 +39,8 @@ export const TeamHubScreen: React.FC<TeamHubScreenProps> = ({
   onBack,
 }) => {
   const [filter, setFilter] = useState<'all' | TeamUpdate['type']>('all');
+  const { colors, isDark } = useTheme();
+  const styles = getStyles(colors, isDark);
 
   const filteredUpdates =
     filter === 'all'
@@ -69,10 +72,10 @@ export const TeamHubScreen: React.FC<TeamHubScreenProps> = ({
                 item.type === 'message'
                   ? colors.primary[500] + '20'
                   : item.type === 'task'
-                  ? colors.semantic.warning + '20'
-                  : item.type === 'update'
-                  ? colors.semantic.info + '20'
-                  : colors.semantic.error + '20',
+                    ? colors.semantic.warning + '20'
+                    : item.type === 'update'
+                      ? colors.semantic.info + '20'
+                      : colors.semantic.error + '20',
             },
           ]}
         >
@@ -84,10 +87,10 @@ export const TeamHubScreen: React.FC<TeamHubScreenProps> = ({
                   item.type === 'message'
                     ? colors.primary[700]
                     : item.type === 'task'
-                    ? colors.semantic.warning
-                    : item.type === 'update'
-                    ? colors.semantic.info
-                    : colors.semantic.error,
+                      ? colors.semantic.warning
+                      : item.type === 'update'
+                        ? colors.semantic.info
+                        : colors.semantic.error,
               },
             ]}
           >
@@ -165,15 +168,15 @@ export const TeamHubScreen: React.FC<TeamHubScreenProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.light.background,
+    backgroundColor: colors.background,
   },
   header: {
     padding: spacing[4],
     borderBottomWidth: 1,
-    borderBottomColor: colors.light.border,
+    borderBottomColor: colors.border,
     flexDirection: 'row',
     alignItems: 'center',
   },
@@ -186,31 +189,36 @@ const styles = StyleSheet.create({
   },
   title: {
     ...typography.textStyles.h2,
-    color: colors.neutral[900],
+    color: colors.text,
   },
   filters: {
     flexDirection: 'row',
     padding: spacing[4],
+    gap: spacing[2],
   },
   filterButton: {
     paddingHorizontal: spacing[3],
     paddingVertical: spacing[2],
     borderRadius: 8,
-    backgroundColor: colors.light.surface,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   filterButtonActive: {
     backgroundColor: colors.primary[500],
+    borderColor: colors.primary[500],
   },
   filterText: {
     ...typography.textStyles.bodySmall,
-    color: colors.neutral[600],
+    color: colors.textSecondary,
   },
   filterTextActive: {
-    color: colors.light.text,
+    color: '#FFFFFF',
     fontWeight: typography.fontWeight.semibold,
   },
   list: {
     padding: spacing[4],
+    paddingBottom: 120,
   },
   updateCard: {
     marginBottom: spacing[3],
@@ -226,15 +234,16 @@ const styles = StyleSheet.create({
   },
   updateInfo: {
     flex: 1,
+    marginLeft: spacing[3],
   },
   updateAuthor: {
     ...typography.textStyles.body,
-    color: colors.neutral[900],
+    color: colors.text,
     fontWeight: typography.fontWeight.semibold,
   },
   updateTime: {
     ...typography.textStyles.caption,
-    color: colors.neutral[500],
+    color: colors.textSecondary,
   },
   unreadDot: {
     width: 8,
@@ -255,13 +264,13 @@ const styles = StyleSheet.create({
   },
   updateTitle: {
     ...typography.textStyles.body,
-    color: colors.neutral[900],
+    color: colors.text,
     fontWeight: typography.fontWeight.semibold,
     marginBottom: spacing[1],
   },
   updateDescription: {
     ...typography.textStyles.bodySmall,
-    color: colors.neutral[600],
+    color: colors.textSecondary,
   },
   emptyContainer: {
     padding: spacing[8],
@@ -269,7 +278,8 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     ...typography.textStyles.body,
-    color: colors.neutral[500],
+    color: colors.textTertiary,
   },
 });
+
 

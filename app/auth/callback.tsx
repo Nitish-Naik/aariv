@@ -10,17 +10,17 @@ export default function AuthCallback() {
       try {
         const { data, error } = await supabase.auth.getSession();
         if (error) {
-          router.replace("/LoginScreen");
+          router.replace("/login");
           return;
         }
         if (data?.session?.user) {
           // Optionally: fetch user profile, onboarding, etc.
-          router.replace("/HomeDashboard");
+          router.replace("/");
         } else {
-          router.replace("/LoginScreen");
+          router.replace("/login");
         }
       } catch (err) {
-        router.replace("/LoginScreen");
+        router.replace("/login");
       }
     }
     finalizeAuth();

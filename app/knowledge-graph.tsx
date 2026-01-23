@@ -8,46 +8,58 @@ import { KnowledgeGraphVisualizerScreen } from '../screens/KnowledgeGraphVisuali
 import { api } from '../services/api';
 import { getCurrentUser } from '../services/auth';
 import type { KnowledgeGraphNode } from '../types';
+import { hasKGConsent } from '../utils/kgConsent';
 
 // Corrected duplicate code removed
 export default function KnowledgeGraphRoute() {
   const router = useRouter();
   const { colors } = useTheme();
-  
+
   // State
   const [hasConsented, setHasConsented] = useState(false);
+  const [checkingConsent, setCheckingConsent] = useState(true);
   const [showVisualizer, setShowVisualizer] = useState(false);
   const [nodes, setNodes] = useState<KnowledgeGraphNode[]>([]);
   const [loading, setLoading] = useState(false);
 
+  // Check consent on mount
   useEffect(() => {
-     if (hasConsented) {
-         fetchGraph();
-     }
+    const checkConsent = async () => {
+      const consentGiven = await hasKGConsent();
+      setHasConsented(consentGiven);
+      setCheckingConsent(false);
+    };
+    checkConsent();
+  }, []);
+
+  useEffect(() => {
+    if (hasConsented) {
+      fetchGraph();
+    }
   }, [hasConsented]);
 
   const fetchGraph = async () => {
-     try {
-         setLoading(true);
-         const user = await getCurrentUser();
-         if (user) {
-             const data = await api.get(`/knowledge/graph?userId=${user.id}`);
-             if (data.nodes) {
-                 // Ensure dates are parsed
-                 const parsedNodes = data.nodes.map((n: any) => ({
-                     ...n,
-                     createdAt: new Date(n.createdAt),
-                     expiresAt: n.expiresAt ? new Date(n.expiresAt) : undefined 
-                 }));
-                 setNodes(parsedNodes);
-             }
-         }
-     } catch (e: any) {
-         console.error("Failed to fetch graph", e);
-         Alert.alert("Graph Error", "Failed to generate your knowledge graph. Please try again later.\n" + (e.message || ""));
-     } finally {
-         setLoading(false);
-     }
+    try {
+      setLoading(true);
+      const user = await getCurrentUser();
+      if (user) {
+        const data = await api.get(`/knowledge/graph?userId=${user.id}`);
+        if (data.nodes) {
+          // Ensure dates are parsed
+          const parsedNodes = data.nodes.map((n: any) => ({
+            ...n,
+            createdAt: new Date(n.createdAt),
+            expiresAt: n.expiresAt ? new Date(n.expiresAt) : undefined
+          }));
+          setNodes(parsedNodes);
+        }
+      }
+    } catch (e: any) {
+      console.error("Failed to fetch graph", e);
+      Alert.alert("Graph Error", "Failed to generate your knowledge graph. Please try again later.\n" + (e.message || ""));
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleConsent = () => {
@@ -63,30 +75,30 @@ export default function KnowledgeGraphRoute() {
     setNodes([]);
   };
 
-  if(!hasConsented) {
-      return (
-        <View style={styles.container}>
-            <KnowledgeGraphConsentScreen
-                onAccept={handleConsent}
-                onDecline={() => router.back()}
-                onBack={() => router.back()}
-            />
-        </View>
-      );
+  if (!hasConsented) {
+    return (
+      <View style={styles.container}>
+        <KnowledgeGraphConsentScreen
+          onAccept={handleConsent}
+          onDecline={() => router.back()}
+          onBack={() => router.back()}
+        />
+      </View>
+    );
   }
 
   if (loading) {
-      return (
-        <View style={[styles.container, { justifyContent: 'center', alignItems: 'center'}]}>
-             <ActivityIndicator size="large" color={colors.primary[500]} />
-        </View>
-      );
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={colors.primary[500]} />
+      </View>
+    );
   }
 
   return (
     <View style={styles.container}>
       {showVisualizer ? (
-        <KnowledgeGraphVisualizerScreen 
+        <KnowledgeGraphVisualizerScreen
           onBack={() => setShowVisualizer(false)}
           onToggleList={() => setShowVisualizer(false)}
         />
@@ -104,7 +116,7 @@ export default function KnowledgeGraphRoute() {
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-    }
+  container: {
+    flex: 1,
+  }
 });

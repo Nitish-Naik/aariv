@@ -99,39 +99,85 @@ export default function ZenModeScreen() {
             // Haptic Feedback for Immediate Satisfaction
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
-            if (action.type === 'email') {
-                showToast("Drafting reply...");
-            } else if (action.type === 'calendar') {
-                showToast("Updating calendar...");
-            } else {
-                showToast("Action initiated");
-            }
-
-            await api.post('/actions/execute', {
+            // API Call to Backend
+            await api.post(`/actions/${action.id}/execute`, {
                 userId: user.id,
-                actionType: action.type === 'calendar' ? 'CALENDAR_ACTION' : 'DRAFT_REPLY',
                 actionData: action.data
             });
 
-            showToast("Done!"); // Update toast on completion
+            // Update local action status
+            const updatedAction = { ...action, status: 'executed' };
 
+            // Navigate to execution status screen
+            router.push({
+                pathname: '/action-status',
+                params: { actionData: JSON.stringify(updatedAction) }
+            });
+
+        } catch (e: any) {
+            Alert.alert(
+                "Execution Failed",
+                e.message || "Could not execute the action. Please try again.",
+                [{ text: "OK" }]
+            );
+        }
+    };
+
+    const handleApprove = async (action: any) => {
+        // Remove from queue immediately for snappy UX
+        setActions(prev => prev.filter(a => a.id !== action.id));
+        setProcessedCount(prev => prev + 1);
+
+        // Update action status to approved
+        const approvedAction = { ...action, status: 'approved' };
+
+        try {
+            await executeAction(approvedAction);
         } catch (e) {
-            console.error("Action failed", e);
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-            Alert.alert("Error", "Failed to execute action.");
+            console.log("Approval failed:", e);
+            // Optionally re-add to queue on failure
+        }
+    };
+
+    const handleReject = async (action: any) => {
+        // Haptic Feedback
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+
+        // Remove from queue
+        setActions(prev => prev.filter(a => a.id !== action.id));
+        setProcessedCount(prev => prev + 1);
+
+        // Update action status to rejected  
+        const rejectedAction = { ...action, status: 'rejected' };
+
+        try {
+            const user = await getCurrentUser();
+            if (user) {
+                await api.post(`/actions/${action.id}/reject`, {
+                    userId: user.id
+                });
+            }
+
+            // Navigate to execution status to show rejection
+            router.push({
+                pathname: '/action-status',
+                params: { actionData: JSON.stringify(rejectedAction) }
+            });
+
+        } catch (e: any) {
+            console.log("Rejection failed:", e);
         }
     };
 
     const handleSwipe = (direction: 'left' | 'right') => {
         const currentAction = actions[0];
+        if (!currentAction) return;
 
-        // 1. Remove from list immediately (Optimistic)
-        setActions((prev) => prev.slice(1));
-        setProcessedCount(c => c + 1);
-
-        // 2. Perform Backend Action if Right Swipe (Approve)
+        // Handle approve (right swipe) or reject (left swipe)
         if (direction === 'right') {
-            executeAction(currentAction);
+            handleApprove(currentAction);
+        } else {
+            handleReject(currentAction);
         }
     };
 

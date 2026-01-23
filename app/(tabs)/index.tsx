@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect } from "@react-navigation/native";
 import { format } from "date-fns";
 import { useRouter } from "expo-router";
@@ -20,8 +21,6 @@ import { api } from "../../services/api";
 import { getCurrentUser } from "../../services/auth";
 import { borderRadius, spacing, typography } from "../../theme";
 
-
-
 export default function HomeTab() {
   const router = useRouter();
   const { colors, isDark } = useTheme();
@@ -39,25 +38,33 @@ export default function HomeTab() {
   const [loading, setLoading] = useState(true);
   const [missingConnections, setMissingConnections] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [zenMode, setZenMode] = useState(false);
 
   useEffect(() => {
     (async () => {
       setUser(await getCurrentUser());
+      // Load zen mode preference
+      const savedZenMode = await AsyncStorage.getItem('zenMode');
+      if (savedZenMode) setZenMode(JSON.parse(savedZenMode));
     })();
   }, []);
 
-  if (!user) {
-    // Instead of returning before hooks, show a loading indicator
-    return (
-      <SafeAreaView style={styles.container} edges={["top"]}>
-        <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-          <ActivityIndicator size="large" color={colors.primary[500]} />
-        </View>
-      </SafeAreaView>
-    );
-  }
+  // Helper function to get time-based greeting
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 18) return 'Good afternoon';
+    return 'Good evening';
+  };
 
-  const checkConnections = async (userId: string) => {
+  // Personalized greeting with user name
+  const personalizedGreeting = user?.user_metadata?.name
+    ? `${getGreeting()}, ${user.user_metadata.name}`
+    : user?.email
+      ? `${getGreeting()}, ${user.email.split('@')[0]}`
+      : getGreeting();
+
+  const checkConnections = useCallback(async (userId: string) => {
     try {
       const res = await api.get(`/integrations?userId=${userId}`);
       const connectedApps = (res.integrations || [])
@@ -73,19 +80,18 @@ export default function HomeTab() {
     } catch (e) {
       console.log("Failed to check connections", e);
     }
-  };
+  }, []);
 
   const fetchBriefing = useCallback(async () => {
     if (!user) return;
     try {
       setError(null);
-      const user = await getCurrentUser();
-      if (!user) {
+      const currentUser = await getCurrentUser();
+      if (!currentUser) {
         throw new Error("You are signed out. Please log in again.");
       }
-      // Parallel fetch for speed
-      checkConnections(user.id);
-      const data = await api.get(`/dashboard/briefing?userId=${user.id}`);
+      checkConnections(currentUser.id);
+      const data = await api.get(`/dashboard/briefing?userId=${currentUser.id}`);
       setBriefing(data);
 
       if (data.actions && Array.isArray(data.actions)) {
@@ -121,7 +127,7 @@ export default function HomeTab() {
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, checkConnections]);
 
   useFocusEffect(
     useCallback(() => {
@@ -138,6 +144,30 @@ export default function HomeTab() {
     setRefreshing(false);
   }, [fetchBriefing, user]);
 
+  const toggleZenMode = async () => {
+    const newZenMode = !zenMode;
+    setZenMode(newZenMode);
+    await AsyncStorage.setItem('zenMode', JSON.stringify(newZenMode));
+  };
+
+  const stats = {
+    pendingActions: actions.filter((a) => a.status === "pending").length,
+    unreadMessages: briefing?.counts?.emails || 0,
+    todayMeetings: events.length,
+  };
+
+  if (!user) {
+    return (
+      <SafeAreaView style={styles.container} edges={["top"]}>
+        <View
+          style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+        >
+          <ActivityIndicator size="large" color={colors.primary[500]} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
       <ScrollView
@@ -153,49 +183,81 @@ export default function HomeTab() {
       >
         <WebContainer>
           {error && (
-            <View style={{ backgroundColor: isDark ? "#40202a" : "#fff5f5", borderRadius: 14, padding: 12, marginBottom: 12 }}>
-              <Text style={{ color: colors.text, marginBottom: 4 }}>Could not load your briefing.</Text>
-              <Text style={{ color: colors.textSecondary, marginBottom: 8 }}>{error}</Text>
-              <TouchableOpacity onPress={fetchBriefing} style={{ flexDirection: "row", alignItems: "center" }}>
-                <Ionicons name="refresh" size={16} color={colors.primary[500]} />
-                <Text style={{ color: colors.primary[500], marginLeft: 6 }}>Retry</Text>
+            <View
+              style={{
+                backgroundColor: isDark ? "#40202a" : "#fff5f5",
+                borderRadius: 14,
+                padding: 12,
+                marginBottom: 12,
+              }}
+            >
+              <Text style={{ color: colors.text, marginBottom: 4 }}>
+                Could not load your briefing.
+              </Text>
+              <Text style={{ color: colors.textSecondary, marginBottom: 8 }}>
+                {error}
+              </Text>
+              <TouchableOpacity
+                onPress={fetchBriefing}
+                style={{ flexDirection: "row", alignItems: "center" }}
+              >
+                <Ionicons
+                  name="refresh"
+                  size={16}
+                  color={colors.primary[500]}
+                />
+                <Text style={{ color: colors.primary[500], marginLeft: 6 }}>
+                  Retry
+                </Text>
               </TouchableOpacity>
             </View>
           )}
-          {/* Morning Briefing */}
+
+          {/* Header with Personalized Greeting */}
           <View style={styles.header}>
             <View style={{ flex: 1 }}>
-              <Text style={styles.greeting}>
-                {briefing?.greeting || "Good Morning"}
-              </Text>
+              <Text style={styles.greeting}>{personalizedGreeting}</Text>
               <Text style={styles.briefing}>
-                {briefing ? (
-                  <Text style={{ lineHeight: 28 }}>
-                    {briefing.summary.split(/(\d+)/).map((part, i) =>
-                      /\d+/.test(part) ? (
-                        <Text key={i} style={styles.highlight}>
-                          {part}
-                        </Text>
-                      ) : (
-                        part
-                      ),
-                    )}
-                  </Text>
+                {actions.length > 0 ? (
+                  <Text>Here's what's waiting for you</Text>
                 ) : (
-                  <Text>
-                    You have <Text style={styles.highlight}>...</Text> meetings
-                    and <Text style={styles.highlight}>...</Text> emails.
-                  </Text>
+                  <Text>You're all caught up 🎉</Text>
                 )}
               </Text>
             </View>
-            <TouchableOpacity
-              onPress={() => router.push("/voice-mode")}
-              style={styles.micButton}
-            >
-              <Ionicons name="mic" size={24} color={colors.primary[500]} />
-            </TouchableOpacity>
+            <View style={{ flexDirection: 'row', gap: spacing[2] }}>
+              {/* Zen Mode Toggle */}
+              <TouchableOpacity
+                onPress={toggleZenMode}
+                style={[styles.iconButton, zenMode && { backgroundColor: 'rgba(5, 150, 105, 0.15)' }]}
+              >
+                <Ionicons
+                  name="leaf-outline"
+                  size={20}
+                  color={zenMode ? "#059669" : colors.textSecondary}
+                />
+              </TouchableOpacity>
+
+              {/* Voice Mode Button */}
+              <TouchableOpacity
+                onPress={() => router.push("/voice-mode")}
+                style={styles.iconButton}
+              >
+                <Ionicons name="mic" size={20} color={colors.primary[500]} />
+              </TouchableOpacity>
+            </View>
           </View>
+
+          {/* Empty State - All Caught Up */}
+          {!loading && actions.length === 0 && events.length === 0 && (
+            <View style={styles.emptyState}>
+              <Ionicons name="checkmark-circle" size={64} color={colors.semantic.success} />
+              <Text style={styles.emptyTitle}>All Caught Up</Text>
+              <Text style={styles.emptySubtitle}>
+                You've reviewed everything for today.{'\n'}Nice work!
+              </Text>
+            </View>
+          )}
 
           {/* Missing Connections CTA */}
           {missingConnections.length > 0 && (
@@ -223,7 +285,9 @@ export default function HomeTab() {
                   width: 48,
                   height: 48,
                   borderRadius: 12,
-                  backgroundColor: isDark ? "rgba(239, 68, 68, 0.2)" : "#FFF5F5",
+                  backgroundColor: isDark
+                    ? "rgba(239, 68, 68, 0.2)"
+                    : "#FFF5F5",
                   alignItems: "center",
                   justifyContent: "center",
                   marginRight: 16,
@@ -293,7 +357,7 @@ export default function HomeTab() {
 
             <TouchableOpacity
               style={styles.statCard}
-              onPress={() => router.push("/inbox")}
+              onPress={() => router.push("/(tabs)/inbox")}
               activeOpacity={0.7}
             >
               <View
@@ -318,7 +382,7 @@ export default function HomeTab() {
 
             <TouchableOpacity
               style={styles.statCard}
-              onPress={() => router.push("/calendar")}
+              onPress={() => router.push("/(tabs)/calendar")}
               activeOpacity={0.7}
             >
               <View
@@ -376,7 +440,7 @@ export default function HomeTab() {
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle}>Today&apos;s Schedule</Text>
-                <TouchableOpacity onPress={() => router.push("/calendar")}>
+                <TouchableOpacity onPress={() => router.push("/(tabs)/calendar")}>
                   <Text style={styles.seeAllText}>View All</Text>
                 </TouchableOpacity>
               </View>
@@ -394,7 +458,8 @@ export default function HomeTab() {
                           style={[
                             styles.eventDot,
                             {
-                              backgroundColor: event.color || colors.primary[500],
+                              backgroundColor:
+                                event.color || colors.primary[500],
                             },
                           ]}
                         />
@@ -427,111 +492,116 @@ export default function HomeTab() {
             </View>
           )}
 
-          {/* Integration Status Hub */}
-          <View style={styles.section}>
-            <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
-            >
-              <Text style={styles.sectionTitle}>System Status</Text>
-              <TouchableOpacity onPress={() => router.push("/toolkits")}>
-                <Text
+          {/* Secondary Sections - Hidden in Zen Mode */}
+          {!zenMode && (
+            <>
+              {/* Integration Status Hub */}
+              <View style={styles.section}>
+                <View
                   style={{
-                    color: colors.primary[500],
-                    fontSize: 13,
-                    fontWeight: "600",
-                    marginBottom: spacing[4],
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                    alignItems: "center",
                   }}
                 >
-                  + Add Toolkit
-                </Text>
-              </TouchableOpacity>
-            </View>
-            <Card style={styles.statusCard}>
-              <View style={styles.statusItem}>
-                <View style={styles.statusLeft}>
-                  <Ionicons
-                    name="mail-outline"
-                    size={20}
-                    color={colors.textSecondary}
-                  />
-                  <Text style={styles.statusText}>Gmail Indexing</Text>
-                </View>
-                <Text style={styles.statusValue}>Complete</Text>
-              </View>
-
-              <View style={styles.divider} />
-
-              <View style={styles.statusItem}>
-                <View style={styles.statusLeft}>
-                  <Ionicons
-                    name="logo-slack"
-                    size={20}
-                    color={colors.textSecondary}
-                  />
-                  <Text style={styles.statusText}>Slack Channels</Text>
-                </View>
-                <View style={styles.statusRight}>
-                  <View
-                    style={[
-                      styles.dot,
-                      { backgroundColor: colors.semantic.warning },
-                    ]}
-                  />
-                  <Text style={styles.statusValue}>Reading...</Text>
-                </View>
-              </View>
-
-              <View style={styles.divider} />
-
-              <View style={styles.statusItem}>
-                <View style={styles.statusLeft}>
-                  <Ionicons
-                    name="calendar-outline"
-                    size={20}
-                    color={colors.textSecondary}
-                  />
-                  <Text style={styles.statusText}>Calendar Optimize</Text>
-                </View>
-                <Text style={styles.statusValue}>Active</Text>
-              </View>
-            </Card>
-          </View>
-
-          {/* Highlights / Insights */}
-          {((briefing?.highlights && briefing.highlights.length > 0) ||
-            loading) && (
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Highlights</Text>
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  style={styles.nudgeScroll}
-                >
-                  {loading ? (
-                    <Card
-                      style={[
-                        styles.nudgeCard,
-                        { width: 250, justifyContent: "center" },
-                      ]}
+                  <Text style={styles.sectionTitle}>System Status</Text>
+                  <TouchableOpacity onPress={() => router.push("/toolkits")}>
+                    <Text
+                      style={{
+                        color: colors.primary[500],
+                        fontSize: 13,
+                        fontWeight: "600",
+                        marginBottom: spacing[4],
+                      }}
                     >
-                      <ActivityIndicator color={colors.primary[500]} />
-                    </Card>
-                  ) : (
-                    briefing?.highlights?.map((highlight, index) => (
-                      <Card key={index} style={styles.nudgeCard}>
-                        <Text style={styles.nudgeText}>{highlight}</Text>
-                      </Card>
-                    ))
-                  )}
-                </ScrollView>
-              </View>
-            )}
+                      + Add Toolkit
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+                <Card style={styles.statusCard}>
+                  <View style={styles.statusItem}>
+                    <View style={styles.statusLeft}>
+                      <Ionicons
+                        name="mail-outline"
+                        size={20}
+                        color={colors.textSecondary}
+                      />
+                      <Text style={styles.statusText}>Gmail Indexing</Text>
+                    </View>
+                    <Text style={styles.statusValue}>Complete</Text>
+                  </View>
 
-          <View style={{ height: 100 }} />
+                  <View style={styles.divider} />
+
+                  <View style={styles.statusItem}>
+                    <View style={styles.statusLeft}>
+                      <Ionicons
+                        name="logo-slack"
+                        size={20}
+                        color={colors.textSecondary}
+                      />
+                      <Text style={styles.statusText}>Slack Channels</Text>
+                    </View>
+                    <View style={styles.statusRight}>
+                      <View
+                        style={[
+                          styles.dot,
+                          { backgroundColor: colors.semantic.warning },
+                        ]}
+                      />
+                      <Text style={styles.statusValue}>Reading...</Text>
+                    </View>
+                  </View>
+
+                  <View style={styles.divider} />
+
+                  <View style={styles.statusItem}>
+                    <View style={styles.statusLeft}>
+                      <Ionicons
+                        name="calendar-outline"
+                        size={20}
+                        color={colors.textSecondary}
+                      />
+                      <Text style={styles.statusText}>Calendar Optimize</Text>
+                    </View>
+                    <Text style={styles.statusValue}>Active</Text>
+                  </View>
+                </Card>
+              </View>
+
+              {/* Highlights / Insights */}
+              {((briefing?.highlights && briefing.highlights.length > 0) ||
+                loading) && (
+                  <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>Highlights</Text>
+                    <ScrollView
+                      horizontal
+                      showsHorizontalScrollIndicator={false}
+                      style={styles.nudgeScroll}
+                    >
+                      {loading ? (
+                        <Card
+                          style={[
+                            styles.nudgeCard,
+                            { width: 250, justifyContent: "center" },
+                          ]}
+                        >
+                          <ActivityIndicator color={colors.primary[500]} />
+                        </Card>
+                      ) : (
+                        briefing?.highlights?.map((highlight, index) => (
+                          <Card key={index} style={styles.nudgeCard}>
+                            <Text style={styles.nudgeText}>{highlight}</Text>
+                          </Card>
+                        ))
+                      )}
+                    </ScrollView>
+                  </View>
+                )}
+            </>
+          )}
+
+          <View style={{ height: 120 }} />
         </WebContainer>
       </ScrollView>
     </SafeAreaView>
@@ -547,7 +617,7 @@ const getStyles = (colors: any, isDark: boolean) =>
     content: {
       padding: spacing[6],
       paddingTop: spacing[12],
-      paddingBottom: 100, // Ensure scroll space for Copilot Bar
+      paddingBottom: 100,
     },
     header: {
       marginBottom: spacing[8],
@@ -556,11 +626,11 @@ const getStyles = (colors: any, isDark: boolean) =>
       alignItems: "flex-start",
       gap: spacing[4],
     },
-    micButton: {
-      width: 44,
-      height: 44,
-      borderRadius: 22,
-      backgroundColor: isDark ? "rgba(59, 130, 246, 0.15)" : "#EFF6FF",
+    iconButton: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: isDark ? "rgba(255,255,255,0.05)" : "#F3F4F6",
       alignItems: "center",
       justifyContent: "center",
     },
@@ -571,13 +641,88 @@ const getStyles = (colors: any, isDark: boolean) =>
     },
     briefing: {
       ...typography.textStyles.body,
-      fontSize: 18,
+      fontSize: 16,
       color: colors.textSecondary,
-      lineHeight: 28,
+      lineHeight: 24,
     },
-    highlight: {
-      color: colors.primary[500],
-      fontWeight: "600",
+
+    // Empty State
+    emptyState: {
+      alignItems: 'center',
+      paddingVertical: spacing[12],
+      marginBottom: spacing[6],
+    },
+    emptyTitle: {
+      ...typography.textStyles.h3,
+      color: colors.text,
+      marginTop: spacing[4],
+      marginBottom: spacing[2],
+    },
+    emptySubtitle: {
+      ...typography.textStyles.body,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      lineHeight: 24,
+    },
+
+    // Today Prepared Card
+    todayPreparedCard: {
+      backgroundColor: isDark ? 'rgba(5, 150, 105, 0.05)' : 'rgba(5, 150, 105, 0.03)',
+      borderRadius: borderRadius.xl,
+      padding: spacing[5],
+      marginBottom: spacing[6],
+      borderWidth: 1,
+      borderColor: isDark ? 'rgba(5, 150, 105, 0.2)' : 'rgba(5, 150, 105, 0.1)',
+    },
+    todayPreparedHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: spacing[4],
+    },
+    todayPreparedDot: {
+      width: 6,
+      height: 6,
+      borderRadius: 3,
+      backgroundColor: '#059669',
+      marginRight: spacing[2],
+    },
+    todayPreparedTitle: {
+      ...typography.textStyles.h4,
+      color: colors.text,
+      fontSize: 15,
+      fontWeight: '500',
+    },
+    todayPreparedStats: {
+      flexDirection: 'row',
+      justifyContent: 'space-around',
+      alignItems: 'center',
+    },
+    todayPreparedStat: {
+      alignItems: 'center',
+      flex: 1,
+    },
+    todayPreparedValue: {
+      ...typography.textStyles.h2,
+      color: colors.text,
+      fontSize: 28,
+      marginBottom: spacing[1],
+    },
+    todayPreparedLabel: {
+      ...typography.textStyles.caption,
+      color: colors.textSecondary,
+      fontSize: 12,
+    },
+    todayPreparedDivider: {
+      width: 1,
+      height: 32,
+      backgroundColor: isDark ? 'rgba(5, 150, 105, 0.2)' : 'rgba(5, 150, 105, 0.15)',
+    },
+    todayPreparedZenHint: {
+      ...typography.textStyles.caption,
+      color: '#059669',
+      textAlign: 'center',
+      marginTop: spacing[3],
+      fontSize: 11,
     },
 
     // Zen Mode Card
@@ -601,6 +746,7 @@ const getStyles = (colors: any, isDark: boolean) =>
       flexDirection: "row",
       alignItems: "center",
       gap: spacing[4],
+      flex: 1,
     },
     zenIconContainer: {
       width: 56,
@@ -760,7 +906,7 @@ const getStyles = (colors: any, isDark: boolean) =>
     nudgeCard: {
       width: 260,
       marginRight: spacing[4],
-      backgroundColor: isDark ? "#1E293B" : "#F1F5F9", // Slate-800 or Slate-100
+      backgroundColor: isDark ? "#1E293B" : "#F1F5F9",
       borderColor: "transparent",
       padding: spacing[5],
     },
@@ -769,51 +915,5 @@ const getStyles = (colors: any, isDark: boolean) =>
       fontSize: 15,
       color: colors.text,
       lineHeight: 24,
-    },
-
-    // Copilot Bar
-    copilotBarWrapper: {
-      position: "absolute",
-      bottom: 90, // Pushed UP to avoid Floating Tab Dock
-      left: 0,
-      right: 0,
-      alignItems: "center",
-      zIndex: 100,
-    },
-    copilotBar: {
-      width: "90%",
-      maxWidth: 400,
-      backgroundColor: isDark ? "#1E293B" : "#FFFFFF",
-      borderRadius: 30,
-      padding: 6,
-      borderWidth: 1,
-      borderColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)",
-
-      shadowColor: "#000",
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.25,
-      shadowRadius: 8,
-      elevation: 8,
-    },
-    copilotInputContainer: {
-      flexDirection: "row",
-      alignItems: "center",
-      paddingHorizontal: spacing[3],
-      height: 44,
-    },
-    copilotIcon: {
-      marginRight: spacing[2],
-      opacity: 0.8,
-    },
-    copilotInput: {
-      flex: 1,
-      color: colors.text,
-      ...typography.textStyles.body,
-      fontSize: 15,
-    },
-    micButtonSmall: {
-      padding: spacing[2],
-      backgroundColor: isDark ? "rgba(255,255,255,0.05)" : "#F1F5F9",
-      borderRadius: 100,
     },
   });

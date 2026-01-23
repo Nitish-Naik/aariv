@@ -147,7 +147,18 @@ export default function SettingsScreen() {
         {/* NEURAL ACCESS */}
         <Text style={styles.sectionLabel}>NEURAL ACCESS</Text>
         <View style={styles.card}>
-          <TouchableOpacity style={styles.row} onPress={() => router.push('/knowledge-graph')}>
+          <TouchableOpacity style={styles.row} onPress={async () => {
+            // Check if user has granted consent
+            const { hasKGConsent } = await import('../../utils/kgConsent');
+            const hasConsent = await hasKGConsent();
+
+            if (hasConsent) {
+              router.push('/knowledge-graph');
+            } else {
+              // Show consent screen first
+              router.push('/kg-consent');
+            }
+          }}>
             <View style={styles.rowIcon}>
               <Ionicons name="git-network" size={20} color={colors.primary[500]} />
             </View>
@@ -168,6 +179,34 @@ export default function SettingsScreen() {
               {/* <Text style={styles.rowTitle}>Toolkit Capacity</Text> */}
               <Text style={styles.rowTitle}>Neural Marketplace</Text>
               <Text style={styles.rowSubtitle}>Manage integrations & capabilities</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />
+          </TouchableOpacity>
+
+          <View style={styles.divider} />
+
+          {/* PREVIEW-ONLY: Team Hub */}
+          <TouchableOpacity style={styles.row} onPress={() => router.push('/team-hub')}>
+            <View style={styles.rowIcon}>
+              <Ionicons name="people" size={20} color={colors.primary[500]} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.rowTitle}>Team Hub</Text>
+              <Text style={styles.rowSubtitle}>Preview: Team collaboration feed</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />
+          </TouchableOpacity>
+
+          <View style={styles.divider} />
+
+          {/* PREVIEW-ONLY: Execution Status */}
+          <TouchableOpacity style={styles.row} onPress={() => router.push('/execution-status')}>
+            <View style={styles.rowIcon}>
+              <Ionicons name="checkmark-done" size={20} color={colors.primary[500]} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.rowTitle}>Execution Status</Text>
+              <Text style={styles.rowSubtitle}>Preview: Action tracking screen</Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />
           </TouchableOpacity>

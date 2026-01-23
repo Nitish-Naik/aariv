@@ -109,6 +109,17 @@ export default function CalendarTab() {
         const now = new Date();
         const currentHour = now.getHours();
         const currentMinute = now.getMinutes();
+        const hourHeight = 60; // pixels per hour block
+
+        // Group events by hour for proper rendering
+        const eventsByHour: { [hour: number]: CalendarEvent[] } = {};
+        todayEvents.forEach(event => {
+            const startHour = event.startTime.getHours();
+            if (!eventsByHour[startHour]) {
+                eventsByHour[startHour] = [];
+            }
+            eventsByHour[startHour].push(event);
+        });
 
         return (
             <ScrollView
@@ -137,7 +148,7 @@ export default function CalendarTab() {
                     </View>
                 )}
                 {hours.map((hour) => {
-                    const hourEvents = todayEvents.filter(e => e.startTime.getHours() === hour);
+                    const hourEvents = eventsByHour[hour] || [];
 
                     return (
                         <View key={hour} style={styles.timeRow}>
@@ -158,35 +169,47 @@ export default function CalendarTab() {
 
                                 {/* "Current Time" Indicator Line */}
                                 {hour === currentHour && isSameDay(selectedDate, now) && (
-                                    <View style={[styles.currentTimeIndicator, { top: (currentMinute / 60) * 60 }]} >
+                                    <View style={[styles.currentTimeIndicator, { top: (currentMinute / 60) * hourHeight }]} >
                                         <View style={styles.currentTimeDot} />
                                         <View style={styles.currentTimeLine} />
                                     </View>
                                 )}
 
-                                {/* Events in this hour */}
-                                {hourEvents.map((event, idx) => (
-                                    <View
-                                        key={idx}
-                                        style={[
-                                            styles.eventCard,
-                                            {
-                                                backgroundColor: isDark ? '#1E293B' : '#F8FAFC',
-                                                borderLeftColor: event.color
-                                            }
-                                        ]}
-                                    >
-                                        <View style={styles.eventContent}>
-                                            <Text style={styles.eventTitle} numberOfLines={1}>{event.title}</Text>
-                                            <Text style={styles.eventDuration}>
-                                                {format(event.startTime, 'h:mm')} - {format(event.endTime, 'h:mm')}
-                                            </Text>
+                                {/* Events in/starting in this hour */}
+                                {hourEvents.map((event, idx) => {
+                                    // Calculate precise position and height based on actual time
+                                    const eventMinuteStart = event.startTime.getMinutes();
+                                    const eventDuration = (event.endTime.getTime() - event.startTime.getTime()) / (1000 * 60); // in minutes
+
+                                    const topOffset = (eventMinuteStart / 60) * hourHeight;
+                                    const eventHeight = Math.max(20, (eventDuration / 60) * hourHeight); // Minimum 20px height
+
+                                    return (
+                                        <View
+                                            key={idx}
+                                            style={[
+                                                styles.eventCard,
+                                                {
+                                                    position: 'absolute',
+                                                    top: topOffset,
+                                                    height: eventHeight,
+                                                    backgroundColor: isDark ? '#1E293B' : '#F8FAFC',
+                                                    borderLeftColor: event.color || colors.primary[500],
+                                                }
+                                            ]}
+                                        >
+                                            <View style={styles.eventContent}>
+                                                <Text style={styles.eventTitle} numberOfLines={1}>{event.title}</Text>
+                                                <Text style={styles.eventDuration}>
+                                                    {format(event.startTime, 'h:mm')} - {format(event.endTime, 'h:mm a')}
+                                                </Text>
+                                            </View>
+                                            {event.platform === 'google-calendar' && (
+                                                <Ionicons name="logo-google" size={14} color={colors.textTertiary} />
+                                            )}
                                         </View>
-                                        {event.platform === 'google-calendar' && (
-                                            <Ionicons name="logo-google" size={14} color={colors.textTertiary} />
-                                        )}
-                                    </View>
-                                ))}
+                                    );
+                                })}
                             </View>
                         </View>
                     );
