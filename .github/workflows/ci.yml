@@ -14,7 +14,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
+          cache: "npm"
 
       - name: Install root deps
         run: npm install
@@ -22,13 +22,14 @@ jobs:
       - name: Lint (Expo)
         run: npm run lint
 
-      - name: Backend deps
-        working-directory: backend
-        run: npm install
+      # Backend steps skipped as backend is not in repo
+      # - name: Backend deps
+      #   working-directory: backend
+      #   run: npm install
 
-      - name: Backend build
-        working-directory: backend
-        run: npm run build
+      # - name: Backend build
+      #   working-directory: backend
+      #   run: npm run build
 
       - name: Expo doctor (static checks)
         run: npx expo-doctor --non-interactive
