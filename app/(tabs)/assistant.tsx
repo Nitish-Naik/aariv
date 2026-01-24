@@ -7,6 +7,7 @@ import {
     KeyboardAvoidingView,
     Modal,
     Platform,
+    ScrollView,
     StyleSheet,
     Text,
     TextInput,
@@ -18,31 +19,35 @@ import { useTheme } from '../../context/ThemeContext';
 import { api } from '../../services/api';
 import { getCurrentUser } from '../../services/auth';
 import { borderRadius, spacing } from '../../theme';
-import { ChatMessage } from '../../types';
+// NEW: Import canonical types and guard
+import { AssistantMessage, ChatMessage, ToolExecutionMessage, UserMessage } from '../../types/chat';
+import { isDev, shouldRenderMessage } from '../../utils/chatMiddleware';
 
-// Extended type for UI demo purposes
-interface RichChatMessage extends ChatMessage {
-    type?: 'text' | 'action_review' | 'options' | 'suggestions';
-    data?: any;
-}
-
-const INITIAL_MESSAGES: RichChatMessage[] = [
+const INITIAL_MESSAGES: ChatMessage[] = [
     {
         id: 'welcome',
-        role: 'assistant',
-        content: 'Hello! I am your AI assistant. Connect your apps (Gmail, Calendar) and I can help you manage your digital life.',
-        timestamp: new Date(),
-        type: 'text'
+        type: 'assistant',
+        text: 'Hello! I am your AI assistant. I can help you manage your emails, calendar, and more.',
+        timestamp: Date.now(),
+        tone: 'neutral',
+        suggestions: [
+            { id: 's1', label: 'Check my calendar', intent: 'Check my calendar', app: 'calendar' },
+            { id: 's2', label: 'Summarize emails', intent: 'Summarize emails', app: 'gmail' },
+            { id: 's3', label: 'What can you do?', intent: 'What can you do?', app: 'generic' }
+        ]
     }
 ];
 
 export default function AssistantTab() {
     const router = useRouter();
-    const [messages, setMessages] = useState<RichChatMessage[]>(INITIAL_MESSAGES);
+    const [messages, setMessages] = useState<ChatMessage[]>(INITIAL_MESSAGES);
     const [inputText, setInputText] = useState('');
     const [, setIsLoading] = useState(false);
     const [isAccountModalVisible, setAccountModalVisible] = useState(false);
     const [isKeyboardVisible, setKeyboardVisible] = useState(false);
+    // Debug toggle state
+    const [showDebugDrawer, setShowDebugDrawer] = useState(false);
+
     const flatListRef = useRef<FlatList>(null);
     const { colors, isDark } = useTheme();
 
@@ -58,40 +63,27 @@ export default function AssistantTab() {
     }, []);
 
     useEffect(() => {
-        if (messages.length > 0) {
+        // Scroll on valid messages only
+        const visibleMessages = messages.filter(shouldRenderMessage);
+        if (visibleMessages.length > 0) {
             setTimeout(() => {
                 flatListRef.current?.scrollToEnd({ animated: true });
             }, 100);
         }
-    }, [messages.length]);
+    }, [messages]);
 
-    const handleActionInteraction = (messageId: string, action: 'confirm' | 'cancel') => {
-        setMessages(prev => prev.map(msg => {
-            if (msg.id === messageId && msg.type === 'action_review') {
-                return {
-                    ...msg,
-                    data: {
-                        ...msg.data,
-                        status: action === 'confirm' ? 'success' : 'cancelled' // content updated to reflect state
-                    }
-                };
-            }
-            return msg;
-        }));
-    };
-
-    const handleSend = async () => {
-        if (!inputText.trim()) {
-            // Navigate to Voice Mode if input is empty (Mic button pressed)
+    const handleSend = async (textOverride?: string) => {
+        const textToSend = textOverride || inputText.trim();
+        if (!textToSend) {
             router.push('/voice-mode');
             return;
         }
 
-        const userMsg: RichChatMessage = {
+        const userMsg: UserMessage = {
             id: Date.now().toString(),
-            role: 'user',
-            content: inputText.trim(),
-            timestamp: new Date(),
+            type: 'user',
+            text: textToSend,
+            timestamp: Date.now(),
         };
 
         setMessages(prev => [...prev, userMsg]);
@@ -100,234 +92,165 @@ export default function AssistantTab() {
 
         try {
             const user = await getCurrentUser();
-            if (!user) {
-                throw new Error("You must be logged in.");
-            }
+            if (!user) throw new Error("You must be logged in.");
 
             const response = await api.post('/chat', {
                 userId: user.id,
-                message: userMsg.content
+                message: userMsg.text
             });
 
-            const assistantMsg: RichChatMessage = {
+            // Handle Tool Execution Messages (if provided by backend in future, debugging only)
+            if (response.toolExecutions && isDev) {
+                const toolMsgs: ToolExecutionMessage[] = response.toolExecutions.map((exec: any, i: number) => ({
+                    id: `tool-${Date.now()}-${i}`,
+                    type: 'tool_execution',
+                    tool: exec.tool || 'unknown_tool',
+                    status: 'success',
+                    output: exec.output
+                }));
+                setMessages(prev => [...prev, ...toolMsgs]);
+            }
+
+            // Clean Assistant Message
+            const assistantMsg: AssistantMessage = {
                 id: (Date.now() + 1).toString(),
-                role: 'assistant',
-                content: response.content || "Action processed.",
-                timestamp: new Date(),
-                type: response.type || 'text',
-                data: response.data
+                type: 'assistant',
+                text: response.content || "I've processed that.",
+                timestamp: Date.now(),
+                tone: 'reassuring', // Default tone
+                suggestions: response.suggestions // Bind suggestions from backend
             };
 
             setMessages(prev => [...prev, assistantMsg]);
         } catch (e: any) {
-            setMessages(prev => [...prev, {
+            const errorMsg: AssistantMessage = {
                 id: Date.now().toString(),
-                role: 'assistant',
-                content: "Error: " + (e.message || "Failed to connect"),
-                timestamp: new Date(),
-                type: 'text'
-            }]);
+                type: 'assistant',
+                text: "I'm having trouble connecting right now.",
+                timestamp: Date.now(),
+                tone: 'neutral'
+            };
+            setMessages(prev => [...prev, errorMsg]);
         } finally {
             setIsLoading(false);
         }
     };
 
-    const renderMessage = ({ item }: { item: RichChatMessage }) => {
-        const isUser = item.role === 'user';
+    const renderMessage = ({ item }: { item: ChatMessage }) => {
+        // CRITICAL GUARD: Do not render if not allowed
+        if (!shouldRenderMessage(item)) return null;
 
-        // 1. Text Message (User or Assistant)
-        if (!item.type || item.type === 'text') {
-            if (!item.content) return null; // Skip empty container messages
+        if (item.type === 'user') {
             return (
-                <View style={[
-                    styles.messageRow,
-                    isUser ? styles.messageRowUser : styles.messageRowAssistant
-                ]}>
-                    {!isUser && (
-                        <View style={styles.avatar}>
-                            <Ionicons name="infinite" size={16} color={colors.primary[500]} />
+                <View style={[styles.messageRow, styles.messageRowUser]}>
+                    <View style={{ alignItems: 'flex-end', maxWidth: '85%' }}>
+                        <View style={[styles.bubble, styles.bubbleUser]}>
+                            <Text style={[styles.messageText, styles.messageTextUser]}>{item.text}</Text>
                         </View>
-                    )}
-                    <View style={{ alignItems: isUser ? 'flex-end' : 'flex-start', maxWidth: '85%' }}>
-                        <View style={[
-                            styles.bubble,
-                            isUser ? styles.bubbleUser : styles.bubbleAssistant
-                        ]}>
-                            <Text style={[
-                                styles.messageText,
-                                isUser ? styles.messageTextUser : styles.messageTextAssistant
-                            ]}>
-                                {item.content}
-                            </Text>
-                        </View>
-                        <Text style={styles.timestamp}>
-                            {item.role === 'user' ? 'Just now' : ''}
-                        </Text>
+                        <Text style={styles.timestamp}>Just now</Text>
                     </View>
                 </View>
             );
         }
 
-        // 2. Suggestions List
-        if (item.type === 'suggestions') {
+        if (item.type === 'assistant') {
             return (
-                <View style={styles.messageBlock}>
-                    <View style={styles.messageRowAssistant}>
-                        <View style={styles.avatar}>
-                            <Ionicons name="infinite" size={16} color={colors.primary[500]} />
-                        </View>
-                        <View style={styles.bubbleAssistant}>
-                            <Text style={styles.messageTextAssistant}>{item.content}</Text>
-                        </View>
+                <View style={[styles.messageRow, styles.messageRowAssistant]}>
+                    <View style={styles.avatar}>
+                        <Ionicons name="infinite" size={16} color={colors.primary[500]} />
                     </View>
-
-                    {/* Vertical Stack of Suggestions */}
-                    <View style={[styles.suggestionBlock, { width: '100%' }]}>
-                        {item.data.options.map((opt: any, idx: number) => (
-                            <TouchableOpacity key={idx} style={styles.suggestionCard}>
-                                {/* Emulate the dual-icon badge look from screenshot 2 */}
-                                <View style={{ flexDirection: 'row', marginRight: 12 }}>
-                                    {/* Primary Icon (Square) */}
-                                    <View style={{
-                                        width: 24, height: 24,
-                                        backgroundColor: isDark ? '#222' : '#EFF6FF',
-                                        alignItems: 'center', justifyContent: 'center',
-                                        borderRadius: 6,
-                                        zIndex: 2,
-                                    }}>
-                                        <Ionicons name={opt.icon} size={14} color={opt.color} />
-                                    </View>
-                                    {/* Secondary Icon (Offset) */}
-                                    {opt.secondaryIcon && (
-                                        <View style={{
-                                            width: 24, height: 24,
-                                            backgroundColor: isDark ? '#333' : '#DBEAFE',
-                                            alignItems: 'center', justifyContent: 'center',
-                                            borderRadius: 6,
-                                            marginLeft: -10, // Overlap
-                                            zIndex: 1,
-                                        }}>
-                                            <Ionicons name={opt.secondaryIcon} size={12} color={colors.textSecondary} />
-                                        </View>
-                                    )}
-                                </View>
-
-                                <Text style={styles.suggestionText}>{opt.label}</Text>
+                    <View style={{ alignItems: 'flex-start', maxWidth: '85%' }}>
+                        <View style={[styles.bubble, styles.bubbleAssistant]}>
+                            <Text style={[styles.messageText, styles.messageTextAssistant]}>{item.text}</Text>
+                        </View>
+                        {item.followUp && (
+                            <TouchableOpacity style={{ marginTop: 8 }}>
+                                <Text style={{ color: colors.primary[500], fontSize: 13 }}>{item.followUp}</Text>
                             </TouchableOpacity>
-                        ))}
-                    </View>
-                </View>
-            );
-        }
+                        )}
 
-        // 3. Choice Options (Vertical)
-        if (item.type === 'options') {
-            return (
-                <View style={styles.messageBlock}>
-                    <View style={styles.messageRowAssistant}>
-                        <View style={styles.avatar}>
-                            <Ionicons name="infinite" size={16} color={colors.primary[500]} />
-                        </View>
-                        <View style={styles.bubbleAssistant}>
-                            <Text style={styles.messageTextAssistant}>{item.content}</Text>
-                        </View>
-                    </View>
+                        {/* Render Contextual Suggestions (Max 3) */}
+                        {item.suggestions && item.suggestions.length > 0 && (
+                            <View style={styles.suggestionChipsContainer}>
+                                {item.suggestions.slice(0, 3).map((suggestion) => {
+                                    // Map app to icon
+                                    let iconName: any = 'flash';
+                                    let iconColor = colors.text;
+                                    let iconBg = isDark ? '#333' : '#E2E8F0';
 
-                    <View style={styles.optionsContainer}>
-                        <Text style={styles.optionsTitle}>{item.data.title}</Text>
-                        {item.data.options.map((opt: any, idx: number) => (
-                            <TouchableOpacity key={idx} style={styles.optionButton}>
-                                <Text style={styles.optionLabel}>{opt.label}</Text>
-                                {opt.subtext && <Text style={styles.optionSubtext}>{opt.subtext}</Text>}
-                            </TouchableOpacity>
-                        ))}
-                        <TouchableOpacity style={styles.optionButtonInput}>
-                            <Text style={styles.optionLabelDim}>Other: Input here</Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-            );
-        }
+                                    switch (suggestion.app) {
+                                        case 'gmail':
+                                            iconName = 'mail';
+                                            iconColor = '#EA4335'; // Gmail Red
+                                            iconBg = isDark ? '#2B1A1A' : '#FCE8E6';
+                                            break;
+                                        case 'calendar':
+                                            iconName = 'calendar';
+                                            iconColor = '#4285F4'; // Google Blue
+                                            iconBg = isDark ? '#1A2333' : '#E8F0FE';
+                                            break;
+                                        case 'maps':
+                                            iconName = 'map';
+                                            iconColor = '#34A853'; // Google Green
+                                            iconBg = isDark ? '#1A2B1A' : '#E6F4EA';
+                                            break;
+                                        default:
+                                            iconName = 'sparkles';
+                                            iconColor = colors.primary[500];
+                                            iconBg = isDark ? '#1A1A1A' : '#F0F9FF';
+                                    }
 
-        // 4. Action Confirmation Card
-        if (item.type === 'action_review') {
-            const isActionCompleted = item.data.status === 'success';
-            const isActionCancelled = item.data.status === 'cancelled';
-
-            return (
-                <View style={styles.messageBlock}>
-                    <View style={styles.messageRowAssistant}>
-                        <View style={styles.avatar}>
-                            <Ionicons name="infinite" size={16} color={colors.primary[500]} />
-                        </View>
-                    </View>
-                    <View style={[styles.actionCardWrapper, isActionCancelled && { opacity: 0.6 }]}>
-                        <View style={styles.actionHeader}>
-                            <Ionicons name="settings-outline" size={16} color={colors.text} />
-                            <Text style={styles.actionHeaderText}>
-                                {isActionCompleted ? 'Action Completed' : (isActionCancelled ? 'Action Dismissed' : 'Action Executed')}
-                            </Text>
-                            {isActionCompleted && <Ionicons name="checkmark" size={16} color={colors.semantic.success} />}
-                        </View>
-
-                        <View style={styles.actionBody}>
-                            <Text style={styles.actionSectionTitle}>Review Actions</Text>
-
-                            <View style={styles.actionItemCard}>
-                                <View style={styles.actionItemHeader}>
-                                    <View style={[styles.actionIcon, { backgroundColor: isActionCancelled ? colors.neutral[400] : colors.semantic.warning }]}>
-                                        <Ionicons name={item.data.action.icon || "calendar"} size={14} color="#FFF" />
-                                    </View>
-                                    <Text style={styles.actionItemTitle}>{item.data.action.title}</Text>
-                                </View>
-
-                                <View style={styles.actionItemDetails}>
-                                    {item.data.action.details && Object.entries(item.data.action.details).map(([key, value]) => (
-                                        <View key={key} style={styles.detailRow}>
-                                            <Text style={styles.detailLabel}>{key}:</Text>
-                                            <Text style={styles.detailValue} numberOfLines={2}>{String(value)}</Text>
-                                        </View>
-                                    ))}
-                                </View>
+                                    return (
+                                        <TouchableOpacity
+                                            key={suggestion.id}
+                                            style={styles.suggestionChip}
+                                            onPress={() => handleSend(suggestion.label)}
+                                        >
+                                            <View style={[styles.suggestionIconContainer, { backgroundColor: iconBg }]}>
+                                                <Ionicons name={iconName} size={16} color={iconColor} />
+                                            </View>
+                                            <Text style={styles.suggestionChipText}>{suggestion.label}</Text>
+                                        </TouchableOpacity>
+                                    );
+                                })}
                             </View>
+                        )}
+                    </View>
+                </View>
+            );
+        }
 
-                            {!isActionCompleted && !isActionCancelled && (
-                                <View style={styles.actionButtons}>
-                                    <TouchableOpacity
-                                        style={[styles.actionButtonSecondary, { marginRight: 8 }]}
-                                        onPress={() => router.push({
-                                            pathname: "/edit-action",
-                                            params: {
-                                                platform: item.data.action.icon?.replace('logo-', '') || 'generic',
-                                                title: item.data.action.title,
-                                                description: JSON.stringify(item.data.action.details, null, 2),
-                                                id: item.id
-                                            }
-                                        })}
-                                    >
-                                        <Text style={styles.actionButtonTextSecondary}>Edit</Text>
-                                    </TouchableOpacity>
-                                    <TouchableOpacity
-                                        style={styles.actionButtonSecondary}
-                                        onPress={() => handleActionInteraction(item.id, 'cancel')}
-                                    >
-                                        <Text style={styles.actionButtonTextSecondary}>Dismiss</Text>
-                                    </TouchableOpacity>
-                                    <TouchableOpacity
-                                        style={styles.actionButtonPrimary}
-                                        onPress={() => handleActionInteraction(item.id, 'confirm')}
-                                    >
-                                        <Text style={styles.actionButtonTextPrimary}>Done</Text>
-                                    </TouchableOpacity>
-                                </View>
+        return null; // Fallback for other types handled by logic but not simple UI
+    };
+
+    // Debug Drawer Component
+    const renderDebugDrawer = () => {
+        if (!isDev || !showDebugDrawer) return null;
+
+        // Filter for debug-only messages
+        const debugMessages = messages.filter(m => m.type === 'tool_execution' || m.type === 'debug' || m.type === 'system');
+
+        return (
+            <View style={styles.debugDrawer}>
+                <Text style={styles.debugTitle}>Developer Console</Text>
+                <ScrollView style={{ maxHeight: 200 }}>
+                    {debugMessages.map(m => (
+                        <View key={m.id} style={styles.debugItem}>
+                            <Text style={styles.debugType}>[{m.type.toUpperCase()}]</Text>
+                            {m.type === 'tool_execution' && (
+                                <Text style={styles.debugContent}>
+                                    Tool: {m.tool} | Status: {m.status}
+                                </Text>
+                            )}
+                            {m.type === 'system' && (
+                                <Text style={styles.debugContent}>{m.text}</Text>
                             )}
                         </View>
-                    </View>
-                </View>
-            );
-        }
-        return null;
-
+                    ))}
+                    {debugMessages.length === 0 && <Text style={styles.debugType}>No debug logs.</Text>}
+                </ScrollView>
+            </View>
+        );
     };
 
     return (
@@ -341,15 +264,23 @@ export default function AssistantTab() {
                     <Ionicons name="infinite" size={28} color={colors.primary[500]} style={styles.logo} />
                 </View>
 
+                {isDev && (
+                    <TouchableOpacity onPress={() => setShowDebugDrawer(!showDebugDrawer)} style={{ marginLeft: 10 }}>
+                        <Ionicons name={showDebugDrawer ? "bug" : "bug-outline"} size={20} color={colors.semantic.warning} />
+                    </TouchableOpacity>
+                )}
+
                 <TouchableOpacity style={styles.userDropdown} onPress={() => setAccountModalVisible(true)}>
                     <Text style={styles.username}>moneybeast733</Text>
                     <Ionicons name="chevron-down" size={14} color={colors.textSecondary} />
                 </TouchableOpacity>
 
-                <TouchableOpacity>
+                <TouchableOpacity onPress={() => setMessages([])}>
                     <Text style={styles.clearText}>Clear</Text>
                 </TouchableOpacity>
             </View>
+
+            {renderDebugDrawer()}
 
             {/* Main Content Wrapper handling Keyboard */}
             <KeyboardAvoidingView
@@ -357,10 +288,11 @@ export default function AssistantTab() {
                 behavior="padding"
             >
                 {/* Chat List */}
-                <FlatList
+                < FlatList
                     ref={flatListRef}
                     data={messages}
-                    style={{ flex: 1 }}
+                    style={{ flex: 1 }
+                    }
                     keyExtractor={(item) => item.id}
                     renderItem={renderMessage}
                     contentContainerStyle={styles.listContent}
@@ -370,14 +302,16 @@ export default function AssistantTab() {
                 />
 
                 {/* Input Area */}
-                <View style={styles.inputContainer}>
+                < View style={styles.inputContainer} >
                     {/* Context Suggestion Chip (Shows when input is empty) */}
-                    {inputText.length === 0 && (
-                        <TouchableOpacity style={styles.contextChip}>
-                            <Ionicons name="bulb-outline" size={16} color={colors.primary[500]} />
-                            <Text style={styles.contextChipText}>Suggest actions</Text>
-                        </TouchableOpacity>
-                    )}
+                    {/* Context Suggestion Chip (Shows when input is empty) - REMOVED for cleaner UI
+                        inputText.length === 0 && (
+                            <TouchableOpacity style={styles.contextChip}>
+                                <Ionicons name="bulb-outline" size={16} color={colors.primary[500]} />
+                                <Text style={styles.contextChipText}>Suggest actions</Text>
+                            </TouchableOpacity>
+                        )
+                    */}
 
                     <View style={styles.inputWrapper}>
                         <TextInput
@@ -386,12 +320,12 @@ export default function AssistantTab() {
                             placeholderTextColor={colors.textTertiary}
                             value={inputText}
                             onChangeText={setInputText}
-                            onSubmitEditing={handleSend}
+                            onSubmitEditing={() => handleSend()}
                             multiline // Allow multiline for better UX
                         />
                         <TouchableOpacity
                             style={[styles.micButton, inputText.length > 0 && styles.sendButtonActive]}
-                            onPress={handleSend}
+                            onPress={() => handleSend()}
                         >
                             <Ionicons
                                 name={inputText ? "arrow-up" : "mic"}
@@ -400,11 +334,11 @@ export default function AssistantTab() {
                             />
                         </TouchableOpacity>
                     </View>
-                </View>
-            </KeyboardAvoidingView>
+                </View >
+            </KeyboardAvoidingView >
 
             {/* Account Selection Modal */}
-            <Modal
+            < Modal
                 animationType="fade"
                 transparent={true}
                 visible={isAccountModalVisible}
@@ -436,8 +370,8 @@ export default function AssistantTab() {
                         </TouchableOpacity>
                     </View>
                 </View>
-            </Modal>
-        </SafeAreaView>
+            </Modal >
+        </SafeAreaView >
     );
 }
 
@@ -856,7 +790,7 @@ const getStyles = (colors: any, isDark: boolean, isKeyboardVisible: boolean) => 
         flex: 1,
         flexDirection: 'row',
         alignItems: 'center',
-        gap: spacing[2.5],
+        gap: 10,
         marginLeft: spacing[2],
     },
     accountEmail: {
@@ -866,8 +800,8 @@ const getStyles = (colors: any, isDark: boolean, isKeyboardVisible: boolean) => 
     },
     primaryBadge: {
         backgroundColor: isDark ? '#333' : '#E2E8F0',
-        paddingHorizontal: spacing[1.5],
-        paddingVertical: spacing[0.5],
+        paddingHorizontal: 6,
+        paddingVertical: 2,
         borderRadius: borderRadius.sm,
     },
     primaryBadgeText: {
@@ -892,5 +826,74 @@ const getStyles = (colors: any, isDark: boolean, isKeyboardVisible: boolean) => 
         color: colors.text,
         fontSize: 14,
         fontWeight: '500',
+    },
+
+    // Suggestion Chips
+    suggestionChipsContainer: {
+        flexDirection: 'column',
+        width: '100%',
+        gap: 12, // Increased gap
+        marginTop: 12,
+        paddingLeft: 4, // Align visually
+    },
+    suggestionChip: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: isDark ? '#000000' : '#FFFFFF', // Pitch black in dark mode per screenshot
+        borderRadius: 24, // Very rounded
+        paddingHorizontal: 6, // Narrow padding around icon
+        paddingVertical: 6,
+        borderWidth: 1,
+        borderColor: isDark ? '#222' : '#E2E8F0',
+        width: '100%', // Full width
+    },
+    suggestionIconContainer: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 12,
+    },
+    suggestionChipText: {
+        fontSize: 14,
+        color: colors.text, // Normal text color (white/black)
+        fontWeight: '500',
+        flex: 1, // Wrap text
+        lineHeight: 20,
+        paddingRight: 16,
+    },
+
+    // Debug Drawer Styles
+    debugDrawer: {
+        backgroundColor: '#000',
+        borderBottomWidth: 1,
+        borderBottomColor: '#333',
+        padding: 10,
+        maxHeight: 250,
+    },
+    debugTitle: {
+        color: '#0F0',
+        fontSize: 12,
+        fontWeight: 'bold',
+        marginBottom: 8,
+        fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+    },
+    debugItem: {
+        marginBottom: 8,
+        borderBottomWidth: 1,
+        borderBottomColor: '#222',
+        paddingBottom: 4,
+    },
+    debugType: {
+        color: '#FF0',
+        fontSize: 10,
+        fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+        marginBottom: 2,
+    },
+    debugContent: {
+        color: '#CCC',
+        fontSize: 10,
+        fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
     },
 });
