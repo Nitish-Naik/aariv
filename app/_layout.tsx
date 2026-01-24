@@ -1,10 +1,10 @@
 import { Stack } from "expo-router";
 import React, { useEffect } from "react";
-import { View } from "react-native";
+import { ActivityIndicator, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { ErrorBoundary } from "../components/ErrorBoundary";
 import { FloatingCopilotBar } from "../components/FloatingCopilotBar";
-import { AuthProvider } from "../context/AuthContext";
+import { AuthProvider, useAuth } from "../context/AuthContext";
 import { ThemeProvider, useTheme } from "../context/ThemeContext";
 import {
   registerForPushNotifications,
@@ -14,6 +14,15 @@ import {
 
 function ThemedStack() {
   const { colors } = useTheme();
+  const { isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <View style={{ flex: 1, backgroundColor: colors.background, justifyContent: "center", alignItems: "center" }}>
+        <ActivityIndicator size="large" color={colors.primary[500]} />
+      </View>
+    );
+  }
 
   return (
     <View style={{ flex: 1 }}>
@@ -96,7 +105,7 @@ function ThemedStack() {
       </Stack>
 
       {/* Global Floating Copilot Bar - Always Available */}
-      <FloatingCopilotBar />
+      {/* <FloatingCopilotBar /> */}
     </View>
   );
 }
@@ -117,7 +126,7 @@ export default function RootLayout() {
         if (bg && typeof bg.registerBackgroundSync === "function") {
           await bg.registerBackgroundSync();
         }
-      } catch (e) {
+      } catch (e: any) {
         console.log("Background sync module not available:", e?.message || e);
       }
     };

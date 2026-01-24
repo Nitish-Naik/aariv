@@ -175,6 +175,14 @@ class Analytics {
   async trackPaywallShown(feature: string, userId: string): Promise<void> {
     return this.track("Paywall Shown", { feature }, userId);
   }
+
+  async trackHighlightViewed(alertId: string, severity: string, alertType: string, screenName: string, userId?: string): Promise<void> {
+    return this.track("highlight_viewed", { alert_id: alertId, severity, alert_type: alertType, screen_name: screenName }, userId);
+  }
+
+  async trackHighlightClicked(alertId: string, severity: string, actionLabel: string, screenName: string, userId?: string): Promise<void> {
+    return this.track("highlight_clicked", { alert_id: alertId, severity, action_label: actionLabel, screen_name: screenName }, userId);
+  }
 }
 
 // Export singleton instance

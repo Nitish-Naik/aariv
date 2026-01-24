@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
 import { API_URL } from '../services/api'; // Ensure API_URL is accessible or use relative
 import { getCurrentUser } from '../services/auth';
 import { spacing, typography } from '../theme';
@@ -21,6 +22,20 @@ import { spacing, typography } from '../theme';
 export default function VoiceModeScreen() {
     const router = useRouter();
     const { colors, isDark } = useTheme();
+    const { user, isLoading: isAuthLoading } = useAuth(); // Use context for immediate state
+
+    if (isAuthLoading) {
+        return (
+            <View style={{ flex: 1, backgroundColor: isDark ? '#000' : '#FFF', justifyContent: 'center', alignItems: 'center' }}>
+                <ActivityIndicator size="large" color={colors.primary ? colors.primary[500] : '#000'} />
+            </View>
+        );
+    }
+
+    if (!user) {
+        // AuthContext will trigger the redirect, but we hide content meanwhile
+        return <View style={{ flex: 1, backgroundColor: isDark ? '#000' : '#FFF' }} />;
+    }
 
     // Audio Refs
     const recording = useRef<Audio.Recording | null>(null);

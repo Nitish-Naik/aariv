@@ -25,7 +25,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const segments = useSegments();
   const router = useRouter();
-  const lastSyncRef = React.useRef<number>(0); // Track last sync time
+  const lastSyncedUserIdRef = React.useRef<string | null>(null);
 
   useEffect(() => {
     // 1. Initial check
@@ -34,8 +34,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (session?.user) {
         const mappedUser = mapSupabaseUser(session.user);
         setUser(mappedUser);
-        // Sync with backend
-        syncWithBackend(mappedUser);
+        // We rely on onAuthStateChange for syncing to avoid duplicates
       }
       setIsLoading(false);
     };
@@ -52,6 +51,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       } else {
         setUser(null);
+        lastSyncedUserIdRef.current = null; // Reset on sign out
       }
       setIsLoading(false);
     });
@@ -62,15 +62,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   async function syncWithBackend(mappedUser: User) {
-    try {
-      // Debounce: Skip if we synced in the last 5 seconds
-      const now = Date.now();
-      if (now - lastSyncRef.current < 5000) {
-        console.log("Backend sync skipped (debounced)");
-        return;
-      }
-      lastSyncRef.current = now;
+    // Idempotency: Skip if we already synced (or are syncing) this user
+    if (lastSyncedUserIdRef.current === mappedUser.id) {
+      return;
+    }
 
+    // Optimistic lock: Mark as synced immediately to prevent race conditions
+    lastSyncedUserIdRef.current = mappedUser.id;
+
+    try {
       // Send sync request to backend
       await api.post('/auth/sync', {
         name: mappedUser.name,
@@ -81,6 +81,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Non-blocking error. Backend might be down or unreachable.
       // We don't want to block the UI for this background task.
       console.warn("Backend sync failed (running in offline/auth-only mode):", e.message);
+
+      // Optional: We DO NOT reset the ref here. 
+      // If we failed, we failed. Constant retrying on every nav/render is exactly what we want to avoid.
+      // The user can try again by reloading the app (which resets the ref).
     }
   }
 

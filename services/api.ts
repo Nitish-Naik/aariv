@@ -1,27 +1,12 @@
 // services/api.ts
-import Constants from "expo-constants";
-import { Platform } from "react-native";
 import { signOut } from "./auth";
 import { supabase } from "./supabaseClient";
 
 // Prefer env-driven API base for all platforms.
 const ENV_API_URL = process.env.EXPO_PUBLIC_API_URL;
 
-// Dynamically determine host for development
-const getDevHost = () => {
-  if (Constants.expoConfig?.hostUri) {
-    return Constants.expoConfig.hostUri.split(":")[0];
-  }
-  return "localhost";
-};
-
-const DEV_HOST = getDevHost();
-
-const fallbackBase = Platform.select({
-  ios: `http://${DEV_HOST}:3000/api`,
-  android: `http://${DEV_HOST}:3000/api`,
-  default: "https://aariv-backend.vercel.app/api", // Use Vercel backend as default for production
-});
+// Fallback to Vercel production if env is missing
+const fallbackBase = "https://aariv-backend.vercel.app/api";
 
 export const API_URL = ENV_API_URL
   ? ENV_API_URL.replace(/\/$/, "")
@@ -55,8 +40,8 @@ async function handleResponse(response: Response, endpoint: string) {
     const errorData = await response.json().catch(() => ({}));
     throw new Error(
       errorData.message ||
-        errorData.error ||
-        `Request failed with status ${response.status}`,
+      errorData.error ||
+      `Request failed with status ${response.status}`,
     );
   }
 

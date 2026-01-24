@@ -15,11 +15,13 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Card } from "../../components/Card";
+import { HighlightCard } from "../../components/HighlightCard";
 import { WebContainer } from "../../components/WebContainer";
 import { useTheme } from "../../context/ThemeContext";
 import { api } from "../../services/api";
 import { getCurrentUser } from "../../services/auth";
 import { borderRadius, spacing, typography } from "../../theme";
+import { inferSeverity } from "../../utils/severityMapping";
 
 export default function HomeTab() {
   const router = useRouter();
@@ -502,6 +504,7 @@ export default function HomeTab() {
                     flexDirection: "row",
                     justifyContent: "space-between",
                     alignItems: "center",
+                    marginBottom: spacing[2],
                   }}
                 >
                   <Text style={styles.sectionTitle}>System Status</Text>
@@ -573,27 +576,58 @@ export default function HomeTab() {
               {((briefing?.highlights && briefing.highlights.length > 0) ||
                 loading) && (
                   <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Highlights</Text>
+                    <Text style={[styles.sectionTitle, { marginBottom: spacing[4] }]}>Highlights</Text>
                     <ScrollView
                       horizontal
                       showsHorizontalScrollIndicator={false}
                       style={styles.nudgeScroll}
+                      contentContainerStyle={{ paddingRight: 24 }}
                     >
                       {loading ? (
                         <Card
                           style={[
                             styles.nudgeCard,
-                            { width: 250, justifyContent: "center" },
+                            { width: 280, justifyContent: "center", height: 140 },
                           ]}
                         >
                           <ActivityIndicator color={colors.primary[500]} />
                         </Card>
                       ) : (
-                        briefing?.highlights?.map((highlight, index) => (
-                          <Card key={index} style={styles.nudgeCard}>
-                            <Text style={styles.nudgeText}>{highlight}</Text>
-                          </Card>
-                        ))
+                        briefing?.highlights?.map((highlight, index) => {
+                          // Parse Title vs Body
+                          const parts = highlight.includes(': ') ? highlight.split(': ') : ['Insight', highlight];
+                          const title = parts[0];
+                          const description = parts.slice(1).join(': ');
+
+                          // Deterministic Severity Inference
+                          const severity = inferSeverity(highlight);
+
+                          // Determine Actions based on Severity
+                          let actionLabel = undefined;
+                          let onActionPress = undefined;
+
+                          if (severity === 'urgent' || severity === 'attention') {
+                            actionLabel = 'Review Activity';
+                            onActionPress = () => router.push('/(tabs)/settings');
+                          }
+
+                          return (
+                            <HighlightCard
+                              key={index}
+                              id={highlight} // Use content as ID for analytics consistency
+                              title={title}
+                              description={description}
+                              severity={severity}
+                              actionLabel={actionLabel}
+                              onActionPress={onActionPress}
+                              actionLabel={actionLabel}
+                              onActionPress={onActionPress}
+                              alertType="briefing_highlight"
+                              screenName="HomeTab"
+                              userId={user?.id}
+                            />
+                          );
+                        })
                       )}
                     </ScrollView>
                   </View>
@@ -904,16 +938,19 @@ const getStyles = (colors: any, isDark: boolean) =>
       paddingHorizontal: spacing[6],
     },
     nudgeCard: {
-      width: 260,
+      width: 280,
       marginRight: spacing[4],
-      backgroundColor: isDark ? "#1E293B" : "#F1F5F9",
-      borderColor: "transparent",
+      backgroundColor: isDark ? "#1E293B" : "#F8FAFC",
+      borderColor: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.03)",
+      borderWidth: 1,
       padding: spacing[5],
-    },
-    nudgeText: {
-      ...typography.textStyles.body,
-      fontSize: 15,
-      color: colors.text,
-      lineHeight: 24,
+      borderRadius: borderRadius.xl,
+      justifyContent: 'center',
+      minHeight: 140,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: isDark ? 0.2 : 0.05,
+      shadowRadius: 12,
+      elevation: 2,
     },
   });

@@ -5,6 +5,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Animated, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { SwipeCard } from '../components/SwipeCard';
+import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { api } from '../services/api';
 import { getCurrentUser } from '../services/auth';
@@ -43,6 +44,19 @@ export default function ZenModeScreen() {
     const router = useRouter();
     const { colors, isDark } = useTheme();
     const styles = getStyles(colors, isDark);
+    const { user, isLoading: isAuthLoading } = useAuth();
+
+    if (isAuthLoading) {
+        return (
+            <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+                <ActivityIndicator size="large" color={colors.primary[500]} />
+            </View>
+        );
+    }
+
+    if (!user) {
+        return <View style={styles.container} />;
+    }
 
     const [actions, setActions] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
