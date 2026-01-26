@@ -29,11 +29,11 @@ export default function ToolkitsScreen() {
     // State
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCategory, setSelectedCategory] = useState<string>('All');
-    const [toolkits, setToolkits] = useState<Toolkit[]>(MOCK_TOOLKITS);
-    const [bundles, setBundles] = useState<ToolkitBundle[]>(MOCK_BUNDLES);
+    // const [toolkits, setToolkits] = useState<Toolkit[]>(MOCK_TOOLKITS);
+    // const [bundles, setBundles] = useState<ToolkitBundle[]>(MOCK_BUNDLES);
     const [installedIds, setInstalledIds] = useState<Set<string>>(new Set(['1', '2', '6', '11']));
     const [modalVisible, setModalVisible] = useState(false);
-    const [pendingToolkit, setPendingToolkit] = useState<Toolkit | null>(null);
+    // const [pendingToolkit, setPendingToolkit] = useState<Toolkit | null>(null);
     const [, setLoading] = useState(true);
 
     // Fetch real toolkits on mount
@@ -48,17 +48,17 @@ export default function ToolkitsScreen() {
                     api.get('/toolkits/bundles'),
                 ]);
 
-                if (toolkitsRes.toolkits) setToolkits(toolkitsRes.toolkits);
-                if (bundlesRes.bundles) setBundles(bundlesRes.bundles);
+                // if (toolkitsRes.toolkits) setToolkits(toolkitsRes.toolkits);
+                // if (bundlesRes.bundles) setBundles(bundlesRes.bundles);
 
                 // Update installed from connected status
                 const installed = new Set<string>();
-                if (Array.isArray(toolkitsRes.toolkits)) {
-                    toolkitsRes.toolkits.forEach((t: Toolkit) => {
-                        if (t.connected) installed.add(t.id);
-                    });
-                    setInstalledIds(installed);
-                }
+                // if (Array.isArray(toolkitsRes.toolkits)) {
+                //     toolkitsRes.toolkits.forEach((t: Toolkit) => {
+                //         if (t.connected) installed.add(t.id);
+                //     });
+                //     setInstalledIds(installed);
+                // }
             } catch (e) {
                 console.log("Failed to fetch toolkits, using defaults", e);
                 // Fallback to mocks already set

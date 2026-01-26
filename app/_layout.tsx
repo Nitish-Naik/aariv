@@ -1,9 +1,9 @@
+import { SpeedInsights } from "@vercel/speed-insights/react";
 import { Stack } from "expo-router";
 import React, { useEffect } from "react";
-import { ActivityIndicator, View } from "react-native";
+import { ActivityIndicator, Platform, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { ErrorBoundary } from "../components/ErrorBoundary";
-import { FloatingCopilotBar } from "../components/FloatingCopilotBar";
 import { AuthProvider, useAuth } from "../context/AuthContext";
 import { ThemeProvider, useTheme } from "../context/ThemeContext";
 import {
@@ -11,6 +11,8 @@ import {
   scheduleDailyBriefing,
   useNotificationHandler,
 } from "../services/notifications";
+
+
 
 function ThemedStack() {
   const { colors } = useTheme();
@@ -142,6 +144,7 @@ export default function RootLayout() {
         <AuthProvider>
           <ThemeProvider>
             <ThemedStack />
+            {Platform.OS === 'web' && <SpeedInsights />}
           </ThemeProvider>
         </AuthProvider>
       </SafeAreaProvider>

@@ -42,6 +42,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // 2. Listen for changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log(`🔐 Auth State Changed: ${event}`, session?.user?.email); // DEBUG
       if (session?.user) {
         const mappedUser = mapSupabaseUser(session.user);
         setUser(mappedUser);
@@ -71,16 +72,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     lastSyncedUserIdRef.current = mappedUser.id;
 
     try {
+      // DEBUG: Check what we are sending
+      console.log("🔄 Initiating Backend Sync for:", mappedUser.email);
+      const { data: { session } } = await supabase.auth.getSession();
+      console.log("🔑 Auth Token Available:", !!session?.access_token);
+      // console.log("🔑 Token:", session?.access_token); // Uncomment to see full token if needed
+
       // Send sync request to backend
       await api.post('/auth/sync', {
         name: mappedUser.name,
         avatar: mappedUser.avatar
       });
-      console.log("Backend sync successful");
+      console.log("✅ Backend sync successful");
     } catch (e: any) {
       // Non-blocking error. Backend might be down or unreachable.
       // We don't want to block the UI for this background task.
-      console.warn("Backend sync failed (running in offline/auth-only mode):", e.message);
+      console.warn("❌ Backend sync failed:", e.message);
+      console.warn("Details:", e);
 
       // Optional: We DO NOT reset the ref here. 
       // If we failed, we failed. Constant retrying on every nav/render is exactly what we want to avoid.
@@ -102,15 +110,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (isLoading) return;
 
     const inPublicGroup = segments[0] === 'login' ||
-      segments[0] === 'onboarding' ||
       segments[0] === 'legal';
 
     // If user is logged in
     if (user) {
-      // Redirect from login/onboarding/index to main app
-      if (segments[0] === 'login' || segments[0] === 'onboarding' || segments.length === 0) {
-        router.replace('/(tabs)');
+      // Redirect from login/index to onboarding (Gatekeeper)
+      if (segments[0] === 'login' || segments.length === 0) {
+        router.replace('/onboarding');
       }
+      // Note: We do NOT redirect away from 'onboarding' here. 
+      // The OnboardingScreen itself handles the forward navigation to /(tabs) when complete.
     } else {
       // If user is NOT logged in and NOT on a public page, redirect to login
       if (!inPublicGroup) {

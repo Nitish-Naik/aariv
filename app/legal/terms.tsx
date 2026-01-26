@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../context/ThemeContext';
 import { spacing } from '../../theme';
@@ -24,70 +24,64 @@ export default function TermsOfServiceScreen() {
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.lastUpdated}>Last updated: January 2026</Text>
 
-        <Section title="1. Agreement">
+        <Text style={styles.paragraph}>
+          Welcome to Aariv. By using the app, you agree to the terms below.
+        </Text>
+
+        <Section title="1. Service Overview">
           <Text style={styles.paragraph}>
-            By using Aariv, you agree to these Terms. If you do not agree, please do not use the app.
+            Aariv is a personal productivity assistant that helps you manage and interact with connected apps (such as email and calendar) in one place.
           </Text>
         </Section>
 
-        <Section title="2. What Aariv provides">
-          <Text style={styles.paragraph}>Aariv:</Text>
-          <Bullet>Prepares suggested actions</Bullet>
-          <Bullet>Drafts responses and schedules</Bullet>
-          <Bullet>Executes actions only after your approval</Bullet>
-          <Bullet>Connects to third-party services you choose</Bullet>
-          <Text style={[styles.paragraph, styles.highlight, { marginTop: 8 }]}>
-            Aariv does not act autonomously.
-          </Text>
+        <Section title="2. Eligibility">
+          <Text style={styles.paragraph}>You must:</Text>
+          <Bullet>Be at least 13 years old</Bullet>
+          <Bullet>Use Aariv only with accounts you own or are authorized to access</Bullet>
         </Section>
 
-        <Section title="3. Your responsibility">
-          <Text style={styles.paragraph}>You remain responsible for:</Text>
-          <Bullet>Reviewing all suggested actions</Bullet>
-          <Bullet>Approving or rejecting executions</Bullet>
-          <Bullet>Ensuring accuracy of final actions</Bullet>
-          <Text style={[styles.paragraph, { marginTop: 8 }]}>
-            Aariv assists with decisions. You make the final call.
-          </Text>
+        <Section title="3. Your Responsibilities">
+          <Text style={styles.paragraph}>You agree to:</Text>
+          <Bullet>Keep your account secure</Bullet>
+          <Bullet>Use the app lawfully and respectfully</Bullet>
+          <Bullet>Not misuse or abuse connected services</Bullet>
         </Section>
 
-        <Section title="4. Third-party services">
+        <Section title="4. Permissions & Connected Apps">
           <Text style={styles.paragraph}>
-            Aariv integrates with external platforms (Google, Slack, etc.). These services:
+            By connecting an app, you grant Aariv permission to access ONLY the data required to perform the actions you request.
           </Text>
-          <Bullet>Operate under their own terms</Bullet>
-          <Bullet>Are responsible for their availability and behavior</Bullet>
-          <Text style={styles.paragraph}>
-            Aariv is not responsible for third-party service outages or errors.
-          </Text>
+          <Text style={styles.paragraph}>You can revoke permissions at any time.</Text>
         </Section>
 
-        <Section title="5. Limitations">
-          <Text style={styles.paragraph}>
-            Aariv is a productivity assistant, not:
-          </Text>
-          <Bullet>A legal advisor</Bullet>
-          <Bullet>A financial advisor</Bullet>
-          <Bullet>A medical advisor</Bullet>
-          <Text style={styles.paragraph}>
-            Suggestions are informational and require your judgment.
-          </Text>
+        <Section title="5. Availability & Changes">
+          <Text style={styles.paragraph}>Aariv is provided “as is”.</Text>
+          <Bullet>Features may change or improve over time</Bullet>
+          <Bullet>Temporary outages may occur</Bullet>
+          <Text style={styles.paragraph}>We aim for reliability, but we don’t guarantee uninterrupted service.</Text>
         </Section>
 
-        <Section title="6. Account termination">
-          <Text style={styles.paragraph}>
-            You may stop using Aariv at any time. We may suspend access if the service is misused or abused.
-          </Text>
+        <Section title="6. Account Termination">
+          <Text style={styles.paragraph}>You may delete your account at any time.</Text>
+          <Text style={styles.paragraph}>We may suspend or terminate accounts if:</Text>
+          <Bullet>Required by law</Bullet>
+          <Bullet>There is misuse, abuse, or security risk</Bullet>
         </Section>
 
-        <Section title="7. Changes">
-          <Text style={styles.paragraph}>
-            We may update these Terms. Continued use means acceptance of changes.
-          </Text>
+        <Section title="7. Limitation of Liability">
+          <Text style={styles.paragraph}>Aariv is not responsible for:</Text>
+          <Bullet>Third-party service outages (e.g., Google services)</Bullet>
+          <Bullet>Data inaccuracies from connected platforms</Bullet>
+          <Bullet>Indirect or incidental damages</Bullet>
         </Section>
 
-        <Section title="8. Contact">
-          <TouchableOpacity onPress={() => {/* In real app, open email */ }}>
+        <Section title="8. Updates to These Terms">
+          <Text style={styles.paragraph}>We may update these terms. Continued use of Aariv means acceptance of the latest version.</Text>
+        </Section>
+
+        <Section title="9. Contact">
+          <Text style={styles.paragraph}>Questions about these terms?</Text>
+          <TouchableOpacity onPress={() => Linking.openURL('mailto:support@aariv.app')}>
             <Text style={styles.link}>support@aariv.app</Text>
           </TouchableOpacity>
         </Section>

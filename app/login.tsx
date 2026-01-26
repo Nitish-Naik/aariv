@@ -55,7 +55,10 @@ export default function LoginRoute() {
           </View>
           <Text style={[styles.title, { color: colors.text }]}>Aariv</Text>
           <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-            Your Neural Companion
+            A calmer way to stay on top of your day.
+          </Text>
+          <Text style={[styles.tagline, { color: colors.textSecondary }]}>
+            Manage emails, calendar, and tasks — all in one quiet place.
           </Text>
         </View>
 
@@ -79,8 +82,22 @@ export default function LoginRoute() {
           )}
 
           <Text style={[styles.disclaimer, { color: colors.textTertiary }]}>
-            By continuing, you agree to our Terms & Privacy Policy
+            We’ll only sign you in.
+            You choose what to connect next.
           </Text>
+          <View style={{ flexDirection: 'row', marginTop: 12, gap: 16 }}>
+            <TouchableOpacity onPress={() => router.push("/legal/privacy")}>
+              <Text style={[styles.privacyTermsLink, { color: colors.textSecondary }]}>
+                Privacy
+              </Text>
+            </TouchableOpacity>
+            <Text style={{ color: colors.textSecondary, opacity: 0.5 }}>•</Text>
+            <TouchableOpacity onPress={() => router.push("/legal/terms")}>
+              <Text style={[styles.privacyTermsLink, { color: colors.textSecondary }]}>
+                Terms
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
     </View>
@@ -102,27 +119,38 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   logoContainer: {
-    width: 64,
-    height: 64,
-    borderRadius: 20,
+    width: 72,
+    height: 72,
+    borderRadius: 24,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 32, // Increased spacing
     shadowColor: "#059669",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 12,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 6,
   },
   title: {
-    fontSize: 42,
-    fontWeight: '700',
-    marginBottom: 8,
-    fontFamily: 'System', // Use default system font
+    fontSize: 48,
+    fontWeight: '800',
+    marginBottom: 12, // Increased spacing
+    fontFamily: 'System',
   },
   subtitle: {
-    fontSize: 18,
-    opacity: 0.8,
+    fontSize: 20,
+    fontWeight: '500',
+    opacity: 0.9,
+    textAlign: 'center',
+    lineHeight: 28,
+    marginTop: 16, // Added spacing
+  },
+  tagline: {
+    fontSize: 16,
+    opacity: 0.7,
+    textAlign: 'center',
+    marginTop: 8,
+    lineHeight: 22,
   },
   footer: {
     width: '100%',
@@ -136,19 +164,22 @@ const styles = StyleSheet.create({
     height: 56,
     borderRadius: 28,
     marginBottom: 24,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 2,
+    // Removed shadow for a flatter, more dominant look
   },
   buttonText: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 18, // Slightly larger font for dominance
+    fontWeight: '700', // Bolder font
   },
   disclaimer: {
-    fontSize: 12,
+    fontSize: 13, // Slightly larger font for readability
     textAlign: 'center',
-    paddingHorizontal: 32,
+    paddingHorizontal: 20,
+    marginTop: 20, // Add margin to separate from the button
+    lineHeight: 18,
+  },
+  privacyTermsLink: {
+    fontSize: 13,
+    textDecorationLine: 'underline',
+    opacity: 0.8,
   },
 });

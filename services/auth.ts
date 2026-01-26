@@ -6,7 +6,7 @@ import * as AuthSession from "expo-auth-session";
 
 import * as WebBrowser from "expo-web-browser";
 
-import { supabase } from "./supabaseClient"; 
+import { supabase } from "./supabaseClient";
 
 import type { User } from "../types";
 
@@ -40,11 +40,13 @@ export async function signInWithGoogle(): Promise<void> {
 
     const redirectUri = AuthSession.makeRedirectUri({
 
-        scheme: 'aariv',
+      scheme: 'aariv',
 
-        path: 'auth/callback'
+      path: 'auth/callback'
 
     });
+
+    console.log("🌐 Redirect URI:", redirectUri); // DEBUG
 
 
 
@@ -53,11 +55,13 @@ export async function signInWithGoogle(): Promise<void> {
       provider: 'google',
 
       options: {
-
         redirectTo: redirectUri,
-
         skipBrowserRedirect: true,
-
+        queryParams: {
+          access_type: 'offline',
+          prompt: 'consent',
+          scope: 'email profile' // Explicitly restrict to basic identity only
+        }
       },
 
     });
@@ -68,17 +72,24 @@ export async function signInWithGoogle(): Promise<void> {
 
     if (!data.url) throw new Error("No OAuth URL returned from Supabase");
 
+    console.log("🔗 Opening OAuth URL..."); // DEBUG
+
 
 
     const result = await WebBrowser.openAuthSessionAsync(data.url, redirectUri);
+
+    console.log("📥 Browser Result:", result.type); // DEBUG
 
 
 
     if (result.type !== "success") {
 
-        throw new Error("Sign in cancelled");
+      throw new Error("Sign in cancelled");
 
     }
+
+    console.log("✅ Browser returned successfully, parsing tokens..."); // DEBUG
+    console.log("🔗 Callback URL:", result.url); // DEBUG
 
 
 
@@ -90,18 +101,23 @@ export async function signInWithGoogle(): Promise<void> {
 
     const refreshToken = params.get("refresh_token");
 
+    console.log("🔑 Tokens found:", !!accessToken, !!refreshToken); // DEBUG
+
 
 
     if (accessToken && refreshToken) {
 
-        await supabase.auth.setSession({
+      await supabase.auth.setSession({
 
-            access_token: accessToken,
+        access_token: accessToken,
 
-            refresh_token: refreshToken,
+        refresh_token: refreshToken,
 
-        });
+      });
+      console.log("✅ Session set successfully!"); // DEBUG
 
+    } else {
+      console.error("❌ No tokens found in callback URL!");
     }
 
 

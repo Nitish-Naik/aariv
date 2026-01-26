@@ -76,7 +76,6 @@ export default function OnboardingScreen() {
 
   const SUPPORTED_PLATFORMS: { id: Platform; name: string; icon: string }[] = [
     { id: "gmail", name: "Google Account", icon: "logo-google" },
-    // { id: "google-calendar", name: "Google Calendar", icon: "calendar" }, // Hidden: Included in Google Account
     { id: "slack", name: "Slack", icon: "logo-slack" },
   ];
 

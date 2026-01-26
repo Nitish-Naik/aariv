@@ -23,17 +23,34 @@ import { getCurrentUser } from "../../services/auth";
 import { borderRadius, spacing, typography } from "../../theme";
 import { inferSeverity } from "../../utils/severityMapping";
 
+import { useIntegrations } from "../../hooks/useIntegrations";
+import { analytics } from "../../services/analytics";
+// ... imports
+
 export default function HomeTab() {
   const router = useRouter();
   const { colors, isDark } = useTheme();
   const styles = getStyles(colors, isDark);
-
   const [user, setUser] = useState<any>(null);
+
+  // Recovery State Hook
+  const { shouldShowRecoveryState } = useIntegrations();
+  const hasLoggedRecoveryRef = React.useRef(false);
+
+  useEffect(() => {
+    // Track recovery state shown (once per mount)
+    if (shouldShowRecoveryState && !hasLoggedRecoveryRef.current) {
+      analytics.trackRecoveryStateShown("home", user?.id);
+      hasLoggedRecoveryRef.current = true;
+    }
+  }, [shouldShowRecoveryState, user]);
+
   const [events, setEvents] = useState<any[]>([]);
   const [briefing, setBriefing] = useState<{
     greeting: string;
     summary: string;
     counts: { meetings: number; emails: number };
+    highlights?: string[];
   } | null>(null);
   const [actions, setActions] = useState<any[]>([]);
   const [refreshing, setRefreshing] = useState(false);
@@ -620,8 +637,6 @@ export default function HomeTab() {
                               severity={severity}
                               actionLabel={actionLabel}
                               onActionPress={onActionPress}
-                              actionLabel={actionLabel}
-                              onActionPress={onActionPress}
                               alertType="briefing_highlight"
                               screenName="HomeTab"
                               userId={user?.id}
@@ -678,6 +693,43 @@ const getStyles = (colors: any, isDark: boolean) =>
       fontSize: 16,
       color: colors.textSecondary,
       lineHeight: 24,
+    },
+
+    // Recovery Card
+    recoveryCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.surface,
+      borderRadius: borderRadius.xl,
+      padding: spacing[5],
+      marginBottom: spacing[6],
+      borderWidth: 1,
+      borderColor: colors.primary[500],
+      shadowColor: colors.primary[500],
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.1,
+      shadowRadius: 12,
+      elevation: 4,
+      gap: spacing[4],
+    },
+    recoveryIconContainer: {
+      width: 56,
+      height: 56,
+      borderRadius: 28,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    recoveryTitle: {
+      ...typography.textStyles.h3,
+      fontWeight: '700',
+    },
+    recoverySubtitle: {
+      fontSize: 14,
+    },
+    recoveryCta: {
+      fontSize: 14,
+      fontWeight: '600',
+      marginTop: 4,
     },
 
     // Empty State

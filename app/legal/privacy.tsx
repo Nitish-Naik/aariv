@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../context/ThemeContext';
 import { spacing } from '../../theme';
@@ -24,102 +24,84 @@ export default function PrivacyPolicyScreen() {
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.lastUpdated}>Last updated: January 2026</Text>
 
-        <Section title="1. What Aariv is">
-          <Text style={styles.paragraph}>
-            Aariv is a personal productivity assistant that helps you manage your calendar, communications, and tasks by preparing actions for your review. Aariv never performs actions without your approval.
-          </Text>
-          <Text style={styles.paragraph}>
-            Our guiding principle is simple:
-          </Text>
+        <Text style={styles.paragraph}>
+          Aariv is built to be a calm, low-stress place to manage your digital life.
+          Your privacy and trust are fundamental to how we design and operate the product.
+        </Text>
+        <Text style={styles.paragraph}>
+          This Privacy Policy explains what data we collect, why we collect it, and how you stay in control.
+        </Text>
+
+        <Section title="1. Information We Collect">
+          <Text style={styles.subHeader}>1.1 Account Information (Required)</Text>
+          <Text style={styles.paragraph}>When you sign in using Google, we collect:</Text>
+          <Bullet>Your name</Bullet>
+          <Bullet>Your email address</Bullet>
+          <Bullet>Your profile photo (avatar)</Bullet>
+          <Bullet>Authentication identifiers required to keep you signed in securely</Bullet>
+          <Text style={[styles.paragraph, styles.highlight]}>We do not collect passwords.</Text>
+
+          <Text style={[styles.subHeader, { marginTop: 16 }]}>1.2 Connected App Data (Only With Your Consent)</Text>
+          <Text style={styles.paragraph}>If you choose to connect apps like Gmail or Google Calendar, we may access:</Text>
+          <Bullet>Email metadata (sender, subject, timestamp)</Bullet>
+          <Bullet>Calendar metadata (event title, date, time)</Bullet>
+          <Bullet>Connection status (which apps are connected)</Bullet>
           <Text style={[styles.paragraph, styles.highlight]}>
-            We only access what’s needed to help you, we keep it briefly, and you stay in control.
+            This data is accessed only to perform actions you explicitly request.
           </Text>
         </Section>
 
-        <Section title="2. Information we collect">
-          <Text style={styles.subHeader}>Information you provide</Text>
-          <Bullet>Google account email (used for login)</Bullet>
-          <Bullet>Basic profile metadata (name, avatar if available)</Bullet>
-          <Bullet>App preferences and permission choices</Bullet>
-
-          <Text style={[styles.subHeader, { marginTop: 16 }]}>Information from connected services</Text>
-          <Text style={styles.paragraph}>
-            When you connect a service (e.g. Google Calendar, Gmail, Slack), Aariv may temporarily access:
-          </Text>
-          <Bullet>Event times and titles</Bullet>
-          <Bullet>Sender, subject, and metadata of messages</Bullet>
-          <Bullet>Scheduling availability</Bullet>
-          <Text style={styles.paragraph}>
-            This access is read-only unless you explicitly approve an action.
-          </Text>
+        <Section title="2. What We Do NOT Collect">
+          <Text style={styles.paragraph}>We want to be very clear. Aariv does NOT:</Text>
+          <Bullet>Read or modify your emails without your action</Bullet>
+          <Bullet>Permanently store full email bodies unless required for a feature</Bullet>
+          <Bullet>Access files, photos, or personal drives</Bullet>
+          <Bullet>Sell or share your data</Bullet>
+          <Bullet>Use your personal data to train AI models</Bullet>
         </Section>
 
-        <Section title="3. Information we do NOT store">
-          <Text style={styles.paragraph}>
-            Aariv is designed to forget noise. We do not permanently store:
-          </Text>
-          <Bullet>Full email bodies</Bullet>
-          <Bullet>Message threads</Bullet>
-          <Bullet>Attachments or files</Bullet>
-          <Bullet>Calendar descriptions beyond what is required</Bullet>
-          <Bullet>Voice recordings after processing</Bullet>
-          <Bullet>Raw chat transcripts beyond the active session</Bullet>
+        <Section title="3. How App Integrations Work">
+          <Text style={styles.paragraph}>When you connect an external app:</Text>
+          <Bullet>Access is granted through secure, industry-standard authorization</Bullet>
+          <Bullet>Permissions are limited to what the feature requires</Bullet>
+          <Bullet>You can revoke access at any time</Bullet>
+          <Text style={styles.paragraph}>All integrations are handled through secure, SOC-compliant providers.</Text>
         </Section>
 
-        <Section title="4. How Aariv uses information">
-          <Text style={styles.paragraph}>Your information is used only to:</Text>
-          <Bullet>Prepare suggested actions</Bullet>
-          <Bullet>Draft responses for review</Bullet>
-          <Bullet>Identify patterns (e.g., preferred meeting times)</Bullet>
-          <Bullet>Improve relevance of suggestions</Bullet>
-
-          <Text style={[styles.paragraph, { marginTop: 8 }]}>Aariv does not:</Text>
-          <Bullet>Sell your data</Bullet>
-          <Bullet>Show ads</Bullet>
-          <Bullet>Profile you for marketing</Bullet>
-          <Bullet>Train public models on your personal content</Bullet>
+        <Section title="4. Your Control & Choices">
+          <Text style={styles.paragraph}>You are always in control of your data:</Text>
+          <Bullet>Connect or disconnect apps at any time</Bullet>
+          <Bullet>Choose what actions Aariv can perform</Bullet>
+          <Bullet>Delete your account whenever you want</Bullet>
         </Section>
 
-        <Section title="5. Retention & automatic deletion">
-          <Text style={styles.paragraph}>
-            Aariv uses time-limited data retention by default.
-          </Text>
-          <Bullet>Raw context automatically expires after short time windows</Bullet>
-          <Bullet>Approved actions are deleted after execution</Bullet>
-          <Bullet>Behavioral learning stores patterns, not content</Bullet>
-          <Bullet>You can manually delete everything at any time</Bullet>
-          <Text style={[styles.paragraph, styles.highlight, { marginTop: 8 }]}>
-            Wisdom stays. Noise disappears.
-          </Text>
+        <Section title="5. Data Deletion">
+          <Text style={styles.paragraph}>If you delete your account:</Text>
+          <Bullet>All your user data is permanently removed</Bullet>
+          <Bullet>All connected integrations are revoked</Bullet>
+          <Bullet>Active sessions are invalidated immediately</Bullet>
+          <Text style={[styles.paragraph, styles.highlight]}>Deleted data cannot be recovered.</Text>
         </Section>
 
         <Section title="6. Security">
-          <Text style={styles.paragraph}>We protect your data using:</Text>
-          <Bullet>Encryption in transit (TLS)</Bullet>
-          <Bullet>Encryption at rest</Bullet>
-          <Bullet>Encrypted storage of third-party connection identifiers</Bullet>
-          <Bullet>Strict access controls and audit logging</Bullet>
+          <Text style={styles.paragraph}>We use industry-standard security practices, including:</Text>
+          <Bullet>Secure authentication</Bullet>
+          <Bullet>Encrypted data transmission</Bullet>
+          <Bullet>Access controls and monitoring</Bullet>
+          <Text style={styles.paragraph}>No system is perfect, but protecting your data is a top priority.</Text>
         </Section>
 
-        <Section title="7. Your controls & rights">
-          <Text style={styles.paragraph}>You can:</Text>
-          <Bullet>Disconnect any service at any time</Bullet>
-          <Bullet>Delete all stored data instantly</Bullet>
-          <Bullet>Control permissions per connected app</Bullet>
-          <Bullet>Adjust data retention settings</Bullet>
-          <Bullet>Request account deletion</Bullet>
-        </Section>
-
-        <Section title="8. Changes">
+        <Section title="7. Changes to This Policy">
           <Text style={styles.paragraph}>
-            If we change this policy, we will notify you in-app and update the date above.
+            We may update this policy as Aariv evolves.
+            If changes are significant, we’ll notify you in the app.
           </Text>
         </Section>
 
-        <Section title="9. Contact">
-          <Text style={styles.paragraph}>Questions or concerns?</Text>
-          <TouchableOpacity onPress={() => {/* In real app, open email */ }}>
-            <Text style={styles.link}>privacy@aariv.app</Text>
+        <Section title="8. Contact Us">
+          <Text style={styles.paragraph}>If you have questions or concerns:</Text>
+          <TouchableOpacity onPress={() => Linking.openURL('mailto:support@aariv.app')}>
+            <Text style={styles.link}>support@aariv.app</Text>
           </TouchableOpacity>
         </Section>
 

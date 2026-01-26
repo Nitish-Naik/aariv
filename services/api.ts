@@ -5,12 +5,10 @@ import { supabase } from "./supabaseClient";
 // Prefer env-driven API base for all platforms.
 const ENV_API_URL = process.env.EXPO_PUBLIC_API_URL;
 
-// Fallback to Vercel production if env is missing
-const fallbackBase = "https://aariv-backend.vercel.app/api";
 
 export const API_URL = ENV_API_URL
   ? ENV_API_URL.replace(/\/$/, "")
-  : fallbackBase;
+  : "http://localhost:3000/api";
 
 // Helper to get auth headers from Supabase
 async function getAuthHeaders(): Promise<HeadersInit> {
@@ -38,6 +36,15 @@ async function handleResponse(response: Response, endpoint: string) {
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
+
+    // 4. Global API Auto-Recovery Guard
+    if (errorData.error === "USER_NOT_FOUND") {
+      console.warn("Global Guard: User not found in backend. Forcing logout.");
+      await signOut();
+      // Throwing error will stop execution, UI will likely rerender to login due to auth state change
+      throw new Error("Account invalid or deleted. Please log in again.");
+    }
+
     throw new Error(
       errorData.message ||
       errorData.error ||

@@ -183,6 +183,23 @@ class Analytics {
   async trackHighlightClicked(alertId: string, severity: string, actionLabel: string, screenName: string, userId?: string): Promise<void> {
     return this.track("highlight_clicked", { alert_id: alertId, severity, action_label: actionLabel, screen_name: screenName }, userId);
   }
+
+  // Post-Onboarding Recovery Events
+  async trackOnboardingSkipped(step: number, userId?: string): Promise<void> {
+    return this.track("onboarding_skipped", { step }, userId);
+  }
+
+  async trackRecoveryStateShown(surface: "home" | "assistant", userId?: string): Promise<void> {
+    return this.track("recovery_state_shown", { surface }, userId);
+  }
+
+  async trackRecoveryConnectClicked(surface: "home_card" | "system_message", userId?: string): Promise<void> {
+    return this.track("recovery_connect_clicked", { surface }, userId);
+  }
+
+  async trackRecoveryConnectSuccess(provider: "google", timeSinceSkipMs: number, userId?: string): Promise<void> {
+    return this.track("recovery_connect_success", { provider, time_since_skip_ms: timeSinceSkipMs }, userId);
+  }
 }
 
 // Export singleton instance

@@ -46,18 +46,6 @@ export default function ZenModeScreen() {
     const styles = getStyles(colors, isDark);
     const { user, isLoading: isAuthLoading } = useAuth();
 
-    if (isAuthLoading) {
-        return (
-            <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-                <ActivityIndicator size="large" color={colors.primary[500]} />
-            </View>
-        );
-    }
-
-    if (!user) {
-        return <View style={styles.container} />;
-    }
-
     const [actions, setActions] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [processedCount, setProcessedCount] = useState(0);
@@ -72,22 +60,22 @@ export default function ZenModeScreen() {
         setTimeout(() => setToastVisible(false), 3000);
     };
 
-
-
     const fetchActions = useCallback(async () => {
+        // Guard against no user inside the callback or check user existence before calling
+        // But the effect depends on it.
         try {
-            const user = await getCurrentUser();
-            if (user) {
+            const currentUser = await getCurrentUser();
+            if (currentUser) {
                 // We reuse the briefing endpoint which returns 'actions'
-                const data = await api.get(`/dashboard/briefing?userId=${user.id}`);
+                const data = await api.get(`/dashboard/briefing?userId=${currentUser.id}`);
                 if (data.actions && Array.isArray(data.actions)) {
                     setActions(data.actions.map((a: any) => ({
                         id: a.id,
                         title: a.title,
                         subtitle: a.subtitle,
                         type: a.type,
-                        platform: a.type === 'email' ? 'gmail' : (a.type === 'calendar' ? 'google-calendar' : 'gmail'), // Map type to platform to prevent crash
-                        proposedAt: new Date(), // Add default date to prevent crash
+                        platform: a.type === 'email' ? 'gmail' : (a.type === 'calendar' ? 'google-calendar' : 'gmail'),
+                        proposedAt: new Date(),
                         status: 'pending',
                         priority: a.priority || 'medium',
                         data: a.data
@@ -102,8 +90,30 @@ export default function ZenModeScreen() {
     }, []);
 
     useEffect(() => {
-        fetchActions();
-    }, [fetchActions]);
+        if (!isAuthLoading && user) {
+            fetchActions();
+        } else if (!isAuthLoading && !user) {
+            // Handle case where user isn't logged in but we need to stop loading state?
+            // Actually, if !user, the render below handles it.
+            setLoading(false);
+        }
+    }, [fetchActions, isAuthLoading, user]);
+
+    // Animation for the empty state checkmark (Moved up)
+    const scaleAnim = useRef(new Animated.Value(0.8)).current;
+    const fadeAnim = useRef(new Animated.Value(0)).current;
+
+    if (isAuthLoading) {
+        return (
+            <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+                <ActivityIndicator size="large" color={colors.primary[500]} />
+            </View>
+        );
+    }
+
+    if (!user) {
+        return <View style={styles.container} />;
+    }
 
     const executeAction = async (action: any) => {
         try {
@@ -195,13 +205,7 @@ export default function ZenModeScreen() {
         }
     };
 
-    // We always render the first item in the array
-    const currentAction = actions[0];
-
-    // Animation for the empty state checkmark
-    const scaleAnim = useRef(new Animated.Value(0.8)).current;
-    const fadeAnim = useRef(new Animated.Value(0)).current;
-
+    // Animation hooks moved to top-level
     useEffect(() => {
         if (actions.length === 0 && !loading) {
             Animated.parallel([
@@ -266,7 +270,7 @@ export default function ZenModeScreen() {
             </View>
 
             <View style={styles.content}>
-                {actions.length > 0 && currentAction ? (
+                {actions.length > 0 && actions[0] ? (
                     <View style={styles.cardContainer}>
                         {/* Background cards for stack effect */}
                         {actions.length > 1 && (
@@ -277,8 +281,8 @@ export default function ZenModeScreen() {
                         )}
 
                         <SwipeCard
-                            key={currentAction.id} // Key is important for animation reset when component replaces
-                            action={currentAction}
+                            key={actions[0].id} // Key is important for animation reset when component replaces
+                            action={actions[0]}
                             onSwipeLeft={() => handleSwipe('left')}
                             onSwipeRight={() => handleSwipe('right')}
                             style={styles.mainCard}
