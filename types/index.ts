@@ -12,6 +12,7 @@ export interface PlatformConnection {
   logo?: string;
   connected: boolean;
   connectedAt?: Date;
+  isPro?: boolean;
   permissions: string[];
 }
 

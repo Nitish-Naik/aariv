@@ -101,7 +101,14 @@ export const ConnectPlatformsScreen: React.FC<ConnectPlatformsScreenProps> = ({
                     <PlatformIcon platform={connection.platform} size={32} logo={connection.logo} />
                   </View>
                   <View style={styles.cardInfo}>
-                    <Text style={styles.cardTitle} numberOfLines={1}>{connection.name}</Text>
+                    <View style={styles.nameRow}>
+                      <Text style={styles.cardTitle} numberOfLines={1}>{connection.name}</Text>
+                      {connection.isPro && (
+                        <View style={styles.proBadge}>
+                          <Text style={styles.proText}>PRO</Text>
+                        </View>
+                      )}
+                    </View>
                     <View style={styles.statusRow}>
                       <View style={[styles.statusDot, { backgroundColor: isConnected ? colors.semantic.success : colors.neutral[400] }]} />
                       <Text style={styles.statusText}>
@@ -259,7 +266,7 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   title: {
     ...typography.textStyles.h3,
     fontSize: 22,
-    fontWeight: '800',
+    fontWeight: '700',
     color: colors.text,
     textAlign: 'center',
     letterSpacing: -0.5,
@@ -425,9 +432,25 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   },
   cardTitle: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '700',
     color: colors.text,
+  },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
     marginBottom: 2,
+  },
+  proBadge: {
+    backgroundColor: '#FFD700', // Gold color for Pro
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: 4,
+  },
+  proText: {
+    fontSize: 9,
+    fontWeight: '900',
+    color: '#000',
   },
   statusRow: {
     flexDirection: 'row',

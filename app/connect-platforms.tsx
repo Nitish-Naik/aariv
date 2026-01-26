@@ -54,6 +54,7 @@ export default function ConnectPlatformsRoute() {
         icon: getIconForPlatform(t.appUniqueId),
         logo: t.logo,
         connected: t.connected,
+        isPro: t.isPro,
         connectedAt: t.connectedAt ? new Date(t.connectedAt) : undefined,
         permissions: []
       }));
