@@ -7,6 +7,7 @@ export interface Toolkit {
     category: string;
     popular?: boolean;
     comingSoon?: boolean;
+    scopes?: { id: string; label: string; description: string; riskLevel: 'low' | 'medium' | 'high' | 'critical' }[];
 }
 
 export interface ToolkitBundle {
@@ -14,7 +15,7 @@ export interface ToolkitBundle {
     title: string;
     description: string;
     icon: string; // Ionicons name
-    toolkits: string[]; // IDs of included toolkits
+    toolkitIds: string[]; // IDs of included toolkits
 }
 
 export const MOCK_TOOLKITS: Toolkit[] = [
@@ -26,6 +27,10 @@ export const MOCK_TOOLKITS: Toolkit[] = [
         connected: false,
         category: 'Communication',
         popular: true,
+        scopes: [
+            { id: 'g1', label: 'Read Mail', description: 'View your email messages and settings.', riskLevel: 'medium' },
+            { id: 'g2', label: 'Send Mail', description: 'Send email on your behalf.', riskLevel: 'high' }
+        ]
     },
     {
         id: '2',
@@ -35,6 +40,10 @@ export const MOCK_TOOLKITS: Toolkit[] = [
         connected: false,
         category: 'Productivity',
         popular: true,
+        scopes: [
+            { id: 'c1', label: 'View Events', description: 'Read your calendar events.', riskLevel: 'low' },
+            { id: 'c2', label: 'Manage Events', description: 'Create, edit, and delete events.', riskLevel: 'high' }
+        ]
     },
     {
         id: '3',
@@ -76,13 +85,13 @@ export const MOCK_BUNDLES: ToolkitBundle[] = [
         title: 'Executive Assistant',
         description: 'The core set for email, calendar, and scheduling.',
         icon: 'briefcase',
-        toolkits: ['1', '2']
+        toolkitIds: ['1', '2']
     },
     {
         id: 'b2',
         title: 'Developer Productivity',
         description: 'Manage code and tasks without leaving your chat.',
         icon: 'code-slash',
-        toolkits: ['5', '6', '3']
+        toolkitIds: ['5', '6', '3']
     }
 ];

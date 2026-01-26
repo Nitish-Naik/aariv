@@ -1,5 +1,8 @@
+import { Ionicons } from "@expo/vector-icons";
 import { SpeedInsights } from "@vercel/speed-insights/react";
+import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
+import * as SplashScreen from "expo-splash-screen";
 import React, { useEffect } from "react";
 import { ActivityIndicator, Platform, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -12,13 +15,28 @@ import {
   useNotificationHandler,
 } from "../services/notifications";
 
-
+// Keep the splash screen visible while we fetch resources
+SplashScreen.preventAutoHideAsync().catch(() => {
+  /* reloading the app might cause some errors here, safe to ignore */
+});
 
 function ThemedStack() {
   const { colors } = useTheme();
-  const { isLoading } = useAuth();
+  const { isLoading: isAuthLoading } = useAuth();
 
-  if (isLoading) {
+  // Load fonts - handles the fontfaceobserver timeout by pre-rendering
+  const [fontsLoaded, fontError] = useFonts({
+    ...Ionicons.font,
+  });
+
+  useEffect(() => {
+    if (fontsLoaded || fontError) {
+      // Once fonts are loaded (or failed), hide splash screen
+      SplashScreen.hideAsync().catch(() => { });
+    }
+  }, [fontsLoaded, fontError]);
+
+  if (isAuthLoading || (!fontsLoaded && !fontError)) {
     return (
       <View style={{ flex: 1, backgroundColor: colors.background, justifyContent: "center", alignItems: "center" }}>
         <ActivityIndicator size="large" color={colors.primary[500]} />
@@ -105,9 +123,6 @@ function ThemedStack() {
           }}
         />
       </Stack>
-
-      {/* Global Floating Copilot Bar - Always Available */}
-      {/* <FloatingCopilotBar /> */}
     </View>
   );
 }
@@ -116,20 +131,20 @@ export default function RootLayout() {
   // Set up notifications and background sync on app start
   useEffect(() => {
     const setup = async () => {
-      // Request notification permissions and register for push
-      await registerForPushNotifications();
-
-      // Schedule daily briefing notification (8 AM)
-      await scheduleDailyBriefing(8, 0);
-
-      // Register background sync task (lazy import to avoid native module errors in dev clients)
       try {
+        // Request notification permissions and register for push
+        await registerForPushNotifications();
+
+        // Schedule daily briefing notification (8 AM)
+        await scheduleDailyBriefing(8, 0);
+
+        // Register background sync task
         const bg = await import("../services/backgroundSync");
         if (bg && typeof bg.registerBackgroundSync === "function") {
           await bg.registerBackgroundSync();
         }
       } catch (e: any) {
-        console.log("Background sync module not available:", e?.message || e);
+        console.log("Background setup failed:", e?.message || e);
       }
     };
     setup();

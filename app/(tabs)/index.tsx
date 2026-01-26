@@ -238,9 +238,9 @@ export default function HomeTab() {
               <Text style={styles.greeting}>{personalizedGreeting}</Text>
               <Text style={styles.briefing}>
                 {actions.length > 0 ? (
-                  <Text>Here&apos;s what&apos;s waiting for you</Text>
+                  <Text>Here's what's waiting for you</Text>
                 ) : (
-                  <Text>You&apos;re all caught up 🎉</Text>
+                  <Text>You're all caught up 🎉</Text>
                 )}
               </Text>
             </View>
@@ -542,13 +542,13 @@ export default function HomeTab() {
                   <View style={styles.statusItem}>
                     <View style={styles.statusLeft}>
                       <Ionicons
-                        name="mail-outline"
+                        name="mail"
                         size={20}
-                        color={colors.textSecondary}
+                        color={colors.primary[500]}
                       />
                       <Text style={styles.statusText}>Gmail Indexing</Text>
                     </View>
-                    <Text style={styles.statusValue}>Complete</Text>
+                    <Text style={[styles.statusValue, { color: colors.semantic.success }]}>Complete</Text>
                   </View>
 
                   <View style={styles.divider} />
@@ -558,18 +558,13 @@ export default function HomeTab() {
                       <Ionicons
                         name="logo-slack"
                         size={20}
-                        color={colors.textSecondary}
+                        color="#4A154B"
                       />
                       <Text style={styles.statusText}>Slack Channels</Text>
                     </View>
                     <View style={styles.statusRight}>
-                      <View
-                        style={[
-                          styles.dot,
-                          { backgroundColor: colors.semantic.warning },
-                        ]}
-                      />
-                      <Text style={styles.statusValue}>Reading...</Text>
+                      <ActivityIndicator size="small" color={colors.semantic.warning} style={{ marginRight: 8 }} />
+                      <Text style={[styles.statusValue, { color: colors.semantic.warning }]}>Reading...</Text>
                     </View>
                   </View>
 
@@ -578,13 +573,13 @@ export default function HomeTab() {
                   <View style={styles.statusItem}>
                     <View style={styles.statusLeft}>
                       <Ionicons
-                        name="calendar-outline"
+                        name="calendar"
                         size={20}
-                        color={colors.textSecondary}
+                        color="#EA4335"
                       />
                       <Text style={styles.statusText}>Calendar Optimize</Text>
                     </View>
-                    <Text style={styles.statusValue}>Active</Text>
+                    <Text style={[styles.statusValue, { color: colors.semantic.success }]}>Active</Text>
                   </View>
                 </Card>
               </View>

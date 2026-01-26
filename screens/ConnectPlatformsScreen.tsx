@@ -8,6 +8,7 @@ import React, { useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Modal,
   ScrollView,
   StyleSheet,
   Text,
@@ -18,8 +19,10 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { PlatformIcon } from '../components/PlatformIcon';
 import { useTheme } from '../context/ThemeContext';
+import { isProUser } from '../services/subscription';
 import { borderRadius, spacing, typography } from '../theme';
 import type { Platform, PlatformConnection } from '../types';
+import { PaywallScreen } from './PaywallScreen';
 
 interface ConnectPlatformsScreenProps {
   connections: PlatformConnection[];
@@ -42,6 +45,7 @@ export const ConnectPlatformsScreen: React.FC<ConnectPlatformsScreenProps> = ({
   const styles = getStyles(colors, isDark);
   const [connecting, setConnecting] = useState<Platform | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [showPaywall, setShowPaywall] = useState(false);
 
   const filteredConnections = connections.filter(c =>
     c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -49,10 +53,19 @@ export const ConnectPlatformsScreen: React.FC<ConnectPlatformsScreenProps> = ({
   );
 
   const handleConnect = async (platform: Platform) => {
+    // Check if platform is PRO
+    const platformData = connections.find(c => c.platform === platform);
+    if (platformData?.isPro) {
+      const isPro = await isProUser();
+      if (!isPro) {
+        setShowPaywall(true);
+        return;
+      }
+    }
+
     try {
       setConnecting(platform);
       await onConnect(platform);
-      // Alert handled by caller usually
     } catch (error: any) {
       Alert.alert('Connection Error', error.message || 'Failed to connect');
     } finally {
@@ -235,6 +248,22 @@ export const ConnectPlatformsScreen: React.FC<ConnectPlatformsScreenProps> = ({
           </View>
         )}
       </ScrollView>
+
+      <Modal
+        visible={showPaywall}
+        animationType="slide"
+        presentationStyle="fullScreen"
+        onRequestClose={() => setShowPaywall(false)}
+      >
+        <PaywallScreen
+          onClose={() => setShowPaywall(false)}
+          onSuccess={() => {
+            setShowPaywall(false);
+            // After success, we could potentially auto-trigger the connection 
+            // if we saved which one the user clicked
+          }}
+        />
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -285,17 +314,6 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     color: colors.textSecondary,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
-  },
-  actionButton: {
-    paddingHorizontal: spacing[4],
-    paddingVertical: spacing[2],
-    backgroundColor: colors.primary[500],
-    borderRadius: borderRadius.lg,
-  },
-  actionButtonText: {
-    color: '#FFF',
-    fontWeight: '700',
-    fontSize: 14,
   },
   content: {
     flex: 1,
