@@ -1,0 +1,15 @@
+{
+    "response": "To access your latest Slack messages, you'll need to complete the connection setup. Please click on the links below for each service:\n\n- [Connect Slack](https://connect.composio.dev/link/lk_LPy4cYU11t-C)\n- [Connect Slackbot](https://connect.composio.dev/link/lk_s18IMolBvAly)\n\nThese links will guide you through the authentication process. They expire in 10 minutes, so please complete the setup soon. Let me know once you've done it, and I'll proceed to fetch your messages.",
+    "actions_taken": true,
+    "auth_actions": [
+        {
+            "appName": "Slack",
+            "url": "https://connect.composio.dev/link/lk_LPy4cYU11t-C"
+        },
+        {
+            "appName": "Slackbot",
+            "url": "https://connect.composio.dev/link/lk_s18IMolBvAly"
+        }
+    ],
+    "logs": []
+}

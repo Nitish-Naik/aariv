@@ -67,7 +67,7 @@ export function HighlightCard({
         },
     };
 
-    const theme = config[severity];
+    const theme = config[severity] || config.info;
 
     return (
         <View style={[styles.card, { borderColor: theme.border }, style]}>

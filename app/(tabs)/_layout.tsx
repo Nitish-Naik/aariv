@@ -59,27 +59,26 @@ export default function TabLayout() {
         }}
       />
 
-      {/* Central "AI" Button - Inspired by screenshot Scan Button */}
       <Tabs.Screen
         name="assistant"
         options={{
-          title: '', // Hide text label for the center button
+          title: '', 
           tabBarIcon: ({ focused }) => (
             <View style={{
               width: 56,
               height: 56,
               borderRadius: 28,
-              backgroundColor: colors.primary[500], // Primary colored circle (like the purple one)
+              backgroundColor: colors.primary[500], 
               justifyContent: 'center',
               alignItems: 'center',
-              marginBottom: Platform.OS === 'ios' ? 30 : 20, // Float it up
+              marginBottom: Platform.OS === 'ios' ? 30 : 20, 
               shadowColor: colors.primary[500],
               shadowOffset: { width: 0, height: 4 },
               shadowOpacity: 0.3,
               shadowRadius: 8,
               elevation: 4,
               borderWidth: 4,
-              borderColor: isDark ? '#000000' : '#FFFFFF', // Border matches bg
+              borderColor: isDark ? '#000000' : '#FFFFFF', 
             }}>
               <Ionicons
                 name="sparkles"

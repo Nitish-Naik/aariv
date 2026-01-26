@@ -19,7 +19,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { api } from '../../services/api';
 import { getCurrentUser } from '../../services/auth';
 import { spacing } from '../../theme';
-// import { MOCK_EVENTS } from '../../utils/mockData';
+
 
 if (Platform.OS === 'android') {
     if (UIManager.setLayoutAnimationEnabledExperimental) {
@@ -61,7 +61,7 @@ export default function CalendarTab() {
             if (!user) {
                 throw new Error("You are signed out. Please log in again.");
             }
-            // Fetch events for the selected day (approx range)
+            
             const start = new Date(selectedDate);
             start.setHours(0, 0, 0, 0);
             const end = new Date(selectedDate);
@@ -93,25 +93,25 @@ export default function CalendarTab() {
         setRefreshing(false);
     };
 
-    // Re-calculate week days when selectedDate changes to keep it in view
+    
     const weekStart = startOfWeek(selectedDate, { weekStartsOn: 1 });
     const weekDays = Array.from({ length: 7 }).map((_, i) => addDays(weekStart, i));
 
-    // const events = MOCK_EVENTS; // In real app, filter by selectedDate
+    
 
-    // Filter events for the selected day
-    const todayEvents = events; // Since we fetch exactly for this range
+    
+    const todayEvents = events; 
 
     const renderTimeLine = () => {
 
-        // Render hours 6 AM to 11 PM
+        
         const hours = Array.from({ length: 18 }).map((_, i) => i + 6);
         const now = new Date();
         const currentHour = now.getHours();
         const currentMinute = now.getMinutes();
-        const hourHeight = 60; // pixels per hour block
+        const hourHeight = 60; 
 
-        // Group events by hour for proper rendering
+        
         const eventsByHour: { [hour: number]: CalendarEvent[] } = {};
         todayEvents.forEach(event => {
             const startHour = event.startTime.getHours();
@@ -124,7 +124,7 @@ export default function CalendarTab() {
         return (
             <ScrollView
                 showsVerticalScrollIndicator={false}
-                contentContainerStyle={{ paddingBottom: 120 }} // Space for TabBar
+                contentContainerStyle={{ paddingBottom: 120 }} 
                 refreshControl={
                     <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary[500]} />
                 }
@@ -162,7 +162,7 @@ export default function CalendarTab() {
                                 </Text>
                             </View>
 
-                            {/* Content Column */}
+                            
                             <View style={styles.gridCell}>
                                 {/* Horizontal Grid Line */}
                                 <View style={styles.gridLine} />
@@ -175,14 +175,14 @@ export default function CalendarTab() {
                                     </View>
                                 )}
 
-                                {/* Events in/starting in this hour */}
+  
                                 {hourEvents.map((event, idx) => {
-                                    // Calculate precise position and height based on actual time
+                                    
                                     const eventMinuteStart = event.startTime.getMinutes();
-                                    const eventDuration = (event.endTime.getTime() - event.startTime.getTime()) / (1000 * 60); // in minutes
+                                    const eventDuration = (event.endTime.getTime() - event.startTime.getTime()) / (1000 * 60); 
 
                                     const topOffset = (eventMinuteStart / 60) * hourHeight;
-                                    const eventHeight = Math.max(20, (eventDuration / 60) * hourHeight); // Minimum 20px height
+                                    const eventHeight = Math.max(20, (eventDuration / 60) * hourHeight); 
 
                                     return (
                                         <View
@@ -277,7 +277,7 @@ export default function CalendarTab() {
                                     backgroundColor: 'transparent',
                                     calendarBackground: 'transparent',
                                     textSectionTitleColor: colors.textSecondary,
-                                    selectedDayBackgroundColor: 'transparent', // We'll custom render or use standard but clean
+                                    selectedDayBackgroundColor: 'transparent', 
                                     selectedDayTextColor: colors.primary,
                                     todayTextColor: colors.primary,
                                     dayTextColor: colors.text,
@@ -298,8 +298,8 @@ export default function CalendarTab() {
                                             container: {
                                                 backgroundColor: 'transparent',
                                                 borderWidth: 1,
-                                                borderColor: colors.primary, // Square border like inspiration
-                                                borderRadius: 4, // Slightly rounded square
+                                                borderColor: colors.primary, 
+                                                borderRadius: 4, 
                                             },
                                             text: {
                                                 color: colors.text,
@@ -410,7 +410,7 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: spacing[1],
-        minHeight: 44, // Ensure touch target size
+        minHeight: 44, 
         paddingHorizontal: spacing[2],
         paddingVertical: spacing[1],
     },
@@ -423,7 +423,7 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
         padding: 4,
     },
 
-    // Expanded Calendar Styles
+    
     expandedCalendarContainer: {
         paddingBottom: spacing[4],
     },
@@ -477,7 +477,7 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
         fontWeight: '600',
     },
 
-    // Date Strip
+    
     dateStrip: {
         flexDirection: 'row',
         justifyContent: 'space-between',
@@ -487,7 +487,7 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
         alignItems: 'center',
         gap: spacing[1.5],
         opacity: 0.6,
-        minWidth: 44, // Ensure touch target size
+        minWidth: 44, 
         paddingVertical: spacing[1],
     },
     dateItemActive: {
@@ -532,21 +532,21 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
         backgroundColor: colors.primary[500],
     },
 
-    // Timeline
+    
     timeRow: {
         flexDirection: 'row',
-        height: 60, // Height per hour block
+        height: 60, 
     },
     timeLabelContainer: {
         width: 60,
         alignItems: 'center',
-        justifyContent: 'flex-start', // Align to grid line
-        paddingTop: -8, // Nudge up to center on line
+        justifyContent: 'flex-start', 
+        paddingTop: -8, 
     },
     timeLabel: {
         fontSize: 12,
         color: colors.textTertiary,
-        transform: [{ translateY: -8 }] // Center vertically on the line
+        transform: [{ translateY: -8 }] 
     },
     timeLabelActive: {
         color: colors.primary[500],
@@ -567,7 +567,7 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
         backgroundColor: isDark ? '#222' : '#f5f5f5',
     },
 
-    // Current Time Indicator
+    
     currentTimeIndicator: {
         position: 'absolute',
         left: 0,
@@ -591,7 +591,7 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
         backgroundColor: colors.primary[500],
     },
 
-    // Event Card
+    
     eventCard: {
         position: 'absolute',
         top: 2,
@@ -620,10 +620,10 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
         color: colors.textSecondary,
     },
 
-    // Copilot Bar
+    
     copilotBarWrapper: {
         position: 'absolute',
-        bottom: 100, // Adjusted for new tab bar
+        bottom: 100, 
         left: spacing[4],
         right: spacing[4],
     },

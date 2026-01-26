@@ -28,7 +28,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const lastSyncedUserIdRef = React.useRef<string | null>(null);
 
   useEffect(() => {
-    // 1. Initial check
+    
     const initAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {

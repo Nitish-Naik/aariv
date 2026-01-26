@@ -1,7 +1,4 @@
-/**
- * Platform Icon Component
- */
-
+import { Image } from 'expo-image';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { colors } from '../theme';
@@ -10,11 +7,13 @@ import type { Platform } from '../types';
 interface PlatformIconProps {
   platform: Platform;
   size?: number;
+  logo?: string;
 }
 
-const platformConfig: Record<Platform, { color: string; label: string }> = {
+const platformConfig: Record<string, { color: string; label: string }> = {
   gmail: { color: colors.platforms.gmail, label: 'G' },
   'google-calendar': { color: colors.platforms.calendar, label: 'C' },
+  'googlecalendar': { color: colors.platforms.calendar, label: 'C' },
   slack: { color: colors.platforms.slack, label: 'S' },
   notion: { color: colors.platforms.notion, label: 'N' },
   linear: { color: colors.platforms.linear, label: 'L' },
@@ -26,9 +25,29 @@ const platformConfig: Record<Platform, { color: string; label: string }> = {
 export const PlatformIcon: React.FC<PlatformIconProps> = ({
   platform,
   size = 40,
+  logo,
 }) => {
-  const config = platformConfig[platform] || { color: colors.neutral[500], label: '?' };
-  
+  // If we have a logo URL, render it
+  if (logo) {
+    return (
+      <Image
+        source={{ uri: logo }}
+        style={{
+          width: size,
+          height: size,
+          borderRadius: size / 4, // Slightly rounded for square icons
+        }}
+        contentFit="contain"
+      />
+    );
+  }
+
+  const slug = platform.toLowerCase().replace(/[-_]/g, '');
+  const config = platformConfig[slug] || platformConfig[platform] || {
+    color: colors.neutral[500],
+    label: platform.charAt(0).toUpperCase()
+  };
+
   return (
     <View
       style={[

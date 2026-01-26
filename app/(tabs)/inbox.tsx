@@ -43,8 +43,6 @@ export default function PriorityTab() {
   const { colors, isDark } = useTheme();
   const styles = getStyles(colors, isDark);
 
-  // const priorityItems = items.slice(0, 3);
-  // const displayItems = filter === "high_priority" ? priorityItems : items;
 
   const fetchInbox = useCallback(async () => {
          try {

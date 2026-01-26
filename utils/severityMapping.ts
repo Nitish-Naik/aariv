@@ -2,9 +2,9 @@
  * Infers the severity of a highlight based on keywords.
  * 
  * @param content The text content to analyze
- * @returns 'normal' | 'attention' | 'urgent'
+ * @returns 'info' | 'attention' | 'urgent'
  */
-export function inferSeverity(content: string): 'normal' | 'attention' | 'urgent' {
+export function inferSeverity(content: string): 'info' | 'attention' | 'urgent' {
     const text = content.toLowerCase();
 
     // Urgent keywords
@@ -30,5 +30,5 @@ export function inferSeverity(content: string): 'normal' | 'attention' | 'urgent
         return 'attention';
     }
 
-    return 'normal';
+    return 'info';
 }

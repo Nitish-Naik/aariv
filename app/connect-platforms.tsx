@@ -11,11 +11,19 @@ import type { Platform, PlatformConnection } from '../types';
 const SUPPORTED_PLATFORMS: { id: Platform; name: string; icon: string }[] = [
   { id: 'gmail', name: 'Gmail', icon: 'logo-google' },
   { id: 'google-calendar', name: 'Google Calendar', icon: 'calendar' },
-  { id: 'slack', name: 'Slack', icon: 'logo-slack' },
-  { id: 'github', name: 'GitHub', icon: 'logo-github' },
-  { id: 'linear', name: 'Linear', icon: 'list' },
-  { id: 'notion', name: 'Notion', icon: 'document-text' },
 ];
+
+const getIconForPlatform = (platform: string): string => {
+  const p = platform.toLowerCase().replace(/[-_]/g, '');
+  if (p.includes('gmail')) return 'logo-google';
+  if (p.includes('calendar')) return 'calendar';
+  if (p.includes('slack')) return 'logo-slack';
+  if (p.includes('github')) return 'logo-github';
+  if (p.includes('notion')) return 'document-text';
+  if (p.includes('linear')) return 'list';
+  if (p.includes('discord')) return 'logo-discord';
+  return 'apps'; // Fallback
+};
 
 export default function ConnectPlatformsRoute() {
   const router = useRouter();
@@ -23,8 +31,6 @@ export default function ConnectPlatformsRoute() {
   const [loading, setLoading] = useState(true);
   const [connections, setConnections] = useState<PlatformConnection[]>([]);
   const [userId, setUserId] = useState<string | null>(null);
-
-
 
   const fetchConnections = useCallback(async () => {
     try {
@@ -36,38 +42,24 @@ export default function ConnectPlatformsRoute() {
       }
       setUserId(user.id);
 
-      // 1. Get integrations from backend
-      // Backend returns: { integrations: [{ appName: 'gmail', status: 'ACTIVE' }] }
-      const response = await api.get(`/integrations?userId=${user.id}`);
-      const activeIntegrations = response.integrations || [];
+      // Fetch unified data (Single Source of Truth)
+      const res = await api.get(`/toolkits?userId=${user.id}`);
+      const allToolkits = res.toolkits || [];
 
-      // 2. Map to UI model
-      const mappedConnections: PlatformConnection[] = SUPPORTED_PLATFORMS.map(p => {
-        const found = activeIntegrations.find((i: any) => {
-          const backendName = (i.appName || '').toLowerCase();
-          const uiId = p.id.toLowerCase();
+      // Map to UI Model
+      const mapped: PlatformConnection[] = allToolkits.map((t: any) => ({
+        id: t.id,
+        platform: t.appUniqueId, // Used for connect/disconnect
+        name: t.name,
+        icon: getIconForPlatform(t.appUniqueId),
+        logo: t.logo,
+        connected: t.connected,
+        connectedAt: t.connectedAt ? new Date(t.connectedAt) : undefined,
+        permissions: []
+      }));
 
-          // Handle google-calendar vs google_calendar mismatch
-          if (uiId === 'google-calendar' && backendName === 'google_calendar') return true;
-
-          return backendName === uiId;
-        });
-
-        const status = (found?.status || '').toUpperCase();
-        const isConnected = found && (status === 'ACTIVE' || status === 'CONNECTED');
-
-        return {
-          id: found?.id || `local-${p.id}`,
-          platform: p.id,
-          name: p.name,
-          icon: p.icon,
-          connected: !!isConnected,
-          connectedAt: found?.connectedAt ? new Date(found.connectedAt) : undefined,
-          permissions: []
-        };
-      });
-
-      setConnections(mappedConnections);
+      // Set connections (The screen handles sectioning)
+      setConnections(mapped);
     } catch (error) {
       console.error('Failed to load connections', error);
       Alert.alert('Error', 'Could not load integrations');

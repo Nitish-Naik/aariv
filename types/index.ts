@@ -2,21 +2,14 @@
  * Type definitions for Aariv app
  */
 
-export type Platform =
-  | "gmail"
-  | "google-calendar"
-  | "slack"
-  | "notion"
-  | "linear"
-  | "discord"
-  | "maps"
-  | "github";
+export type Platform = string;
 
 export interface PlatformConnection {
   id: string;
   platform: Platform;
   name: string;
   icon: string;
+  logo?: string;
   connected: boolean;
   connectedAt?: Date;
   permissions: string[];
@@ -25,13 +18,13 @@ export interface PlatformConnection {
 export interface ActionItem {
   id: string;
   type:
-    | "email"
-    | "calendar"
-    | "slack"
-    | "notion"
-    | "linear"
-    | "discord"
-    | "maps";
+  | "email"
+  | "calendar"
+  | "slack"
+  | "notion"
+  | "linear"
+  | "discord"
+  | "maps";
   title: string;
   description: string;
   platform: Platform;
@@ -85,6 +78,11 @@ export interface User {
   subscriptionTier?: "free" | "pro";
 }
 
+export interface AuthAction {
+  appName: string;
+  url: string;
+}
+
 export interface ChatMessage {
   id: string;
   role: "user" | "assistant";
@@ -92,4 +90,6 @@ export interface ChatMessage {
   timestamp: Date;
   suggestions?: string[];
   actions?: ActionItem[];
+  auth_actions?: AuthAction[];
+  logs?: { label: string; status: string; tool: string }[];
 }

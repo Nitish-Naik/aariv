@@ -246,7 +246,7 @@ export default function HomeTab() {
             </View>
             <View style={{ flexDirection: 'row', gap: spacing[2] }}>
               {/* Zen Mode Toggle */}
-              <TouchableOpacity
+              {/* <TouchableOpacity
                 onPress={toggleZenMode}
                 style={[styles.iconButton, zenMode && { backgroundColor: 'rgba(5, 150, 105, 0.15)' }]}
               >
@@ -255,7 +255,7 @@ export default function HomeTab() {
                   size={20}
                   color={zenMode ? "#059669" : colors.textSecondary}
                 />
-              </TouchableOpacity>
+              </TouchableOpacity> */}
 
               {/* Voice Mode Button */}
               <TouchableOpacity

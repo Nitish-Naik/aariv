@@ -146,4 +146,13 @@ export const api = {
       throw error;
     }
   },
+
+  getConnections: async (userId: string) => {
+    const headers = await getAuthHeaders(); // Helper from existing api.ts
+    const response = await fetch(`${API_URL}/chat/connections?userId=${userId}`, {
+      method: 'GET',
+      headers,
+    });
+    return handleResponse(response, '/chat/connections');
+  },
 };
