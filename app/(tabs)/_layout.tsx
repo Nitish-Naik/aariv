@@ -62,23 +62,23 @@ export default function TabLayout() {
       <Tabs.Screen
         name="assistant"
         options={{
-          title: '', 
+          title: '',
           tabBarIcon: ({ focused }) => (
             <View style={{
               width: 56,
               height: 56,
               borderRadius: 28,
-              backgroundColor: colors.primary[500], 
+              backgroundColor: colors.primary[500],
               justifyContent: 'center',
               alignItems: 'center',
-              marginBottom: Platform.OS === 'ios' ? 30 : 20, 
+              marginBottom: Platform.OS === 'ios' ? 30 : 20,
               shadowColor: colors.primary[500],
               shadowOffset: { width: 0, height: 4 },
               shadowOpacity: 0.3,
               shadowRadius: 8,
               elevation: 4,
               borderWidth: 4,
-              borderColor: isDark ? '#000000' : '#FFFFFF', 
+              borderColor: isDark ? '#000000' : '#FFFFFF',
             }}>
               <Ionicons
                 name="sparkles"
@@ -115,6 +115,14 @@ export default function TabLayout() {
               color={color}
             />
           ),
+        }}
+      />
+
+      <Tabs.Screen
+        name="connect-platforms"
+        options={{
+          href: null,
+          title: 'Connections',
         }}
       />
     </Tabs>

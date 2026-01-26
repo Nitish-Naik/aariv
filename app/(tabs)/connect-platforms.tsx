@@ -3,10 +3,10 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useNavigation, useRouter } from 'expo-router'; // Added useNavigation
 import React, { useCallback, useState } from 'react';
 import { ActivityIndicator, Alert, Linking, View } from 'react-native';
-import { ConnectPlatformsScreen } from '../screens/ConnectPlatformsScreen';
-import { api } from '../services/api';
-import { getCurrentUser } from '../services/auth';
-import type { Platform, PlatformConnection } from '../types';
+import { ConnectPlatformsScreen } from '../../screens/ConnectPlatformsScreen';
+import { api } from '../../services/api';
+import { getCurrentUser } from '../../services/auth';
+import type { Platform, PlatformConnection } from '../../types';
 // List of supported platforms in our UI
 const SUPPORTED_PLATFORMS: { id: Platform; name: string; icon: string }[] = [
   { id: 'gmail', name: 'Gmail', icon: 'logo-google' },
