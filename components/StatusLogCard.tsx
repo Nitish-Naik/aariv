@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import LottieView from 'lottie-react-native';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
@@ -33,9 +34,19 @@ export const StatusLogCard = ({ label, status, tool }: StatusLogCardProps) => {
 
                 <View style={styles.rightSection}>
                     {isSuccess ? (
-                        <Ionicons name="checkmark" size={18} color={colors.semantic.success} />
+                        <LottieView
+                            source={{ uri: 'https://lottie.host/4e0f6b4d-1a86-4f9e-bd71-e2a2e3796f64/x55iGfS5x7.json' }}
+                            autoPlay
+                            loop={false}
+                            style={styles.lottieIcon}
+                        />
                     ) : (
-                        <View style={styles.loadingDot} />
+                        <LottieView
+                            source={{ uri: 'https://lottie.host/9e4d075d-3d07-4e6a-8b8a-b8a7b93a3848/lKx4Q1z8R0.json' }}
+                            autoPlay
+                            loop
+                            style={styles.lottieLoading}
+                        />
                     )}
                 </View>
             </View>
@@ -79,6 +90,18 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     },
     rightSection: {
         marginLeft: spacing[2],
+        width: 24,
+        height: 24,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    lottieIcon: {
+        width: 28,
+        height: 28,
+    },
+    lottieLoading: {
+        width: 20,
+        height: 20,
     },
     loadingDot: {
         width: 6,

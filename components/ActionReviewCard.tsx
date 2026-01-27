@@ -1,3 +1,4 @@
+import LottieView from 'lottie-react-native';
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
@@ -20,7 +21,17 @@ export const ActionReviewCard = ({ actions, onApprove, onReject, isExecuting }: 
 
     return (
         <View style={styles.container}>
-            <Text style={styles.headerTitle}>Review Actions</Text>
+            <View style={styles.headerRow}>
+                <Text style={styles.headerTitle}>Review Actions</Text>
+                {isExecuting && (
+                    <LottieView
+                        source={{ uri: 'https://lottie.host/9e4d075d-3d07-4e6a-8b8a-b8a7b93a3848/lKx4Q1z8R0.json' }}
+                        autoPlay
+                        loop
+                        style={styles.headerLottie}
+                    />
+                )}
+            </View>
 
             {actions.map((action) => (
                 <View key={action.id} style={styles.actionItemCard}>
@@ -84,12 +95,21 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
         borderColor: isDark ? colors.neutral[800] : colors.neutral[200],
         width: '100%',
     },
+    headerRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: spacing[2],
+    },
     headerTitle: {
         ...typography.textStyles.body,
         fontWeight: '700',
         color: colors.text,
-        marginBottom: spacing[4],
         fontSize: 15,
+    },
+    headerLottie: {
+        width: 24,
+        height: 24,
     },
     actionItemCard: {
         backgroundColor: isDark ? '#1A1D21' : colors.surface,

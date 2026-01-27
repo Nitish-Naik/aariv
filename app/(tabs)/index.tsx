@@ -57,6 +57,7 @@ export default function HomeTab() {
   const [loading, setLoading] = useState(true);
   const [missingConnections, setMissingConnections] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [isRateLimited, setIsRateLimited] = useState(false);
   const [zenMode, setZenMode] = useState(false);
 
   useEffect(() => {
@@ -105,6 +106,7 @@ export default function HomeTab() {
     if (!user) return;
     try {
       setError(null);
+      setIsRateLimited(false);
       const currentUser = await getCurrentUser();
       if (!currentUser) {
         throw new Error("You are signed out. Please log in again.");
@@ -142,7 +144,13 @@ export default function HomeTab() {
       }
     } catch (e: any) {
       console.log("Failed to fetch briefing", e);
-      setError(e?.message || "Failed to load dashboard");
+      const errorMessage = e?.message || "Failed to load dashboard";
+      setError(errorMessage);
+
+      // Check for rate limits or 429
+      if (errorMessage.toLowerCase().includes('rate limit') || errorMessage.includes('429')) {
+        setIsRateLimited(true);
+      }
     } finally {
       setLoading(false);
     }
@@ -203,32 +211,51 @@ export default function HomeTab() {
         <WebContainer>
           {error && (
             <View
-              style={{
-                backgroundColor: isDark ? "#40202a" : "#fff5f5",
-                borderRadius: 14,
-                padding: 12,
-                marginBottom: 12,
-              }}
+              style={[
+                styles.errorContainer,
+                isRateLimited && styles.rateLimitContainer
+              ]}
             >
-              <Text style={{ color: colors.text, marginBottom: 4 }}>
-                Could not load your briefing.
-              </Text>
-              <Text style={{ color: colors.textSecondary, marginBottom: 8 }}>
-                {error}
-              </Text>
+              <View style={styles.errorHeader}>
+                <View style={[styles.errorIconCircle, isRateLimited && { backgroundColor: 'rgba(245, 158, 11, 0.1)' }]}>
+                  <Ionicons
+                    name={isRateLimited ? "hourglass-outline" : "alert-circle-outline"}
+                    size={24}
+                    color={isRateLimited ? "#F59E0B" : colors.semantic.error}
+                  />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.errorTitle}>
+                    {isRateLimited ? "Taking a breather" : "Briefing unavailable"}
+                  </Text>
+                  <Text style={styles.errorSubtitle}>
+                    {isRateLimited
+                      ? "We've hit a temporary rate limit. Your assistant will be back in just a moment."
+                      : error}
+                  </Text>
+                </View>
+              </View>
+
               <TouchableOpacity
                 onPress={fetchBriefing}
-                style={{ flexDirection: "row", alignItems: "center" }}
+                style={[styles.retryButton, isRateLimited && styles.rateLimitRetry]}
+                activeOpacity={0.8}
               >
                 <Ionicons
                   name="refresh"
-                  size={16}
-                  color={colors.primary[500]}
+                  size={18}
+                  color={isRateLimited ? "#F59E0B" : colors.primary[500]}
                 />
-                <Text style={{ color: colors.primary[500], marginLeft: 6 }}>
-                  Retry
+                <Text style={[styles.retryText, isRateLimited && { color: "#F59E0B" }]}>
+                  {isRateLimited ? "Try Again Now" : "Retry Now"}
                 </Text>
               </TouchableOpacity>
+
+              {isRateLimited && (
+                <Text style={styles.rateLimitNote}>
+                  Frequent updates can trigger this. Aariv is usually back in {'<'} 60s.
+                </Text>
+              )}
             </View>
           )}
 
@@ -999,5 +1026,70 @@ const getStyles = (colors: any, isDark: boolean) =>
       shadowOpacity: isDark ? 0.2 : 0.05,
       shadowRadius: 12,
       elevation: 2,
+    },
+
+    // Error & Rate Limit Styles
+    errorContainer: {
+      backgroundColor: isDark ? "#40202a" : "#FFF5F5",
+      borderRadius: 20,
+      padding: spacing[5],
+      marginBottom: spacing[6],
+      borderWidth: 1,
+      borderColor: isDark ? "#5c2b2b" : "#FED7D7",
+    },
+    rateLimitContainer: {
+      backgroundColor: isDark ? "#1E1B16" : "#FFFBEB",
+      borderColor: isDark ? "#45361D" : "#FEF3C7",
+    },
+    errorHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing[4],
+      marginBottom: spacing[4],
+    },
+    errorIconCircle: {
+      width: 48,
+      height: 48,
+      borderRadius: 24,
+      backgroundColor: isDark ? "rgba(239, 68, 68, 0.1)" : "#FEE2E2",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    errorTitle: {
+      ...typography.textStyles.h4,
+      color: colors.text,
+      marginBottom: 2,
+    },
+    errorSubtitle: {
+      ...typography.textStyles.caption,
+      color: colors.textSecondary,
+      lineHeight: 18,
+    },
+    retryButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: isDark ? "rgba(255,255,255,0.05)" : "#FFFFFF",
+      paddingVertical: spacing[3],
+      borderRadius: 12,
+      gap: spacing[2],
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    rateLimitRetry: {
+      backgroundColor: isDark ? "rgba(245, 158, 11, 0.05)" : "#FFFFFF",
+      borderColor: isDark ? "rgba(245, 158, 11, 0.2)" : "#FDE68A",
+    },
+    retryText: {
+      ...typography.textStyles.bodySmall,
+      fontWeight: "600",
+      color: colors.primary[500],
+    },
+    rateLimitNote: {
+      ...typography.textStyles.caption,
+      color: colors.textTertiary,
+      textAlign: "center",
+      marginTop: spacing[3],
+      fontSize: 11,
     },
   });

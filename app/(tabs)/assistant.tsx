@@ -13,11 +13,12 @@ import {
     View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { ActionReviewCard, StatusLogCard } from '../../components';
 import { useTheme } from '../../context/ThemeContext';
 import { api } from '../../services/api';
 import { getCurrentUser } from '../../services/auth';
 import { spacing, typography } from '../../theme';
-import type { ChatMessage } from '../../types';
+import type { ActionItem, ChatMessage } from '../../types';
 import { MarkdownText } from '../components/MarkdownText';
 
 export default function AssistantScreen() {
@@ -111,15 +112,32 @@ export default function AssistantScreen() {
 
                     {/* Render Logs (Thinking Process) */}
                     {item.logs && item.logs.length > 0 && (
-                        <View style={{ marginBottom: 8, gap: 4 }}>
+                        <View style={{ marginBottom: 12, gap: 4 }}>
                             {item.logs.map((log, idx) => (
-                                <View key={idx} style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                                    <Ionicons name="checkmark-circle" size={14} color={(colors as any).success || '#4CAF50'} />
-                                    <Text style={{ fontSize: 12, color: colors.textSecondary }}>
-                                        {log.label}
-                                    </Text>
-                                </View>
+                                <StatusLogCard
+                                    key={idx}
+                                    label={log.label}
+                                    status={log.status || 'completed'}
+                                    tool={log.tool}
+                                />
                             ))}
+                        </View>
+                    )}
+
+                    {/* Render Tool Actions for Approval */}
+                    {item.actions && item.actions.length > 0 && (
+                        <View style={{ marginBottom: 12 }}>
+                            <ActionReviewCard
+                                actions={item.actions}
+                                onApprove={(action: ActionItem) => {
+                                    console.log('Approved action:', action);
+                                    // Implementation of approval would go here
+                                }}
+                                onReject={(id: string) => {
+                                    console.log('Rejected action:', id);
+                                }}
+                                isExecuting={false}
+                            />
                         </View>
                     )}
 

@@ -14,6 +14,7 @@ import {
   scheduleDailyBriefing,
   useNotificationHandler,
 } from "../services/notifications";
+import { initSubscription } from "../services/subscription";
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync().catch(() => {
@@ -143,6 +144,8 @@ export default function RootLayout() {
         if (bg && typeof bg.registerBackgroundSync === "function") {
           await bg.registerBackgroundSync();
         }
+        // Initialize RevenueCat
+        await initSubscription();
       } catch (e: any) {
         console.log("Background setup failed:", e?.message || e);
       }
