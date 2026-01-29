@@ -61,62 +61,50 @@ export const MarkdownText: React.FC<MarkdownTextProps> = ({ content }) => {
 // Helper to parse inline styles: **bold**, [link](url)
 const parseInline = (text: string, styles: any): React.ReactNode[] => {
     const parts: React.ReactNode[] = [];
-    let remaining = text;
     let i = 0;
 
-    // Simple regex for **bold** and [link](url)
-    // We process sequentially. A robust parser is complex, this is a lightweight heuristic.
-    // Optimization: Just split by ** for bold first.
-
-    // Strategy: tokenizing is hard without recursion.
-    // Let's support BOLD first as it's most common.
-
+    // 1. Split by bold **
     const boldChunks = text.split('**');
     for (let j = 0; j < boldChunks.length; j++) {
         const chunk = boldChunks[j];
-        // Even indices are normal, Odd indices are bold (if closed properly)
-        // e.g. "normal **bold** normal" -> ["normal ", "bold", " normal"]
-
-        // Check if this was a valid bold pair. If split length is even, the last one isn't closed?
-        // Let's assume valid markdown for simplicity or unclosed is strictly even.
         const isBold = (j % 2 === 1) && (j < boldChunks.length - 1 || boldChunks.length % 2 === 1);
-        // Logic fix: "a **b** c" -> len 3. j=0(norm), j=1(bold), j=2(norm).
 
-        if (j % 2 === 1) {
+        if (isBold) {
             parts.push(<Text key={`b-${i++}`} style={styles.bold}>{chunk}</Text>);
-        } else {
-            // Basic link parsing within non-bold text
-            // Regex for [text](url)
-            const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
-            let lastIndex = 0;
-            let match;
+            continue;
+        }
 
-            while ((match = linkRegex.exec(chunk)) !== null) {
-                // Push text before link
-                if (match.index > lastIndex) {
-                    parts.push(<Text key={`t-${i++}`} style={styles.text}>{chunk.substring(lastIndex, match.index)}</Text>);
-                }
+        // 2. Parse links, entities, and hashtags within normal text
+        // Entity regex for @username, #hashtag
+        const entityLinkRegex = /(\[([^\]]+)\]\(([^)]+)\))|(@\w+)|(#\w+)/g;
+        let lastIndex = 0;
+        let match;
 
-                const linkText = match[1];
-                const linkUrl = match[2];
+        while ((match = entityLinkRegex.exec(chunk)) !== null) {
+            // Text before match
+            if (match.index > lastIndex) {
+                parts.push(<Text key={`t-${i++}`} style={styles.text}>{chunk.substring(lastIndex, match.index)}</Text>);
+            }
 
+            if (match[1]) { // Markdown Link [text](url)
+                const linkText = match[2];
+                const linkUrl = match[3];
                 parts.push(
-                    <Text
-                        key={`l-${i++}`}
-                        style={styles.link}
-                        onPress={() => Linking.openURL(linkUrl)}
-                    >
+                    <Text key={`l-${i++}`} style={styles.link} onPress={() => Linking.openURL(linkUrl)}>
                         {linkText}
                     </Text>
                 );
-
-                lastIndex = match.index + match[0].length;
+            } else if (match[4]) { // @username
+                parts.push(<Text key={`at-${i++}`} style={styles.entity}>{match[4]}</Text>);
+            } else if (match[5]) { // #hashtag
+                parts.push(<Text key={`hash-${i++}`} style={styles.entity}>{match[5]}</Text>);
             }
 
-            // Remaining text after last link
-            if (lastIndex < chunk.length) {
-                parts.push(<Text key={`t-${i++}`} style={styles.text}>{chunk.substring(lastIndex)}</Text>);
-            }
+            lastIndex = match.index + match[0].length;
+        }
+
+        if (lastIndex < chunk.length) {
+            parts.push(<Text key={`t-${i++}`} style={styles.text}>{chunk.substring(lastIndex)}</Text>);
         }
     }
 
@@ -132,6 +120,10 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     bold: {
         fontWeight: 'bold',
         color: colors.text,
+    },
+    entity: {
+        color: colors.primary[400] || '#60A5FA',
+        fontWeight: '600',
     },
     h1: {
         fontSize: 22,
@@ -156,17 +148,19 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     },
     listItem: {
         flexDirection: 'row',
-        marginBottom: 4,
+        marginBottom: 8, // Increased spacing
         paddingLeft: 4,
+        alignItems: 'flex-start',
     },
     bullet: {
         fontSize: 15,
         lineHeight: 24,
-        color: colors.text,
-        marginRight: 6,
+        color: colors.primary[500], // Brand colored bullet
+        marginRight: 8,
+        fontWeight: 'bold',
     },
     spacer: {
-        height: 8,
+        height: 12, // Increased spacing
     },
     link: {
         color: colors.primary[500] || '#2196F3',

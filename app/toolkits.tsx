@@ -241,7 +241,7 @@ export default function ToolkitsScreen() {
                 <View style={styles.cardContent}>
                     <View style={styles.cardHeader}>
                         <Text style={styles.cardTitle}>{item.name}</Text>
-                        {item.isPremium && (
+                        {item.isPro && (
                             <View style={styles.premiumTag}>
                                 <Text style={styles.premiumText}>PRO</Text>
                             </View>
@@ -286,7 +286,7 @@ export default function ToolkitsScreen() {
                 </TouchableOpacity>
             </View>
 
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: spacing[25] }}>
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: spacing[24] }}>
                 {/* Search */}
                 <View style={styles.searchContainer}>
                     <Ionicons name="search" size={20} color={colors.neutral[400]} style={styles.searchIcon} />
@@ -484,7 +484,7 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     savingsTag: {
         backgroundColor: isDark ? 'rgba(34, 197, 94, 0.2)' : '#DCFCE7',
         paddingHorizontal: spacing[2], // sm
-        paddingVertical: spacing[0.5],
+        paddingVertical: spacing[1],
         borderRadius: borderRadius.sm,
     },
     savingsText: {
@@ -554,8 +554,8 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     },
     premiumTag: {
         backgroundColor: isDark ? '#F59E0B20' : '#FEF3C7',
-        paddingHorizontal: spacing[1.5],
-        paddingVertical: spacing[0.5],
+        paddingHorizontal: spacing[2],
+        paddingVertical: spacing[1],
         borderRadius: borderRadius.sm,
     },
     premiumText: {
@@ -648,15 +648,15 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
         ...typography.textStyles.body, // body1
         fontWeight: 'bold',
         color: colors.text,
-        marginBottom: spacing[0.5],
+        marginBottom: spacing[1],
     },
     scopeDesc: {
         ...typography.textStyles.caption,
         color: colors.neutral[500], // gray[500]
     },
     riskTag: {
-        paddingHorizontal: spacing[1.5],
-        paddingVertical: spacing[0.5],
+        paddingHorizontal: spacing[2],
+        paddingVertical: spacing[1],
         borderRadius: borderRadius.sm,
         marginLeft: spacing[2], // sm
     },

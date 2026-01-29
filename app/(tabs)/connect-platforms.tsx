@@ -22,6 +22,7 @@ const getIconForPlatform = (platform: string): string => {
   if (p.includes('notion')) return 'document-text';
   if (p.includes('linear')) return 'list';
   if (p.includes('discord')) return 'logo-discord';
+  if (p.includes('twitter') || p.includes(' x ')) return 'logo-twitter';
   return 'apps'; // Fallback
 };
 

@@ -7,6 +7,7 @@ export interface Toolkit {
     category: string;
     popular?: boolean;
     comingSoon?: boolean;
+    isPro?: boolean;
     scopes?: { id: string; label: string; description: string; riskLevel: 'low' | 'medium' | 'high' | 'critical' }[];
 }
 
@@ -16,6 +17,7 @@ export interface ToolkitBundle {
     description: string;
     icon: string; // Ionicons name
     toolkitIds: string[]; // IDs of included toolkits
+    savings?: string;
 }
 
 export const MOCK_TOOLKITS: Toolkit[] = [
@@ -76,6 +78,15 @@ export const MOCK_TOOLKITS: Toolkit[] = [
         icon: 'list',
         connected: false,
         category: 'Developer',
+    },
+    {
+        id: 'twitter',
+        name: 'Twitter',
+        description: 'Read and send tweets, manage your timeline.',
+        icon: 'logo-twitter',
+        connected: false,
+        category: 'Social',
+        isPro: false
     }
 ];
 
@@ -92,6 +103,7 @@ export const MOCK_BUNDLES: ToolkitBundle[] = [
         title: 'Developer Productivity',
         description: 'Manage code and tasks without leaving your chat.',
         icon: 'code-slash',
-        toolkitIds: ['5', '6', '3']
+        toolkitIds: ['5', '6', '3'],
+        savings: 'Setup in 1 click'
     }
 ];

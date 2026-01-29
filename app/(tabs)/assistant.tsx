@@ -1,7 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useRef, useState } from 'react';
 import {
-    ActivityIndicator,
     FlatList,
     KeyboardAvoidingView,
     Linking,
@@ -13,11 +12,11 @@ import {
     View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ActionReviewCard, StatusLogCard } from '../../components';
+import { ActionReviewCard, PulsingAvatar, StatusLogCard } from '../../components';
 import { useTheme } from '../../context/ThemeContext';
 import { api } from '../../services/api';
 import { getCurrentUser } from '../../services/auth';
-import { spacing, typography } from '../../theme';
+import { borderRadius, spacing, typography } from '../../theme';
 import type { ActionItem, ChatMessage } from '../../types';
 import { MarkdownText } from '../components/MarkdownText';
 
@@ -27,10 +26,10 @@ export default function AssistantScreen() {
 
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [inputText, setInputText] = useState('');
-    const [loading, setLoading] = useState(false);
+    const [, setLoading] = useState(false);
     const flatListRef = useRef<FlatList>(null);
     const [userId, setUserId] = useState<string | null>(null);
-    const [connectedApps, setConnectedApps] = useState<string[]>([]); // Define state here
+    const [connectedApps] = useState<string[]>([]);
 
     useEffect(() => {
         // Initialize with a welcome message
@@ -58,43 +57,97 @@ export default function AssistantScreen() {
             timestamp: new Date()
         };
 
-        setMessages(prev => [...prev, userMessage]);
+        const aiMessageId = Date.now().toString() + '_ai';
+        const initialAiMessage: ChatMessage = {
+            id: aiMessageId,
+            role: 'assistant',
+            content: '',
+            timestamp: new Date(),
+            logs: []
+        };
+
+        setMessages(prev => [...prev, userMessage, initialAiMessage]);
         setInputText('');
         setLoading(true);
 
         try {
-            const res = await api.post('/chat', {
+            const response = await api.stream('/chat', {
                 userId,
                 message: userMessage.content
             });
 
-            const assistantMessage: ChatMessage = {
-                id: Date.now().toString() + '_ai',
-                role: 'assistant',
-                content: res.response || "I processed that, but have no specific response.",
-                timestamp: new Date(),
-                actions: res.actions, // Optional actions if returned
-                auth_actions: res.auth_actions,
-                logs: res.logs
-            };
+            if (!response.body) throw new Error('No response body from server');
 
-            setMessages(prev => [...prev, assistantMessage]);
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let accumulated = '';
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                accumulated += decoder.decode(value, { stream: true });
+
+                const parts = accumulated.split('\n\n');
+                accumulated = parts.pop() || '';
+
+                for (const part of parts) {
+                    if (part.startsWith('data: ')) {
+                        try {
+                            const eventData = part.substring(6);
+                            const event = JSON.parse(eventData);
+
+                            setMessages(prev => prev.map(msg => {
+                                if (msg.id === aiMessageId) {
+                                    if (event.type === 'log') {
+                                        const newLogs = [...(msg.logs || [])];
+                                        // Update existing log if label matches, or if it's a transition from Running to Completed
+                                        const existingIdx = newLogs.findIndex(l =>
+                                            l.label === event.data.label ||
+                                            (l.label.startsWith('Running:') && event.data.label.startsWith('Completed:') &&
+                                                l.label.split(':')[1] === event.data.label.split(':')[1])
+                                        );
+
+                                        if (existingIdx >= 0) {
+                                            newLogs[existingIdx] = event.data;
+                                        } else {
+                                            newLogs.push(event.data);
+                                        }
+                                        return { ...msg, logs: newLogs };
+                                    } else if (event.type === 'result') {
+                                        return {
+                                            ...msg,
+                                            content: event.data.response,
+                                            auth_actions: event.data.auth_actions,
+                                            logs: event.data.logs || msg.logs,
+                                        };
+                                    } else if (event.type === 'error') {
+                                        return { ...msg, content: `Error: ${event.data}` };
+                                    }
+                                }
+                                return msg;
+                            }));
+                        } catch (e) {
+                            console.error('Failed to parse SSE line:', part, e);
+                        }
+                    }
+                }
+            }
         } catch (e: any) {
-            const errorMessage: ChatMessage = {
-                id: Date.now().toString() + '_error',
-                role: 'assistant',
-                content: "Sorry, I encountered an error: " + (e.message || "Unknown error"),
-                timestamp: new Date()
-            };
-            setMessages(prev => [...prev, errorMessage]);
+            console.error('Chat error:', e);
+            const errorMessage = "Sorry, I encountered an error: " + (e.message || "Unknown error");
+            setMessages(prev => prev.map(msg =>
+                msg.id === aiMessageId ? { ...msg, content: errorMessage } : msg
+            ));
         } finally {
             setLoading(false);
         }
     };
 
-    // Move renderMessage INSIDE component to access connectedApps and colors
     const renderMessage = ({ item }: { item: ChatMessage }) => {
         const isUser = item.role === 'user';
+        const isThinking = !item.content && (item.logs?.length || 0) > 0;
+
         return (
             <View style={[
                 styles.messageBubble,
@@ -102,7 +155,7 @@ export default function AssistantScreen() {
             ]}>
                 {!isUser && (
                     <View style={styles.avatarContainer}>
-                        <Ionicons name="sparkles" size={16} color="#FFF" />
+                        <PulsingAvatar isThinking={isThinking} size={32} />
                     </View>
                 )}
                 <View style={[
@@ -110,17 +163,26 @@ export default function AssistantScreen() {
                     isUser ? styles.userContent : styles.assistantContent
                 ]}>
 
-                    {/* Render Logs (Thinking Process) */}
+                    {/* Render Logs (Thinking Process) - Minimal Inline Style */}
                     {item.logs && item.logs.length > 0 && (
-                        <View style={{ marginBottom: 12, gap: 4 }}>
-                            {item.logs.map((log, idx) => (
-                                <StatusLogCard
-                                    key={idx}
-                                    label={log.label}
-                                    status={log.status || 'completed'}
-                                    tool={log.tool}
-                                />
-                            ))}
+                        <View style={{ marginBottom: item.content ? 12 : 0, gap: 2 }}>
+                            {item.logs.map((log, idx) => {
+                                // Only show physical cards for completed/historic logs if message has content
+                                // Otherwise if thinking, show all in minimal mode
+                                const isLatest = idx === item.logs!.length - 1;
+                                if (!item.content || isLatest) {
+                                    return (
+                                        <StatusLogCard
+                                            key={idx}
+                                            label={log.label}
+                                            status={log.status || 'completed'}
+                                            tool={log.tool}
+                                            minimal={true}
+                                        />
+                                    );
+                                }
+                                return null;
+                            })}
                         </View>
                     )}
 
@@ -131,7 +193,6 @@ export default function AssistantScreen() {
                                 actions={item.actions}
                                 onApprove={(action: ActionItem) => {
                                     console.log('Approved action:', action);
-                                    // Implementation of approval would go here
                                 }}
                                 onReject={(id: string) => {
                                     console.log('Rejected action:', id);
@@ -145,38 +206,27 @@ export default function AssistantScreen() {
                     {isUser ? (
                         <Text style={styles.userText}>{item.content}</Text>
                     ) : (
-                        <MarkdownText content={item.content} />
+                        item.content ? <MarkdownText content={item.content} /> : null
                     )}
 
                     {/* Render Auth Actions if available */}
                     {item.auth_actions && item.auth_actions.length > 0 && (
                         <View style={{ marginTop: 12, gap: 8 }}>
-                            {item.auth_actions.map((action, idx) => {
-                                const isConnected = connectedApps.includes(action.appName.toLowerCase()) ||
-                                    connectedApps.some(ca => action.appName.toLowerCase().includes(ca));
-
-                                return (
-                                    <View key={idx} style={styles.authCard}>
-                                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 }}>
-                                            <View style={styles.authIconPlaceholder}>
-                                                <Text style={styles.authIconText}>{action.appName[0]}</Text>
-                                            </View>
-                                            <Text style={styles.authCardTitle}>
-                                                {isConnected ? `Connected to ${action.appName}` : `Connect to ${action.appName}`}
-                                            </Text>
-                                        </View>
-                                        <TouchableOpacity
-                                            style={[styles.connectButton, isConnected && { backgroundColor: (colors as any).success || '#4CAF50', opacity: 0.8 }]}
-                                            onPress={() => !isConnected && Linking.openURL(action.url)}
-                                            disabled={isConnected}
-                                        >
-                                            <Text style={styles.connectButtonText}>
-                                                {isConnected ? 'Active' : 'Connect'}
-                                            </Text>
-                                        </TouchableOpacity>
+                            {item.auth_actions.map((action, idx) => (
+                                <View key={idx} style={styles.authCard}>
+                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 }}>
+                                        <Text style={styles.authCardTitle}>
+                                            {`Connect to ${action.appName}`}
+                                        </Text>
                                     </View>
-                                );
-                            })}
+                                    <TouchableOpacity
+                                        style={styles.connectButton}
+                                        onPress={() => Linking.openURL(action.url)}
+                                    >
+                                        <Text style={styles.connectButtonText}>Connect</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            ))}
                         </View>
                     )}
                 </View>
@@ -199,13 +249,6 @@ export default function AssistantScreen() {
                 onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
                 onLayout={() => flatListRef.current?.scrollToEnd({ animated: true })}
             />
-
-            {loading && (
-                <View style={styles.typingIndicator}>
-                    <ActivityIndicator size="small" color={colors.primary[500]} />
-                    <Text style={styles.typingText}>Aariv is thinking...</Text>
-                </View>
-            )}
 
             <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -248,14 +291,15 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     headerTitle: {
         ...typography.textStyles.h3,
         color: colors.text,
+        fontSize: 24,
     },
     listContent: {
         padding: spacing[4],
-        gap: spacing[4],
+        paddingBottom: spacing[10],
     },
     messageBubble: {
         flexDirection: 'row',
-        marginBottom: spacing[2],
+        marginBottom: spacing[6],
         alignItems: 'flex-end',
     },
     userBubble: {
@@ -265,55 +309,40 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
         justifyContent: 'flex-start',
     },
     avatarContainer: {
-        width: 32,
-        height: 32,
-        borderRadius: 16,
-        backgroundColor: colors.primary[500],
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginRight: spacing[2],
-        marginBottom: 4,
+        marginRight: spacing[3],
+        marginBottom: 2,
     },
     messageContent: {
-        maxWidth: '80%',
-        padding: spacing[3],
-        borderRadius: 20,
+        maxWidth: '85%',
+        padding: spacing[4],
+        borderRadius: borderRadius.xl,
         borderBottomLeftRadius: 4,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: isDark ? 0.4 : 0.05,
+        shadowRadius: 10,
+        elevation: 5,
     },
     userContent: {
         backgroundColor: colors.primary[500],
-        borderBottomLeftRadius: 20,
+        borderBottomLeftRadius: borderRadius.xl,
         borderBottomRightRadius: 4,
     },
     assistantContent: {
-        backgroundColor: colors.surface,
+        backgroundColor: isDark ? 'rgba(28, 28, 30, 0.8)' : 'rgba(255, 255, 255, 0.9)',
         borderWidth: 1,
-        borderColor: colors.border,
-    },
-    messageText: {
-        fontSize: 15,
-        lineHeight: 22,
+        borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
     },
     userText: {
         color: '#FFF',
-    },
-    assistantText: {
-        color: colors.text,
-    },
-    typingIndicator: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        padding: spacing[4],
-        gap: spacing[2],
-    },
-    typingText: {
-        color: colors.textSecondary,
-        fontSize: 12,
+        ...typography.textStyles.body,
+        lineHeight: 22,
     },
     inputContainer: {
         flexDirection: 'row',
-        padding: spacing[4],
-        backgroundColor: colors.surface,
+        paddingHorizontal: spacing[4],
+        paddingVertical: spacing[4],
+        backgroundColor: isDark ? colors.background : '#FFF',
         borderTopWidth: 1,
         borderTopColor: colors.border,
         alignItems: 'center',
@@ -321,18 +350,19 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     },
     input: {
         flex: 1,
-        height: 44,
-        backgroundColor: colors.background,
-        borderRadius: 22,
-        paddingHorizontal: spacing[4],
+        height: 48,
+        backgroundColor: isDark ? colors.surface : colors.neutral[100],
+        borderRadius: 24,
+        paddingHorizontal: spacing[5],
         color: colors.text,
         borderWidth: 1,
-        borderColor: colors.border,
+        borderColor: isDark ? colors.border : 'transparent',
+        ...typography.textStyles.body,
     },
     sendButton: {
-        width: 44,
-        height: 44,
-        borderRadius: 22,
+        width: 48,
+        height: 48,
+        borderRadius: 24,
         backgroundColor: colors.primary[500],
         alignItems: 'center',
         justifyContent: 'center',
@@ -340,45 +370,30 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     sendButtonDisabled: {
         opacity: 0.5,
     },
-    // Auth Card Styles
     authCard: {
-        backgroundColor: colors.surface,
-        borderRadius: 12,
-        padding: spacing[3],
+        backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
+        borderRadius: 16,
+        padding: spacing[4],
         borderWidth: 1,
         borderColor: colors.border,
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'space-between',
-        marginTop: 8,
-    },
-    authIconPlaceholder: {
-        width: 32,
-        height: 32,
-        borderRadius: 8,
-        backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    authIconText: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        color: colors.text,
+        gap: spacing[4],
     },
     authCardTitle: {
         fontSize: 14,
-        fontWeight: '600',
+        fontWeight: '700',
         color: colors.text,
     },
     connectButton: {
-        backgroundColor: isDark ? '#FFF' : '#000',
+        backgroundColor: colors.primary[500],
         paddingHorizontal: 16,
-        paddingVertical: 8,
-        borderRadius: 8,
+        paddingVertical: 10,
+        borderRadius: 20,
     },
     connectButtonText: {
-        color: isDark ? '#000' : '#FFF',
+        color: '#FFF',
         fontSize: 13,
-        fontWeight: '600',
+        fontWeight: 'bold',
     }
 });

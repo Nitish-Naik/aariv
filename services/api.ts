@@ -155,4 +155,13 @@ export const api = {
     });
     return handleResponse(response, '/chat/connections');
   },
+
+  stream: async (endpoint: string, body: any) => {
+    const headers = await getAuthHeaders();
+    return fetch(`${API_URL}${endpoint}`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(body),
+    });
+  },
 };

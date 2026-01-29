@@ -8,6 +8,7 @@ export { Card } from './Card';
 export { ErrorBoundary } from './ErrorBoundary';
 export { Input } from './Input';
 export { PlatformIcon } from './PlatformIcon';
+export { PulsingAvatar } from './PulsingAvatar';
 export { StatusLogCard } from './StatusLogCard';
 export { SwipeCard } from './SwipeCard';
 

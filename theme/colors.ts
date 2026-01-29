@@ -17,7 +17,7 @@ export const colors = {
     800: '#1E40AF',
     900: '#1E3A8A',
   },
-  
+
   // Neutral grays - Zinc (Neutral & Sharp)
   neutral: {
     50: '#FAFAFA',
@@ -31,7 +31,7 @@ export const colors = {
     800: '#27272A',
     900: '#18181B',
   },
-  
+
   // Dark theme base - OLED True Black
   dark: {
     background: '#000000', // True Black for OLED
@@ -42,7 +42,7 @@ export const colors = {
     textSecondary: '#A1A1AA', // Zinc-400
     textTertiary: '#71717A',  // Zinc-500
   },
-  
+
   // Light theme base
   light: {
     background: '#FFFFFF',
@@ -53,7 +53,7 @@ export const colors = {
     textSecondary: '#52525B',
     textTertiary: '#71717A',
   },
-  
+
   // Semantic colors
   semantic: {
     success: '#10B981', // Emerald
@@ -61,7 +61,7 @@ export const colors = {
     error: '#EF4444',
     info: '#3B82F6',
   },
-  
+
   // Action states
   action: {
     approve: '#10B981',
@@ -69,7 +69,7 @@ export const colors = {
     pending: '#F59E0B',
     neutral: '#737373',
   },
-  
+
   // Platform colors
   platforms: {
     gmail: '#EA4335',
@@ -80,6 +80,7 @@ export const colors = {
     discord: '#5865F2',
     maps: '#34A853',
     github: '#24292e',
+    twitter: '#1DA1F2',
   },
 };
 

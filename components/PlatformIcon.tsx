@@ -20,6 +20,7 @@ const platformConfig: Record<string, { color: string; label: string }> = {
   discord: { color: colors.platforms.discord, label: 'D' },
   maps: { color: colors.platforms.maps, label: 'M' },
   github: { color: colors.platforms.github, label: 'GH' },
+  twitter: { color: colors.platforms.twitter, label: 'X' },
 };
 
 export const PlatformIcon: React.FC<PlatformIconProps> = ({
