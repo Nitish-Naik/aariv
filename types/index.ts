@@ -93,4 +93,5 @@ export interface ChatMessage {
   actions?: ActionItem[];
   auth_actions?: AuthAction[];
   logs?: { label: string; status: string; tool: string }[];
+  is_proactive?: boolean;
 }

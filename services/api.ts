@@ -57,6 +57,7 @@ async function handleResponse(response: Response, endpoint: string) {
 
 // Generic API client
 export const api = {
+  getBaseUrl: () => API_URL,
   get: async (endpoint: string) => {
     try {
       const headers = await getAuthHeaders();

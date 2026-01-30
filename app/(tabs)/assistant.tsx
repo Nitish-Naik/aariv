@@ -29,7 +29,76 @@ export default function AssistantScreen() {
     const [, setLoading] = useState(false);
     const flatListRef = useRef<FlatList>(null);
     const [userId, setUserId] = useState<string | null>(null);
-    const [connectedApps] = useState<string[]>([]);
+
+    useEffect(() => {
+        if (!userId) return;
+
+        // Proactive Notification Stream
+        const controller = new AbortController();
+        const startNotificationStream = async () => {
+            console.log(`[SSE] Starting notification stream for user: ${userId}`);
+            try {
+                // Using standard fetch for SSE
+                const response = await fetch(`${api.getBaseUrl()}/notifications/${userId}`, {
+                    signal: controller.signal
+                });
+
+                if (!response.body) {
+                    console.error('[SSE] No response body for notifications');
+                    return;
+                }
+                console.log('[SSE] Notification stream established');
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let accumulated = '';
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) {
+                        console.log('[SSE] Notification stream closed');
+                        break;
+                    }
+
+                    accumulated += decoder.decode(value, { stream: true });
+                    const parts = accumulated.split('\n\n');
+                    accumulated = parts.pop() || '';
+
+                    for (const part of parts) {
+                        if (part.startsWith('data: ')) {
+                            try {
+                                const rawData = part.substring(6);
+                                console.log('[SSE] Notification received:', rawData);
+                                const event = JSON.parse(rawData);
+                                if (event.type === 'proactive_summary') {
+                                    setMessages(prev => [
+                                        ...prev,
+                                        {
+                                            id: event.data.id || Date.now().toString(),
+                                            role: 'assistant',
+                                            content: event.data.content,
+                                            timestamp: new Date(event.data.timestamp),
+                                            is_proactive: true
+                                        }
+                                    ]);
+                                }
+                            } catch (err) {
+                                console.error('Failed to parse notification event:', err);
+                            }
+                        }
+                    }
+                }
+            } catch (e: any) {
+                if (e.name !== 'AbortError') {
+                    console.error('Notification stream error:', e);
+                    // Retry after 5 seconds
+                    setTimeout(startNotificationStream, 5000);
+                }
+            }
+        };
+
+        startNotificationStream();
+        return () => controller.abort();
+    }, [userId]);
 
     useEffect(() => {
         // Initialize with a welcome message
@@ -167,8 +236,15 @@ export default function AssistantScreen() {
                 )}
                 <View style={[
                     styles.messageContent,
-                    isUser ? styles.userContent : styles.assistantContent
+                    isUser ? styles.userContent : styles.assistantContent,
+                    item.is_proactive && styles.proactiveContent
                 ]}>
+                    {item.is_proactive && (
+                        <View style={styles.proactiveBadge}>
+                            <Ionicons name="flash" size={12} color="#FFD700" />
+                            <Text style={styles.proactiveBadgeText}>PROACTIVE SUMMARY</Text>
+                        </View>
+                    )}
 
                     {/* Render Logs (Thinking Process) - Minimal Inline Style */}
                     {item.logs && item.logs.length > 0 && (
@@ -402,5 +478,25 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
         color: '#FFF',
         fontSize: 13,
         fontWeight: 'bold',
+    },
+    proactiveContent: {
+        borderColor: '#FFD700',
+        backgroundColor: isDark ? 'rgba(255, 215, 0, 0.05)' : 'rgba(255, 215, 0, 0.03)',
+    },
+    proactiveBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        marginBottom: 8,
+        backgroundColor: 'rgba(255, 215, 0, 0.1)',
+        paddingHorizontal: 8,
+        paddingVertical: 2,
+        borderRadius: 4,
+        alignSelf: 'flex-start',
+    },
+    proactiveBadgeText: {
+        fontSize: 10,
+        fontWeight: '900',
+        color: '#B8860B',
     }
 });
