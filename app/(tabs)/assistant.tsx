@@ -104,7 +104,7 @@ export default function AssistantScreen() {
                                         // Update existing log if label matches, or if it's a transition from Running to Completed
                                         const existingIdx = newLogs.findIndex(l =>
                                             l.label === event.data.label ||
-                                            (l.label.startsWith('Running:') && event.data.label.startsWith('Completed:') &&
+                                            (l.label.startsWith('Thinking:') && event.data.label.startsWith('Completed:') &&
                                                 l.label.split(':')[1] === event.data.label.split(':')[1])
                                         );
 
@@ -114,11 +114,18 @@ export default function AssistantScreen() {
                                             newLogs.push(event.data);
                                         }
                                         return { ...msg, logs: newLogs };
+                                    } else if (event.type === 'auth_required') {
+                                        const newAuthActions = [...(msg.auth_actions || [])];
+                                        // Avoid duplicates
+                                        if (!newAuthActions.some(a => a.url === event.data.url)) {
+                                            newAuthActions.push(event.data);
+                                        }
+                                        return { ...msg, auth_actions: newAuthActions };
                                     } else if (event.type === 'result') {
                                         return {
                                             ...msg,
                                             content: event.data.response,
-                                            auth_actions: event.data.auth_actions,
+                                            auth_actions: event.data.auth_actions?.length > 0 ? event.data.auth_actions : msg.auth_actions,
                                             logs: event.data.logs || msg.logs,
                                         };
                                     } else if (event.type === 'error') {
