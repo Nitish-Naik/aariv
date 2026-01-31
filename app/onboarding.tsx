@@ -1,42 +1,59 @@
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { useFocusEffect } from "@react-navigation/native";
-import * as Linking from 'expo-linking';
 import { useRouter } from "expo-router";
-import React, { useCallback, useEffect } from "react";
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import * as WebBrowser from 'expo-web-browser';
+import React, { useCallback } from "react";
+import { ActivityIndicator, Linking, Platform, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTheme } from "../context/ThemeContext";
 import { useIntegrations } from "../hooks/useIntegrations";
 import { api } from "../services/api";
 import { getCurrentUser } from "../services/auth";
 import { spacing, typography } from "../theme";
+import { setOnboardingComplete } from "../utils/onboarding";
+
+const DEEP_LINK_SCHEME = 'aariv://';
 
 export default function OnboardingScreen() {
     const router = useRouter();
     const { colors, isDark } = useTheme();
     const styles = getStyles(colors, isDark);
-    const { integrations, isLoading, refetch } = useIntegrations();
+    const [userId, setUserId] = React.useState<string | null>(null);
+    const { integrations, loading, refetch } = useIntegrations(userId || undefined);
     const [isConnecting, setIsConnecting] = React.useState(false);
 
-    // Auto-refresh when returning from browser (Deep Link)
+    // Get current user on mount
+    React.useEffect(() => {
+        getCurrentUser().then(user => {
+            if (user) setUserId(user.id);
+        });
+    }, []);
+
+    // Poll for connection status and navigate when Gmail is connected
     useFocusEffect(
         useCallback(() => {
-            refetch();
-        }, [refetch])
-    );
+            const poll = async () => {
+                const fetchedIntegrations = await refetch();
+                console.log('📊 Fetched integrations:', fetchedIntegrations);
 
-    // Check if we can proceed
-    useEffect(() => {
-        if (!isLoading && integrations.length > 0) {
-            const hasGmail = integrations.some(i => i.appName === 'gmail' && (i.status === 'ACTIVE' || i.status === 'CONNECTED'));
-            if (hasGmail) {
-                // router.replace("/(tabs)");
-                // Keep manual proceed or auto?
-                // Let's stick to router replace if they are connected
-                router.replace("/(tabs)");
-            }
-        }
-    }, [integrations, isLoading]);
+                // Handle different toolkit slug formats (gmail, GMAIL, googlemail, etc.)
+                const hasGmail = fetchedIntegrations?.some(i => {
+                    const appNameLower = i.appName?.toLowerCase() || '';
+                    const isGmailConnected = (appNameLower.includes('gmail') || appNameLower === 'googlemail')
+                        && i.status === 'ACTIVE';
+                    console.log(`🔍 Checking ${i.appName}: ${isGmailConnected ? '✅' : '❌'}`);
+                    return isGmailConnected;
+                });
+
+                if (hasGmail) {
+                    console.log('✅ Gmail detected! Navigating to main app...');
+                    await setOnboardingComplete();
+                    router.replace("/(tabs)"); // Navigate to main app
+                }
+            };
+            poll();
+        }, [refetch, router])
+    );
 
     const handleConnect = async () => {
         setIsConnecting(true);
@@ -46,17 +63,19 @@ export default function OnboardingScreen() {
 
             const response = await api.post('/integrations/connect', {
                 userId: user.id,
-                appName: 'gmail' // Force Gmail as primary first step
+                appName: 'gmail',
+                platform: Platform.OS === 'web' ? 'web' : 'mobile'
             });
 
             if (response.url) {
-                const supported = await Linking.canOpenURL(response.url);
-                if (supported) {
-                    await Linking.openURL(response.url);
-                    // We rely on useIntegrations polling or focus effect to pick up the change
-                    // But let's trigger a refetch after a delay
-                    setTimeout(refetch, 3000);
+                if (Platform.OS === 'web') {
+                    // On web, use a full redirect to avoid cross-origin policy issues.
+                    Linking.openURL(response.url);
+                } else {
+                    // On mobile, use the in-app browser for a better UX.
+                    await WebBrowser.openAuthSessionAsync(response.url, DEEP_LINK_SCHEME);
                 }
+                // After returning, the useFocusEffect will handle checking the connection status.
             }
         } catch (error) {
             console.error("Connect failed", error);
@@ -65,6 +84,7 @@ export default function OnboardingScreen() {
         }
     };
 
+    // The rest of the component remains the same
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.content}>

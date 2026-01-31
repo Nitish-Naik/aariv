@@ -1,9 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
 import { SpeedInsights } from "@vercel/speed-insights/react";
 import { useFonts } from "expo-font";
-import { Stack } from "expo-router";
+import { useRouter, useSegments, Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { ActivityIndicator, Platform, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { ErrorBoundary } from "../components/ErrorBoundary";
@@ -15,24 +15,70 @@ import {
   useNotificationHandler,
 } from "../services/notifications";
 import { initSubscription } from "../services/subscription";
+import { hasCompletedOnboarding } from "../utils/onboarding";
 
-// Keep the splash screen visible while we fetch resources
-SplashScreen.preventAutoHideAsync().catch(() => {
-  /* reloading the app might cause some errors here, safe to ignore */
-});
+SplashScreen.preventAutoHideAsync().catch(() => {});
+
+function RootNavigation() {
+  const { isLoading: isAuthLoading, isAuthenticated } = useAuth();
+  const [onboardingStatus, setOnboardingStatus] = useState<{ loading: boolean, complete: boolean }>({ loading: true, complete: false });
+  const router = useRouter();
+  const segments = useSegments();
+
+  useEffect(() => {
+    const checkOnboarding = async () => {
+      const complete = await hasCompletedOnboarding();
+      setOnboardingStatus({ loading: false, complete });
+    };
+    checkOnboarding();
+  }, []);
+
+  useEffect(() => {
+    // Wait until auth and onboarding status are loaded
+    if (isAuthLoading || onboardingStatus.loading) {
+      return;
+    }
+
+    const inAuthGroup = segments[0] === '(auth)';
+    const inAppGroup = segments[0] === '(tabs)';
+
+    // This effect should only re-run when auth or onboarding status changes,
+    // not when the router segments change.
+    if (!isAuthenticated) {
+      // If the user is not signed in and not in the auth group,
+      // redirect them to the login page.
+      if (!inAuthGroup) {
+        router.replace('/login');
+      }
+    } else if (!onboardingStatus.complete) {
+      // If the user is signed in but hasn't completed onboarding,
+      // send them to the onboarding screen.
+      if (segments[0] !== 'onboarding') {
+        router.replace('/onboarding');
+      }
+    } else {
+      // If the user is signed in and has completed onboarding,
+      // ensure they are in the main app group.
+      if (!inAppGroup) {
+        router.replace('/(tabs)');
+      }
+    }
+  }, [isAuthenticated, isAuthLoading, onboardingStatus.loading, onboardingStatus.complete]);
+
+  return <ThemedStack />;
+}
+
 
 function ThemedStack() {
   const { colors } = useTheme();
   const { isLoading: isAuthLoading } = useAuth();
 
-  // Load fonts - handles the fontfaceobserver timeout by pre-rendering
   const [fontsLoaded, fontError] = useFonts({
     ...Ionicons.font,
   });
 
   useEffect(() => {
     if (fontsLoaded || fontError) {
-      // Once fonts are loaded (or failed), hide splash screen
       SplashScreen.hideAsync().catch(() => { });
     }
   }, [fontsLoaded, fontError]);
@@ -58,6 +104,8 @@ function ThemedStack() {
       >
         <Stack.Screen name="index" />
         <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="login" />
+        <Stack.Screen name="onboarding" />
         <Stack.Screen
           name="knowledge-graph"
           options={{
@@ -129,22 +177,15 @@ function ThemedStack() {
 }
 
 export default function RootLayout() {
-  // Set up notifications and background sync on app start
   useEffect(() => {
     const setup = async () => {
       try {
-        // Request notification permissions and register for push
         await registerForPushNotifications();
-
-        // Schedule daily briefing notification (8 AM)
         await scheduleDailyBriefing(8, 0);
-
-        // Register background sync task
         const bg = await import("../services/backgroundSync");
         if (bg && typeof bg.registerBackgroundSync === "function") {
           await bg.registerBackgroundSync();
         }
-        // Initialize RevenueCat
         await initSubscription();
       } catch (e: any) {
         console.log("Background setup failed:", e?.message || e);
@@ -153,7 +194,6 @@ export default function RootLayout() {
     setup();
   }, []);
 
-  // Handle notification taps
   useNotificationHandler();
 
   return (
@@ -161,7 +201,7 @@ export default function RootLayout() {
       <SafeAreaProvider>
         <AuthProvider>
           <ThemeProvider>
-            <ThemedStack />
+            <RootNavigation />
             {Platform.OS === 'web' && <SpeedInsights />}
           </ThemeProvider>
         </AuthProvider>

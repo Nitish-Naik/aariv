@@ -1,4 +1,3 @@
-
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
 import {
@@ -18,6 +17,7 @@ import { useIntegrations } from '../hooks/useIntegrations';
 import { api } from '../services/api';
 import { getCurrentUser } from '../services/auth';
 import { spacing } from '../theme';
+import { supabase } from '../services/supabaseClient';
 
 interface SideMenuProps {
     isVisible: boolean;
@@ -27,45 +27,46 @@ interface SideMenuProps {
 export default function SideMenu({ isVisible, onClose }: SideMenuProps) {
     const { colors, isDark } = useTheme();
     const insets = useSafeAreaInsets();
+    const [user, setUser] = useState<{ id: string; name: string; email: string } | null>(null);
 
-    // Use Central Hook
-    const { integrations, refetch: loadIntegrations } = useIntegrations();
-
-    const [isConnecting, setIsConnecting] = useState(false);
-    // Expand state for "Manage Accounts"
-    const [isExpanded, setIsExpanded] = useState(true);
-    const [user, setUser] = useState<{ name: string; email: string } | null>(null);
-
-    // Initial User Load
+    // Fetch user on visibility
     useEffect(() => {
         if (isVisible) {
             getCurrentUser().then(u => {
-                if (u) setUser({ name: u.name || "User", email: u.email });
+                if (u) setUser({ id: u.id, name: u.name || "User", email: u.email });
             });
-            loadIntegrations();
         }
-    }, [isVisible, loadIntegrations]);
+    }, [isVisible]);
+
+    // Use the central hook for integrations management
+    const { 
+        integrations, 
+        loading: integrationsLoading, 
+        connectIntegration, 
+        disconnectIntegration,
+        refetch
+    } = useIntegrations(user?.id);
+
+    const [isConnecting, setIsConnecting] = useState(false);
+    const [isExpanded, setIsExpanded] = useState(true);
+
+    useEffect(() => {
+        if (isVisible && user?.id) {
+            refetch();
+        }
+    }, [isVisible, user, refetch]);
+
 
     const handleConnect = async (appName: string) => {
         setIsConnecting(true);
         try {
-            const user = await getCurrentUser();
-            if (!user) {
-                Alert.alert("Error", "You must be logged in.");
-                return;
-            }
-            // Logic to add NEW connection (Composio supports multiple)
-            const response = await api.post('/integrations/connect', {
-                userId: user.id,
-                appName: appName
-            });
-
-            if (response.url) {
-                const supported = await Linking.canOpenURL(response.url);
+            const redirectUrl = await connectIntegration(appName);
+            if (redirectUrl) {
+                const supported = await Linking.canOpenURL(redirectUrl);
                 if (supported) {
-                    await Linking.openURL(response.url);
-                    // Poll for update or wait
-                    setTimeout(loadIntegrations, 5000);
+                    await Linking.openURL(redirectUrl);
+                    // Optionally poll or refetch after a delay
+                    setTimeout(refetch, 5000); 
                 }
             }
         } catch (error: any) {
@@ -75,38 +76,8 @@ export default function SideMenu({ isVisible, onClose }: SideMenuProps) {
         }
     };
 
-    const handleDisconnect = async (appName: string, connectionId?: string) => {
-        // TODO: Backend needs to support disconnecting specific ID
-        // For now, call the generic disconnect (which might need update to take ID)
-        // Ignoring specific ID implementation for brevity, assuming backend handles "disconnect app" as "delete connection" 
-        // But to be precise, we need to pass connectionId to backend. 
-        // Updating backend might be needed. For now, let's assume we can only disconnect the APP or we use the ID if we updated backend.
 
-        // Actually, the current disconnectIntegration controller uses `appName` and finds `targetConnection`.
-        // To support specific ID deletion, we should update the backend.
-        // But let's try calling it anyway.
-
-        try {
-            const user = await getCurrentUser();
-            if (!user) return;
-
-            // If we have an ID, we might need a specific endpoint or update the existing one.
-            // Let's just use the existing one for now, it removes *one* active connection.
-            await api.post('/integrations/disconnect', {
-                userId: user.id,
-                appName: appName,
-                connectionId: connectionId // Pass connectionId if backend supports it
-            });
-
-            loadIntegrations();
-        } catch (error) {
-            console.error(error);
-            Alert.alert("Disconnect Failed", "Could not disconnect account.");
-        }
-    };
-
-    // Filter Gmail connections
-    const gmailConnections = integrations.filter(i => i.appName === 'gmail' && (i.status === 'ACTIVE' || i.status === 'CONNECTED'));
+    const gmailConnections = integrations.filter(i => i.appName === 'gmail' && i.status === 'ACTIVE');
 
     const styles = getStyles(colors, isDark, insets);
 
@@ -157,7 +128,6 @@ export default function SideMenu({ isVisible, onClose }: SideMenuProps) {
 
                         <Text style={styles.sectionTitle}>Connected Accounts</Text>
 
-                        {/* Google Manage Accounts / List */}
                         <TouchableOpacity
                             style={styles.menuItem}
                             onPress={() => setIsExpanded(!isExpanded)}
@@ -169,18 +139,20 @@ export default function SideMenu({ isVisible, onClose }: SideMenuProps) {
 
                         {isExpanded && (
                             <View style={styles.accountsList}>
-                                {gmailConnections.length > 0 ? (
+                                {integrationsLoading ? (
+                                    <ActivityIndicator color={colors.text} />
+                                ) : gmailConnections.length > 0 ? (
                                     gmailConnections.map((conn, index) => (
                                         <View key={conn.id} style={styles.accountItem}>
                                             <View style={styles.accountInfo}>
                                                 <Text style={styles.accountEmail}>{conn.email || `Account ${index + 1}`}</Text>
-                                                {index === 0 && ( // Assume first is primary for now
+                                                {index === 0 && (
                                                     <View style={styles.primaryTag}>
                                                         <Text style={styles.primaryTagText}>PRIMARY</Text>
                                                     </View>
                                                 )}
                                             </View>
-                                            <TouchableOpacity onPress={() => handleDisconnect('gmail', conn.id)}>
+                                            <TouchableOpacity onPress={() => disconnectIntegration(conn.id)}>
                                                 <Ionicons name="trash-outline" size={18} color={colors.semantic.error} />
                                             </TouchableOpacity>
                                         </View>
@@ -209,7 +181,10 @@ export default function SideMenu({ isVisible, onClose }: SideMenuProps) {
                     </ScrollView>
 
                     <View style={styles.footer}>
-                        <TouchableOpacity style={styles.menuItem}>
+                        <TouchableOpacity style={styles.menuItem} onPress={async () => {
+                            await supabase.auth.signOut();
+                            onClose();
+                        }}>
                             <Ionicons name="log-out-outline" size={22} color={colors.semantic.error} />
                             <Text style={[styles.menuItemText, { color: colors.semantic.error }]}>Sign Out</Text>
                         </TouchableOpacity>
@@ -219,7 +194,7 @@ export default function SideMenu({ isVisible, onClose }: SideMenuProps) {
                             onPress={() => {
                                 Alert.alert(
                                     "Delete Account",
-                                    "Are you sure you want to delete your account? This action is irreversible and will delete all your data.",
+                                    "Are you sure? This action is irreversible and will delete all your data.",
                                     [
                                         { text: "Cancel", style: "cancel" },
                                         {
@@ -227,28 +202,10 @@ export default function SideMenu({ isVisible, onClose }: SideMenuProps) {
                                             style: "destructive",
                                             onPress: async () => {
                                                 try {
-                                                    // 1. Call backend delete endpoint
                                                     await api.delete("/auth/account");
-                                                } catch (error) {
-                                                    console.error("Account deletion API failed", error);
-                                                    // Continue to logout anyway
                                                 } finally {
-                                                    // 2. Hard logout (always)
-                                                    try {
-                                                        await api.post('/auth/logout', {}); // Optional: Call backend logout if exists
-                                                        // Supabase logout
-                                                        const { error } = await supabase.auth.signOut();
-                                                        if (error) console.error("Supabase signOut error", error);
-                                                    } catch (e) {
-                                                        console.error("Logout error", e);
-                                                    }
-
-                                                    // 3. Clear local state / Close menu
+                                                    await supabase.auth.signOut();
                                                     onClose();
-
-                                                    // 4. Redirect triggers automatically via auth state listener in layout
-                                                    // But we can force it just in case
-                                                    // router.replace("/login"); 
                                                 }
                                             }
                                         }
@@ -262,13 +219,12 @@ export default function SideMenu({ isVisible, onClose }: SideMenuProps) {
                     </View>
                 </View>
 
-                {/* Backdrop press to close */}
                 <TouchableOpacity style={styles.backdrop} onPress={onClose} />
             </View>
         </Modal>
     );
 }
-
+// Styles are unchanged, so they are omitted for brevity
 const getStyles = (colors: any, isDark: boolean, insets: any) => StyleSheet.create({
     overlay: {
         flex: 1,
@@ -416,10 +372,9 @@ const getStyles = (colors: any, isDark: boolean, insets: any) => StyleSheet.crea
         fontSize: 13,
         fontWeight: '500',
     },
-    // New Styles
     accountsList: {
         marginTop: 8,
-        marginLeft: 16, // Indent
+        marginLeft: 16,
         gap: 8,
     },
     accountItem: {
