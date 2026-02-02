@@ -8,7 +8,9 @@ export interface Toolkit {
     popular?: boolean;
     comingSoon?: boolean;
     isPro?: boolean;
-    scopes?: { id: string; label: string; description: string; riskLevel: 'low' | 'medium' | 'high' | 'critical' }[];
+    platform: string; // Added platform
+    logo?: string; // Added optional logo
+    scopes?: { id:string; label: string; description: string; riskLevel: 'low' | 'medium' | 'high' | 'critical' }[];
 }
 
 export interface ToolkitBundle {
@@ -29,6 +31,7 @@ export const MOCK_TOOLKITS: Toolkit[] = [
         connected: false,
         category: 'Communication',
         popular: true,
+        platform: 'gmail',
         scopes: [
             { id: 'g1', label: 'Read Mail', description: 'View your email messages and settings.', riskLevel: 'medium' },
             { id: 'g2', label: 'Send Mail', description: 'Send email on your behalf.', riskLevel: 'high' }
@@ -42,6 +45,7 @@ export const MOCK_TOOLKITS: Toolkit[] = [
         connected: false,
         category: 'Productivity',
         popular: true,
+        platform: 'google-calendar',
         scopes: [
             { id: 'c1', label: 'View Events', description: 'Read your calendar events.', riskLevel: 'low' },
             { id: 'c2', label: 'Manage Events', description: 'Create, edit, and delete events.', riskLevel: 'high' }
@@ -54,6 +58,7 @@ export const MOCK_TOOLKITS: Toolkit[] = [
         icon: 'logo-slack',
         connected: false,
         category: 'Communication',
+        platform: 'slack',
     },
     {
         id: '4',
@@ -62,6 +67,7 @@ export const MOCK_TOOLKITS: Toolkit[] = [
         icon: 'document-text',
         connected: false,
         category: 'Productivity',
+        platform: 'notion',
     },
     {
         id: '5',
@@ -70,6 +76,7 @@ export const MOCK_TOOLKITS: Toolkit[] = [
         icon: 'logo-github',
         connected: false,
         category: 'Developer',
+        platform: 'github',
     },
     {
         id: '6',
@@ -78,6 +85,7 @@ export const MOCK_TOOLKITS: Toolkit[] = [
         icon: 'list',
         connected: false,
         category: 'Developer',
+        platform: 'linear',
     },
     {
         id: 'twitter',
@@ -86,7 +94,8 @@ export const MOCK_TOOLKITS: Toolkit[] = [
         icon: 'logo-twitter',
         connected: false,
         category: 'Social',
-        isPro: false
+        isPro: false,
+        platform: 'twitter',
     }
 ];
 

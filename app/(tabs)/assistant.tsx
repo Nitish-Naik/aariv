@@ -5,6 +5,7 @@ import {
     KeyboardAvoidingView,
     Linking,
     Platform,
+    ScrollView,
     StyleSheet,
     Text,
     TextInput,
@@ -14,6 +15,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ActionReviewCard, PulsingAvatar, StatusLogCard } from '../../components';
 import { useTheme } from '../../context/ThemeContext';
+
 import { api } from '../../services/api';
 import { getCurrentUser } from '../../services/auth';
 import { borderRadius, spacing, typography } from '../../theme';
@@ -29,6 +31,9 @@ export default function AssistantScreen() {
     const [, setLoading] = useState(false);
     const flatListRef = useRef<FlatList>(null);
     const [userId, setUserId] = useState<string | null>(null);
+
+
+
 
     useEffect(() => {
         if (!userId) return;
@@ -142,7 +147,7 @@ export default function AssistantScreen() {
         try {
             const response = await api.stream('/chat', {
                 userId,
-                message: userMessage.content
+                message: userMessage.content,
             });
 
             if (!response.body) throw new Error('No response body from server');
@@ -323,6 +328,8 @@ export default function AssistantScreen() {
                 <Text style={styles.headerTitle}>Assistant</Text>
             </View>
 
+
+
             <FlatList
                 ref={flatListRef}
                 data={messages}
@@ -337,23 +344,27 @@ export default function AssistantScreen() {
                 behavior={Platform.OS === 'ios' ? 'padding' : undefined}
                 keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
             >
-                <View style={styles.inputContainer}>
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Ask anything..."
-                        placeholderTextColor={colors.textTertiary}
-                        value={inputText}
-                        onChangeText={setInputText}
-                        onSubmitEditing={handleSend}
-                        returnKeyType="send"
-                    />
-                    <TouchableOpacity
-                        style={[styles.sendButton, !inputText.trim() && styles.sendButtonDisabled]}
-                        onPress={handleSend}
-                        disabled={!inputText.trim()}
-                    >
-                        <Ionicons name="send" size={20} color="#FFF" />
+                <View style={styles.inputBar}>
+                    <TouchableOpacity style={styles.actionButton}>
+                        <Ionicons name="add" size={28} color={colors.textSecondary} />
                     </TouchableOpacity>
+                    <View style={styles.inputContainer}>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Ask anything..."
+                            placeholderTextColor={colors.textTertiary}
+                            value={inputText}
+                            onChangeText={setInputText}
+                            multiline
+                        />
+                        <TouchableOpacity
+                            style={styles.sendButton}
+                            onPress={handleSend}
+                            disabled={!inputText.trim()}
+                        >
+                            <Ionicons name="arrow-up-circle" size={32} color={!inputText.trim() ? colors.neutral[400] : colors.primary[500]} />
+                        </TouchableOpacity>
+                    </View>
                 </View>
             </KeyboardAvoidingView>
         </SafeAreaView>
@@ -376,6 +387,7 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
         color: colors.text,
         fontSize: 24,
     },
+
     listContent: {
         padding: spacing[4],
         paddingBottom: spacing[10],
@@ -399,7 +411,6 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
         maxWidth: '85%',
         padding: spacing[4],
         borderRadius: borderRadius.xl,
-        borderBottomLeftRadius: 4,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: isDark ? 0.4 : 0.05,
@@ -407,9 +418,7 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
         elevation: 5,
     },
     userContent: {
-        backgroundColor: colors.primary[500],
-        borderBottomLeftRadius: borderRadius.xl,
-        borderBottomRightRadius: 4,
+        backgroundColor: isDark ? colors.neutral[800] : colors.neutral[200],
     },
     assistantContent: {
         backgroundColor: isDark ? 'rgba(28, 28, 30, 0.8)' : 'rgba(255, 255, 255, 0.9)',
@@ -417,41 +426,59 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
         borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
     },
     userText: {
-        color: '#FFF',
+        color: colors.text,
         ...typography.textStyles.body,
         lineHeight: 22,
     },
-    inputContainer: {
+    inputBar: {
         flexDirection: 'row',
+        alignItems: 'flex-end',
         paddingHorizontal: spacing[4],
         paddingVertical: spacing[4],
-        backgroundColor: isDark ? colors.background : '#FFF',
-        borderTopWidth: 1,
-        borderTopColor: colors.border,
-        alignItems: 'center',
-        gap: spacing[3],
+        backgroundColor: colors.background,
+    },
+    inputContainer: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'flex-end',
+        backgroundColor: isDark ? colors.surface : '#FFFFFF',
+        borderRadius: 26,
+        paddingHorizontal: spacing[2],
+        paddingVertical: 2,
+        borderWidth: 1,
+        borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: isDark ? 0.2 : 0.08,
+        shadowRadius: 12,
+        elevation: 4,
     },
     input: {
         flex: 1,
-        height: 48,
-        backgroundColor: isDark ? colors.surface : colors.neutral[100],
-        borderRadius: 24,
-        paddingHorizontal: spacing[5],
+        maxHeight: 140,
+        minHeight: 48,
+        paddingHorizontal: spacing[3],
+        paddingVertical: 12,
         color: colors.text,
-        borderWidth: 1,
-        borderColor: isDark ? colors.border : 'transparent',
+        fontSize: 16,
         ...typography.textStyles.body,
+        lineHeight: 22,
     },
-    sendButton: {
-        width: 48,
-        height: 48,
-        borderRadius: 24,
-        backgroundColor: colors.primary[500],
+    actionButton: {
+        width: 44,
+        height: 44,
         alignItems: 'center',
         justifyContent: 'center',
+        marginRight: spacing[2],
+        marginBottom: 4,
+        borderRadius: 22,
+        backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
     },
-    sendButtonDisabled: {
-        opacity: 0.5,
+    sendButton: {
+        width: 44,
+        height: 48,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     authCard: {
         backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
@@ -480,15 +507,15 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
         fontWeight: 'bold',
     },
     proactiveContent: {
-        borderColor: '#FFD700',
-        backgroundColor: isDark ? 'rgba(255, 215, 0, 0.05)' : 'rgba(255, 215, 0, 0.03)',
+        borderColor: colors.primary[500],
+        backgroundColor: isDark ? 'rgba(59, 130, 246, 0.05)' : 'rgba(59, 130, 246, 0.03)',
     },
     proactiveBadge: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 4,
         marginBottom: 8,
-        backgroundColor: 'rgba(255, 215, 0, 0.1)',
+        backgroundColor: 'rgba(59, 130, 246, 0.1)',
         paddingHorizontal: 8,
         paddingVertical: 2,
         borderRadius: 4,
@@ -497,6 +524,6 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     proactiveBadgeText: {
         fontSize: 10,
         fontWeight: '900',
-        color: '#B8860B',
+        color: colors.primary[500],
     }
 });

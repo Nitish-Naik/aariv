@@ -8,222 +8,20 @@ import {
   Switch,
   Text,
   TouchableOpacity,
-  View,
-  FlatList
+  View
 } from 'react-native';
-import { Card } from "../../components/Card"
-import { PlatformIcon } from "../../components/PlatformIcon"
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../context/ThemeContext';
 import { deleteAccount, getCurrentUser, signOut } from '../../services/auth';
-import { borderRadius, spacing, typography } from '../../theme';
+import { spacing, typography } from '../../theme';
 import type { User } from '../../types';
-import { format } from 'date-fns';
-
-interface TeamUpdate {
-  id: string;
-  platform: string;
-  type: 'message' | 'task' | 'update' | 'mention';
-  title: string;
-  description: string;
-  author: string;
-  timestamp: Date;  
-  unread: boolean;
-}
-
-const MOCK_UPDATES: TeamUpdate[] = [
-  {
-    id: '1',
-    platform: 'slack',
-    type: 'message' as const,
-    title: 'New message in #engineering',
-    description: 'Sarah: "Just pushed the new calendar feature to staging. Can someone review?"',
-    author: 'Sarah Johnson',
-    timestamp: new Date(Date.now() - 5 * 60 * 1000), 
-    unread: true,
-  },
-  {
-    id: '2',
-    platform: 'gmail',
-    type: 'mention' as const,
-    title: 'You were mentioned in "Q4 Planning"',
-    description: 'John mentioned you in the quarterly planning email thread',
-    author: 'John Smith',
-    timestamp: new Date(Date.now() - 30 * 60 * 1000), 
-    unread: true,
-  },
-  {
-    id: '3',
-    platform: 'slack',
-    type: 'task' as const,
-    title: 'New task assigned: Update documentation',
-    description: 'Please update the API documentation for the new endpoints',
-    author: 'Project Manager',
-    timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000), 
-    unread: false,
-  },
-  {
-    id: '4',
-    platform: 'google-calendar',
-    type: 'update' as const,
-    title: 'Meeting rescheduled: Sprint Review',
-    description: 'Sprint review has been moved from 2pm to 4pm tomorrow',
-    author: 'Calendar Bot',
-    timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000), 
-    unread: false,
-  },
-  {
-    id: '5',
-    platform: 'github',
-    type: 'message' as const,
-    title: 'New message in #design',
-    description: 'Mike: "Check out the new mockups I just posted!"',
-    author: 'Mike Chen',
-    timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000), 
-    unread: false,
-  },
-];
-
-const TeamHubView = ({ onBack }: { onBack: () => void }) => {
-  const [filter, setFilter] = useState<'all' | TeamUpdate['type']>('all');
-  const { colors, isDark } = useTheme();
-  const styles = getTeamHubStyles(colors, isDark);
-
-  const filteredUpdates =
-    filter === 'all'
-      ? MOCK_UPDATES
-      : MOCK_UPDATES.filter(update => update.type === filter);
-
-  const renderUpdate = ({ item }: { item: TeamUpdate }) => (
-    <TouchableOpacity onPress={() => console.log('Pressed', item.id)}>
-      <Card style={[styles.updateCard, item.unread && styles.unreadCard]}>
-        <View style={styles.updateHeader}>
-          <PlatformIcon
-            platform={item.platform as any}
-            size={32}
-          />
-          <View style={styles.updateInfo}>
-            <Text style={styles.updateAuthor}>{item.author}</Text>
-            <Text style={styles.updateTime}>
-              {format(item.timestamp, 'MMM d, h:mm a')}
-            </Text>
-          </View>
-          {item.unread && <View style={styles.unreadDot} />}
-        </View>
-
-        <View
-          style={[
-            styles.typeBadge,
-            {
-              backgroundColor:
-                item.type === 'message'
-                  ? colors.primary[500] + '20'
-                  : item.type === 'task'
-                    ? colors.semantic.warning + '20'
-                    : item.type === 'update'
-                      ? colors.semantic.info + '20'
-                      : colors.semantic.error + '20',
-            },
-          ]}
-        >
-          <Text
-            style={[
-              styles.typeText,
-              {
-                color:
-                  item.type === 'message'
-                    ? colors.primary[700]
-                    : item.type === 'task'
-                      ? colors.semantic.warning
-                      : item.type === 'update'
-                        ? colors.semantic.info
-                        : colors.semantic.error,
-              },
-            ]}
-          >
-            {item.type.toUpperCase()}
-          </Text>
-        </View>
-
-        <Text style={styles.updateTitle}>{item.title}</Text>
-        <Text style={styles.updateDescription} numberOfLines={2}>
-          {item.description}
-        </Text>
-      </Card>
-    </TouchableOpacity>
-  );
-
-  return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={onBack} style={styles.backButton}>
-          <Text style={styles.backButtonText}>← Back</Text>
-        </TouchableOpacity>
-        <Text style={styles.title}>Team Hub</Text>
-      </View>
-
-      <View style={styles.filters}>
-        <TouchableOpacity
-          style={[
-            styles.filterButton,
-            filter === 'all' && styles.filterButtonActive,
-          ]}
-          onPress={() => setFilter('all')}
-        >
-          <Text
-            style={[
-              styles.filterText,
-              filter === 'all' && styles.filterTextActive,
-            ]}
-          >
-            All
-          </Text>
-        </TouchableOpacity>
-        {(['message', 'task', 'update', 'mention'] as const).map((type) => (
-          <TouchableOpacity
-            key={type}
-            style={[
-              styles.filterButton,
-              filter === type && styles.filterButtonActive,
-            ]}
-            onPress={() => setFilter(type)}
-          >
-            <Text
-              style={[
-                styles.filterText,
-                filter === type && styles.filterTextActive,
-              ]}
-            >
-              {type.charAt(0).toUpperCase() + type.slice(1)}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      <FlatList
-        data={filteredUpdates}
-        renderItem={renderUpdate}
-        keyExtractor={item => item.id}
-        contentContainerStyle={styles.list}
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No team updates</Text>
-          </View>
-        }
-      />
-    </View>
-  );
-};
 
 export default function SettingsScreen() {
   const router = useRouter();
   const { colors, isDark, toggleTheme } = useTheme();
 
-  
   const [user, setUser] = useState<User | null>(null);
-  const [operatingMode, setOperatingMode] = useState<'passive' | 'executive'>('passive');
   const [notifications, setNotifications] = useState(true);
-  const [showTeamHub, setShowTeamHub] = useState(false);
 
   const styles = getStyles(colors, isDark);
 
@@ -277,40 +75,13 @@ export default function SettingsScreen() {
     );
   };
 
-  const renderModeCard = (mode: 'passive' | 'executive', title: string, desc: string, icon: string) => {
-    const isActive = operatingMode === mode;
-    return (
-      <TouchableOpacity
-        style={[styles.modeCard, isActive && styles.modeCardActive]}
-        onPress={() => setOperatingMode(mode)}
-      >
-        <View style={styles.modeHeader}>
-          <Ionicons
-            name={icon as any}
-            size={24}
-            color={isActive ? '#FFF' : colors.textSecondary}
-          />
-          <Text style={[styles.modeTitle, isActive && styles.modeTitleActive]}>{title}</Text>
-          {isActive && <View style={styles.pixelTag}><Text style={styles.pixelText}>ACTIVE</Text></View>}
-        </View>
-        <Text style={[styles.modeDesc, isActive && styles.modeDescActive]}>
-          {desc}
-        </Text>
-      </TouchableOpacity>
-    );
-  };
-
-  if (showTeamHub) {
-    return <TeamHubView onBack={() => setShowTeamHub(false)} />;
-  }
-
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <View style={{ flex: 1 }}>
-          <Text style={styles.greeting}>Protocols</Text>
+          <Text style={styles.greeting}>Settings</Text>
           <Text style={styles.briefing}>
-            Configure <Text style={styles.highlight}>neural weights</Text> and integration permissions.
+            Manage your account and preferences.
           </Text>
         </View>
         <TouchableOpacity style={styles.profileBtn} onPress={handleLogout}>
@@ -332,8 +103,8 @@ export default function SettingsScreen() {
       <ScrollView contentContainerStyle={styles.scrollContent}>
 
 
-        {/* NEURAL ACCESS */}
-        <Text style={styles.sectionLabel}>NEURAL ACCESS</Text>
+        {/* Core */}
+        <Text style={styles.sectionLabel}>Core</Text>
         <View style={styles.card}>
           <TouchableOpacity style={styles.row} onPress={async () => {
             
@@ -364,7 +135,6 @@ export default function SettingsScreen() {
               <Ionicons name="extension-puzzle" size={20} color={colors.primary[500]} />
             </View>
             <View style={{ flex: 1 }}>
-              {/* <Text style={styles.rowTitle}>Toolkit Capacity</Text> */}
               <Text style={styles.rowTitle}>Neural Marketplace</Text>
               <Text style={styles.rowSubtitle}>Manage integrations & capabilities</Text>
             </View>
@@ -373,44 +143,17 @@ export default function SettingsScreen() {
 
           <View style={styles.divider} />
 
-          {/* PREVIEW-ONLY: Team Hub */}
-          <TouchableOpacity style={styles.row} onPress={() => setShowTeamHub(true)}>
-            <View style={styles.rowIcon}>
-              <Ionicons name="people" size={20} color={colors.primary[500]} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.rowTitle}>Team Hub</Text>
-              <Text style={styles.rowSubtitle}>Preview: Team collaboration feed</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />
-          </TouchableOpacity>
-
-          <View style={styles.divider} />
-
-          {/* PREVIEW-ONLY: Execution Status */}
-          <TouchableOpacity style={styles.row} onPress={() => router.push('/settings')}>
-            <View style={styles.rowIcon}>
-              <Ionicons name="checkmark-done" size={20} color={colors.primary[500]} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.rowTitle}>Execution Status</Text>
-              <Text style={styles.rowSubtitle}>Preview: Action tracking screen</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />
-          </TouchableOpacity>
-        </View>
-
-        {/* CONFIGURATION */}
-        <Text style={styles.sectionLabel}>CONFIGURATION</Text>
-        <View style={styles.card}>
           <TouchableOpacity style={styles.row} onPress={() => router.push('/connect-platforms')}>
+            <View style={styles.rowIcon}>
+                <Ionicons name="apps" size={20} color={colors.primary[500]} />
+            </View>
             <Text style={styles.rowTitle}>Connected Apps</Text>
             <Ionicons name="chevron-forward" size={20} color={colors.neutral[400]} />
           </TouchableOpacity>
         </View>
 
-        {/* SYSTEM PREFS */}
-        <Text style={styles.sectionLabel}>SYSTEM PREFS</Text>
+        {/* Preferences */}
+        <Text style={styles.sectionLabel}>Preferences</Text>
         <View style={styles.card}>
           <View style={styles.row}>
             <Text style={styles.rowTitle}>Notifications</Text>
@@ -522,55 +265,6 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     marginBottom: -8, 
   },
   
-  modeContainer: {
-    gap: 12,
-  },
-  modeCard: {
-    padding: 16,
-    borderRadius: 16,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  modeCardActive: {
-    backgroundColor: colors.primary[500],
-    borderColor: colors.primary[500],
-  },
-  modeHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-    gap: 8
-  },
-  modeTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: colors.text,
-    flex: 1,
-  },
-  modeTitleActive: {
-    color: '#FFF',
-  },
-  modeDesc: {
-    fontSize: 13,
-    color: colors.textSecondary,
-    lineHeight: 20,
-  },
-  modeDescActive: {
-    color: 'rgba(255,255,255,0.8)'
-  },
-  pixelTag: {
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  pixelText: {
-    fontSize: 10,
-    color: '#FFF',
-    fontWeight: 'bold',
-  },
-  
   card: {
     backgroundColor: colors.surface,
     borderRadius: 16,
@@ -605,143 +299,4 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     backgroundColor: colors.border,
     marginLeft: 60, 
   },
-  
-  subCard: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: spacing[5],
-    backgroundColor: isDark ? '#1E293B' : '#F1F5F9',
-    borderRadius: borderRadius.xl,
-  },
-  subTitle: {
-    fontWeight: 'bold',
-    color: colors.text,
-  },
-  subDesc: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    marginTop: 2, 
-  },
-  subAction: {
-    fontWeight: 'bold',
-    color: colors.primary[500],
-  },
 });
-
-const getTeamHubStyles = (colors: any, isDark: boolean) => StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  header: {
-    padding: spacing[4],
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingTop: spacing[8],
-  },
-  backButton: {
-    marginRight: spacing[3],
-  },
-  backButtonText: {
-    ...typography.textStyles.body,
-    color: colors.primary[500],
-  },
-  title: {
-    ...typography.textStyles.h2,
-    color: colors.text,
-  },
-  filters: {
-    flexDirection: 'row',
-    padding: spacing[4],
-    gap: spacing[2],
-  },
-  filterButton: {
-    paddingHorizontal: spacing[3],
-    paddingVertical: spacing[2],
-    borderRadius: 8,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  filterButtonActive: {
-    backgroundColor: colors.primary[500],
-    borderColor: colors.primary[500],
-  },
-  filterText: {
-    ...typography.textStyles.bodySmall,
-    color: colors.textSecondary,
-  },
-  filterTextActive: {
-    color: '#FFFFFF',
-    fontWeight: typography.fontWeight.semibold,
-  },
-  list: {
-    padding: spacing[4],
-    paddingBottom: 120,
-  },
-  updateCard: {
-    marginBottom: spacing[3],
-  },
-  unreadCard: {
-    borderLeftWidth: 3,
-    borderLeftColor: colors.primary[500],
-  },
-  updateHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: spacing[3],
-  },
-  updateInfo: {
-    flex: 1,
-    marginLeft: spacing[3],
-  },
-  updateAuthor: {
-    ...typography.textStyles.body,
-    color: colors.text,
-    fontWeight: typography.fontWeight.semibold,
-  },
-  updateTime: {
-    ...typography.textStyles.caption,
-    color: colors.textSecondary,
-  },
-  unreadDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: colors.primary[500],
-  },
-  typeBadge: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: spacing[2],
-    paddingVertical: spacing[1],
-    borderRadius: 4,
-    marginBottom: spacing[2],
-  },
-  typeText: {
-    ...typography.textStyles.caption,
-    fontWeight: typography.fontWeight.semibold,
-  },
-  updateTitle: {
-    ...typography.textStyles.body,
-    color: colors.text,
-    fontWeight: typography.fontWeight.semibold,
-    marginBottom: spacing[1],
-  },
-  updateDescription: {
-    ...typography.textStyles.bodySmall,
-    color: colors.textSecondary,
-  },
-  emptyContainer: {
-    padding: spacing[8],
-    alignItems: 'center',
-  },
-  emptyText: {
-    ...typography.textStyles.body,
-    color: colors.textTertiary,
-  },
-});
-
-

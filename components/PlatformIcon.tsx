@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
@@ -43,6 +44,24 @@ export const PlatformIcon: React.FC<PlatformIconProps> = ({
     );
   }
 
+  if (!platform) {
+    return (
+      <View
+        style={[
+          styles.icon,
+          {
+            width: size,
+            height: size,
+            borderRadius: size / 2,
+            backgroundColor: colors.neutral[300],
+          },
+        ]}
+      >
+        <Ionicons name="apps" size={size * 0.6} color={colors.neutral[600]} />
+      </View>
+    );
+  }
+
   const slug = platform.toLowerCase().replace(/[-_]/g, '');
   const config = platformConfig[slug] || platformConfig[platform] || {
     color: colors.neutral[500],
@@ -85,4 +104,3 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 });
-

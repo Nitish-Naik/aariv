@@ -4,7 +4,6 @@ import { ActivityIndicator, Alert, StyleSheet, View } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import { KnowledgeGraphConsentScreen } from '../screens/KnowledgeGraphConsentScreen';
 import { KnowledgeGraphViewerScreen } from '../screens/KnowledgeGraphViewerScreen';
-import { KnowledgeGraphVisualizerScreen } from '../screens/KnowledgeGraphVisualizerScreen';
 import { api } from '../services/api';
 import { getCurrentUser } from '../services/auth';
 import type { KnowledgeGraphNode } from '../types';
@@ -18,7 +17,6 @@ export default function KnowledgeGraphRoute() {
   // State
   const [hasConsented, setHasConsented] = useState(false);
   const [checkingConsent, setCheckingConsent] = useState(true);
-  const [showVisualizer, setShowVisualizer] = useState(false);
   const [nodes, setNodes] = useState<KnowledgeGraphNode[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -97,20 +95,12 @@ export default function KnowledgeGraphRoute() {
 
   return (
     <View style={styles.container}>
-      {showVisualizer ? (
-        <KnowledgeGraphVisualizerScreen
-          onBack={() => setShowVisualizer(false)}
-          onToggleList={() => setShowVisualizer(false)}
-        />
-      ) : (
         <KnowledgeGraphViewerScreen
           nodes={nodes}
           onDeleteNode={handleDeleteNode}
           onClearAll={handleClearAll}
           onBack={() => router.back()}
-          onVisualize={() => setShowVisualizer(true)}
         />
-      )}
     </View>
   );
 }

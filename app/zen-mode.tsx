@@ -48,7 +48,6 @@ export default function ZenModeScreen() {
 
     const [actions, setActions] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
-    const [processedCount, setProcessedCount] = useState(0);
 
     // Toast State
     const [toastMsg, setToastMsg] = useState("");
@@ -150,7 +149,6 @@ export default function ZenModeScreen() {
     const handleApprove = async (action: any) => {
         // Remove from queue immediately for snappy UX
         setActions(prev => prev.filter(a => a.id !== action.id));
-        setProcessedCount(prev => prev + 1);
 
         // Update action status to approved
         const approvedAction = { ...action, status: 'approved' };
@@ -169,7 +167,6 @@ export default function ZenModeScreen() {
 
         // Remove from queue
         setActions(prev => prev.filter(a => a.id !== action.id));
-        setProcessedCount(prev => prev + 1);
 
         // Update action status to rejected  
         const rejectedAction = { ...action, status: 'rejected' };
@@ -230,13 +227,6 @@ export default function ZenModeScreen() {
             </Animated.View>
             <Text style={styles.emptyTitle}>All Caught Up</Text>
             <Text style={styles.emptySubtitle}>You&apos;ve reviewed all pending items for today.</Text>
-
-            <View style={styles.statsContainer}>
-                <View style={styles.statItem}>
-                    <Text style={styles.statValue}>{processedCount}</Text>
-                    <Text style={styles.statLabel}>Completed</Text>
-                </View>
-            </View>
 
             <TouchableOpacity
                 style={styles.returnButton}

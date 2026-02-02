@@ -105,8 +105,10 @@ export const SwipeCard: React.FC<SwipeCardProps> = ({
         </Text>
       </View>
 
-      <Text style={styles.title}>{action.title}</Text>
-      <Text style={styles.description}>{action.description}</Text>
+      <View style={styles.content}>
+        <Text style={styles.title}>{action.title}</Text>
+        <Text style={styles.description}>{action.description}</Text>
+      </View>
 
       <View style={styles.footer}>
         <View style={[styles.badge, styles.badgePending]}>
@@ -166,6 +168,10 @@ const getStyles = (colors: any) => StyleSheet.create({
     borderColor: colors.border,
     minHeight: 200,
     justifyContent: 'space-between',
+  },
+  content: {
+    flex: 1,
+    justifyContent: 'center',
   },
   header: {
     flexDirection: 'row',

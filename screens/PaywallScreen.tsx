@@ -1,10 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import React, { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
-    Dimensions,
     ScrollView,
     StyleSheet,
     Text,
@@ -12,11 +10,10 @@ import {
     View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Button } from '../components/Button';
 import { useTheme } from '../context/ThemeContext';
 import { getOfferings, purchaseSubscription, restorePurchases } from '../services/subscription';
 import { borderRadius, spacing, typography } from '../theme';
-
-const { width } = Dimensions.get('window');
 
 interface PaywallScreenProps {
     onClose: () => void;
@@ -24,7 +21,9 @@ interface PaywallScreenProps {
 }
 
 export const PaywallScreen = ({ onClose, onSuccess }: PaywallScreenProps) => {
-    const { colors, isDark } = useTheme();
+    const { colors } = useTheme();
+    const styles = getStyles(colors);
+
     const [loading, setLoading] = useState(true);
     const [purchasing, setPurchasing] = useState(false);
     const [offerings, setOfferings] = useState<any>(null);
@@ -47,7 +46,6 @@ export const PaywallScreen = ({ onClose, onSuccess }: PaywallScreenProps) => {
 
     const handlePurchase = async () => {
         if (!offerings) return;
-
         const pkg = selectedPlan === 'annual' ? offerings.annual : offerings.monthly;
         if (!pkg) {
             Alert.alert("Offerings not found", "Please check back later.");
@@ -86,328 +84,204 @@ export const PaywallScreen = ({ onClose, onSuccess }: PaywallScreenProps) => {
     };
 
     const benefits = [
-        { icon: 'infinite', title: 'Unlimited Toolkits', desc: 'Access 800+ apps like HubSpot, Jira, & Slack.' },
-        { icon: 'flash', title: 'Instant Execution', desc: 'No more approval caps on high-speed actions.' },
-        { icon: 'shield-checkmark', title: 'Early Access', desc: 'Get new features and visual overhauls first.' },
-        { icon: 'people', title: 'Team Hub', desc: 'Collaborate with your team seamlessly.' },
+        'Unlimited connected accounts & apps',
+        '5,000 monthly automations (for email, calendar, etc.)',
+        '100 monthly Advanced AI Lookups (for web search & research)',
+        'Priority access to new features & models',
+        'Dedicated team collaboration hub',
     ];
 
     if (loading) {
         return (
-            <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+            <View style={[styles.container, { justifyContent: 'center' }]}>
                 <ActivityIndicator size="large" color={colors.primary[500]} />
             </View>
         );
     }
-
+    
     return (
         <View style={styles.container}>
-            <LinearGradient
-                colors={isDark ? ['#1e1b4b', '#000000'] : ['#e0e7ff', '#ffffff']}
-                style={StyleSheet.absoluteFill}
-            />
-
-            <SafeAreaView style={{ flex: 1 }}>
-                <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-                    {/* Header */}
+            <SafeAreaView style={{ flex: 1 }} edges={['bottom']}>
+                <ScrollView contentContainerStyle={styles.scrollContent}>
                     <View style={styles.header}>
-                        <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-                            <Ionicons name="close" size={24} color={colors.text} />
+                        <Text style={styles.title}>Aariv Pro</Text>
+                         <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+                            <Ionicons name="close" size={28} color={colors.textSecondary} />
                         </TouchableOpacity>
-
-                        <View style={styles.logoAndTitle}>
-                            <LinearGradient
-                                colors={['#4f46e5', '#9333ea']}
-                                style={styles.logoIcon}
-                            >
-                                <Ionicons name="sparkles" size={24} color="#FFF" />
-                            </LinearGradient>
-                            <Text style={styles.title}>Aariv <Text style={styles.proLabel}>PRO</Text></Text>
-                            <Text style={styles.subtitle}>Unleash the full power of your productivity assistant.</Text>
-                        </View>
+                    </View>
+                    <Text style={styles.subtitle}>Become more focused and prepared than ever before.</Text>
+                    
+                    <View style={styles.planSelector}>
+                        <TouchableOpacity 
+                            style={[styles.planOption, selectedPlan === 'monthly' && styles.planOptionSelected]} 
+                            onPress={() => setSelectedPlan('monthly')}
+                        >
+                            <Text style={[styles.planText, selectedPlan === 'monthly' && styles.planTextSelected]}>Monthly</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity 
+                            style={[styles.planOption, selectedPlan === 'annual' && styles.planOptionSelected]} 
+                            onPress={() => setSelectedPlan('annual')}
+                        >
+                            <Text style={[styles.planText, selectedPlan === 'annual' && styles.planTextSelected]}>Annual</Text>
+                             <View style={styles.badge}>
+                                <Text style={styles.badgeText}>SAVE 40%</Text>
+                            </View>
+                        </TouchableOpacity>
                     </View>
 
-                    {/* Benefits Grid */}
-                    <View style={styles.benefitsGrid}>
+                    <View style={styles.pricingDisplay}>
+                        <Text style={styles.price}>
+                            {selectedPlan === 'annual' 
+                                ? offerings?.annual?.product?.priceString || '$199.99' 
+                                : offerings?.monthly?.product?.priceString || '$19.99'}
+                        </Text>
+                        <Text style={styles.priceUnit}>
+                            {selectedPlan === 'annual' ? '/ year' : '/ month'}
+                        </Text>
+                    </View>
+
+                    <View style={styles.benefitsContainer}>
                         {benefits.map((benefit, index) => (
-                            <View key={index} style={styles.benefitCard}>
-                                <View style={styles.benefitIconContainer}>
-                                    <Ionicons name={benefit.icon as any} size={24} color={colors.primary[500]} />
-                                </View>
-                                <View style={{ flex: 1 }}>
-                                    <Text style={styles.benefitTitle}>{benefit.title}</Text>
-                                    <Text style={styles.benefitDesc}>{benefit.desc}</Text>
-                                </View>
+                            <View key={index} style={styles.benefitItem}>
+                                <Ionicons name="checkmark-circle-outline" size={22} color={colors.primary[500]} />
+                                <Text style={styles.benefitText}>{benefit}</Text>
                             </View>
                         ))}
                     </View>
-
-                    {/* Pricing Selector */}
-                    <View style={styles.pricingContainer}>
-                        <TouchableOpacity
-                            style={[
-                                styles.pricingCard,
-                                selectedPlan === 'annual' && styles.pricingCardActive,
-                                { borderColor: selectedPlan === 'annual' ? colors.primary[500] : colors.border }
-                            ]}
-                            onPress={() => setSelectedPlan('annual')}
-                            activeOpacity={0.8}
-                        >
-                            <View style={styles.pricingHeader}>
-                                <Text style={styles.planName}>Annual Pro</Text>
-                                <View style={styles.bestValueBadge}>
-                                    <Text style={styles.bestValueText}>BEST VALUE</Text>
-                                </View>
-                            </View>
-                            <Text style={styles.planPrice}>{offerings?.annual?.product?.priceString || '$199.99'}<Text style={styles.perYear}>/year</Text></Text>
-                            <Text style={styles.planSavings}>Save 40% compared to monthly</Text>
-                            <View style={[styles.checkbox, selectedPlan === 'annual' && { backgroundColor: colors.primary[500] }]}>
-                                {selectedPlan === 'annual' && <Ionicons name="checkmark" size={14} color="#FFF" />}
-                            </View>
-                        </TouchableOpacity>
-
-                        <TouchableOpacity
-                            style={[
-                                styles.pricingCard,
-                                selectedPlan === 'monthly' && styles.pricingCardActive,
-                                { borderColor: selectedPlan === 'monthly' ? colors.primary[500] : colors.border }
-                            ]}
-                            onPress={() => setSelectedPlan('monthly')}
-                            activeOpacity={0.8}
-                        >
-                            <View style={styles.pricingHeader}>
-                                <Text style={styles.planName}>Monthly Pro</Text>
-                            </View>
-                            <Text style={styles.planPrice}>{offerings?.monthly?.product?.priceString || '$19.99'}<Text style={styles.perYear}>/mo</Text></Text>
-                            <Text style={styles.planSavings}>Cancel anytime, no commitment</Text>
-                            <View style={[styles.checkbox, selectedPlan === 'monthly' && { backgroundColor: colors.primary[500] }]}>
-                                {selectedPlan === 'monthly' && <Ionicons name="checkmark" size={14} color="#FFF" />}
-                            </View>
-                        </TouchableOpacity>
-                    </View>
-
-                    {/* Checkout Button */}
-                    <View style={styles.footer}>
-                        <TouchableOpacity
-                            style={[styles.purchaseButton, purchasing && { opacity: 0.7 }]}
-                            onPress={handlePurchase}
-                            disabled={purchasing}
-                        >
-                            <LinearGradient
-                                colors={['#4f46e5', '#7c3aed']}
-                                start={{ x: 0, y: 0 }}
-                                end={{ x: 1, y: 0 }}
-                                style={styles.purchaseGradient}
-                            >
-                                {purchasing ? (
-                                    <ActivityIndicator color="#FFF" />
-                                ) : (
-                                    <Text style={styles.purchaseButtonText}>
-                                        Continue with {selectedPlan.charAt(0).toUpperCase() + selectedPlan.slice(1)}
-                                    </Text>
-                                )}
-                            </LinearGradient>
-                        </TouchableOpacity>
-
-                        <TouchableOpacity onPress={handleRestore} style={styles.restoreButton}>
-                            <Text style={styles.restoreText}>Restore Purchases</Text>
-                        </TouchableOpacity>
-
-                        <Text style={styles.disclaimer}>
-                            Recurring billing. Cancel anytime. By subscribing, you agree to our Terms and Privacy Policy.
-                        </Text>
-                    </View>
                 </ScrollView>
+                
+                <View style={styles.footer}>
+                     <Button
+                        title="Unlock Pro"
+                        onPress={handlePurchase}
+                        loading={purchasing}
+                        size="large"
+                        variant="primary"
+                    />
+                    <Button
+                        title="Restore Purchase"
+                        onPress={handleRestore}
+                        variant="ghost"
+                    />
+                </View>
             </SafeAreaView>
         </View>
     );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (colors: any) => StyleSheet.create({
     container: {
         flex: 1,
+        backgroundColor: colors.background,
     },
     scrollContent: {
-        paddingBottom: spacing[10],
+        padding: spacing[5],
+        paddingBottom: spacing[20] // Extra padding to ensure content is above footer
     },
     header: {
-        paddingHorizontal: spacing[6],
-        paddingTop: spacing[2],
-    },
-    closeButton: {
-        alignSelf: 'flex-start',
-        padding: spacing[2],
-        marginLeft: -spacing[2],
-    },
-    logoAndTitle: {
-        alignItems: 'center',
-        marginVertical: spacing[6],
-    },
-    logoIcon: {
-        width: 64,
-        height: 64,
-        borderRadius: 32,
-        alignItems: 'center',
+        flexDirection: 'row',
         justifyContent: 'center',
-        marginBottom: spacing[4],
-        shadowColor: '#4f46e5',
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.4,
-        shadowRadius: 16,
-        elevation: 8,
+        alignItems: 'center',
+        paddingVertical: spacing[4],
     },
     title: {
-        ...typography.textStyles.h1,
-        fontSize: 32,
-        textAlign: 'center',
-        color: '#FFF',
+        ...typography.textStyles.h3,
+        color: colors.text,
     },
-    proLabel: {
-        color: '#9333ea',
-        fontWeight: '900',
+    closeButton: {
+        position: 'absolute',
+        right: 0,
+        top: '50%',
+        marginTop: -14,
     },
     subtitle: {
         ...typography.textStyles.body,
+        color: colors.textSecondary,
         textAlign: 'center',
-        color: 'rgba(255, 255, 255, 0.7)',
-        marginTop: spacing[2],
-        paddingHorizontal: spacing[4],
+        marginBottom: spacing[6],
     },
-    benefitsGrid: {
-        paddingHorizontal: spacing[6],
-        gap: spacing[4],
-        marginBottom: spacing[8],
-    },
-    benefitCard: {
+    planSelector: {
         flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: 'rgba(255, 255, 255, 0.05)',
-        padding: spacing[4],
-        borderRadius: borderRadius.xl,
-        borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.1)',
+        backgroundColor: colors.surface,
+        borderRadius: borderRadius.lg,
+        padding: spacing[1],
+        marginBottom: spacing[5],
     },
-    benefitIconContainer: {
-        width: 44,
-        height: 44,
-        borderRadius: 22,
-        backgroundColor: 'rgba(79, 70, 229, 0.1)',
+    planOption: {
+        flex: 1,
+        paddingVertical: spacing[3],
+        borderRadius: borderRadius.md,
         alignItems: 'center',
         justifyContent: 'center',
-        marginRight: spacing[4],
-    },
-    benefitTitle: {
-        ...typography.textStyles.body,
-        fontWeight: '700',
-        color: '#FFF',
-    },
-    benefitDesc: {
-        ...typography.textStyles.bodySmall,
-        color: 'rgba(255, 255, 255, 0.6)',
-        marginTop: 2,
-    },
-    pricingContainer: {
-        paddingHorizontal: spacing[6],
-        gap: spacing[4],
-    },
-    pricingCard: {
-        backgroundColor: 'rgba(255, 255, 255, 0.05)',
-        borderRadius: borderRadius.xl,
-        padding: spacing[5],
-        borderWidth: 2,
-        position: 'relative',
-    },
-    pricingCardActive: {
-        backgroundColor: 'rgba(79, 70, 229, 0.08)',
-    },
-    pricingHeader: {
         flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        marginBottom: spacing[3],
     },
-    planName: {
-        ...typography.textStyles.body,
-        fontWeight: '800',
-        color: '#FFF',
-        fontSize: 18,
+    planOptionSelected: {
+        backgroundColor: colors.background,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
     },
-    bestValueBadge: {
-        backgroundColor: '#9333ea',
-        paddingHorizontal: 8,
+    planText: {
+        ...typography.textStyles.button,
+        fontSize: 16,
+        color: colors.textSecondary,
+    },
+    planTextSelected: {
+        color: colors.text,
+    },
+    badge: {
+        backgroundColor: colors.primary[500],
+        borderRadius: borderRadius.sm,
+        paddingHorizontal: spacing[2],
         paddingVertical: 2,
-        borderRadius: 4,
+        marginLeft: spacing[2],
     },
-    bestValueText: {
+    badgeText: {
+        ...typography.textStyles.caption,
+        color: 'white',
+        fontWeight: 'bold',
         fontSize: 10,
-        fontWeight: '900',
-        color: '#FFF',
     },
-    planPrice: {
-        fontSize: 28,
-        fontWeight: '800',
-        color: '#FFF',
-    },
-    perYear: {
-        fontSize: 14,
-        color: 'rgba(255, 255, 255, 0.5)',
-        fontWeight: '500',
-    },
-    planSavings: {
-        ...typography.textStyles.bodySmall,
-        color: 'rgba(255, 255, 255, 0.6)',
-        marginTop: 4,
-    },
-    checkbox: {
-        position: 'absolute',
-        top: spacing[5],
-        right: spacing[5],
-        width: 22,
-        height: 22,
-        borderRadius: 11,
-        borderWidth: 2,
-        borderColor: 'rgba(255, 255, 255, 0.2)',
-        alignItems: 'center',
+    pricingDisplay: {
+        flexDirection: 'row',
+        alignItems: 'baseline',
         justifyContent: 'center',
+        marginBottom: spacing[6],
+    },
+    price: {
+        ...typography.textStyles.h1,
+        color: colors.text,
+    },
+    priceUnit: {
+        ...typography.textStyles.h4,
+        color: colors.textSecondary,
+        marginLeft: spacing[2],
+    },
+    benefitsContainer: {
+        gap: spacing[4],
+    },
+    benefitItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing[3],
+    },
+    benefitText: {
+        ...typography.textStyles.body,
+        color: colors.text,
+        flex: 1,
+        lineHeight: 22,
     },
     footer: {
-        paddingHorizontal: spacing[6],
-        marginTop: spacing[8],
-        alignItems: 'center',
-    },
-    purchaseButton: {
-        width: '100%',
-        height: 64,
-        borderRadius: 32,
-        overflow: 'hidden',
-        shadowColor: '#4f46e5',
-        shadowOffset: { width: 0, height: 12 },
-        shadowOpacity: 0.5,
-        shadowRadius: 20,
-        elevation: 10,
-    },
-    purchaseGradient: {
-        flex: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    purchaseButtonText: {
-        color: '#FFF',
-        fontSize: 18,
-        fontWeight: '800',
-    },
-    restoreButton: {
-        paddingVertical: spacing[4],
-    },
-    restoreText: {
-        color: 'rgba(255, 255, 255, 0.5)',
-        fontWeight: '600',
-    },
-    disclaimer: {
-        fontSize: 11,
-        color: 'rgba(255, 255, 255, 0.4)',
-        textAlign: 'center',
-        lineHeight: 16,
-        paddingHorizontal: spacing[4],
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        padding: spacing[5],
+        backgroundColor: colors.background,
+        borderTopWidth: 1,
+        borderColor: colors.border,
+        gap: spacing[2],
     }
 });

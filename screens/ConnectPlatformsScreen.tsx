@@ -41,6 +41,7 @@ export const ConnectPlatformsScreen: React.FC<ConnectPlatformsScreenProps> = ({
   actionLabel,
   onAction,
 }) => {
+  // console.log("Connections prop in ConnectPlatformsScreen: ", JSON.stringify(connections, null, 2));
   const { colors, isDark } = useTheme();
   const styles = getStyles(colors, isDark);
   const [connecting, setConnecting] = useState<Platform | null>(null);

@@ -1,14 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import { format } from 'date-fns';
-import React, { useState } from 'react';
+import React from 'react';
 import {
-    LayoutAnimation,
-    Platform,
     ScrollView,
     StyleSheet,
     Text,
     TouchableOpacity,
-    UIManager,
     View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -18,19 +15,11 @@ import { useTheme } from '../context/ThemeContext';
 import { spacing, typography } from '../theme';
 import type { KnowledgeGraphNode } from '../types';
 
-if (
-  Platform.OS === 'android' &&
-  UIManager.setLayoutAnimationEnabledExperimental
-) {
-  UIManager.setLayoutAnimationEnabledExperimental(true);
-}
-
 interface KnowledgeGraphViewerScreenProps {
   nodes: KnowledgeGraphNode[];
   onDeleteNode: (nodeId: string) => void;
   onClearAll: () => void;
   onBack: () => void;
-  onVisualize?: () => void;
 }
 
 export const KnowledgeGraphViewerScreen: React.FC<KnowledgeGraphViewerScreenProps> = ({
@@ -38,28 +27,11 @@ export const KnowledgeGraphViewerScreen: React.FC<KnowledgeGraphViewerScreenProp
   onDeleteNode,
   onClearAll,
   onBack,
-  onVisualize,
 }) => {
   const { colors, isDark } = useTheme();
   const styles = getStyles(colors, isDark);
-  const [filter, setFilter] = useState<'all' | KnowledgeGraphNode['type']>('all');
 
-  const handleFilterChange = (newFilter: 'all' | KnowledgeGraphNode['type']) => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setFilter(newFilter);
-  };
-
-  const filteredNodes =
-    filter === 'all'
-      ? nodes
-      : nodes.filter(node => node.type === filter);
-
-  const nodeTypeCounts = {
-    pattern: nodes.filter(n => n.type === 'pattern').length,
-    preference: nodes.filter(n => n.type === 'preference').length,
-    ritual: nodes.filter(n => n.type === 'ritual').length,
-    cadence: nodes.filter(n => n.type === 'cadence').length,
-  };
+  const filteredNodes = nodes;
 
   const getNodeIcon = (type: string) => {
     switch (type) {
@@ -192,98 +164,19 @@ export const KnowledgeGraphViewerScreen: React.FC<KnowledgeGraphViewerScreenProp
                 <Ionicons name="arrow-back" size={24} color={colors.text} />
                 <Text style={styles.backText}>Back</Text>
             </TouchableOpacity>
-            {onVisualize && (
-                <TouchableOpacity onPress={onVisualize} style={styles.visualizeButton}>
-                    <Ionicons name="git-network-outline" size={24} color={colors.primary[500]} />
-                </TouchableOpacity>
-            )}
         </View>
         <Text style={styles.title}>Knowledge Graph</Text>
       </View>
 
       <ScrollView 
         showsVerticalScrollIndicator={false}
-        stickyHeaderIndices={[1]} // Make filters sticky
       >
-        <View style={styles.statsContainer}>
-            <Card style={styles.statsCard}>
-            <View style={styles.statHeader}>
-                <Ionicons name="analytics" size={20} color={colors.primary[500]} />
-                <Text style={styles.statTitle}>Graph Insights</Text>
-            </View>
-            <View style={styles.statsGrid}>
-                <View style={styles.statItem}>
-                    <Text style={styles.statValue}>{nodes.length}</Text>
-                    <Text style={styles.statLabel}>Total Nodes</Text>
-                </View>
-                <View style={styles.verticalDivider} />
-                <View style={styles.statItem}>
-                    <Text style={styles.statValue}>{nodeTypeCounts.pattern}</Text>
-                    <Text style={styles.statLabel}>Patterns</Text>
-                </View>
-                <View style={styles.verticalDivider} />
-                <View style={styles.statItem}>
-                    <Text style={styles.statValue}>{nodeTypeCounts.preference}</Text>
-                    <Text style={styles.statLabel}>Prefs</Text>
-                </View>
-            </View>
-            </Card>
-        </View>
-
-        <View style={styles.filtersContainer}>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filtersScroll}>
-                <TouchableOpacity
-                style={[
-                    styles.filterButton,
-                    filter === 'all' && styles.filterButtonActive,
-                ]}
-                onPress={() => handleFilterChange('all')}
-                >
-                <Text
-                    style={[
-                    styles.filterText,
-                    filter === 'all' && styles.filterTextActive,
-                    ]}
-                >
-                    All Nodes
-                </Text>
-                </TouchableOpacity>
-                {(['pattern', 'preference', 'ritual', 'cadence'] as const).map(
-                (type) => (
-                    <TouchableOpacity
-                    key={type}
-                    style={[
-                        styles.filterButton,
-                        filter === type && styles.filterButtonActive,
-                    ]}
-                    onPress={() => handleFilterChange(type)}
-                    >
-                    <Ionicons 
-                        name={getNodeIcon(type)} 
-                        size={14} 
-                        color={filter === type ? '#FFF' : colors.textSecondary} 
-                        style={{ marginRight: spacing[1.5] }}
-                    />
-                    <Text
-                        style={[
-                        styles.filterText,
-                        filter === type && styles.filterTextActive,
-                        ]}
-                    >
-                        {type.charAt(0).toUpperCase() + type.slice(1)}
-                    </Text>
-                    </TouchableOpacity>
-                )
-                )}
-            </ScrollView>
-        </View>
-
         <View style={styles.contentContainer}>
             {filteredNodes.length === 0 ? (
             <View style={styles.emptyContainer}>
                 <Ionicons name="cube-outline" size={64} color={colors.textTertiary} />
                 <Text style={styles.emptyText}>No knowledge nodes found</Text>
-                <Text style={styles.emptySubtext}>Your graph is currently empty for this category.</Text>
+                <Text style={styles.emptySubtext}>Your graph is currently empty.</Text>
             </View>
             ) : (
             filteredNodes.map(renderNode)
@@ -334,98 +227,22 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     ...typography.textStyles.body,
     color: colors.text,
   },
-  visualizeButton: {
-    padding: 4,
-  },
   title: {
     ...typography.textStyles.h2,
     color: colors.text,
     marginBottom: spacing[2],
   },
-  statsContainer: {
-    padding: spacing[4],
-  },
-  statsCard: {
-    padding: spacing[4],
-    backgroundColor: isDark ? colors.surfaceElevated : '#fff',
-    borderColor: colors.border,
-    borderWidth: 1,
-  },
-  statHeader: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      marginBottom: spacing[4],
-      gap: 8,
-  },
-  statTitle: {
-      ...typography.textStyles.h4,
-      color: colors.text,
-  },
-  statsGrid: {
-      flexDirection: 'row',
-      justifyContent: 'space-around',
-      alignItems: 'center',
-  },
-  statItem: {
-      alignItems: 'center',
-  },
-  verticalDivider: {
-      width: 1,
-      height: 24,
-      backgroundColor: colors.border,
-  },
-  statLabel: {
-    ...typography.textStyles.caption,
-    color: colors.textSecondary,
-    marginTop: 2,
-  },
-  statValue: {
-    ...typography.textStyles.h3,
-    color: colors.primary[500],
-  },
   
-  // Filters
-  filtersContainer: {
-    backgroundColor: colors.background,
-    paddingVertical: spacing[2],
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  filtersScroll: {
-    paddingHorizontal: spacing[4],
-    gap: spacing[2],
-  },
-  filterButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing[4],
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  filterButtonActive: {
-    backgroundColor: colors.primary[500],
-    borderColor: colors.primary[500],
-  },
-  filterText: {
-    ...typography.textStyles.bodySmall,
-    color: colors.textSecondary,
-    fontWeight: '600',
-  },
-  filterTextActive: {
-    color: '#FFFFFF',
-  },
-
   // Content
   contentContainer: {
     padding: spacing[4],
+    gap: spacing[4], // Add gap for generous spacing between cards
   },
   nodeCard: {
-    marginBottom: spacing[4],
+    borderRadius: 16, // More rounded corners
     backgroundColor: isDark ? colors.surfaceElevated : '#fff',
     borderColor: colors.border,
+    borderWidth: 1,
   },
   expiredCard: {
     opacity: 0.7,
@@ -510,13 +327,13 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     alignItems: 'center',
     padding: spacing[3],
     borderWidth: 1,
-    borderColor: colors.semantic.error + '30',
+    borderColor: colors.neutral[300], // Softer border
     borderRadius: 12,
-    backgroundColor: colors.semantic.error + '05',
+    backgroundColor: colors.neutral[100], // Softer background
   },
   deleteButtonText: {
     ...typography.textStyles.bodySmall,
-    color: colors.semantic.error,
+    color: colors.textSecondary, // Softer text color
     fontWeight: typography.fontWeight.semibold,
   },
   emptyContainer: {

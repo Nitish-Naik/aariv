@@ -19,6 +19,7 @@ import { useTheme } from '../context/ThemeContext';
 import { api } from '../services/api';
 import { getCurrentUser } from '../services/auth';
 import { borderRadius, spacing, typography } from '../theme';
+import { PlatformIcon } from '../components/PlatformIcon';
 import { MOCK_BUNDLES, MOCK_TOOLKITS, Toolkit, ToolkitBundle } from '../utils/mockToolkits';
 
 export default function ToolkitsScreen() {
@@ -27,8 +28,6 @@ export default function ToolkitsScreen() {
     const styles = getStyles(colors, isDark);
 
     // State
-    const [searchQuery, setSearchQuery] = useState('');
-    const [selectedCategory, setSelectedCategory] = useState<string>('All');
     const [toolkits, setToolkits] = useState<Toolkit[]>(MOCK_TOOLKITS);
     const [bundles, setBundles] = useState<ToolkitBundle[]>(MOCK_BUNDLES);
     const [installedIds, setInstalledIds] = useState<Set<string>>(new Set(['1', '2', '6', '11']));
@@ -73,16 +72,7 @@ export default function ToolkitsScreen() {
         fetchToolkits();
     }, []);
 
-    const categories = ['All', 'Productivity', 'Development', 'Communication', 'Finance', 'Design', 'Social'];
-
-    const filteredToolkits = useMemo(() => {
-        return toolkits.filter(item => {
-            const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                item.description.toLowerCase().includes(searchQuery.toLowerCase());
-            const matchesCategory = selectedCategory === 'All' || item.category === selectedCategory;
-            return matchesSearch && matchesCategory;
-        });
-    }, [searchQuery, selectedCategory, toolkits]);
+    const filteredToolkits = toolkits;
 
     // Handlers
     const initiateConnection = (toolkit: Toolkit) => {
@@ -163,10 +153,9 @@ export default function ToolkitsScreen() {
                         <>
                             <View style={styles.modalHeader}>
                                 <View style={styles.modalIconBg}>
-                                    <Ionicons name={pendingToolkit.icon as any} size={32} color={colors.primary[500]} />
+                                    <PlatformIcon platform={pendingToolkit.platform as any} size={32} />
                                 </View>
                                 <Text style={styles.modalTitle}>Connect {pendingToolkit.name}</Text>
-                                <Text style={styles.modalSubtitle}>Permission Handshake</Text>
                             </View>
 
                             <ScrollView style={styles.scopeList}>
@@ -174,19 +163,14 @@ export default function ToolkitsScreen() {
                                 {pendingToolkit.scopes?.map(scope => (
                                     <View key={scope.id} style={styles.scopeItem}>
                                         <Ionicons
-                                            name={scope.riskLevel === 'critical' || scope.riskLevel === 'high' ? 'warning' : 'checkmark-circle'}
+                                            name={'checkmark-circle'}
                                             size={20}
-                                            color={getRiskColor(scope.riskLevel, isDark)}
+                                            color={colors.semantic.success}
                                             style={{ marginRight: spacing[3] }}
                                         />
                                         <View style={{ flex: 1 }}>
                                             <Text style={styles.scopeLabel}>{scope.label}</Text>
                                             <Text style={styles.scopeDesc}>{scope.description}</Text>
-                                        </View>
-                                        <View style={[styles.riskTag, { backgroundColor: getRiskColor(scope.riskLevel, isDark) + '20' }]}>
-                                            <Text style={[styles.riskText, { color: getRiskColor(scope.riskLevel, isDark) }]}>
-                                                {scope.riskLevel ? scope.riskLevel.toUpperCase() : 'INFO'}
-                                            </Text>
                                         </View>
                                     </View>
                                 ))}
@@ -194,7 +178,7 @@ export default function ToolkitsScreen() {
 
                             <View style={styles.modalFooter}>
                                 <Text style={styles.disclaimer}>
-                                    By connecting, you allow the Assistant to act on your behalf within these limits.
+                                    Aariv will use these permissions to act on your behalf.
                                 </Text>
                                 <View style={styles.modalActions}>
                                     <TouchableOpacity style={styles.cancelBtn} onPress={() => setModalVisible(false)}>
@@ -212,42 +196,23 @@ export default function ToolkitsScreen() {
         </Modal>
     );
 
-    const renderBundleItem = ({ item }: { item: ToolkitBundle }) => (
-        <TouchableOpacity style={styles.bundleCard} onPress={() => installBundle(item)}>
-            <View style={styles.bundleHeader}>
-                <Ionicons name={item.icon as any} size={24} color={colors.text} />
-                <View style={styles.savingsTag}>
-                    <Text style={styles.savingsText}>{item.savings}</Text>
-                </View>
-            </View>
-            <Text style={styles.bundleTitle}>{item.title}</Text>
-            <Text style={styles.bundleDesc} numberOfLines={2}>{item.description}</Text>
-            <View style={styles.bundleFooter}>
-                <Text style={styles.bundleCount}>{(item.toolkitIds || []).length} Tools</Text>
-                <Ionicons name="arrow-forward-circle" size={24} color={colors.primary[500]} />
-            </View>
-        </TouchableOpacity>
-    );
-
     const renderToolkitItem = ({ item }: { item: Toolkit }) => {
         const isInstalled = installedIds.has(item.id);
 
         return (
-            <View style={styles.card}>
-                <View style={styles.iconContainer}>
-                    <Ionicons name={item.icon as any} size={24} color={isDark ? '#FFF' : colors.primary[600]} />
+            <View style={[styles.card, isInstalled && styles.cardConnected]}>
+                <View style={[styles.iconContainer, isInstalled && styles.iconWrapperConnected]}>
+                    <PlatformIcon platform={item.platform as any} size={24} />
                 </View>
 
                 <View style={styles.cardContent}>
-                    <View style={styles.cardHeader}>
-                        <Text style={styles.cardTitle}>{item.name}</Text>
-                        {item.isPro && (
-                            <View style={styles.premiumTag}>
-                                <Text style={styles.premiumText}>PRO</Text>
-                            </View>
-                        )}
+                    <Text style={styles.cardTitle}>{item.name}</Text>
+                    <View style={styles.statusRow}>
+                        <View style={[styles.statusDot, { backgroundColor: isInstalled ? colors.semantic.success : colors.neutral[400] }]} />
+                        <Text style={styles.statusText}>
+                            {isInstalled ? 'Active' : 'Not Connected'}
+                        </Text>
                     </View>
-                    <Text style={styles.cardDesc} numberOfLines={2}>{item.description}</Text>
                 </View>
 
                 <TouchableOpacity
@@ -261,7 +226,7 @@ export default function ToolkitsScreen() {
                         styles.actionButtonText,
                         isInstalled ? styles.actionButtonTextActive : styles.actionButtonTextInactive
                     ]}>
-                        {isInstalled ? 'ACTIVE' : 'ADD'}
+                        {isInstalled ? 'MANAGE' : 'CONNECT'}
                     </Text>
                 </TouchableOpacity>
             </View>
@@ -277,62 +242,15 @@ export default function ToolkitsScreen() {
                 <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
                     <Ionicons name="arrow-back" size={24} color={colors.text} />
                 </TouchableOpacity>
-                <View>
-                    <Text style={styles.headerTitle}>Neural Marketplace</Text>
-                    <Text style={styles.headerSubtitle}>865 Available Modules</Text>
+                <View style={{ flex: 1 }}>
+                    <Text style={styles.headerTitle}>Toolkits</Text>
                 </View>
-                <TouchableOpacity style={styles.filterButton}>
-                    <Ionicons name="filter" size={24} color={colors.text} />
-                </TouchableOpacity>
             </View>
 
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: spacing[24] }}>
-                {/* Search */}
-                <View style={styles.searchContainer}>
-                    <Ionicons name="search" size={20} color={colors.neutral[400]} style={styles.searchIcon} />
-                    <TextInput
-                        style={styles.searchInput}
-                        placeholder="Search capabilities..."
-                        placeholderTextColor={colors.neutral[400]}
-                        value={searchQuery}
-                        onChangeText={setSearchQuery}
-                    />
-                </View>
-
-                {/* Categories */}
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.hScroll} contentContainerStyle={styles.hScrollContent}>
-                    {categories.map((cat) => (
-                        <TouchableOpacity
-                            key={cat}
-                            style={[styles.catChip, selectedCategory === cat && styles.catChipActive]}
-                            onPress={() => setSelectedCategory(cat)}
-                        >
-                            <Text style={[styles.catText, selectedCategory === cat && styles.catTextActive]}>
-                                {cat}
-                            </Text>
-                        </TouchableOpacity>
-                    ))}
-                </ScrollView>
-
-                {/* Smart Bundles (Only show when not searching) */}
-                {searchQuery === '' && selectedCategory === 'All' && (
-                    <View style={styles.section}>
-                        <Text style={styles.sectionTitle}>Smart Bundles</Text>
-                        <FlatList
-                            data={bundles}
-                            renderItem={renderBundleItem}
-                            keyExtractor={item => item.id}
-                            horizontal
-                            showsHorizontalScrollIndicator={false}
-                            contentContainerStyle={{ paddingHorizontal: spacing[6] }}
-                            ItemSeparatorComponent={() => <View style={{ width: spacing[4] }} />}
-                        />
-                    </View>
-                )}
-
                 {/* Toolkits List */}
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Individual Modules</Text>
+                    <Text style={styles.sectionTitle}>Available Toolkits</Text>
                     {filteredToolkits.map(item => (
                         <View key={item.id} style={{ marginBottom: spacing[4], paddingHorizontal: spacing[6] }}>
                             {renderToolkitItem({ item })}
@@ -365,16 +283,6 @@ export default function ToolkitsScreen() {
     );
 }
 
-function getRiskColor(level: string, isDark: boolean) {
-    switch (level) {
-        case 'critical': return '#ef4444'; // Red
-        case 'high': return '#f97316'; // Orange
-        case 'medium': return '#eab308'; // Yellow
-        case 'low': return isDark ? '#94a3b8' : '#64748b'; // Slate
-        default: return '#94a3b8';
-    }
-}
-
 const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     container: {
         flex: 1,
@@ -405,55 +313,6 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     filterButton: {
         padding: spacing[1], // xs
     },
-    searchContainer: {
-        marginHorizontal: spacing[6], // lg
-        marginVertical: spacing[4], // md
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: isDark ? colors.surface : '#F1F5F9',
-        borderRadius: borderRadius.md,
-        paddingHorizontal: spacing[4], // md
-        height: 48,
-        borderWidth: 1,
-        borderColor: isDark ? colors.border : 'transparent',
-    },
-    searchIcon: {
-        marginRight: spacing[2], // sm
-    },
-    searchInput: {
-        flex: 1,
-        color: colors.text,
-        ...typography.textStyles.body, // body1
-    },
-    hScroll: {
-        maxHeight: 50,
-        marginBottom: spacing[4], // md
-    },
-    hScrollContent: {
-        paddingHorizontal: spacing[6], // lg
-        alignItems: 'center',
-    },
-    catChip: {
-        paddingHorizontal: spacing[6], // lg
-        paddingVertical: spacing[1] + 2, // xs + 2
-        borderRadius: borderRadius.xl,
-        backgroundColor: isDark ? colors.surface : '#E2E8F0',
-        marginRight: spacing[2], // sm
-        borderWidth: 1,
-        borderColor: isDark ? colors.border : 'transparent',
-    },
-    catChipActive: {
-        backgroundColor: colors.primary[500],
-        borderColor: colors.primary[500],
-    },
-    catText: {
-        ...typography.textStyles.bodySmall, // body2
-        color: colors.text,
-        fontWeight: '600',
-    },
-    catTextActive: {
-        color: '#FFFFFF',
-    },
     section: {
         marginTop: spacing[2], // sm
     },
@@ -464,133 +323,87 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
         marginBottom: spacing[4], // md
         fontSize: 18,
     },
-    // Bundle Styles
-    bundleCard: {
-        width: 280,
-        backgroundColor: isDark ? '#1E293B' : '#FFF',
-        borderRadius: borderRadius.lg,
-        padding: spacing[6], // lg
-        borderWidth: 1,
-        borderColor: isDark ? colors.border : '#E2E8F0',
-        shadowColor: '#000',
-        elevation: 2,
-    },
-    bundleHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'flex-start',
-        marginBottom: spacing[4], // md
-    },
-    savingsTag: {
-        backgroundColor: isDark ? 'rgba(34, 197, 94, 0.2)' : '#DCFCE7',
-        paddingHorizontal: spacing[2], // sm
-        paddingVertical: spacing[1],
-        borderRadius: borderRadius.sm,
-    },
-    savingsText: {
-        color: isDark ? '#4ADE80' : '#15803D',
-        fontSize: 10,
-        fontWeight: 'bold',
-        textTransform: 'uppercase',
-    },
-    bundleTitle: {
-        ...typography.textStyles.h3,
-        color: colors.text,
-        fontSize: 18,
-        marginBottom: spacing[1],
-    },
-    bundleDesc: {
-        ...typography.textStyles.bodySmall, // body2
-        color: colors.neutral[500], // gray[500]
-        marginBottom: spacing[6], // lg
-        height: 40,
-    },
-    bundleFooter: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        paddingTop: spacing[2], // sm
-        borderTopWidth: 1,
-        borderTopColor: isDark ? colors.border : '#F1F5F9',
-    },
-    bundleCount: {
-        ...typography.textStyles.caption,
-        color: colors.primary[500],
-        fontWeight: 'bold',
-    },
     // Toolkit Card Styles
     card: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: isDark ? '#1E1E1E' : '#FFFFFF',
-        borderRadius: borderRadius.lg,
-        padding: spacing[4], // md
+        backgroundColor: isDark ? colors.surface : '#FFFFFF',
+        borderRadius: borderRadius.xl,
+        padding: spacing[4],
         borderWidth: 1,
-        borderColor: isDark ? '#333' : '#E2E8F0',
+        borderColor: colors.border,
+    },
+    cardConnected: {
+        borderColor: colors.primary[500],
+        backgroundColor: isDark ? colors.surface : colors.primary[50],
     },
     iconContainer: {
         width: 48,
         height: 48,
-        borderRadius: borderRadius.md,
-        backgroundColor: isDark ? '#2D3748' : '#F8FAFC',
+        borderRadius: borderRadius.lg,
+        backgroundColor: isDark ? colors.neutral[800] : colors.neutral[100],
         justifyContent: 'center',
         alignItems: 'center',
-        marginRight: spacing[4], // md
+        marginRight: spacing[4],
+    },
+    iconWrapperConnected: {
+        backgroundColor: isDark ? colors.primary[900] : colors.primary[100],
     },
     cardContent: {
         flex: 1,
-        marginRight: spacing[2], // sm
-    },
-    cardHeader: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: spacing[1],
+        marginRight: spacing[2],
     },
     cardTitle: {
         ...typography.textStyles.h3,
         fontSize: 16,
         color: colors.text,
-        marginRight: spacing[2], // sm
+        marginBottom: spacing[1],
     },
-    premiumTag: {
-        backgroundColor: isDark ? '#F59E0B20' : '#FEF3C7',
-        paddingHorizontal: spacing[2],
-        paddingVertical: spacing[1],
-        borderRadius: borderRadius.sm,
+    statusRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
     },
-    premiumText: {
-        fontSize: 10,
-        fontWeight: 'bold',
-        color: '#D97706',
+    statusDot: {
+        width: 6,
+        height: 6,
+        borderRadius: 3,
+    },
+    statusText: {
+        ...typography.textStyles.bodySmall,
+        color: colors.textSecondary,
     },
     cardDesc: {
-        ...typography.textStyles.bodySmall, // body2
-        color: colors.neutral[500], // gray[500]
+        ...typography.textStyles.bodySmall,
+        color: colors.neutral[500],
         fontSize: 13,
     },
     actionButton: {
-        paddingHorizontal: spacing[4], // md
-        paddingVertical: spacing[1] + 2, // xs+2
-        borderRadius: borderRadius.xl,
-        borderWidth: 1,
-    },
-    actionButtonActive: {
-        backgroundColor: 'transparent',
-        borderColor: colors.neutral[600], // gray[600]
+        paddingHorizontal: spacing[4],
+        paddingVertical: spacing[2],
+        borderRadius: borderRadius.full,
+        minWidth: 100,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     actionButtonInactive: {
         backgroundColor: colors.primary[500],
-        borderColor: 'transparent',
+    },
+    actionButtonActive: {
+        backgroundColor: 'transparent',
+        borderWidth: 1,
+        borderColor: isDark ? colors.neutral[700] : colors.neutral[300],
     },
     actionButtonText: {
-        fontSize: 12,
-        fontWeight: 'bold',
-    },
-    actionButtonTextActive: {
-        color: colors.neutral[500], // gray[500]
+        fontSize: 13,
+        fontWeight: '600',
     },
     actionButtonTextInactive: {
         color: '#FFFFFF',
+    },
+    actionButtonTextActive: {
+        color: colors.text,
     },
     // Permission Modal Styles
     modalOverlay: {

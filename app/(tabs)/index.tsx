@@ -15,16 +15,14 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Card } from "../../components/Card";
-import { HighlightCard } from "../../components/HighlightCard";
+import { ConflictProposal, ConflictResolutionCard } from "../../components/ConflictResolutionCard";
+import { UpcomingMeetingCard } from "../../components/UpcomingMeetingCard";
 import { WebContainer } from "../../components/WebContainer";
 import { useTheme } from "../../context/ThemeContext";
 import { api } from "../../services/api";
 import { getCurrentUser } from "../../services/auth";
 import { borderRadius, spacing, typography } from "../../theme";
-import { inferSeverity } from "../../utils/severityMapping";
 
-import { useIntegrations } from "../../hooks/useIntegrations";
-import { analytics } from "../../services/analytics";
 // ... imports
 
 export default function HomeTab() {
@@ -32,18 +30,6 @@ export default function HomeTab() {
   const { colors, isDark } = useTheme();
   const styles = getStyles(colors, isDark);
   const [user, setUser] = useState<any>(null);
-
-  // Recovery State Hook
-  const { shouldShowRecoveryState } = useIntegrations();
-  const hasLoggedRecoveryRef = React.useRef(false);
-
-  useEffect(() => {
-    // Track recovery state shown (once per mount)
-    if (shouldShowRecoveryState && !hasLoggedRecoveryRef.current) {
-      analytics.trackRecoveryStateShown("home", user?.id);
-      hasLoggedRecoveryRef.current = true;
-    }
-  }, [shouldShowRecoveryState, user]);
 
   const [events, setEvents] = useState<any[]>([]);
   const [briefing, setBriefing] = useState<{
@@ -59,6 +45,8 @@ export default function HomeTab() {
   const [error, setError] = useState<string | null>(null);
   const [isRateLimited, setIsRateLimited] = useState(false);
   const [zenMode, setZenMode] = useState(false);
+  const [upcomingMeeting, setUpcomingMeeting] = useState<any>(null);
+  const [conflicts, setConflicts] = useState<ConflictProposal[]>([]);
 
   useEffect(() => {
     (async () => {
@@ -78,7 +66,7 @@ export default function HomeTab() {
   };
 
   // Personalized greeting with user name
-  const personalizedGreeting = user?.user_metadata?.name
+  const personalizedGreeting = user?.user_metadata?.first_name
     ? `${getGreeting()}, ${user.user_metadata.name}`
     : user?.email
       ? `${getGreeting()}, ${user.email.split('@')[0]}`
@@ -86,16 +74,24 @@ export default function HomeTab() {
 
   const checkConnections = useCallback(async (userId: string) => {
     try {
-      const res = await api.get(`/integrations?userId=${userId}`);
-      const connectedApps = (res.integrations || [])
-        .filter((i: any) => i.status === "ACTIVE" || i.status === "CONNECTED")
-        .map((i: any) => i.appName.toLowerCase());
+      // Use same endpoint as connect-platforms screen
+      const res = await api.get(`/toolkits?userId=${userId}`);
+      const allToolkits = res.toolkits || [];
+
+      // Filter for connected apps only
+      const connectedApps = allToolkits
+        .filter((t: any) => t.connected === true && t.appUniqueId)
+        .map((t: any) => t.appUniqueId.toLowerCase());
+
+      console.log('🔍 Connected apps:', connectedApps);
 
       const missing = [];
       if (!connectedApps.some((a: string) => a.includes("gmail")))
         missing.push("Gmail");
-      if (!connectedApps.some((a: string) => a.includes("calendar")))
+      if (!connectedApps.some((a: string) => a.includes("googlecalendar") || a.includes("google-calendar")))
         missing.push("Google Calendar");
+
+      console.log('❌ Missing connections:', missing);
       setMissingConnections(missing);
     } catch (e) {
       console.log("Failed to check connections", e);
@@ -177,11 +173,82 @@ export default function HomeTab() {
     await AsyncStorage.setItem('zenMode', JSON.stringify(newZenMode));
   };
 
-  const stats = {
-    pendingActions: actions.filter((a) => a.status === "pending").length,
-    unreadMessages: briefing?.counts?.emails || 0,
-    todayMeetings: events.length,
+  // Check for upcoming meetings (5-10 minutes before start)
+  const checkUpcomingMeeting = useCallback(async () => {
+    if (!user) return;
+    try {
+      const currentUser = await getCurrentUser();
+      if (!currentUser) return;
+
+      const data = await api.get(`/dashboard/upcoming-meeting?userId=${currentUser.id}`);
+      setUpcomingMeeting(data.meeting);
+    } catch (error) {
+      console.log('Failed to check upcoming meeting:', error);
+    }
+  }, [user]);
+
+  // Check for conflicts
+  const checkConflicts = useCallback(async () => {
+    if (!user) return;
+    try {
+      const currentUser = await getCurrentUser();
+      if (!currentUser) return;
+
+      const data = await api.get(`/calendar/conflicts?userId=${currentUser.id}`);
+      setConflicts(data.conflicts || []);
+    } catch (error) {
+      console.log('Failed to check conflicts:', error);
+    }
+  }, [user]);
+
+  const handleResolveConflict = async (resolution: any) => {
+    // Optimistically hide the conflict immediately
+    const previousConflicts = [...conflicts];
+    setConflicts([]);
+
+    try {
+      const currentUser = await getCurrentUser();
+      if (!currentUser) return;
+
+      console.log(`🚀 Resolving conflict with action: ${resolution.type}`);
+      const res = await api.post('/calendar/conflicts/resolve', {
+        userId: currentUser.id,
+        resolution
+      });
+
+      if (res.success) {
+        console.log('✅ Conflict resolved:', res.message);
+        alert(res.message);
+      } else {
+        throw new Error(res.message || 'Resolution failed');
+      }
+    } catch (error: any) {
+      console.error('❌ Failed to resolve conflict:', error);
+      // Revert on failure
+      setConflicts(previousConflicts);
+      alert(`Failed to resolve: ${error.message || 'Unknown error'}`);
+    }
   };
+
+  // Poll for upcoming meetings every 30 seconds
+  useEffect(() => {
+    if (!user) return;
+
+    // Check immediately
+    checkUpcomingMeeting();
+    checkConflicts();
+
+    // Then poll every 30 seconds
+    const interval = setInterval(() => {
+      checkUpcomingMeeting();
+      checkConflicts();
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, [checkUpcomingMeeting, user]);
+
+
+
 
   if (!user) {
     return (
@@ -209,6 +276,23 @@ export default function HomeTab() {
         }
       >
         <WebContainer>
+          {/* Upcoming Meeting Notification */}
+          {upcomingMeeting && (
+            <UpcomingMeetingCard
+              meeting={upcomingMeeting}
+              onDismiss={() => setUpcomingMeeting(null)}
+            />
+          )}
+
+          {/* Conflict Resolution Card */}
+          {conflicts.length > 0 && (
+            <ConflictResolutionCard
+              conflict={conflicts[0]}
+              onResolve={handleResolveConflict}
+              onDismiss={() => setConflicts([])}
+            />
+          )}
+
           {error && (
             <View
               style={[
@@ -374,84 +458,6 @@ export default function HomeTab() {
             </TouchableOpacity>
           )}
 
-          {/* Quick Stats */}
-          <View style={styles.statsContainer}>
-            <TouchableOpacity
-              style={styles.statCard}
-              onPress={() => router.push("/zen-mode")}
-              activeOpacity={0.7}
-            >
-              <View
-                style={[
-                  styles.statIconContainer,
-                  {
-                    backgroundColor: isDark
-                      ? "rgba(59, 130, 246, 0.15)"
-                      : "#EFF6FF",
-                  },
-                ]}
-              >
-                <Ionicons
-                  name="checkmark-circle-outline"
-                  size={24}
-                  color={colors.primary[500]}
-                />
-              </View>
-              <Text style={styles.statValue}>{stats.pendingActions}</Text>
-              <Text style={styles.statLabel}>Pending</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.statCard}
-              onPress={() => router.push("/(tabs)/inbox")}
-              activeOpacity={0.7}
-            >
-              <View
-                style={[
-                  styles.statIconContainer,
-                  {
-                    backgroundColor: isDark
-                      ? "rgba(239, 68, 68, 0.15)"
-                      : "#FEE2E2",
-                  },
-                ]}
-              >
-                <Ionicons
-                  name="mail-unread-outline"
-                  size={24}
-                  color={colors.semantic.error}
-                />
-              </View>
-              <Text style={styles.statValue}>{stats.unreadMessages}</Text>
-              <Text style={styles.statLabel}>Unread</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.statCard}
-              onPress={() => router.push("/(tabs)/calendar")}
-              activeOpacity={0.7}
-            >
-              <View
-                style={[
-                  styles.statIconContainer,
-                  {
-                    backgroundColor: isDark
-                      ? "rgba(16, 185, 129, 0.15)"
-                      : "#D1FAE5",
-                  },
-                ]}
-              >
-                <Ionicons
-                  name="calendar-outline"
-                  size={24}
-                  color={colors.semantic.success}
-                />
-              </View>
-              <Text style={styles.statValue}>{stats.todayMeetings}</Text>
-              <Text style={styles.statLabel}>Meetings</Text>
-            </TouchableOpacity>
-          </View>
-
           {/* Zen Mode / Review Queue Main CTA */}
           <TouchableOpacity
             style={styles.zenModeCard}
@@ -541,134 +547,6 @@ export default function HomeTab() {
           {/* Secondary Sections - Hidden in Zen Mode */}
           {!zenMode && (
             <>
-              {/* Integration Status Hub */}
-              <View style={styles.section}>
-                <View
-                  style={{
-                    flexDirection: "row",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    marginBottom: spacing[2],
-                  }}
-                >
-                  <Text style={styles.sectionTitle}>System Status</Text>
-                  <TouchableOpacity onPress={() => router.push("/toolkits")}>
-                    <Text
-                      style={{
-                        color: colors.primary[500],
-                        fontSize: 13,
-                        fontWeight: "600",
-                        marginBottom: spacing[4],
-                      }}
-                    >
-                      + Add Toolkit
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-                <Card style={styles.statusCard}>
-                  <View style={styles.statusItem}>
-                    <View style={styles.statusLeft}>
-                      <Ionicons
-                        name="mail"
-                        size={20}
-                        color={colors.primary[500]}
-                      />
-                      <Text style={styles.statusText}>Gmail Indexing</Text>
-                    </View>
-                    <Text style={[styles.statusValue, { color: colors.semantic.success }]}>Complete</Text>
-                  </View>
-
-                  <View style={styles.divider} />
-
-                  <View style={styles.statusItem}>
-                    <View style={styles.statusLeft}>
-                      <Ionicons
-                        name="logo-slack"
-                        size={20}
-                        color="#4A154B"
-                      />
-                      <Text style={styles.statusText}>Slack Channels</Text>
-                    </View>
-                    <View style={styles.statusRight}>
-                      <ActivityIndicator size="small" color={colors.semantic.warning} style={{ marginRight: 8 }} />
-                      <Text style={[styles.statusValue, { color: colors.semantic.warning }]}>Reading...</Text>
-                    </View>
-                  </View>
-
-                  <View style={styles.divider} />
-
-                  <View style={styles.statusItem}>
-                    <View style={styles.statusLeft}>
-                      <Ionicons
-                        name="calendar"
-                        size={20}
-                        color="#EA4335"
-                      />
-                      <Text style={styles.statusText}>Calendar Optimize</Text>
-                    </View>
-                    <Text style={[styles.statusValue, { color: colors.semantic.success }]}>Active</Text>
-                  </View>
-                </Card>
-              </View>
-
-              {/* Highlights / Insights */}
-              {((briefing?.highlights && briefing.highlights.length > 0) ||
-                loading) && (
-                  <View style={styles.section}>
-                    <Text style={[styles.sectionTitle, { marginBottom: spacing[4] }]}>Highlights</Text>
-                    <ScrollView
-                      horizontal
-                      showsHorizontalScrollIndicator={false}
-                      style={styles.nudgeScroll}
-                      contentContainerStyle={{ paddingRight: 24 }}
-                    >
-                      {loading ? (
-                        <Card
-                          style={[
-                            styles.nudgeCard,
-                            { width: 280, justifyContent: "center", height: 140 },
-                          ]}
-                        >
-                          <ActivityIndicator color={colors.primary[500]} />
-                        </Card>
-                      ) : (
-                        briefing?.highlights?.map((highlight, index) => {
-                          // Parse Title vs Body
-                          const parts = highlight.includes(': ') ? highlight.split(': ') : ['Insight', highlight];
-                          const title = parts[0];
-                          const description = parts.slice(1).join(': ');
-
-                          // Deterministic Severity Inference
-                          const severity = inferSeverity(highlight);
-
-                          // Determine Actions based on Severity
-                          let actionLabel = undefined;
-                          let onActionPress = undefined;
-
-                          if (severity === 'urgent' || severity === 'attention') {
-                            actionLabel = 'Review Activity';
-                            onActionPress = () => router.push('/(tabs)/settings');
-                          }
-
-                          return (
-                            <HighlightCard
-                              key={index}
-                              id={highlight} // Use content as ID for analytics consistency
-                              title={title}
-                              description={description}
-                              severity={severity}
-                              actionLabel={actionLabel}
-                              onActionPress={onActionPress}
-                              alertType="briefing_highlight"
-                              screenName="HomeTab"
-                              userId={user?.id}
-                            />
-                          );
-                        })
-                      )}
-                    </ScrollView>
-                  </View>
-                )}
             </>
           )}
 
@@ -877,39 +755,6 @@ const getStyles = (colors: any, isDark: boolean) =>
       marginLeft: spacing[0],
     },
 
-    // Quick Stats
-    statsContainer: {
-      flexDirection: "row",
-      gap: spacing[3],
-      marginBottom: spacing[6],
-    },
-    statCard: {
-      flex: 1,
-      backgroundColor: colors.surface,
-      borderRadius: borderRadius.lg,
-      padding: spacing[4],
-      alignItems: "center",
-      borderWidth: 1,
-      borderColor: colors.border,
-    },
-    statIconContainer: {
-      width: 48,
-      height: 48,
-      borderRadius: 24,
-      alignItems: "center",
-      justifyContent: "center",
-      marginBottom: spacing[2],
-    },
-    statValue: {
-      ...typography.textStyles.h3,
-      color: colors.text,
-      marginBottom: spacing[1],
-    },
-    statLabel: {
-      ...typography.textStyles.caption,
-      color: colors.textSecondary,
-    },
-
     // Integration Status
     section: {
       marginBottom: spacing[8],
@@ -927,44 +772,6 @@ const getStyles = (colors: any, isDark: boolean) =>
     seeAllText: {
       ...typography.textStyles.bodySmall,
       color: colors.primary[500],
-      fontWeight: "600",
-    },
-    statusCard: {
-      padding: 0,
-      backgroundColor: colors.surface,
-      borderWidth: 1,
-      borderColor: colors.border,
-      overflow: "hidden",
-    },
-    statusItem: {
-      padding: spacing[4],
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
-    },
-    statusLeft: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: spacing[3],
-    },
-    statusText: {
-      ...typography.textStyles.bodySmall,
-      color: colors.text,
-      fontWeight: "500",
-    },
-    statusRight: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: spacing[2],
-    },
-    dot: {
-      width: 6,
-      height: 6,
-      borderRadius: 3,
-    },
-    statusValue: {
-      ...typography.textStyles.caption,
-      color: colors.textTertiary,
       fontWeight: "600",
     },
     divider: {
@@ -1004,28 +811,6 @@ const getStyles = (colors: any, isDark: boolean) =>
     eventTime: {
       ...typography.textStyles.caption,
       color: colors.textSecondary,
-    },
-
-    // Nudges
-    nudgeScroll: {
-      marginHorizontal: -spacing[6],
-      paddingHorizontal: spacing[6],
-    },
-    nudgeCard: {
-      width: 280,
-      marginRight: spacing[4],
-      backgroundColor: isDark ? "#1E293B" : "#F8FAFC",
-      borderColor: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.03)",
-      borderWidth: 1,
-      padding: spacing[5],
-      borderRadius: borderRadius.xl,
-      justifyContent: 'center',
-      minHeight: 140,
-      shadowColor: "#000",
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: isDark ? 0.2 : 0.05,
-      shadowRadius: 12,
-      elevation: 2,
     },
 
     // Error & Rate Limit Styles
