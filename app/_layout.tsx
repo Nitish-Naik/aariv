@@ -9,6 +9,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { ErrorBoundary } from "../components/ErrorBoundary";
 import { AuthProvider, useAuth } from "../context/AuthContext";
 import { ThemeProvider, useTheme } from "../context/ThemeContext";
+import { SubscriptionProvider } from "../hooks/useSubscription";
 import {
   registerForPushNotifications,
   scheduleDailyBriefing,
@@ -200,10 +201,12 @@ export default function RootLayout() {
     <ErrorBoundary>
       <SafeAreaProvider>
         <AuthProvider>
-          <ThemeProvider>
-            <RootNavigation />
-            {Platform.OS === 'web' && <SpeedInsights />}
-          </ThemeProvider>
+          <SubscriptionProvider>
+            <ThemeProvider>
+              <RootNavigation />
+              {Platform.OS === 'web' && <SpeedInsights />}
+            </ThemeProvider>
+          </SubscriptionProvider>
         </AuthProvider>
       </SafeAreaProvider>
     </ErrorBoundary>

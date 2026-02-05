@@ -1,287 +1,436 @@
-import { Ionicons } from '@expo/vector-icons';
-import React, { useEffect, useState } from 'react';
-import {
-    ActivityIndicator,
-    Alert,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Button } from '../components/Button';
-import { useTheme } from '../context/ThemeContext';
-import { getOfferings, purchaseSubscription, restorePurchases } from '../services/subscription';
-import { borderRadius, spacing, typography } from '../theme';
+/**
+ * Paywall Screen
+ * Calm upgrade screen aligned with brand visuals
+ */
 
-interface PaywallScreenProps {
-    onClose: () => void;
-    onSuccess: () => void;
+import { Ionicons } from "@expo/vector-icons";
+import React, { useMemo, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useTheme } from "../context/ThemeContext";
+import { useSubscription } from "../hooks/useSubscription";
+import { borderRadius, spacing, typography } from "../theme";
+
+type Period = "monthly" | "annual";
+
+const FEATURE_LIST = [
+  {
+    id: "feat-email",
+    icon: "mail-outline" as const,
+    text: "Connect email & more sources",
+  },
+  {
+    id: "feat-calendar",
+    icon: "calendar-outline" as const,
+    text: "All calendar providers",
+  },
+  {
+    id: "feat-conversations",
+    icon: "chatbubble-ellipses-outline" as const,
+    text: "Longer conversations",
+  },
+  {
+    id: "feat-calls",
+    icon: "call-outline" as const,
+    text: "Voice calls",
+  },
+];
+
+interface PaywallProps {
+  onClose: () => void;
+  onSuccess?: () => void;
+  highlightTier?: "pro" | "business";
 }
 
-export const PaywallScreen = ({ onClose, onSuccess }: PaywallScreenProps) => {
-    const { colors } = useTheme();
-    const styles = getStyles(colors);
+export function PaywallScreen({
+  onClose,
+  onSuccess,
+  highlightTier = "pro",
+}: PaywallProps) {
+  const { offerings, purchase, restore, isLoading } = useSubscription();
+  const { isDark } = useTheme();
+  const [selectedPeriod, setSelectedPeriod] = useState<Period>("annual");
+  const [isPurchasing, setIsPurchasing] = useState(false);
+  const [isRestoring, setIsRestoring] = useState(false);
 
-    const [loading, setLoading] = useState(true);
-    const [purchasing, setPurchasing] = useState(false);
-    const [offerings, setOfferings] = useState<any>(null);
-    const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'annual'>('annual');
+  const styles = getStyles(isDark);
+  const sparkleColor = isDark ? "#E6D6C6" : "#7C6C5A";
+  const featureIconColor = isDark ? "#C9C0B5" : "#7A6A5C";
+  const closeIconColor = isDark ? "#CFC8BF" : "#8D8176";
 
-    useEffect(() => {
-        loadOfferings();
-    }, []);
+  const packages = useMemo(() => {
+    if (!offerings) return null;
+    return highlightTier === "business" ? offerings.business : offerings.pro;
+  }, [offerings, highlightTier]);
 
-    const loadOfferings = async () => {
-        try {
-            const data = await getOfferings();
-            setOfferings(data);
-        } catch (e) {
-            console.error(e);
-        } finally {
-            setLoading(false);
-        }
-    };
+  const monthlyPackage = packages?.find((pkg) => pkg.period === "monthly");
+  const annualPackage = packages?.find((pkg) => pkg.period === "annual");
+  const selectedPackage =
+    selectedPeriod === "monthly" ? monthlyPackage : annualPackage;
 
-    const handlePurchase = async () => {
-        if (!offerings) return;
-        const pkg = selectedPlan === 'annual' ? offerings.annual : offerings.monthly;
-        if (!pkg) {
-            Alert.alert("Offerings not found", "Please check back later.");
-            return;
-        }
+  const monthlyPriceLabel = monthlyPackage?.price ?? "$12";
+  const annualPriceLabel = annualPackage?.pricePerMonth ?? "$9";
+  const annualBilledLabel = annualPackage
+    ? `${annualPackage.price} billed yearly`
+    : "$108 billed yearly";
+  const savingsLabel = annualPackage?.savings ?? "Save 25%";
 
-        try {
-            setPurchasing(true);
-            const { success } = await purchaseSubscription(pkg);
-            if (success) {
-                Alert.alert("Welcome to Aariv Pro!", "Your digital life is now fully unlocked.");
-                onSuccess();
-            }
-        } catch (e: any) {
-            Alert.alert("Purchase Failed", e.message || "An error occurred.");
-        } finally {
-            setPurchasing(false);
-        }
-    };
-
-    const handleRestore = async () => {
-        try {
-            setPurchasing(true);
-            const success = await restorePurchases();
-            if (success) {
-                Alert.alert("Purchases Restored", "Your Pro status has been reactivated.");
-                onSuccess();
-            } else {
-                Alert.alert("No Subscription Found", "We couldn't find an active subscription for your account.");
-            }
-        } catch (e: any) {
-            Alert.alert("Restore Failed", e.message);
-        } finally {
-            setPurchasing(false);
-        }
-    };
-
-    const benefits = [
-        'Unlimited connected accounts & apps',
-        '5,000 monthly automations (for email, calendar, etc.)',
-        '100 monthly Advanced AI Lookups (for web search & research)',
-        'Priority access to new features & models',
-        'Dedicated team collaboration hub',
-    ];
-
-    if (loading) {
-        return (
-            <View style={[styles.container, { justifyContent: 'center' }]}>
-                <ActivityIndicator size="large" color={colors.primary[500]} />
-            </View>
-        );
+  const handlePurchase = async () => {
+    if (!selectedPackage) {
+      Alert.alert("Unavailable", "Subscription options are not available yet.");
+      return;
     }
-    
+
+    setIsPurchasing(true);
+    try {
+      const success = await purchase(selectedPackage.package);
+      if (success) {
+        onSuccess?.();
+        onClose();
+      }
+    } catch (error) {
+      Alert.alert("Error", "Purchase failed. Please try again.");
+    } finally {
+      setIsPurchasing(false);
+    }
+  };
+
+  const handleRestore = async () => {
+    setIsRestoring(true);
+    try {
+      const success = await restore();
+      if (success) {
+        onSuccess?.();
+        onClose();
+      } else {
+        Alert.alert("No Subscription", "No previous subscription found.");
+      }
+    } catch (error) {
+      Alert.alert("Error", "Restore failed. Please try again.");
+    } finally {
+      setIsRestoring(false);
+    }
+  };
+
+  if (isLoading) {
     return (
-        <View style={styles.container}>
-            <SafeAreaView style={{ flex: 1 }} edges={['bottom']}>
-                <ScrollView contentContainerStyle={styles.scrollContent}>
-                    <View style={styles.header}>
-                        <Text style={styles.title}>Aariv Pro</Text>
-                         <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-                            <Ionicons name="close" size={28} color={colors.textSecondary} />
-                        </TouchableOpacity>
-                    </View>
-                    <Text style={styles.subtitle}>Become more focused and prepared than ever before.</Text>
-                    
-                    <View style={styles.planSelector}>
-                        <TouchableOpacity 
-                            style={[styles.planOption, selectedPlan === 'monthly' && styles.planOptionSelected]} 
-                            onPress={() => setSelectedPlan('monthly')}
-                        >
-                            <Text style={[styles.planText, selectedPlan === 'monthly' && styles.planTextSelected]}>Monthly</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity 
-                            style={[styles.planOption, selectedPlan === 'annual' && styles.planOptionSelected]} 
-                            onPress={() => setSelectedPlan('annual')}
-                        >
-                            <Text style={[styles.planText, selectedPlan === 'annual' && styles.planTextSelected]}>Annual</Text>
-                             <View style={styles.badge}>
-                                <Text style={styles.badgeText}>SAVE 40%</Text>
-                            </View>
-                        </TouchableOpacity>
-                    </View>
-
-                    <View style={styles.pricingDisplay}>
-                        <Text style={styles.price}>
-                            {selectedPlan === 'annual' 
-                                ? offerings?.annual?.product?.priceString || '$199.99' 
-                                : offerings?.monthly?.product?.priceString || '$19.99'}
-                        </Text>
-                        <Text style={styles.priceUnit}>
-                            {selectedPlan === 'annual' ? '/ year' : '/ month'}
-                        </Text>
-                    </View>
-
-                    <View style={styles.benefitsContainer}>
-                        {benefits.map((benefit, index) => (
-                            <View key={index} style={styles.benefitItem}>
-                                <Ionicons name="checkmark-circle-outline" size={22} color={colors.primary[500]} />
-                                <Text style={styles.benefitText}>{benefit}</Text>
-                            </View>
-                        ))}
-                    </View>
-                </ScrollView>
-                
-                <View style={styles.footer}>
-                     <Button
-                        title="Unlock Pro"
-                        onPress={handlePurchase}
-                        loading={purchasing}
-                        size="large"
-                        variant="primary"
-                    />
-                    <Button
-                        title="Restore Purchase"
-                        onPress={handleRestore}
-                        variant="ghost"
-                    />
-                </View>
-            </SafeAreaView>
-        </View>
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={isDark ? "#F2EDE6" : "#6B7390"} />
+      </View>
     );
-};
+  }
 
-const getStyles = (colors: any) => StyleSheet.create({
+  return (
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.closeRow}>
+          <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+            <Ionicons name="close" size={16} color={closeIconColor} />
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.header}>
+          <View style={styles.sparkleWrapper}>
+            <Ionicons name="sparkles" size={18} color={sparkleColor} />
+          </View>
+          <Text style={styles.headline}>EXPAND YOUR{"\n"}CALM</Text>
+          <Text style={styles.subHeadline}>
+            More sources. More clarity. Same quiet.
+          </Text>
+        </View>
+
+        <View style={styles.planStack}>
+          <TouchableOpacity
+            style={[
+              styles.planCard,
+              selectedPeriod === "monthly" && styles.planCardSelected,
+            ]}
+            onPress={() => setSelectedPeriod("monthly")}
+            activeOpacity={0.9}
+          >
+            <View style={styles.planRow}>
+              <View>
+                <Text style={styles.planTitle}>Monthly</Text>
+                <Text style={styles.planCaption}>Cancel anytime</Text>
+              </View>
+              <View style={styles.priceRow}>
+                <Text style={styles.planPrice}>{monthlyPriceLabel}</Text>
+                <Text style={styles.planPeriod}>/mo</Text>
+              </View>
+            </View>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.planCard,
+              selectedPeriod === "annual" && styles.planCardSelected,
+            ]}
+            onPress={() => setSelectedPeriod("annual")}
+            activeOpacity={0.9}
+          >
+            <View style={styles.planRow}>
+              <View>
+                <Text style={styles.planTitle}>Annual</Text>
+                <Text style={styles.planCaption}>{annualBilledLabel}</Text>
+              </View>
+              <View style={styles.priceRow}>
+                <Text style={styles.planPrice}>{annualPriceLabel}</Text>
+                <Text style={styles.planPeriod}>/mo</Text>
+              </View>
+            </View>
+            <View style={styles.saveBadge}>
+              <Text style={styles.saveBadgeText}>{savingsLabel}</Text>
+            </View>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.featuresCard}>
+          <Text style={styles.featuresTitle}>WHAT OPENS UP</Text>
+          {FEATURE_LIST.map((item) => (
+            <View key={item.id} style={styles.featureRow}>
+              <Ionicons
+                name={item.icon}
+                size={18}
+                color={featureIconColor}
+                style={styles.featureIcon}
+              />
+              <Text style={styles.featureText}>{item.text}</Text>
+            </View>
+          ))}
+        </View>
+
+        <TouchableOpacity
+          style={[styles.ctaButton, isPurchasing && styles.ctaButtonDisabled]}
+          onPress={handlePurchase}
+          disabled={isPurchasing || !selectedPackage}
+          activeOpacity={0.9}
+        >
+          {isPurchasing ? (
+            <ActivityIndicator color="#FFFFFF" />
+          ) : (
+            <Text style={styles.ctaText}>Continue</Text>
+          )}
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.restoreButton}
+          onPress={handleRestore}
+          disabled={isRestoring}
+        >
+          <Text style={styles.restoreText}>
+            {isRestoring ? "Restoring..." : "Restore purchase"}
+          </Text>
+        </TouchableOpacity>
+
+        <Text style={styles.cancelText}>
+          Cancel anytime. Renews automatically.
+        </Text>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+const getStyles = (isDark: boolean) =>
+  StyleSheet.create({
     container: {
-        flex: 1,
-        backgroundColor: colors.background,
+      flex: 1,
+      backgroundColor: isDark ? "#0B0B0D" : "#F7F4F1",
+    },
+    loadingContainer: {
+      flex: 1,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: isDark ? "#0B0B0D" : "#F7F4F1",
     },
     scrollContent: {
-        padding: spacing[5],
-        paddingBottom: spacing[20] // Extra padding to ensure content is above footer
+      flexGrow: 1,
+      paddingVertical: spacing[8],
+      paddingHorizontal: spacing[5],
+      alignItems: "center",
     },
-    header: {
-        flexDirection: 'row',
-        justifyContent: 'center',
-        alignItems: 'center',
-        paddingVertical: spacing[4],
-    },
-    title: {
-        ...typography.textStyles.h3,
-        color: colors.text,
+    closeRow: {
+      width: "100%",
+      alignItems: "flex-start",
+      marginBottom: spacing[6],
     },
     closeButton: {
-        position: 'absolute',
-        right: 0,
-        top: '50%',
-        marginTop: -14,
+      width: 34,
+      height: 34,
+      borderRadius: 17,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: isDark ? "rgba(255,255,255,0.06)" : "#EEE7DF",
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(255,255,255,0.08)" : "#E6DED3",
     },
-    subtitle: {
-        ...typography.textStyles.body,
-        color: colors.textSecondary,
-        textAlign: 'center',
-        marginBottom: spacing[6],
+    header: {
+      alignItems: "center",
+      marginBottom: spacing[7],
+      width: "100%",
     },
-    planSelector: {
-        flexDirection: 'row',
-        backgroundColor: colors.surface,
-        borderRadius: borderRadius.lg,
-        padding: spacing[1],
-        marginBottom: spacing[5],
+    sparkleWrapper: {
+      width: 34,
+      height: 34,
+      borderRadius: 17,
+      alignItems: "center",
+      justifyContent: "center",
+      marginBottom: spacing[4],
+      backgroundColor: isDark ? "rgba(255,255,255,0.06)" : "#FFFFFF",
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(255,255,255,0.08)" : "#EEE7DF",
     },
-    planOption: {
-        flex: 1,
-        paddingVertical: spacing[3],
-        borderRadius: borderRadius.md,
-        alignItems: 'center',
-        justifyContent: 'center',
-        flexDirection: 'row',
+    headline: {
+      ...typography.textStyles.h1,
+      color: isDark ? "#F2EDE6" : "#2E2620",
+      textAlign: "center",
+      marginBottom: spacing[2],
+      letterSpacing: 2.5,
+      maxWidth: 320,
     },
-    planOptionSelected: {
-        backgroundColor: colors.background,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 3,
+    subHeadline: {
+      ...typography.textStyles.body,
+      fontSize: typography.fontSize.md,
+      color: isDark ? "rgba(255,255,255,0.6)" : "#6E6258",
+      textAlign: "center",
+      marginBottom: spacing[4],
+      maxWidth: 320,
     },
-    planText: {
-        ...typography.textStyles.button,
-        fontSize: 16,
-        color: colors.textSecondary,
+    planStack: {
+      width: "100%",
+      maxWidth: 360,
+      gap: spacing[4],
+      marginBottom: spacing[6],
     },
-    planTextSelected: {
-        color: colors.text,
+    planCard: {
+      backgroundColor: isDark ? "#1A1A1E" : "#FFFFFF",
+      borderRadius: borderRadius.xl,
+      paddingVertical: spacing[4],
+      paddingHorizontal: spacing[5],
+      borderWidth: 1,
+      borderColor: isDark ? "#2A2A2F" : "#E9E1D7",
     },
-    badge: {
-        backgroundColor: colors.primary[500],
-        borderRadius: borderRadius.sm,
-        paddingHorizontal: spacing[2],
-        paddingVertical: 2,
-        marginLeft: spacing[2],
+    planCardSelected: {
+      borderColor: isDark ? "#6B778D" : "#8B91A8",
+      backgroundColor: isDark ? "#1D1F24" : "#F5F2EE",
     },
-    badgeText: {
-        ...typography.textStyles.caption,
-        color: 'white',
-        fontWeight: 'bold',
-        fontSize: 10,
+    planRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
     },
-    pricingDisplay: {
-        flexDirection: 'row',
-        alignItems: 'baseline',
-        justifyContent: 'center',
-        marginBottom: spacing[6],
+    planTitle: {
+      ...typography.textStyles.body,
+      fontWeight: typography.fontWeight.semibold,
+      color: isDark ? "#F2EDE6" : "#2E2620",
     },
-    price: {
-        ...typography.textStyles.h1,
-        color: colors.text,
+    planCaption: {
+      ...typography.textStyles.caption,
+      color: isDark ? "rgba(255,255,255,0.55)" : "#7B6F65",
+      marginTop: spacing[1],
     },
-    priceUnit: {
-        ...typography.textStyles.h4,
-        color: colors.textSecondary,
-        marginLeft: spacing[2],
+    priceRow: {
+      flexDirection: "row",
+      alignItems: "flex-end",
+      gap: 4,
     },
-    benefitsContainer: {
-        gap: spacing[4],
+    planPrice: {
+      ...typography.textStyles.h3,
+      color: isDark ? "#F2EDE6" : "#2E2620",
     },
-    benefitItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: spacing[3],
+    planPeriod: {
+      ...typography.textStyles.caption,
+      color: isDark ? "rgba(255,255,255,0.6)" : "#7B6F65",
+      marginBottom: 2,
     },
-    benefitText: {
-        ...typography.textStyles.body,
-        color: colors.text,
-        flex: 1,
-        lineHeight: 22,
+    saveBadge: {
+      position: "absolute",
+      right: spacing[4],
+      top: -spacing[2],
+      paddingHorizontal: spacing[2],
+      paddingVertical: 2,
+      borderRadius: borderRadius.md,
+      backgroundColor: "#78A46A",
     },
-    footer: {
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        padding: spacing[5],
-        backgroundColor: colors.background,
-        borderTopWidth: 1,
-        borderColor: colors.border,
-        gap: spacing[2],
-    }
-});
+    saveBadgeText: {
+      ...typography.textStyles.caption,
+      color: "#FFFFFF",
+      fontWeight: typography.fontWeight.semibold,
+    },
+    featuresCard: {
+      width: "100%",
+      maxWidth: 360,
+      backgroundColor: isDark ? "#141418" : "#FFFFFF",
+      borderRadius: borderRadius.xl,
+      paddingHorizontal: spacing[5],
+      paddingVertical: spacing[5],
+      borderWidth: 1,
+      borderColor: isDark ? "#222228" : "#EFE6DC",
+      marginBottom: spacing[7],
+    },
+    featuresTitle: {
+      ...typography.textStyles.caption,
+      color: isDark ? "rgba(255,255,255,0.4)" : "#A39487",
+      letterSpacing: 1.2,
+      marginBottom: spacing[4],
+    },
+    featureRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginBottom: spacing[3],
+    },
+    featureIcon: {
+      marginRight: spacing[2],
+    },
+    featureText: {
+      ...typography.textStyles.body,
+      color: isDark ? "#E7DFD5" : "#2E2620",
+      flexShrink: 1,
+    },
+    ctaButton: {
+      width: "100%",
+      maxWidth: 360,
+      paddingVertical: spacing[4],
+      borderRadius: borderRadius.xl,
+      alignItems: "center",
+      justifyContent: "center",
+      minHeight: 52,
+      backgroundColor: isDark ? "#6B7390" : "#69708A",
+      marginBottom: spacing[4],
+    },
+    ctaButtonDisabled: {
+      opacity: 0.7,
+    },
+    ctaText: {
+      ...typography.textStyles.button,
+      color: "#FFFFFF",
+    },
+    restoreButton: {
+      paddingVertical: spacing[2],
+    },
+    restoreText: {
+      ...typography.textStyles.caption,
+      color: isDark ? "rgba(255,255,255,0.65)" : "#8A7E74",
+      textDecorationLine: "underline",
+    },
+    cancelText: {
+      ...typography.textStyles.caption,
+      color: isDark ? "rgba(255,255,255,0.4)" : "#A39487",
+      textAlign: "center",
+      marginBottom: spacing[6],
+    },
+  });
+
+export default PaywallScreen;
