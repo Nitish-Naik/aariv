@@ -62,27 +62,25 @@ export default function TabLayout() {
       <Tabs.Screen
         name="assistant"
         options={{
-          title: '',
+          title: 'Assistant', // Adding label back for consistency
           tabBarIcon: ({ focused }) => (
             <View style={{
-              width: 56,
-              height: 56,
-              borderRadius: 28,
+              width: 48, // Slightly smaller
+              height: 48,
+              borderRadius: 24,
               backgroundColor: colors.primary[500],
               justifyContent: 'center',
               alignItems: 'center',
-              marginBottom: Platform.OS === 'ios' ? 30 : 20,
-              shadowColor: colors.primary[500],
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.3,
-              shadowRadius: 8,
-              elevation: 4,
-              borderWidth: 4,
-              borderColor: isDark ? '#000000' : '#FFFFFF',
+              marginBottom: Platform.OS === 'ios' ? 4 : 4, // Adjusted alignment
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.15, // Reduced from 0.3
+              shadowRadius: 4, // Reduced from 8
+              elevation: 3,
             }}>
               <Ionicons
                 name="sparkles"
-                size={26}
+                size={22}
                 color="#FFFFFF"
               />
             </View>

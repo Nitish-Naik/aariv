@@ -5,7 +5,6 @@ import {
     KeyboardAvoidingView,
     Linking,
     Platform,
-    ScrollView,
     StyleSheet,
     Text,
     TextInput,
@@ -322,23 +321,44 @@ export default function AssistantScreen() {
         );
     };
 
+    const renderWelcome = () => (
+        <View style={styles.welcomeContainer}>
+            <View style={styles.welcomeHeader}>
+                <PulsingAvatar isThinking={false} size={64} />
+                <Text style={styles.welcomeTitle}>Good afternoon, Nitish</Text>
+                <Text style={styles.welcomeSubtitle}>Ready to get things done?</Text>
+            </View>
+            <View style={styles.starterChipsContainer}>
+                {["Summarize my day", "Pending actions", "Draft email"].map((chip, index) => (
+                    <TouchableOpacity
+                        key={index}
+                        style={styles.starterChip}
+                        onPress={() => setInputText(chip)}
+                    >
+                        <Text style={styles.starterChipText}>{chip}</Text>
+                    </TouchableOpacity>
+                ))}
+            </View>
+        </View>
+    );
+
     return (
         <SafeAreaView style={styles.container} edges={['top']}>
             <View style={styles.header}>
-                <Text style={styles.headerTitle}>Assistant</Text>
+                {/* Header Title Removed/Simplified */}
             </View>
 
-
-
-            <FlatList
-                ref={flatListRef}
-                data={messages}
-                keyExtractor={item => item.id}
-                renderItem={renderMessage}
-                contentContainerStyle={styles.listContent}
-                onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
-                onLayout={() => flatListRef.current?.scrollToEnd({ animated: true })}
-            />
+            {messages.length <= 1 ? renderWelcome() : (
+                <FlatList
+                    ref={flatListRef}
+                    data={messages}
+                    keyExtractor={item => item.id}
+                    renderItem={renderMessage}
+                    contentContainerStyle={styles.listContent}
+                    onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
+                    onLayout={() => flatListRef.current?.scrollToEnd({ animated: true })}
+                />
+            )}
 
             <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -346,7 +366,7 @@ export default function AssistantScreen() {
             >
                 <View style={styles.inputBar}>
                     <TouchableOpacity style={styles.actionButton}>
-                        <Ionicons name="add" size={28} color={colors.textSecondary} />
+                        <Ionicons name="add" size={24} color={colors.textSecondary} />
                     </TouchableOpacity>
                     <View style={styles.inputContainer}>
                         <TextInput
@@ -379,13 +399,55 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     header: {
         paddingHorizontal: spacing[6],
         paddingVertical: spacing[4],
-        borderBottomWidth: 1,
-        borderBottomColor: colors.border,
+        // Removed border and title for cleaner look
     },
     headerTitle: {
         ...typography.textStyles.h3,
         color: colors.text,
         fontSize: 24,
+    },
+    // Welcome View Styles
+    welcomeContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingHorizontal: spacing[6],
+        marginTop: -60, // Visual center correction
+    },
+    welcomeHeader: {
+        alignItems: 'center',
+        marginBottom: spacing[8],
+    },
+    welcomeTitle: {
+        ...typography.textStyles.h2,
+        color: colors.text,
+        marginTop: spacing[4],
+        marginBottom: spacing[2],
+        textAlign: 'center',
+    },
+    welcomeSubtitle: {
+        ...typography.textStyles.body,
+        color: colors.textSecondary,
+        textAlign: 'center',
+    },
+    starterChipsContainer: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        justifyContent: 'center',
+        gap: spacing[3],
+    },
+    starterChip: {
+        paddingHorizontal: spacing[4],
+        paddingVertical: spacing[3],
+        borderRadius: borderRadius.full,
+        backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
+        borderWidth: 1,
+        borderColor: colors.border,
+    },
+    starterChipText: {
+        fontSize: 14,
+        color: colors.text,
+        fontWeight: '500',
     },
 
     listContent: {
@@ -406,24 +468,24 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     avatarContainer: {
         marginRight: spacing[3],
         marginBottom: 2,
+        opacity: 0.8, // Slightly subtle
     },
     messageContent: {
         maxWidth: '85%',
         padding: spacing[4],
-        borderRadius: borderRadius.xl,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: isDark ? 0.4 : 0.05,
-        shadowRadius: 10,
-        elevation: 5,
+        borderRadius: borderRadius.xl, // Consistent XL radius
+        // Removed heavy shadows
+        borderWidth: 1,
+        borderColor: 'transparent', // Default
     },
     userContent: {
-        backgroundColor: isDark ? colors.neutral[800] : colors.neutral[200],
+        backgroundColor: isDark ? colors.neutral[800] : colors.neutral[100],
+        borderBottomRightRadius: 4,
     },
     assistantContent: {
-        backgroundColor: isDark ? 'rgba(28, 28, 30, 0.8)' : 'rgba(255, 255, 255, 0.9)',
-        borderWidth: 1,
-        borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
+        backgroundColor: 'transparent',
+        borderColor: colors.border, // Subtle border instead of shadow
+        borderBottomLeftRadius: 4,
     },
     userText: {
         color: colors.text,
