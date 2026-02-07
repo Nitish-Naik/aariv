@@ -1,12 +1,8 @@
-import { Ionicons } from "@expo/vector-icons";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useFocusEffect } from "@react-navigation/native";
-import { format } from "date-fns";
-import { useRouter } from "expo-router";
-import React, { useCallback, useEffect, useState } from "react";
+import { LinearGradient } from "expo-linear-gradient";
+import { StatusBar } from "expo-status-bar";
+import React from "react";
 import {
-  ActivityIndicator,
-  RefreshControl,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -14,867 +10,211 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Card } from "../../components/Card";
-import { ConflictProposal, ConflictResolutionCard } from "../../components/ConflictResolutionCard";
-import { UpcomingMeetingCard } from "../../components/UpcomingMeetingCard";
-import { WebContainer } from "../../components/WebContainer";
-import { useTheme } from "../../context/ThemeContext";
-import { api } from "../../services/api";
-import { getCurrentUser } from "../../services/auth";
-import { borderRadius, spacing, typography } from "../../theme";
 
-// ... imports
+const cards = [
+  {
+    id: "email",
+    kicker: "Email from Sarah",
+    time: "2h ago",
+    body:
+      "Sarah asked about the Q4 timeline. Should I let her know we're targeting mid-November?",
+    primary: "Yes, do it",
+  },
+  {
+    id: "calendar",
+    kicker: "Calendar",
+    time: "Tomorrow",
+    body:
+      "You have back-to-back meetings from 9-12. Want me to add a 15-min buffer between them?",
+    primary: "Yes, do it",
+  },
+];
+
+const palette = {
+  backgroundTop: "#0b0b0d",
+  backgroundBottom: "#121218",
+  card: "#141418",
+  cardBorder: "#24242a",
+  textPrimary: "#e8e4df",
+  textSecondary: "#a5a1a0",
+  textMuted: "#7a7780",
+  buttonPrimary: "#8b93b2",
+  buttonPrimaryText: "#11131a",
+  buttonSecondary: "rgba(255,255,255,0.04)",
+  buttonSecondaryBorder: "rgba(255,255,255,0.12)",
+  buttonSecondaryText: "#b9bdc8",
+};
+
+const serif = Platform.select({
+  ios: "Georgia",
+  android: "serif",
+  default: "serif",
+});
+
+const sans = Platform.select({
+  ios: "Avenir Next",
+  android: "sans-serif",
+  default: "System",
+});
+
+const sansMedium = Platform.select({
+  ios: "Avenir Next",
+  android: "sans-serif-medium",
+  default: "System",
+});
 
 export default function HomeTab() {
-  const router = useRouter();
-  const { colors, isDark } = useTheme();
-  const styles = getStyles(colors, isDark);
-  const [user, setUser] = useState<any>(null);
-
-  const [events, setEvents] = useState<any[]>([]);
-  const [briefing, setBriefing] = useState<{
-    greeting: string;
-    summary: string;
-    counts: { meetings: number; emails: number };
-    highlights?: string[];
-  } | null>(null);
-  const [actions, setActions] = useState<any[]>([]);
-  const [refreshing, setRefreshing] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [missingConnections, setMissingConnections] = useState<string[]>([]);
-  const [error, setError] = useState<string | null>(null);
-  const [isRateLimited, setIsRateLimited] = useState(false);
-  const [zenMode, setZenMode] = useState(false);
-  const [upcomingMeeting, setUpcomingMeeting] = useState<any>(null);
-  const [conflicts, setConflicts] = useState<ConflictProposal[]>([]);
-
-  useEffect(() => {
-    (async () => {
-      setUser(await getCurrentUser());
-      // Load zen mode preference
-      const savedZenMode = await AsyncStorage.getItem('zenMode');
-      if (savedZenMode) setZenMode(JSON.parse(savedZenMode));
-    })();
-  }, []);
-
-  // Helper function to get time-based greeting
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return 'Good morning';
-    if (hour < 18) return 'Good afternoon';
-    return 'Good evening';
-  };
-
-  // Personalized greeting with user name
-  const personalizedGreeting = user?.user_metadata?.first_name
-    ? `${getGreeting()}, ${user.user_metadata.name}`
-    : user?.email
-      ? `${getGreeting()}, ${user.email.split('@')[0]}`
-      : getGreeting();
-
-  const checkConnections = useCallback(async (userId: string) => {
-    try {
-      // Use same endpoint as connect-platforms screen
-      const res = await api.get(`/toolkits?userId=${userId}`);
-      const allToolkits = res.toolkits || [];
-
-      // Filter for connected apps only
-      const connectedApps = allToolkits
-        .filter((t: any) => t.connected === true && t.appUniqueId)
-        .map((t: any) => t.appUniqueId.toLowerCase());
-
-      console.log('🔍 Connected apps:', connectedApps);
-
-      const missing = [];
-      if (!connectedApps.some((a: string) => a.includes("gmail")))
-        missing.push("Gmail");
-      if (!connectedApps.some((a: string) => a.includes("googlecalendar") || a.includes("google-calendar")))
-        missing.push("Google Calendar");
-
-      console.log('❌ Missing connections:', missing);
-      setMissingConnections(missing);
-    } catch (e) {
-      console.log("Failed to check connections", e);
-    }
-  }, []);
-
-  const fetchBriefing = useCallback(async () => {
-    if (!user) return;
-    try {
-      setError(null);
-      setIsRateLimited(false);
-      const currentUser = await getCurrentUser();
-      if (!currentUser) {
-        throw new Error("You are signed out. Please log in again.");
-      }
-      checkConnections(currentUser.id);
-      const data = await api.get(`/dashboard/briefing?userId=${currentUser.id}`);
-      setBriefing(data);
-
-      if (data.actions && Array.isArray(data.actions)) {
-        setActions(
-          data.actions.map((a: any) => ({
-            id: a.id,
-            title: a.title,
-            subtitle: a.subtitle,
-            type: a.type,
-            status: "pending",
-            priority: a.priority || "medium",
-            data: a.data,
-          })),
-        );
-      } else {
-        setActions([]);
-      }
-
-      if (data.events && Array.isArray(data.events)) {
-        setEvents(
-          data.events.map((e: any) => ({
-            ...e,
-            startTime: new Date(e.startTime),
-            endTime: new Date(e.endTime),
-          })),
-        );
-      } else {
-        setEvents([]);
-      }
-    } catch (e: any) {
-      console.log("Failed to fetch briefing", e);
-      const errorMessage = e?.message || "Failed to load dashboard";
-      setError(errorMessage);
-
-      // Check for rate limits or 429
-      if (errorMessage.toLowerCase().includes('rate limit') || errorMessage.includes('429')) {
-        setIsRateLimited(true);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [user, checkConnections]);
-
-  useFocusEffect(
-    useCallback(() => {
-      if (user) {
-        fetchBriefing();
-      }
-    }, [fetchBriefing, user]),
-  );
-
-  const onRefresh = useCallback(async () => {
-    if (!user) return;
-    setRefreshing(true);
-    await fetchBriefing();
-    setRefreshing(false);
-  }, [fetchBriefing, user]);
-
-  const toggleZenMode = async () => {
-    const newZenMode = !zenMode;
-    setZenMode(newZenMode);
-    await AsyncStorage.setItem('zenMode', JSON.stringify(newZenMode));
-  };
-
-  // Check for upcoming meetings (5-10 minutes before start)
-  const checkUpcomingMeeting = useCallback(async () => {
-    if (!user) return;
-    try {
-      const currentUser = await getCurrentUser();
-      if (!currentUser) return;
-
-      const data = await api.get(`/dashboard/upcoming-meeting?userId=${currentUser.id}`);
-      setUpcomingMeeting(data.meeting);
-    } catch (error) {
-      console.log('Failed to check upcoming meeting:', error);
-    }
-  }, [user]);
-
-  // Check for conflicts
-  const checkConflicts = useCallback(async () => {
-    if (!user) return;
-    try {
-      const currentUser = await getCurrentUser();
-      if (!currentUser) return;
-
-      const data = await api.get(`/calendar/conflicts?userId=${currentUser.id}`);
-      setConflicts(data.conflicts || []);
-    } catch (error) {
-      console.log('Failed to check conflicts:', error);
-    }
-  }, [user]);
-
-  const handleResolveConflict = async (resolution: any) => {
-    // Optimistically hide the conflict immediately
-    const previousConflicts = [...conflicts];
-    setConflicts([]);
-
-    try {
-      const currentUser = await getCurrentUser();
-      if (!currentUser) return;
-
-      console.log(`🚀 Resolving conflict with action: ${resolution.type}`);
-      const res = await api.post('/calendar/conflicts/resolve', {
-        userId: currentUser.id,
-        resolution
-      });
-
-      if (res.success) {
-        console.log('✅ Conflict resolved:', res.message);
-        alert(res.message);
-      } else {
-        throw new Error(res.message || 'Resolution failed');
-      }
-    } catch (error: any) {
-      console.error('❌ Failed to resolve conflict:', error);
-      // Revert on failure
-      setConflicts(previousConflicts);
-      alert(`Failed to resolve: ${error.message || 'Unknown error'}`);
-    }
-  };
-
-  // Poll for upcoming meetings every 30 seconds
-  useEffect(() => {
-    if (!user) return;
-
-    // Check immediately
-    checkUpcomingMeeting();
-    checkConflicts();
-
-    // Then poll every 30 seconds
-    const interval = setInterval(() => {
-      checkUpcomingMeeting();
-      checkConflicts();
-    }, 30000);
-
-    return () => clearInterval(interval);
-  }, [checkUpcomingMeeting, user]);
-
-
-
-
-  if (!user) {
-    return (
-      <SafeAreaView style={styles.container} edges={["top"]}>
-        <View
-          style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
-        >
-          <ActivityIndicator size="large" color={colors.primary[500]} />
-        </View>
-      </SafeAreaView>
-    );
-  }
-
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
-      <ScrollView
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor={colors.primary[500]}
-          />
-        }
+    <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
+      <StatusBar style="light" />
+      <LinearGradient
+        colors={[palette.backgroundTop, palette.backgroundBottom]}
+        style={styles.background}
       >
-        <WebContainer>
-          {/* Upcoming Meeting Notification */}
-          {upcomingMeeting && (
-            <UpcomingMeetingCard
-              meeting={upcomingMeeting}
-              onDismiss={() => setUpcomingMeeting(null)}
-            />
-          )}
-
-          {/* Conflict Resolution Card */}
-          {conflicts.length > 0 && (
-            <ConflictResolutionCard
-              conflict={conflicts[0]}
-              onResolve={handleResolveConflict}
-              onDismiss={() => setConflicts([])}
-            />
-          )}
-
-          {error && (
-            <View
-              style={[
-                styles.errorContainer,
-                isRateLimited && styles.rateLimitContainer
-              ]}
-            >
-              <View style={styles.errorHeader}>
-                <View style={[styles.errorIconCircle, isRateLimited && { backgroundColor: 'rgba(245, 158, 11, 0.1)' }]}>
-                  <Ionicons
-                    name={isRateLimited ? "hourglass-outline" : "alert-circle-outline"}
-                    size={24}
-                    color={isRateLimited ? "#F59E0B" : colors.semantic.error}
-                  />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.errorTitle}>
-                    {isRateLimited ? "Taking a breather" : "Briefing unavailable"}
-                  </Text>
-                  <Text style={styles.errorSubtitle}>
-                    {isRateLimited
-                      ? "We've hit a temporary rate limit. Your assistant will be back in just a moment."
-                      : error}
-                  </Text>
-                </View>
-              </View>
-
-              <TouchableOpacity
-                onPress={fetchBriefing}
-                style={[styles.retryButton, isRateLimited && styles.rateLimitRetry]}
-                activeOpacity={0.8}
-              >
-                <Ionicons
-                  name="refresh"
-                  size={18}
-                  color={isRateLimited ? "#F59E0B" : colors.primary[500]}
-                />
-                <Text style={[styles.retryText, isRateLimited && { color: "#F59E0B" }]}>
-                  {isRateLimited ? "Try Again Now" : "Retry Now"}
-                </Text>
-              </TouchableOpacity>
-
-              {isRateLimited && (
-                <Text style={styles.rateLimitNote}>
-                  Frequent updates can trigger this. Aariv is usually back in {'<'} 60s.
-                </Text>
-              )}
-            </View>
-          )}
-
-          {/* Header with Personalized Greeting */}
+        <ScrollView
+          contentContainerStyle={styles.content}
+          showsVerticalScrollIndicator={false}
+        >
           <View style={styles.header}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.greeting}>{personalizedGreeting}</Text>
-              <Text style={styles.briefing}>
-                {actions.length > 0 ? (
-                  <Text>Here's what's waiting for you</Text>
-                ) : (
-                  <Text>You're all caught up 🎉</Text>
-                )}
-              </Text>
-            </View>
-            <View style={{ flexDirection: 'row', gap: spacing[2] }}>
-              {/* Zen Mode Toggle */}
-              {/* <TouchableOpacity
-                onPress={toggleZenMode}
-                style={[styles.iconButton, zenMode && { backgroundColor: 'rgba(5, 150, 105, 0.15)' }]}
-              >
-                <Ionicons
-                  name="leaf-outline"
-                  size={20}
-                  color={zenMode ? "#059669" : colors.textSecondary}
-                />
-              </TouchableOpacity> */}
-
-              {/* Voice Mode Button */}
-              <TouchableOpacity
-                onPress={() => router.push("/voice-mode")}
-                style={styles.iconButton}
-              >
-                <Ionicons name="mic" size={20} color={colors.primary[500]} />
-              </TouchableOpacity>
-            </View>
+            <Text style={styles.greeting}>Good evening</Text>
+            <Text style={styles.subGreeting}>A few things for you</Text>
           </View>
 
-          {/* Empty State - All Caught Up */}
-          {!loading && actions.length === 0 && events.length === 0 && (
-            <View style={styles.emptyState}>
-              <Ionicons name="checkmark-circle" size={64} color={colors.semantic.success} />
-              <Text style={styles.emptyTitle}>All Caught Up</Text>
-              <Text style={styles.emptySubtitle}>
-                You&apos;ve reviewed everything for today.{'\n'}Nice work!
-              </Text>
-            </View>
-          )}
-
-          {/* Missing Connections CTA */}
-          {missingConnections.length > 0 && (
-            <TouchableOpacity
-              style={{
-                backgroundColor: isDark ? "#1F2937" : "#FFF5F5",
-                borderRadius: 16,
-                padding: 16,
-                marginBottom: 24,
-                borderWidth: 1,
-                borderColor: isDark ? "#374151" : "#FED7D7",
-                flexDirection: "row",
-                alignItems: "center",
-                shadowColor: "#000",
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.05,
-                shadowRadius: 8,
-                elevation: 2,
-              }}
-              onPress={() => router.push("/connect-platforms")}
-              activeOpacity={0.9}
+          {cards.map((card, index) => (
+            <View
+              key={card.id}
+              style={[styles.card, index > 0 && styles.cardSpacing]}
             >
-              <View
-                style={{
-                  width: 48,
-                  height: 48,
-                  borderRadius: 12,
-                  backgroundColor: isDark
-                    ? "rgba(239, 68, 68, 0.2)"
-                    : "#FFF5F5",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  marginRight: 16,
-                }}
-              >
-                <Ionicons
-                  name="alert-circle"
-                  size={28}
-                  color={isDark ? "#F87171" : "#F56565"}
-                />
+              <View style={styles.cardHeader}>
+                <Text style={styles.cardKicker}>{card.kicker}</Text>
+                <Text style={styles.cardTime}>{card.time}</Text>
               </View>
-              <View style={{ flex: 1 }}>
-                <Text
-                  style={{
-                    fontSize: 16,
-                    fontWeight: "700",
-                    color: isDark ? "#F3F4F6" : "#C53030",
-                    marginBottom: 4,
-                  }}
+              <Text style={styles.cardBody}>{card.body}</Text>
+              <View style={styles.cardActions}>
+                <TouchableOpacity
+                  style={styles.secondaryButton}
+                  activeOpacity={0.85}
                 >
-                  Setup Required
-                </Text>
-                <Text
-                  style={{
-                    fontSize: 14,
-                    color: isDark ? "#9CA3AF" : "#718096",
-                    lineHeight: 20,
-                  }}
+                  <Text style={styles.secondaryButtonText}>Later</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.primaryButton}
+                  activeOpacity={0.85}
                 >
-                  Connect {missingConnections[0]} to activate your assistant.
-                </Text>
-              </View>
-              <Ionicons
-                name="chevron-forward"
-                size={20}
-                color={isDark ? "#6B7280" : "#A0AEC0"}
-              />
-            </TouchableOpacity>
-          )}
-
-          {/* Zen Mode / Review Queue Main CTA */}
-          <TouchableOpacity
-            style={styles.zenModeCard}
-            onPress={() => router.push("/zen-mode")}
-            activeOpacity={0.9}
-          >
-            <View style={styles.zenContent}>
-              <View style={styles.zenIconContainer}>
-                <Ionicons
-                  name="documents-outline"
-                  size={32}
-                  color={colors.primary[500]}
-                />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.zenTitle}>Daily Review</Text>
-                <Text style={styles.zenSubtitle}>
-                  {actions.length} decisions waiting for your approval
-                </Text>
-              </View>
-            </View>
-            <Ionicons
-              name="chevron-forward"
-              size={24}
-              color={colors.textTertiary}
-              style={styles.zenArrow}
-            />
-          </TouchableOpacity>
-
-          {/* Today's Schedule */}
-          {(events.length > 0 || loading) && (
-            <View style={styles.section}>
-              <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>Today&apos;s Schedule</Text>
-                <TouchableOpacity onPress={() => router.push("/(tabs)/calendar")}>
-                  <Text style={styles.seeAllText}>View All</Text>
+                  <Text style={styles.primaryButtonText}>{card.primary}</Text>
                 </TouchableOpacity>
               </View>
-              <Card style={styles.scheduleCard}>
-                {loading ? (
-                  <ActivityIndicator
-                    color={colors.primary[500]}
-                    style={{ padding: spacing[4] }}
-                  />
-                ) : (
-                  events.slice(0, 3).map((event, index) => (
-                    <View key={event.id}>
-                      <View style={styles.eventItem}>
-                        <View
-                          style={[
-                            styles.eventDot,
-                            {
-                              backgroundColor:
-                                event.color || colors.primary[500],
-                            },
-                          ]}
-                        />
-                        <View style={styles.eventContent}>
-                          <Text style={styles.eventTitle}>{event.title}</Text>
-                          <Text style={styles.eventTime}>
-                            {format(event.startTime, "h:mm a")} -{" "}
-                            {format(event.endTime, "h:mm a")}
-                          </Text>
-                        </View>
-                      </View>
-                      {index < events.slice(0, 3).length - 1 && (
-                        <View style={styles.divider} />
-                      )}
-                    </View>
-                  ))
-                )}
-                {!loading && events.length === 0 && (
-                  <Text
-                    style={{
-                      textAlign: "center",
-                      color: colors.textSecondary,
-                      padding: spacing[4],
-                    }}
-                  >
-                    No events scheduled
-                  </Text>
-                )}
-              </Card>
             </View>
-          )}
+          ))}
 
-          {/* Secondary Sections - Hidden in Zen Mode */}
-          {!zenMode && (
-            <>
-            </>
-          )}
-
-          <View style={{ height: 120 }} />
-        </WebContainer>
-      </ScrollView>
+          <View style={styles.bottomSpace} />
+        </ScrollView>
+      </LinearGradient>
     </SafeAreaView>
   );
 }
 
-const getStyles = (colors: any, isDark: boolean) =>
-  StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: colors.background,
-    },
-    content: {
-      padding: spacing[6],
-      paddingTop: spacing[12],
-      paddingBottom: 100,
-    },
-    header: {
-      marginBottom: spacing[8],
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "flex-start",
-      gap: spacing[4],
-    },
-    iconButton: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
-      backgroundColor: isDark ? "rgba(255,255,255,0.05)" : "#F3F4F6",
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    greeting: {
-      ...typography.textStyles.h2,
-      color: colors.text,
-      marginBottom: spacing[2],
-    },
-    briefing: {
-      ...typography.textStyles.body,
-      fontSize: 16,
-      color: colors.textSecondary,
-      lineHeight: 24,
-    },
-
-    // Recovery Card
-    recoveryCard: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: colors.surface,
-      borderRadius: borderRadius.xl,
-      padding: spacing[5],
-      marginBottom: spacing[6],
-      borderWidth: 1,
-      borderColor: colors.primary[500],
-      shadowColor: colors.primary[500],
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.1,
-      shadowRadius: 12,
-      elevation: 4,
-      gap: spacing[4],
-    },
-    recoveryIconContainer: {
-      width: 56,
-      height: 56,
-      borderRadius: 28,
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    recoveryTitle: {
-      ...typography.textStyles.h3,
-      fontWeight: '700',
-    },
-    recoverySubtitle: {
-      fontSize: 14,
-    },
-    recoveryCta: {
-      fontSize: 14,
-      fontWeight: '600',
-      marginTop: 4,
-    },
-
-    // Empty State
-    emptyState: {
-      alignItems: 'center',
-      paddingVertical: spacing[12],
-      marginBottom: spacing[6],
-    },
-    emptyTitle: {
-      ...typography.textStyles.h3,
-      color: colors.text,
-      marginTop: spacing[4],
-      marginBottom: spacing[2],
-    },
-    emptySubtitle: {
-      ...typography.textStyles.body,
-      color: colors.textSecondary,
-      textAlign: 'center',
-      lineHeight: 24,
-    },
-
-    // Today Prepared Card
-    todayPreparedCard: {
-      backgroundColor: isDark ? 'rgba(5, 150, 105, 0.05)' : 'rgba(5, 150, 105, 0.03)',
-      borderRadius: borderRadius.xl,
-      padding: spacing[5],
-      marginBottom: spacing[6],
-      borderWidth: 1,
-      borderColor: isDark ? 'rgba(5, 150, 105, 0.2)' : 'rgba(5, 150, 105, 0.1)',
-    },
-    todayPreparedHeader: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      marginBottom: spacing[4],
-    },
-    todayPreparedDot: {
-      width: 6,
-      height: 6,
-      borderRadius: 3,
-      backgroundColor: '#059669',
-      marginRight: spacing[2],
-    },
-    todayPreparedTitle: {
-      ...typography.textStyles.h4,
-      color: colors.text,
-      fontSize: 15,
-      fontWeight: '500',
-    },
-    todayPreparedStats: {
-      flexDirection: 'row',
-      justifyContent: 'space-around',
-      alignItems: 'center',
-    },
-    todayPreparedStat: {
-      alignItems: 'center',
-      flex: 1,
-    },
-    todayPreparedValue: {
-      ...typography.textStyles.h2,
-      color: colors.text,
-      fontSize: 28,
-      marginBottom: spacing[1],
-    },
-    todayPreparedLabel: {
-      ...typography.textStyles.caption,
-      color: colors.textSecondary,
-      fontSize: 12,
-    },
-    todayPreparedDivider: {
-      width: 1,
-      height: 32,
-      backgroundColor: isDark ? 'rgba(5, 150, 105, 0.2)' : 'rgba(5, 150, 105, 0.15)',
-    },
-    todayPreparedZenHint: {
-      ...typography.textStyles.caption,
-      color: '#059669',
-      textAlign: 'center',
-      marginTop: spacing[3],
-      fontSize: 11,
-    },
-
-    // Zen Mode Card
-    zenModeCard: {
-      backgroundColor: colors.surface,
-      borderRadius: borderRadius.xl,
-      padding: spacing[5],
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-      borderWidth: 1,
-      borderColor: colors.border,
-      marginBottom: spacing[8],
-      shadowColor: colors.primary[500],
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: isDark ? 0.2 : 0.1,
-      shadowRadius: 16,
-      elevation: 4,
-    },
-    zenContent: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: spacing[4],
-      flex: 1,
-    },
-    zenIconContainer: {
-      width: 56,
-      height: 56,
-      borderRadius: 28,
-      backgroundColor: isDark ? "rgba(59, 130, 246, 0.1)" : "#EFF6FF",
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    zenTitle: {
-      ...typography.textStyles.h4,
-      color: colors.text,
-      marginBottom: 2,
-    },
-    zenSubtitle: {
-      ...typography.textStyles.caption,
-      color: colors.textSecondary,
-    },
-    zenArrow: {
-      marginLeft: spacing[0],
-    },
-
-    // Integration Status
-    section: {
-      marginBottom: spacing[8],
-    },
-    sectionHeader: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
-      marginBottom: spacing[4],
-    },
-    sectionTitle: {
-      ...typography.textStyles.h4,
-      color: colors.text,
-    },
-    seeAllText: {
-      ...typography.textStyles.bodySmall,
-      color: colors.primary[500],
-      fontWeight: "600",
-    },
-    divider: {
-      height: 1,
-      backgroundColor: colors.border,
-      marginHorizontal: spacing[4],
-    },
-
-    // Schedule
-    scheduleCard: {
-      padding: 0,
-      backgroundColor: colors.surface,
-      borderWidth: 1,
-      borderColor: colors.border,
-      overflow: "hidden",
-    },
-    eventItem: {
-      flexDirection: "row",
-      alignItems: "center",
-      padding: spacing[4],
-    },
-    eventDot: {
-      width: 8,
-      height: 8,
-      borderRadius: 4,
-      marginRight: spacing[3],
-    },
-    eventContent: {
-      flex: 1,
-    },
-    eventTitle: {
-      ...typography.textStyles.body,
-      color: colors.text,
-      fontWeight: "500",
-      marginBottom: spacing[1],
-    },
-    eventTime: {
-      ...typography.textStyles.caption,
-      color: colors.textSecondary,
-    },
-
-    // Error & Rate Limit Styles
-    errorContainer: {
-      backgroundColor: isDark ? "#40202a" : "#FFF5F5",
-      borderRadius: 20,
-      padding: spacing[5],
-      marginBottom: spacing[6],
-      borderWidth: 1,
-      borderColor: isDark ? "#5c2b2b" : "#FED7D7",
-    },
-    rateLimitContainer: {
-      backgroundColor: isDark ? "#1E1B16" : "#FFFBEB",
-      borderColor: isDark ? "#45361D" : "#FEF3C7",
-    },
-    errorHeader: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: spacing[4],
-      marginBottom: spacing[4],
-    },
-    errorIconCircle: {
-      width: 48,
-      height: 48,
-      borderRadius: 24,
-      backgroundColor: isDark ? "rgba(239, 68, 68, 0.1)" : "#FEE2E2",
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    errorTitle: {
-      ...typography.textStyles.h4,
-      color: colors.text,
-      marginBottom: 2,
-    },
-    errorSubtitle: {
-      ...typography.textStyles.caption,
-      color: colors.textSecondary,
-      lineHeight: 18,
-    },
-    retryButton: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "center",
-      backgroundColor: isDark ? "rgba(255,255,255,0.05)" : "#FFFFFF",
-      paddingVertical: spacing[3],
-      borderRadius: 12,
-      gap: spacing[2],
-      borderWidth: 1,
-      borderColor: colors.border,
-    },
-    rateLimitRetry: {
-      backgroundColor: isDark ? "rgba(245, 158, 11, 0.05)" : "#FFFFFF",
-      borderColor: isDark ? "rgba(245, 158, 11, 0.2)" : "#FDE68A",
-    },
-    retryText: {
-      ...typography.textStyles.bodySmall,
-      fontWeight: "600",
-      color: colors.primary[500],
-    },
-    rateLimitNote: {
-      ...typography.textStyles.caption,
-      color: colors.textTertiary,
-      textAlign: "center",
-      marginTop: spacing[3],
-      fontSize: 11,
-    },
-  });
+const styles = StyleSheet.create({
+  safe: {
+    flex: 1,
+    backgroundColor: palette.backgroundTop,
+  },
+  background: {
+    flex: 1,
+  },
+  content: {
+    paddingTop: 28,
+    paddingHorizontal: 22,
+    paddingBottom: 30,
+  },
+  header: {
+    marginBottom: 18,
+  },
+  greeting: {
+    fontSize: 28,
+    lineHeight: 34,
+    color: palette.textPrimary,
+    fontFamily: serif,
+    marginBottom: 4,
+  },
+  subGreeting: {
+    fontSize: 14,
+    lineHeight: 18,
+    color: palette.textSecondary,
+    fontFamily: sans,
+  },
+  card: {
+    backgroundColor: palette.card,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: palette.cardBorder,
+    padding: 16,
+    shadowColor: "#000",
+    shadowOpacity: 0.35,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 6,
+  },
+  cardSpacing: {
+    marginTop: 16,
+  },
+  cardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 10,
+  },
+  cardKicker: {
+    fontSize: 12,
+    color: palette.textMuted,
+    fontFamily: sansMedium,
+  },
+  cardTime: {
+    fontSize: 12,
+    color: "#6b6f7b",
+    fontFamily: sans,
+  },
+  cardBody: {
+    fontSize: 16,
+    lineHeight: 22,
+    color: "#e6e8ef",
+    fontFamily: sans,
+  },
+  cardActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 14,
+    gap: 12,
+  },
+  secondaryButton: {
+    flex: 1,
+    height: 40,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: palette.buttonSecondary,
+    borderWidth: 1,
+    borderColor: palette.buttonSecondaryBorder,
+  },
+  secondaryButtonText: {
+    color: palette.buttonSecondaryText,
+    fontSize: 14,
+    fontFamily: sansMedium,
+  },
+  primaryButton: {
+    flex: 1,
+    height: 40,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: palette.buttonPrimary,
+  },
+  primaryButtonText: {
+    color: palette.buttonPrimaryText,
+    fontSize: 14,
+    fontFamily: sansMedium,
+  },
+  bottomSpace: {
+    height: 90,
+  },
+});

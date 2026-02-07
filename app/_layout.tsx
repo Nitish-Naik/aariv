@@ -135,7 +135,7 @@ function ThemedStack() {
           name="paywall"
           options={{
             presentation: "modal",
-            animation: "slide_from_bottom",
+            animation: "fade",
             gestureEnabled: true,
             contentStyle: {
               backgroundColor: colors.background,
@@ -146,7 +146,7 @@ function ThemedStack() {
           name="zen-mode"
           options={{
             presentation: "fullScreenModal",
-            animation: "slide_from_right",
+            animation: "fade",
             contentStyle: {
               backgroundColor: colors.background,
             },
@@ -166,7 +166,7 @@ function ThemedStack() {
           name="toolkits"
           options={{
             presentation: "modal",
-            animation: "slide_from_bottom",
+            animation: "fade",
             contentStyle: {
               backgroundColor: colors.background,
             },

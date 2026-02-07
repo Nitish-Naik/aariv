@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
 import { Ionicons, MaterialIcons, Feather, FontAwesome5 } from '@expo/vector-icons';
