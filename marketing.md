@@ -111,7 +111,6 @@ This document outlines a comprehensive marketing strategy to scale Aariv from 0 
 2. **YouTube + Video Content**
    - Tutorial series: "Getting started with Aariv"
    - Use case walkthroughs: "How I process 200 emails in 10 minutes"
-   - AI behind-the-scenes: "How our knowledge graph works"
    - Shorts/TikTok clips (60-90 sec demos)
    - Publishing: 1 long-form/week, 3 shorts/week
    - Expected: 2,000-4,000 signups

@@ -1,7 +1,7 @@
-import { LinearGradient } from "expo-linear-gradient";
 import { StatusBar } from "expo-status-bar";
-import React from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
+  Animated,
   Platform,
   ScrollView,
   StyleSheet,
@@ -10,211 +10,295 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useTheme } from "../../context/ThemeContext";
 
-const cards = [
-  {
-    id: "email",
-    kicker: "Email from Sarah",
-    time: "2h ago",
-    body:
-      "Sarah asked about the Q4 timeline. Should I let her know we're targeting mid-November?",
-    primary: "Yes, do it",
-  },
-  {
-    id: "calendar",
-    kicker: "Calendar",
-    time: "Tomorrow",
-    body:
-      "You have back-to-back meetings from 9-12. Want me to add a 15-min buffer between them?",
-    primary: "Yes, do it",
-  },
-];
-
-const palette = {
-  backgroundTop: "#0b0b0d",
-  backgroundBottom: "#121218",
-  card: "#141418",
-  cardBorder: "#24242a",
-  textPrimary: "#e8e4df",
-  textSecondary: "#a5a1a0",
-  textMuted: "#7a7780",
-  buttonPrimary: "#8b93b2",
-  buttonPrimaryText: "#11131a",
-  buttonSecondary: "rgba(255,255,255,0.04)",
-  buttonSecondaryBorder: "rgba(255,255,255,0.12)",
-  buttonSecondaryText: "#b9bdc8",
-};
+/* ─── Palette matching the HTML template ─── */
+const pal = (isDark: boolean) => ({
+  bgDeep: isDark ? "#0c0c0e" : "#f7f6f4",
+  bgCard: isDark ? "#141416" : "#ffffff",
+  bgElevated: isDark ? "#1a1a1d" : "#ffffff",
+  accent: isDark ? "#8b95b0" : "#6b7490",
+  accentSoft: isDark ? "rgba(139,149,176,0.12)" : "rgba(107,116,144,0.1)",
+  textPrimary: isDark ? "#e4e2df" : "#1a1918",
+  textSecondary: isDark ? "#908c88" : "#6a6662",
+  textMuted: isDark ? "#5a5754" : "#9a9794",
+  border: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)",
+  btnSecondaryBg: isDark ? "#1a1a1d" : "#f0efed",
+});
 
 const serif = Platform.select({
   ios: "Georgia",
   android: "serif",
   default: "serif",
 });
-
 const sans = Platform.select({
-  ios: "Avenir Next",
+  ios: "System",
   android: "sans-serif",
   default: "System",
 });
 
-const sansMedium = Platform.select({
-  ios: "Avenir Next",
-  android: "sans-serif-medium",
-  default: "System",
-});
+/* ─── Proposal data (will come from backend later) ─── */
+const INITIAL_PROPOSALS = [
+  {
+    id: "1",
+    source: "Email from Sarah",
+    time: "2h ago",
+    message:
+      "Sarah asked about the Q4 timeline. Should I let her know we're targeting mid-November?",
+    primary: "Yes, do it",
+  },
+  {
+    id: "2",
+    source: "Calendar",
+    time: "Tomorrow",
+    message:
+      "You have back-to-back meetings from 9-12. Want me to add a 15-min buffer between them?",
+    primary: "Yes, do it",
+  },
+];
+
+const getGreeting = () => {
+  const hour = new Date().getHours();
+  if (hour < 12) return "Good morning";
+  if (hour < 18) return "Good afternoon";
+  return "Good evening";
+};
+
+const getSubMessage = () => {
+  const hour = new Date().getHours();
+  if (hour >= 21 || hour < 6)
+    return "Enjoy your evening. I'll let you know if anything comes up.";
+  if (hour < 12) return "A fresh start. I'll handle the rest.";
+  return "Everything's under control.";
+};
 
 export default function HomeTab() {
+  const { isDark } = useTheme();
+  const p = pal(isDark);
+  const [proposals, setProposals] = useState(INITIAL_PROPOSALS);
+  const [floatAnim] = useState(() => new Animated.Value(0));
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(floatAnim, {
+          toValue: -8,
+          duration: 1500,
+          useNativeDriver: true,
+        }),
+        Animated.timing(floatAnim, {
+          toValue: 0,
+          duration: 1500,
+          useNativeDriver: true,
+        }),
+      ]),
+    ).start();
+  }, [floatAnim]);
+
+  const handleDismiss = useCallback((id: string) => {
+    setProposals((prev) => prev.filter((p) => p.id !== id));
+  }, []);
+
+  const hasProposals = proposals.length > 0;
+
   return (
-    <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
-      <StatusBar style="light" />
-      <LinearGradient
-        colors={[palette.backgroundTop, palette.backgroundBottom]}
-        style={styles.background}
-      >
+    <SafeAreaView
+      style={[styles.safe, { backgroundColor: p.bgDeep }]}
+      edges={["top", "bottom"]}
+    >
+      <StatusBar style={isDark ? "light" : "dark"} />
+
+      {/* ── Calm state (no proposals) ── */}
+      {!hasProposals && (
+        <View style={styles.calmContainer}>
+          <Animated.Text
+            style={[
+              styles.calmIcon,
+              { color: p.textMuted, transform: [{ translateY: floatAnim }] },
+            ]}
+          >
+            ✦
+          </Animated.Text>
+          <Text
+            style={[
+              styles.calmMessage,
+              { color: p.textPrimary, fontFamily: serif },
+            ]}
+          >
+            Nothing needs your attention
+          </Text>
+          <Text style={[styles.calmSub, { color: p.textMuted }]}>
+            {getSubMessage()}
+          </Text>
+        </View>
+      )}
+
+      {/* ── Proposals state ── */}
+      {hasProposals && (
         <ScrollView
-          contentContainerStyle={styles.content}
+          contentContainerStyle={styles.proposalsScroll}
           showsVerticalScrollIndicator={false}
         >
+          {/* Header */}
           <View style={styles.header}>
-            <Text style={styles.greeting}>Good evening</Text>
-            <Text style={styles.subGreeting}>A few things for you</Text>
+            <Text
+              style={[
+                styles.greeting,
+                { color: p.textPrimary, fontFamily: serif },
+              ]}
+            >
+              {getGreeting()}
+            </Text>
+            <Text style={[styles.subGreeting, { color: p.textMuted }]}>
+              A few things for you
+            </Text>
           </View>
 
-          {cards.map((card, index) => (
+          {/* Cards */}
+          {proposals.map((card) => (
             <View
               key={card.id}
-              style={[styles.card, index > 0 && styles.cardSpacing]}
+              style={[
+                styles.card,
+                {
+                  backgroundColor: p.bgCard,
+                  borderColor: p.border,
+                },
+              ]}
             >
               <View style={styles.cardHeader}>
-                <Text style={styles.cardKicker}>{card.kicker}</Text>
-                <Text style={styles.cardTime}>{card.time}</Text>
+                <Text style={[styles.cardSource, { color: p.textSecondary }]}>
+                  {card.source}
+                </Text>
+                <Text style={[styles.cardTime, { color: p.textMuted }]}>
+                  {card.time}
+                </Text>
               </View>
-              <Text style={styles.cardBody}>{card.body}</Text>
+              <Text style={[styles.cardMessage, { color: p.textPrimary }]}>
+                {card.message}
+              </Text>
               <View style={styles.cardActions}>
                 <TouchableOpacity
-                  style={styles.secondaryButton}
-                  activeOpacity={0.85}
+                  style={[
+                    styles.btn,
+                    styles.btnDefer,
+                    { backgroundColor: p.bgElevated, borderColor: p.border },
+                  ]}
+                  activeOpacity={0.8}
+                  onPress={() => handleDismiss(card.id)}
                 >
-                  <Text style={styles.secondaryButtonText}>Later</Text>
+                  <Text style={[styles.btnText, { color: p.textSecondary }]}>
+                    Later
+                  </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={styles.primaryButton}
-                  activeOpacity={0.85}
+                  style={[
+                    styles.btn,
+                    styles.btnAffirm,
+                    { backgroundColor: p.accent },
+                  ]}
+                  activeOpacity={0.8}
+                  onPress={() => handleDismiss(card.id)}
                 >
-                  <Text style={styles.primaryButtonText}>{card.primary}</Text>
+                  <Text style={[styles.btnText, { color: "#fff" }]}>
+                    {card.primary}
+                  </Text>
                 </TouchableOpacity>
               </View>
             </View>
           ))}
 
-          <View style={styles.bottomSpace} />
+          <View style={{ height: 30 }} />
         </ScrollView>
-      </LinearGradient>
+      )}
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: {
+  safe: { flex: 1 },
+
+  /* ── Calm state ── */
+  calmContainer: {
     flex: 1,
-    backgroundColor: palette.backgroundTop,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 32,
   },
-  background: {
-    flex: 1,
+  calmIcon: {
+    fontSize: 48,
+    marginBottom: 24,
+    opacity: 0.6,
   },
-  content: {
-    paddingTop: 28,
-    paddingHorizontal: 22,
+  calmMessage: {
+    fontSize: 24,
+    fontWeight: "400",
+    textAlign: "center",
+    lineHeight: 34,
+    marginBottom: 12,
+  },
+  calmSub: {
+    fontSize: 15,
+    textAlign: "center",
+    lineHeight: 24,
+  },
+
+  /* ── Proposals ── */
+  proposalsScroll: {
+    paddingHorizontal: 16,
+    paddingTop: 20,
     paddingBottom: 30,
   },
   header: {
-    marginBottom: 18,
+    paddingHorizontal: 8,
+    marginBottom: 20,
   },
   greeting: {
     fontSize: 28,
-    lineHeight: 34,
-    color: palette.textPrimary,
-    fontFamily: serif,
+    fontWeight: "400",
     marginBottom: 4,
   },
   subGreeting: {
     fontSize: 14,
-    lineHeight: 18,
-    color: palette.textSecondary,
-    fontFamily: sans,
   },
+
+  /* ── Card ── */
   card: {
-    backgroundColor: palette.card,
-    borderRadius: 18,
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: palette.cardBorder,
-    padding: 16,
-    shadowColor: "#000",
-    shadowOpacity: 0.35,
-    shadowRadius: 14,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 6,
-  },
-  cardSpacing: {
-    marginTop: 16,
+    padding: 18,
+    marginBottom: 12,
   },
   cardHeader: {
     flexDirection: "row",
-    alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 10,
+    alignItems: "center",
+    marginBottom: 12,
   },
-  cardKicker: {
-    fontSize: 12,
-    color: palette.textMuted,
-    fontFamily: sansMedium,
-  },
-  cardTime: {
-    fontSize: 12,
-    color: "#6b6f7b",
-    fontFamily: sans,
-  },
-  cardBody: {
-    fontSize: 16,
-    lineHeight: 22,
-    color: "#e6e8ef",
-    fontFamily: sans,
+  cardSource: { fontSize: 13 },
+  cardTime: { fontSize: 12 },
+  cardMessage: {
+    fontSize: 15,
+    lineHeight: 23,
+    marginBottom: 16,
   },
   cardActions: {
     flexDirection: "row",
-    alignItems: "center",
-    marginTop: 14,
-    gap: 12,
+    gap: 10,
   },
-  secondaryButton: {
+  btn: {
     flex: 1,
-    height: 40,
-    borderRadius: 12,
+    paddingVertical: 12,
+    borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: palette.buttonSecondary,
+  },
+  btnDefer: {
     borderWidth: 1,
-    borderColor: palette.buttonSecondaryBorder,
   },
-  secondaryButtonText: {
-    color: palette.buttonSecondaryText,
+  btnAffirm: {},
+  btnText: {
     fontSize: 14,
-    fontFamily: sansMedium,
-  },
-  primaryButton: {
-    flex: 1,
-    height: 40,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: palette.buttonPrimary,
-  },
-  primaryButtonText: {
-    color: palette.buttonPrimaryText,
-    fontSize: 14,
-    fontFamily: sansMedium,
-  },
-  bottomSpace: {
-    height: 90,
+    fontWeight: "500",
   },
 });

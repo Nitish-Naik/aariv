@@ -108,14 +108,6 @@ function ThemedStack() {
         <Stack.Screen name="login" />
         <Stack.Screen name="onboarding" />
         <Stack.Screen
-          name="knowledge-graph"
-          options={{
-            contentStyle: {
-              backgroundColor: colors.background,
-            },
-          }}
-        />
-        <Stack.Screen
           name="connect-platforms"
           options={{
             contentStyle: {

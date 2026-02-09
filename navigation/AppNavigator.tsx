@@ -12,8 +12,6 @@ import { ConnectPlatformsScreen } from "../screens/ConnectPlatformsScreen";
 import { EditActionFormScreen } from "../screens/EditActionFormScreen";
 import { ExecutionStatusScreen } from "../screens/ExecutionStatusScreen";
 import { HomeDashboard } from "../screens/HomeDashboard";
-import { KnowledgeGraphConsentScreen } from "../screens/KnowledgeGraphConsentScreen";
-import { KnowledgeGraphViewerScreen } from "../screens/KnowledgeGraphViewerScreen";
 import { PermissionsManagerScreen } from "../screens/PermissionsManagerScreen";
 import { ReviewQueueScreen } from "../screens/ReviewQueueScreen";
 import { SettingsScreen } from "../screens/SettingsScreen";
@@ -28,7 +26,6 @@ import type {
     CalendarEvent,
     ChatMessage,
     InboxItem,
-    KnowledgeGraphNode,
     PlatformConnection,
 } from "../types";
 
@@ -176,27 +173,6 @@ const mockMessages: ChatMessage[] = [
       "What's on my calendar today?",
       "Suggest actions for my inbox",
     ],
-  },
-];
-
-const mockKnowledgeGraph: KnowledgeGraphNode[] = [
-  {
-    id: "node-1",
-    type: "pattern",
-    label: "Morning Email Check",
-    description: "You typically check emails between 9-10 AM",
-    createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-    expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-    connections: ["node-2"],
-  },
-  {
-    id: "node-2",
-    type: "preference",
-    label: "Brief Replies",
-    description: "You prefer concise, action-oriented email responses",
-    createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
-    expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-    connections: ["node-1"],
   },
 ];
 
@@ -371,19 +347,6 @@ function SettingsStack() {
               // KeyVault screen not yet implemented
               console.log("Navigate to KeyVault");
             }}
-            onNavigateToKnowledgeGraph={() =>
-              navigation.navigate("KnowledgeGraphViewer")
-            }
-          />
-        )}
-      </Stack.Screen>
-      <Stack.Screen name="KnowledgeGraphViewer">
-        {({ navigation }) => (
-          <KnowledgeGraphViewerScreen
-            nodes={mockKnowledgeGraph}
-            onDeleteNode={(id) => console.log("Delete node", id)}
-            onClearAll={() => console.log("Clear all")}
-            onBack={() => navigation.goBack()}
           />
         )}
       </Stack.Screen>
@@ -438,21 +401,6 @@ export function AppNavigator() {
           {({ route, navigation }: any) => (
             <ExecutionStatusScreen
               action={route.params?.action}
-              onBack={() => navigation.goBack()}
-            />
-          )}
-        </Stack.Screen>
-        <Stack.Screen name="KnowledgeGraphConsent">
-          {({ navigation }) => (
-            <KnowledgeGraphConsentScreen
-              onAccept={() => {
-                console.log("Accept knowledge graph");
-                navigation.goBack();
-              }}
-              onDecline={() => {
-                console.log("Decline knowledge graph");
-                navigation.goBack();
-              }}
               onBack={() => navigation.goBack()}
             />
           )}

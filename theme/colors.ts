@@ -1,88 +1,87 @@
 /**
  * Aariv Design System - Colors
- * Updated to "True Black" & "Electric Blue" Aesthetic (OLED Friendly)
+ * Calm, muted aesthetic — warm neutrals with slate-blue accent
  */
 
 export const colors = {
-  // Primary palette - Electric Blue (Vibrant & High Energy)
+  // Primary/Accent palette — Slate-blue (calm & understated)
   primary: {
-    50: '#EFF6FF',
-    100: '#DBEAFE',
-    200: '#BFDBFE',
-    300: '#93C5FD',
-    400: '#60A5FA',
-    500: '#3B82F6', // Vibrant Blue (Main Brand)
-    600: '#2563EB', // Hover/Active
-    700: '#1D4ED8',
-    800: '#1E40AF',
-    900: '#1E3A8A',
+    50: "#f0f1f5",
+    100: "#dfe1ea",
+    200: "#c4c8d6",
+    300: "#a8aec2",
+    400: "#99a0b9",
+    500: "#8b95b0", // Main accent (from template)
+    600: "#7b84a0",
+    700: "#6b7490", // Light-theme accent
+    800: "#545c73",
+    900: "#3d4356",
   },
 
-  // Neutral grays - Zinc (Neutral & Sharp)
+  // Neutral grays — warm-toned
   neutral: {
-    50: '#FAFAFA',
-    100: '#F4F4F5',
-    200: '#E4E4E7',
-    300: '#D4D4D8',
-    400: '#A1A1AA',
-    500: '#71717A',
-    600: '#52525B',
-    700: '#3F3F46',
-    800: '#27272A',
-    900: '#18181B',
+    50: "#f7f6f4",
+    100: "#f0efed",
+    200: "#e4e2df",
+    300: "#d4d1cd",
+    400: "#a5a19d",
+    500: "#908c88",
+    600: "#6a6662",
+    700: "#5a5754",
+    800: "#3a3836",
+    900: "#1a1918",
   },
 
-  // Dark theme base - OLED True Black
+  // Dark theme — deep charcoal (NOT pure black, warm & calm)
   dark: {
-    background: '#000000', // True Black for OLED
-    surface: '#121212',    // Subtle surface separation
-    surfaceElevated: '#1C1C1E', // Apple-style elevated surface
-    border: '#27272A',     // Subtle border (Zinc-800)
-    text: '#FFFFFF',       // Pure white for max contrast
-    textSecondary: '#A1A1AA', // Zinc-400
-    textTertiary: '#71717A',  // Zinc-500
+    background: "#0c0c0e",
+    surface: "#141416",
+    surfaceElevated: "#1a1a1d",
+    border: "rgba(255, 255, 255, 0.06)",
+    text: "#e4e2df",
+    textSecondary: "#908c88",
+    textTertiary: "#5a5754",
   },
 
-  // Light theme base
+  // Light theme
   light: {
-    background: '#FFFFFF',
-    surface: '#F4F4F5',    // Slight off-white container
-    surfaceElevated: '#FFFFFF',
-    border: '#E4E4E7',     // Zinc-200
-    text: '#09090B',       // Zinc-950 (Almost Black)
-    textSecondary: '#52525B',
-    textTertiary: '#71717A',
+    background: "#f7f6f4",
+    surface: "#ffffff",
+    surfaceElevated: "#ffffff",
+    border: "rgba(0, 0, 0, 0.06)",
+    text: "#1a1918",
+    textSecondary: "#6a6662",
+    textTertiary: "#9a9794",
   },
 
-  // Semantic colors
+  // Semantic colors — soft, muted tones
   semantic: {
-    success: '#10B981', // Emerald
-    warning: '#F59E0B',
-    error: '#EF4444',
-    info: '#3B82F6',
+    success: "#7eb88a",
+    warning: "#c6a27a",
+    error: "#c45c5c",
+    info: "#8b95b0",
   },
 
   // Action states
   action: {
-    approve: '#10B981',
-    reject: '#EF4444',
-    pending: '#F59E0B',
-    neutral: '#737373',
+    approve: "#7eb88a",
+    reject: "#c45c5c",
+    pending: "#c6a27a",
+    neutral: "#908c88",
   },
 
   // Platform colors
   platforms: {
-    gmail: '#EA4335',
-    calendar: '#3B82F6', // Aligned with primary
-    slack: '#ECB22E',    // Using the yellow/gold from Slack logo for contrast
-    notion: '#FFFFFF',   // White for dark mode visibility
-    linear: '#5E6AD2',
-    discord: '#5865F2',
-    maps: '#34A853',
-    github: '#24292e',
-    twitter: '#1DA1F2',
+    gmail: "#EA4335",
+    calendar: "#8b95b0",
+    slack: "#ECB22E",
+    notion: "#FFFFFF",
+    linear: "#5E6AD2",
+    discord: "#5865F2",
+    maps: "#34A853",
+    github: "#24292e",
+    twitter: "#1DA1F2",
   },
 };
 
-export type ColorScheme = 'light' | 'dark';
-
+export type ColorScheme = "light" | "dark";

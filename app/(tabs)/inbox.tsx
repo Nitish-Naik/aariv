@@ -1,222 +1,292 @@
-import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useState } from "react";
 import {
-    ActivityIndicator,
-    ScrollView,
+    Platform,
     RefreshControl,
+    ScrollView,
     StyleSheet,
     Text,
     TouchableOpacity,
     View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Card } from "../../components/Card";
-import { PlatformIcon } from "../../components/PlatformIcon";
 import { useTheme } from "../../context/ThemeContext";
-import { api } from "../../services/api";
-import { getCurrentUser } from "../../services/auth";
-import { borderRadius, spacing, typography } from "../../theme";
-// import { MOCK_INBOX_ITEMS } from "../../utils/mockData";
 
-interface InboxItem {
-    id: string;
-    threadId?: string;
-    sender: string;
-    subject: string;
-    snippet: string;
-    time: string;
-    unread: boolean;
-    priority: "high" | "low";
-    actionRequired: boolean;
-    suggestedAction?: string;
+/* ─── Palette ─── */
+const pal = (isDark: boolean) => ({
+  bgDeep: isDark ? "#0c0c0e" : "#f7f6f4",
+  bgCard: isDark ? "#141416" : "#ffffff",
+  bgElevated: isDark ? "#1a1a1d" : "#ffffff",
+  accent: isDark ? "#8b95b0" : "#6b7490",
+  accentSoft: isDark ? "rgba(139,149,176,0.12)" : "rgba(107,116,144,0.1)",
+  textPrimary: isDark ? "#e4e2df" : "#1a1918",
+  textSecondary: isDark ? "#908c88" : "#6a6662",
+  textMuted: isDark ? "#5a5754" : "#9a9794",
+  border: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)",
+});
+
+const serif = Platform.select({
+  ios: "Georgia",
+  android: "serif",
+  default: "serif",
+});
+
+interface ReviewItem {
+  id: string;
+  icon: string;
+  source: string;
+  context: string;
+  summary: string;
+  question: string;
 }
 
-export default function PriorityTab() {
-  const router = useRouter();
-  const [messages, setMessages] = useState<InboxItem[]>([]);
-  const [loading, setLoading] = useState(true);
+const MOCK_REVIEW_ITEMS: ReviewItem[] = [
+  {
+    id: "1",
+    icon: "📧",
+    source: "Email from Mike",
+    context: "Waiting 2 days",
+    summary: "Asked about the budget proposal",
+    question: "Should I draft a response?",
+  },
+  {
+    id: "2",
+    icon: "📅",
+    source: "Calendar",
+    context: "Tomorrow",
+    summary: "Design review meeting needs attendees confirmed",
+    question: "Want me to send reminders?",
+  },
+];
+
+export default function ReviewTab() {
+  const { isDark } = useTheme();
+  const p = pal(isDark);
+  const [items, setItems] = useState<ReviewItem[]>(MOCK_REVIEW_ITEMS);
+  const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  
-  const { colors, isDark } = useTheme();
-  const styles = getStyles(colors, isDark);
 
-
-  const fetchInbox = useCallback(async () => {
-         try {
-           setError(null);
-           const user = await getCurrentUser();
-           if (!user) {
-             throw new Error("You are signed out. Please log in again.");
-           }
-           const data = await api.get(`/inbox?userId=${user.id}`);
-           setMessages(Array.isArray(data.messages) ? data.messages : []);
-         } catch (e: any) {
-           console.log("Failed to fetch inbox", e);
-           setError(e?.message || "Failed to load inbox");
-         } finally {
-           setLoading(false);
-         }
+  const handleAction = useCallback((id: string, action: string) => {
+    setItems((prev) => prev.filter((item) => item.id !== id));
   }, []);
 
-  useEffect(() => {
-      fetchInbox();
-  }, [fetchInbox]);
-
   const onRefresh = async () => {
-      setRefreshing(true);
-      await fetchInbox();
+    setRefreshing(true);
+    // In production, fetch from backend
+    setTimeout(() => {
+      setItems(MOCK_REVIEW_ITEMS);
       setRefreshing(false);
+    }, 800);
   };
 
+  const hasItems = items.length > 0;
+
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
+    <SafeAreaView
+      style={[styles.safe, { backgroundColor: p.bgDeep }]}
+      edges={["top"]}
+    >
+      {/* Header */}
       <View style={styles.header}>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.greeting}>Inbox</Text>
-          <Text style={styles.briefing}>
-            Items prepared for your review.
-          </Text>
-        </View>
+        <Text
+          style={[styles.title, { color: p.textPrimary, fontFamily: serif }]}
+        >
+          Review
+        </Text>
+        <Text style={[styles.subtitle, { color: p.textMuted }]}>
+          Items that may need your judgment
+        </Text>
       </View>
 
-      {error && (
-        <View style={{ padding: 12, borderRadius: 12, backgroundColor: isDark ? "#40202a" : "#fff5f5", marginBottom: 12, marginHorizontal: spacing[6] }}>
-          <Text style={{ color: colors.text, marginBottom: 4 }}>Could not load inbox.</Text>
-          <Text style={{ color: colors.textSecondary, marginBottom: 8 }}>{error}</Text>
-          <TouchableOpacity onPress={fetchInbox} style={{ flexDirection: "row", alignItems: "center" }}>
-            <Ionicons name="refresh" size={16} color={colors.primary[500]} />
-            <Text style={{ color: colors.primary[500], marginLeft: 6 }}>Retry</Text>
-          </TouchableOpacity>
-        </View>
-      )}
-
       <ScrollView
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary[500]} />
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={p.accent}
+          />
         }
       >
-        {loading ? (
-          <ActivityIndicator style={{marginTop: 40}} color={colors.primary[500]} />
-        ) : error ? (
-          <View style={{ alignItems: "center", marginTop: 40 }}>
-            <Ionicons name="warning" size={48} color={colors.textTertiary} />
-            <Text style={{ color: colors.textSecondary, marginTop: 16 }}>Could not load inbox.</Text>
-          </View>
-        ) : messages.length === 0 ? (
-          <View style={{ flex: 1, alignItems: "center", justifyContent: "center", marginTop: 40 }}>
-              <Ionicons name="mail-open-outline" size={48} color={colors.textTertiary} />
-              <Text style={{ color: colors.textSecondary, marginTop: 16 }}>No messages found</Text>
-          </View>
-        ) : (
-          messages.map((item, index) => (
-            <Card
-              key={item.id}
-              style={styles.messageCard}
-              padding={0}
+        {/* Empty state */}
+        {!hasItems && (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyIcon}>☁️</Text>
+            <Text
+              style={[
+                styles.emptyTitle,
+                { color: p.textPrimary, fontFamily: serif },
+              ]}
             >
-              <TouchableOpacity style={styles.cardInner} onPress={() => {}}>
-                <View style={styles.messageHeader}>
-                  <View style={styles.senderInfo}>
-                    <PlatformIcon platform={'gmail'} size={16} />
-                    <Text style={styles.sender}>{item.sender}</Text>
-                  </View>
-                  <Text style={styles.time}>{item.time}</Text>
-                </View>
+              Nothing needs your judgment
+            </Text>
+            <Text style={[styles.emptyText, { color: p.textMuted }]}>
+              I've processed everything for now.
+            </Text>
+          </View>
+        )}
 
-                <Text style={styles.subject} numberOfLines={2}>
-                  {item.subject}
-                </Text>
-                <Text style={styles.preview} numberOfLines={2}>
-                    {item.snippet}
+        {/* Review cards */}
+        {items.map((item) => (
+          <View
+            key={item.id}
+            style={[
+              styles.card,
+              { backgroundColor: p.bgCard, borderColor: p.border },
+            ]}
+          >
+            <View style={styles.cardHeader}>
+              <Text style={styles.cardIcon}>{item.icon}</Text>
+              <Text style={[styles.cardSource, { color: p.textSecondary }]}>
+                {item.source}
+              </Text>
+              <Text style={[styles.cardContext, { color: p.textMuted }]}>
+                {item.context}
+              </Text>
+            </View>
+            <Text style={[styles.cardSummary, { color: p.textPrimary }]}>
+              {item.summary}
+            </Text>
+            <Text style={[styles.cardQuestion, { color: p.accent }]}>
+              {item.question}
+            </Text>
+            <View style={styles.actions}>
+              <TouchableOpacity
+                style={[
+                  styles.actionBtn,
+                  { backgroundColor: p.bgElevated, borderColor: p.border },
+                ]}
+                activeOpacity={0.8}
+                onPress={() => handleAction(item.id, "dismiss")}
+              >
+                <Text
+                  style={[styles.actionBtnText, { color: p.textSecondary }]}
+                >
+                  Dismiss
                 </Text>
               </TouchableOpacity>
-            </Card>
-          ))
-        )}
+              <TouchableOpacity
+                style={[
+                  styles.actionBtn,
+                  { backgroundColor: p.bgElevated, borderColor: p.border },
+                ]}
+                activeOpacity={0.8}
+                onPress={() => handleAction(item.id, "defer")}
+              >
+                <Text
+                  style={[styles.actionBtnText, { color: p.textSecondary }]}
+                >
+                  Later
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.actionBtn,
+                  styles.primaryBtn,
+                  { backgroundColor: p.accent },
+                ]}
+                activeOpacity={0.8}
+                onPress={() => handleAction(item.id, "affirm")}
+              >
+                <Text style={[styles.actionBtnText, { color: "#fff" }]}>
+                  Yes
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        ))}
+
+        <View style={{ height: 30 }} />
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-const getStyles = (colors: any, isDark: boolean) =>
-  StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: colors.background,
-    },
-    header: {
-      paddingHorizontal: spacing[6],
-      marginBottom: spacing[6],
-      paddingTop: spacing[8], // Matches Home Tab alignment
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "flex-start",
-      gap: spacing[4],
-    },
-    greeting: {
-      ...typography.textStyles.h2,
-      color: colors.text,
-      marginBottom: spacing[2],
-    },
-    briefing: {
-      ...typography.textStyles.body,
-      fontSize: 16,
-      color: colors.textSecondary,
-      lineHeight: 24,
-    },
-    listContent: {
-      paddingHorizontal: spacing[6],
-      paddingBottom: 120, // Space for Copilot bar
-      flexGrow: 1,
-    },
+const styles = StyleSheet.create({
+  safe: { flex: 1 },
+  header: {
+    paddingHorizontal: 24,
+    paddingTop: 20,
+    paddingBottom: 16,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: "400",
+  },
+  subtitle: {
+    fontSize: 14,
+    marginTop: 4,
+  },
+  scrollContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 30,
+  },
 
-    // CARD STYLES
-    messageCard: {
-      marginBottom: spacing[4],
-      borderWidth: 1,
-      borderColor: "transparent",
-      overflow: "hidden", // Contain buttons
-    },
-    actionCard: {
-      borderColor: isDark ? colors.primary[900] : colors.primary[100],
-      backgroundColor: isDark ? "#0F172A" : "#FFFFFF",
-    },
-    cardInner: {
-      padding: spacing[4],
-    },
-    messageHeader: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      marginBottom: spacing[2],
-      alignItems: "center",
-    },
-    senderInfo: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: spacing[2],
-    },
-    sender: {
-      ...typography.textStyles.bodySmall,
-      color: colors.textSecondary,
-      fontWeight: "500",
-    },
-    time: {
-      ...typography.textStyles.caption,
-      color: colors.textTertiary,
-    },
-    subject: {
-      ...typography.textStyles.h4,
-      fontSize: 15,
-      color: colors.text,
-      marginBottom: spacing[3],
-    },
-    preview: {
-      ...typography.textStyles.bodySmall,
-      color: colors.textSecondary,
-      lineHeight: 20,
-    },
-  });
+  /* Empty */
+  emptyContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: 400,
+    paddingHorizontal: 40,
+  },
+  emptyIcon: {
+    fontSize: 48,
+    marginBottom: 20,
+    opacity: 0.5,
+  },
+  emptyTitle: {
+    fontSize: 22,
+    marginBottom: 8,
+    textAlign: "center",
+  },
+  emptyText: {
+    fontSize: 14,
+    textAlign: "center",
+  },
+
+  /* Card */
+  card: {
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 18,
+    marginBottom: 12,
+  },
+  cardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    marginBottom: 10,
+  },
+  cardIcon: { fontSize: 18 },
+  cardSource: { fontSize: 13 },
+  cardContext: { fontSize: 12, marginLeft: "auto" },
+  cardSummary: {
+    fontSize: 15,
+    marginBottom: 8,
+  },
+  cardQuestion: {
+    fontSize: 14,
+    fontStyle: "italic",
+    marginBottom: 16,
+  },
+
+  /* Actions */
+  actions: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  actionBtn: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    alignItems: "center",
+  },
+  primaryBtn: {
+    borderWidth: 0,
+  },
+  actionBtnText: {
+    fontSize: 13,
+    fontWeight: "500",
+  },
+});

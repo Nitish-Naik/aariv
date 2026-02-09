@@ -19,13 +19,13 @@ export interface PlatformConnection {
 export interface ActionItem {
   id: string;
   type:
-  | "email"
-  | "calendar"
-  | "slack"
-  | "notion"
-  | "linear"
-  | "discord"
-  | "maps";
+    | "email"
+    | "calendar"
+    | "slack"
+    | "notion"
+    | "linear"
+    | "discord"
+    | "maps";
   title: string;
   description: string;
   platform: Platform;
@@ -57,17 +57,6 @@ export interface InboxItem {
   receivedAt: Date;
   unread: boolean;
   priority?: "low" | "medium" | "high";
-}
-
-export interface KnowledgeGraphNode {
-  id: string;
-  type: "pattern" | "preference" | "ritual" | "cadence";
-  label: string;
-  description: string;
-  createdAt: Date;
-  expiresAt: Date;
-  connections: string[];
-  metadata?: Record<string, any>;
 }
 
 export interface User {

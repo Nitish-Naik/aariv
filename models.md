@@ -25,7 +25,6 @@ This document explores multiple pricing models for Aariv, analyzing each approac
 | **AI Actions/Day** | 5 | 50 | 500 | Unlimited |
 | **Email Drafts** | 3/day | 20/day | Unlimited | Unlimited |
 | **Calendar Integration** | 1 calendar | 3 calendars | Unlimited | Unlimited |
-| **Knowledge Graph** | Basic | Full | Full | Full |
 | **Voice Mode** | ❌ | ✅ | ✅ | ✅ |
 | **Zen Mode** | ❌ | ✅ | ✅ | ✅ |
 | **Team Members** | 1 | 1 | 1 | 5+ |
@@ -96,7 +95,6 @@ Usage Credits:
 - Email analyzed: $0.01 per email
 - AI action executed: $0.50 per action
 - Calendar event processed: $0.05 per event
-- Knowledge graph node: $0.10 per node
 - API call: $0.001 per 1000 calls (after 10k free/month)
 - Voice mode minute: $0.10 per minute
 
@@ -258,7 +256,6 @@ Premium Tier: $24.99/month
 - Advanced AI features (better responses)
 - Voice Mode (advanced voice commands)
 - Zen Mode (swipe-based approval)
-- Knowledge Graph Visualization
 - Advanced analytics
 - API access
 - Priority support

@@ -1,61 +1,92 @@
-import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import { useRouter } from "expo-router";
+import React, { useEffect, useState } from "react";
 import {
   Alert,
+  Platform,
   ScrollView,
   StyleSheet,
   Switch,
   Text,
   TouchableOpacity,
-  View
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useTheme } from '../../context/ThemeContext';
-import { deleteAccount, getCurrentUser, signOut } from '../../services/auth';
-import { spacing, typography } from '../../theme';
-import type { User } from '../../types';
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useTheme } from "../../context/ThemeContext";
+import { deleteAccount, getCurrentUser, signOut } from "../../services/auth";
+import type { User } from "../../types";
+
+/* ── colour helper (same pattern as other screens) ── */
+const pal = (dark: boolean) => ({
+  bg: dark ? "#0c0c0e" : "#f7f6f4",
+  card: dark ? "#141416" : "#ffffff",
+  elevated: dark ? "#1a1a1d" : "#f0efed",
+  accent: dark ? "#8b95b0" : "#6b7490",
+  accentSoft: dark ? "rgba(139,149,176,0.12)" : "rgba(107,116,144,0.10)",
+  textPri: dark ? "#e4e2df" : "#1a1918",
+  textSec: dark ? "#908c88" : "#6a6662",
+  textMut: dark ? "#5a5754" : "#9a9794",
+  border: dark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)",
+  success: "#7eb88a",
+  successSoft: dark ? "rgba(126,184,138,0.12)" : "rgba(126,184,138,0.12)",
+  warning: "#c6a27a",
+  warningSoft: dark ? "rgba(198,162,122,0.12)" : "rgba(198,162,122,0.12)",
+  error: "#c45c5c",
+  trackOn: dark ? "#8b95b0" : "#6b7490",
+  trackOff: dark ? "#2a2a2d" : "#d4d3d0",
+});
+
+const SERIF = Platform.select({ ios: "Georgia", default: "serif" });
+
+/* ── source data ── */
+const SOURCES = [
+  {
+    name: "Google Calendar",
+    emoji: "📅",
+    badge: "Connected",
+    badgeType: "connected",
+  },
+  { name: "Gmail", emoji: "📧", badge: "Pro", badgeType: "pro" },
+  { name: "Slack", emoji: "💬", badge: "+ Add", badgeType: "add" },
+];
 
 export default function SettingsScreen() {
   const router = useRouter();
-  const { colors, isDark, toggleTheme } = useTheme();
+  const { isDark, toggleTheme, setTheme } = useTheme();
+  const c = pal(isDark);
 
   const [user, setUser] = useState<User | null>(null);
-  const [notifications, setNotifications] = useState(true);
 
-  const styles = getStyles(colors, isDark);
+  /* toggle states */
+  const [onlyNecessary, setOnlyNecessary] = useState(true);
+  const [quietHours, setQuietHours] = useState(true);
+  const [draftResponses, setDraftResponses] = useState(true);
+  const [protectFocus, setProtectFocus] = useState(false);
 
   useEffect(() => {
     loadUser();
   }, []);
-
   const loadUser = async () => {
-    const currentUser = await getCurrentUser();
-    setUser(currentUser);
+    setUser(await getCurrentUser());
   };
 
-  const handleLogout = () => {
-    Alert.alert(
-      "Sever Neural Link?",
-      "Disconnecting will pause all active context monitoring.",
-      [
-        { text: "Stay Connected", style: "cancel" },
-        {
-          text: "Disconnect",
-          style: "destructive",
-          onPress: async () => {
-            await signOut();
-            router.replace('/login');
-          }
-        }
-      ]
-    );
-  };
+  /* ── auth actions ── */
+  const handleSignOut = () =>
+    Alert.alert("Sign Out?", "You'll be signed out of Aariv.", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Sign Out",
+        style: "destructive",
+        onPress: async () => {
+          await signOut();
+          router.replace("/login");
+        },
+      },
+    ]);
 
-  const handleDeleteAccount = () => {
+  const handleDeleteAccount = () =>
     Alert.alert(
       "Delete Account?",
-      "This action is irreversible. All your data and connections will be wiped.",
+      "This is irreversible. All data will be removed.",
       [
         { text: "Cancel", style: "cancel" },
         {
@@ -65,238 +96,311 @@ export default function SettingsScreen() {
             if (!user) return;
             try {
               await deleteAccount(user.id);
-              router.replace('/login');
+              router.replace("/login");
             } catch (e: any) {
               Alert.alert("Error", "Failed to delete account: " + e.message);
             }
-          }
-        }
-      ]
+          },
+        },
+      ],
     );
+
+  /* ── badge colour ── */
+  const badgeStyle = (type: string) => {
+    if (type === "connected") return { bg: c.successSoft, text: c.success };
+    if (type === "pro") return { bg: c.warningSoft, text: c.warning };
+    return { bg: c.accentSoft, text: c.accent };
   };
 
+  /* ── shared switch props ── */
+  const sw = (value: boolean, onChange: (v: boolean) => void) => ({
+    value,
+    onValueChange: onChange,
+    trackColor: { true: c.trackOn, false: c.trackOff },
+    thumbColor: "#fff",
+  });
+
+  const s = styles(c, isDark);
+
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.greeting}>Settings</Text>
-          <Text style={styles.briefing}>
-            Manage your account and preferences.
-          </Text>
-        </View>
-        <TouchableOpacity style={styles.profileBtn} onPress={handleLogout}>
-          {user ? (
-            <View style={styles.avatarBadge}>
-              <Text style={styles.avatarText}>
-                {user.name
-                  ? user.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
-                  : 'ID'}
-              </Text>
-              <View style={styles.statusDot} />
-            </View>
-          ) : (
-            <Ionicons name="person-circle" size={36} color={colors.textSecondary} />
-          )}
-        </TouchableOpacity>
-      </View>
+    <SafeAreaView style={s.safe}>
+      <ScrollView
+        contentContainerStyle={s.scroll}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* ── Header ── */}
+        <Text style={s.title}>Your Boundaries</Text>
+        <Text style={s.subtitle}>Control when Aariv speaks</Text>
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-
-
-        {/* Core */}
-        <Text style={styles.sectionLabel}>Core</Text>
-        <View style={styles.card}>
-          <TouchableOpacity style={styles.row} onPress={async () => {
-            
-            const { hasKGConsent } = await import('../../utils/kgConsent');
-            const hasConsent = await hasKGConsent();
-
-            if (hasConsent) {
-              router.push('/knowledge-graph');
-            } else {
-              
-              router.push('/kg-consent');
-            }
-          }}>
-            <View style={styles.rowIcon}>
-              <Ionicons name="git-network" size={20} color={colors.primary[500]} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.rowTitle}>Knowledge Graph</Text>
-              <Text style={styles.rowSubtitle}>View mapped relationships & context</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />
-          </TouchableOpacity>
-
-          <View style={styles.divider} />
-
-          <TouchableOpacity style={styles.row} onPress={() => router.push('/toolkits')}>
-            <View style={styles.rowIcon}>
-              <Ionicons name="extension-puzzle" size={20} color={colors.primary[500]} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.rowTitle}>Neural Marketplace</Text>
-              <Text style={styles.rowSubtitle}>Manage integrations & capabilities</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />
-          </TouchableOpacity>
-
-          <View style={styles.divider} />
-
-          <TouchableOpacity style={styles.row} onPress={() => router.push('/connect-platforms')}>
-            <View style={styles.rowIcon}>
-                <Ionicons name="apps" size={20} color={colors.primary[500]} />
-            </View>
-            <Text style={styles.rowTitle}>Connected Apps</Text>
-            <Ionicons name="chevron-forward" size={20} color={colors.neutral[400]} />
-          </TouchableOpacity>
+        {/* ── Connected Sources ── */}
+        <Text style={s.section}>Connected Sources</Text>
+        <View style={s.card}>
+          {SOURCES.map((src, i) => {
+            const b = badgeStyle(src.badgeType);
+            return (
+              <React.Fragment key={src.name}>
+                {i > 0 && <View style={s.divider} />}
+                <TouchableOpacity
+                  style={s.row}
+                  onPress={() => router.push("/connect-platforms")}
+                >
+                  <View style={s.iconBox}>
+                    <Text style={s.iconEmoji}>{src.emoji}</Text>
+                  </View>
+                  <View style={s.itemContent}>
+                    <Text style={s.rowLabel}>{src.name}</Text>
+                  </View>
+                  <View style={[s.badge, { backgroundColor: b.bg }]}>
+                    <Text style={[s.badgeText, { color: b.text }]}>
+                      {src.badge}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              </React.Fragment>
+            );
+          })}
         </View>
 
-        {/* Preferences */}
-        <Text style={styles.sectionLabel}>Preferences</Text>
-        <View style={styles.card}>
-          <View style={styles.row}>
-            <Text style={styles.rowTitle}>Notifications</Text>
-            <Switch
-              value={notifications}
-              onValueChange={setNotifications}
-              trackColor={{ true: colors.primary[500], false: colors.neutral[700] }}
-            />
+        {/* ── When to Surface ── */}
+        <Text style={s.section}>When to Surface</Text>
+        <View style={s.card}>
+          <View style={s.row}>
+            <View style={s.itemContent}>
+              <Text style={s.rowLabel}>Only when necessary</Text>
+              <Text style={s.rowSub}>Skip routine updates</Text>
+            </View>
+            <Switch {...sw(onlyNecessary, setOnlyNecessary)} />
           </View>
-          <View style={styles.divider} />
-          <View style={styles.row}>
-            <Text style={styles.rowTitle}>Dark Mode</Text>
-            <Switch
-              value={isDark}
-              onValueChange={toggleTheme}
-              trackColor={{ true: colors.primary[500], false: colors.neutral[700] }}
-            />
+          <View style={s.divider} />
+          <View style={s.row}>
+            <View style={s.itemContent}>
+              <Text style={s.rowLabel}>Respect quiet hours</Text>
+              <Text style={s.rowSub}>10 PM – 8 AM</Text>
+            </View>
+            <Switch {...sw(quietHours, setQuietHours)} />
           </View>
         </View>
 
-        {/* DANGER ZONE */}
-        <Text style={[styles.sectionLabel, { color: colors.semantic.error, marginTop: spacing[6] }]}>DANGER ZONE</Text>
-        <View style={[styles.card, { borderColor: colors.semantic.error, borderWidth: 1 }]}>
-          <TouchableOpacity style={styles.row} onPress={handleLogout}>
-            <Ionicons name="log-out-outline" size={20} color={colors.semantic.error} />
-            <Text style={[styles.rowTitle, { color: colors.semantic.error }]}>Sign Out</Text>
-          </TouchableOpacity>
+        {/* ── Copilot Behaviour ── */}
+        <Text style={s.section}>Copilot Behaviour</Text>
+        <View style={s.card}>
+          <View style={s.row}>
+            <View style={s.itemContent}>
+              <Text style={s.rowLabel}>Draft responses</Text>
+              <Text style={s.rowSub}>Prepare replies for approval</Text>
+            </View>
+            <Switch {...sw(draftResponses, setDraftResponses)} />
+          </View>
+          <View style={s.divider} />
+          <View style={s.row}>
+            <View style={s.itemContent}>
+              <Text style={s.rowLabel}>Protect focus time</Text>
+              <Text style={s.rowSub}>Block calendar during deep work</Text>
+            </View>
+            <Switch {...sw(protectFocus, setProtectFocus)} />
+          </View>
+        </View>
 
-          <View style={styles.divider} />
-
-          <TouchableOpacity style={styles.row} onPress={handleDeleteAccount}>
-            <Ionicons name="trash-outline" size={20} color={colors.semantic.error} />
-            <Text style={[styles.rowTitle, { color: colors.semantic.error }]}>Delete Account</Text>
+        {/* ── More ── */}
+        <Text style={s.section}>More</Text>
+        <View style={s.card}>
+          <TouchableOpacity
+            style={s.row}
+            onPress={() => router.push("/toolkits")}
+          >
+            <View style={s.iconBox}>
+              <Text style={s.iconEmoji}>🧩</Text>
+            </View>
+            <View style={[s.itemContent, { flex: 1 }]}>
+              <Text style={s.rowLabel}>Integrations</Text>
+            </View>
+            <Text style={s.arrow}>›</Text>
           </TouchableOpacity>
         </View>
 
+        {/* ── Appearance ── */}
+        <Text style={s.section}>Appearance</Text>
+        <View style={s.card}>
+          <View style={s.row}>
+            <View style={s.itemContent}>
+              <Text style={s.rowLabel}>Theme</Text>
+            </View>
+            <View style={s.themeRow}>
+              <TouchableOpacity
+                style={[s.themeBtn, !isDark && s.themeBtnActive]}
+                onPress={() => setTheme("light")}
+              >
+                <Text style={[s.themeBtnText, !isDark && s.themeBtnTextActive]}>
+                  Light
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[s.themeBtn, isDark && s.themeBtnActive]}
+                onPress={() => setTheme("dark")}
+              >
+                <Text style={[s.themeBtnText, isDark && s.themeBtnTextActive]}>
+                  Dark
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+
+        {/* ── Account ── */}
+        <Text style={s.section}>Account</Text>
+        <View style={s.card}>
+          <TouchableOpacity
+            style={s.row}
+            onPress={() => router.push("/paywall")}
+          >
+            <View style={s.iconBox}>
+              <Text style={s.iconEmoji}>✦</Text>
+            </View>
+            <View style={[s.itemContent, { flex: 1 }]}>
+              <Text style={s.rowLabel}>Subscription</Text>
+              <Text style={s.rowSub}>Free plan · 50 messages/mo</Text>
+            </View>
+            <Text style={s.arrow}>›</Text>
+          </TouchableOpacity>
+          <View style={s.divider} />
+          <TouchableOpacity style={s.row} onPress={handleSignOut}>
+            <View style={s.iconBox}>
+              <Text style={s.iconEmoji}>👤</Text>
+            </View>
+            <View style={[s.itemContent, { flex: 1 }]}>
+              <Text style={s.rowLabel}>Account</Text>
+              <Text style={s.rowSub}>{user?.email ?? "demo@aariv.app"}</Text>
+            </View>
+            <Text style={s.arrow}>›</Text>
+          </TouchableOpacity>
+          <View style={s.divider} />
+          <TouchableOpacity style={s.row} onPress={handleDeleteAccount}>
+            <Text style={[s.rowLabel, { flex: 1, color: c.error }]}>
+              Delete Account
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={{ height: 100 }} />
       </ScrollView>
-    </SafeAreaView >
+    </SafeAreaView>
   );
 }
 
-const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  header: {
-    paddingHorizontal: spacing[6],
-    marginBottom: spacing[6],
-    paddingTop: spacing[8], 
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    gap: spacing[4],
-    backgroundColor: colors.background,
-  },
-  greeting: {
-    ...typography.textStyles.h2,
-    color: colors.text,
-    marginBottom: spacing[2],
-  },
-  briefing: {
-    ...typography.textStyles.body,
-    fontSize: 16,
-    color: colors.textSecondary,
-    lineHeight: 24,
-  },
-  highlight: {
-    color: colors.primary[500],
-    fontWeight: '600',
-  },
-  profileBtn: {
-    
-  },
-  avatarBadge: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: colors.primary[500],
-    justifyContent: 'center',
-    alignItems: 'center',
-    position: 'relative',
-  },
-  avatarText: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: '#FFF',
-  },
-  statusDot: {
-    position: 'absolute',
-    bottom: 0,
-    right: 0,
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: '#22C55E', 
-    borderWidth: 2,
-    borderColor: colors.background,
-  },
-  scrollContent: {
-    padding: spacing[4],
-    gap: spacing[6],
-    paddingBottom: 100
-  },
-  sectionLabel: {
-    ...typography.textStyles.caption,
-    color: colors.textTertiary,
-    marginLeft: 4,
-    marginBottom: -8, 
-  },
-  
-  card: {
-    backgroundColor: colors.surface,
-    borderRadius: 16,
-    paddingVertical: 8,
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: spacing[4],
-    gap: spacing[3],
-    minHeight: 44, 
-  },
-  rowIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
-    justifyContent: 'center',
-    alignItems: 'center'
-  },
-  rowTitle: {
-    fontSize: 16,
-    color: colors.text,
-    flex: 1,
-  },
-  rowSubtitle: {
-    fontSize: 12,
-    color: colors.textTertiary,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: colors.border,
-    marginLeft: 60, 
-  },
-});
+/* ── styles ── */
+const styles = (c: ReturnType<typeof pal>, isDark: boolean) =>
+  StyleSheet.create({
+    safe: { flex: 1, backgroundColor: c.bg },
+    scroll: { paddingHorizontal: 16, paddingTop: 20 },
+
+    title: {
+      fontFamily: SERIF,
+      fontSize: 28,
+      color: c.textPri,
+      marginBottom: 4,
+      paddingHorizontal: 4,
+    },
+    subtitle: {
+      fontSize: 14,
+      color: c.textMut,
+      marginBottom: 16,
+      paddingHorizontal: 4,
+    },
+
+    section: {
+      fontSize: 12,
+      fontWeight: "600",
+      letterSpacing: 0.6,
+      textTransform: "uppercase",
+      color: c.textMut,
+      marginBottom: 12,
+      marginTop: 28,
+      paddingLeft: 4,
+    },
+
+    card: {
+      backgroundColor: c.card,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: c.border,
+      overflow: "hidden",
+    },
+
+    row: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingHorizontal: 16,
+      paddingVertical: 16,
+    },
+
+    iconBox: {
+      width: 32,
+      height: 32,
+      borderRadius: 8,
+      backgroundColor: c.accentSoft,
+      alignItems: "center",
+      justifyContent: "center",
+      marginRight: 14,
+    },
+    iconEmoji: {
+      fontSize: 16,
+    },
+
+    itemContent: {
+      flex: 1,
+    },
+    rowLabel: {
+      fontSize: 15,
+      color: c.textPri,
+    },
+    rowSub: {
+      fontSize: 13,
+      color: c.textMut,
+      marginTop: 2,
+    },
+
+    arrow: {
+      fontSize: 18,
+      color: c.textMut,
+    },
+
+    badge: {
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+      borderRadius: 4,
+    },
+    badgeText: {
+      fontSize: 11,
+      fontWeight: "500",
+    },
+
+    divider: {
+      height: StyleSheet.hairlineWidth,
+      backgroundColor: c.border,
+      marginLeft: 16,
+    },
+
+    themeRow: {
+      flexDirection: "row",
+      gap: 8,
+    },
+    themeBtn: {
+      paddingHorizontal: 14,
+      paddingVertical: 8,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: c.border,
+    },
+    themeBtnActive: {
+      backgroundColor: c.accent,
+      borderColor: c.accent,
+    },
+    themeBtnText: {
+      fontSize: 13,
+      color: c.textSec,
+      fontWeight: "500",
+    },
+    themeBtnTextActive: {
+      color: "#fff",
+    },
+  });

@@ -23,7 +23,7 @@ You are an expert AI software engineer assisting with "Aariv", a specialized mob
 
 ### **1. AI & Tool Integration (Critical)**
 The backend relies heavily on `composio-core` and OpenAI function calling.
-- **Execution Loop:** Controller functions (e.g., `knowledgeController.ts`) implement a specific multi-turn loop (max 5 turns) to handle AI tool calls.
+- **Execution Loop:** Controller functions implement a specific multi-turn loop (max 5 turns) to handle AI tool calls.
 - **Tool Output:** Tool outputs >15k-20k characters **must be truncated** to prevent context window explosion.
 - **Context:** Always fetch user `connections` via `toolset.client.getEntity(userId)` before initializing tools to filter relevant apps.
 
@@ -51,7 +51,7 @@ The backend relies heavily on `composio-core` and OpenAI function calling.
 2. **Backend:** `cd backend && npm run dev` (Runs headers on port 3000).
 
 ### **Debugging Tips**
-- **Backend Logs:** Check terminal for `[KnowledgeGraph]` or tool execution logs.
+- **Backend Logs:** Check terminal for tool execution logs.
 - **Supabase:** If Supabase is missing, the backend degrades gracefully (warns in console).
 - **Deep Links:** Auth callbacks use scheme `mymobileapp://`. Ensure `app.json` scheme matches.
 

@@ -1,25 +1,48 @@
-import { Ionicons } from "@expo/vector-icons";
 import { Audio } from "expo-av";
 import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+} from "react";
 import {
-  ActivityIndicator,
-  Alert,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    Alert,
+    Animated,
+    Easing,
+    Platform,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 import { API_URL } from "../services/api";
 import { getCurrentUser } from "../services/auth";
-import { borderRadius, spacing, typography } from "../theme";
+
+const SERIF = Platform.select({ ios: "Georgia", default: "serif" });
 
 type ListeningState = "idle" | "listening" | "thinking" | "speaking";
+
+const pal = (dark: boolean) => ({
+  bg: dark ? "#0c0c0e" : "#f7f6f4",
+  card: dark ? "#141416" : "#ffffff",
+  elevated: dark ? "#1a1a1d" : "#f0efed",
+  accentSoft: dark ? "rgba(139,149,176,0.12)" : "rgba(107,116,144,0.1)",
+  accent: dark ? "#8b95b0" : "#6b7490",
+  textPri: dark ? "#e4e2df" : "#1a1918",
+  textSec: dark ? "#908c88" : "#6a6662",
+  textMut: dark ? "#5a5754" : "#9a9794",
+  border: dark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)",
+  danger: "#c45c5c",
+});
 
 export default function VoiceModeScreen() {
   const router = useRouter();
@@ -208,295 +231,229 @@ export default function VoiceModeScreen() {
     return "idle";
   }, [isProcessing, isPlaying, isRecording]);
 
-  const isSpeakingView =
-    listeningState === "speaking" || listeningState === "thinking";
-  const responseText =
-    reply || "Tomorrow is light. Standup at 10, lunch with Mike at 1.";
+  /* ── timer ── */
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [seconds, setSeconds] = useState(0);
 
-  const displayTranscript = transcript
-    ? `"${transcript}"`
-    : "\"What does tomorrow look like?\"";
-  const transcriptLabel = isSpeakingView
-    ? listeningState === "thinking"
-      ? "THINKING"
-      : "SPEAKING"
-    : "YOU SAID";
-  const transcriptText = isSpeakingView
-    ? `"${responseText}"`
-    : displayTranscript;
+  useEffect(() => {
+    if (isRecording || isPlaying || isProcessing) {
+      setSeconds(0);
+      timerRef.current = setInterval(() => setSeconds((s) => s + 1), 1000);
+    } else {
+      if (timerRef.current) clearInterval(timerRef.current);
+    }
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [isRecording, isPlaying, isProcessing]);
+
+  const formatTime = (s: number) => {
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    return `${m}:${sec.toString().padStart(2, "0")}`;
+  };
+
+  /* ── pulse animation ── */
+  const pulseAnim = useRef(new Animated.Value(0.9)).current;
+
+  useEffect(() => {
+    if (listeningState !== "idle") {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, {
+            toValue: 1.1,
+            duration: 1000,
+            easing: Easing.out(Easing.ease),
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulseAnim, {
+            toValue: 0.9,
+            duration: 1000,
+            easing: Easing.in(Easing.ease),
+            useNativeDriver: true,
+          }),
+        ]),
+      ).start();
+    } else {
+      pulseAnim.stopAnimation();
+      pulseAnim.setValue(1);
+    }
+  }, [listeningState, pulseAnim]);
+
+  const c = pal(isDark);
+
+  const statusText =
+    listeningState === "listening"
+      ? "Listening..."
+      : listeningState === "thinking"
+        ? "Thinking..."
+        : listeningState === "speaking"
+          ? "Speaking..."
+          : "Tap to start";
 
   if (isAuthLoading) {
     return (
       <View
         style={{
           flex: 1,
-          backgroundColor: isDark ? "#0B0B0D" : "#F7F4F1",
+          backgroundColor: c.bg,
           justifyContent: "center",
           alignItems: "center",
         }}
       >
-        <ActivityIndicator
-          size="large"
-          color={colors?.primary ? colors.primary[500] : "#6B7390"}
-        />
+        <ActivityIndicator size="large" color={c.accent} />
       </View>
     );
   }
 
   if (!user) {
-    return (
-      <View
-        style={{
-          flex: 1,
-          backgroundColor: isDark ? "#0B0B0D" : "#F7F4F1",
-        }}
-      />
-    );
+    return <View style={{ flex: 1, backgroundColor: c.bg }} />;
   }
 
-  const styles = getStyles(isDark);
-
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: c.bg }}>
       <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
 
-      {listeningState === "idle" ? (
-        <View style={styles.startContent}>
-          <View style={styles.sparkBadge}>
-            <Ionicons name="sparkles" size={18} color={styles.sparkle.color} />
+      <View style={vs.content}>
+        {/* Avatar + pulse ring */}
+        <View style={vs.avatarWrap}>
+          {listeningState !== "idle" && (
+            <Animated.View
+              style={[
+                vs.pulseRing,
+                {
+                  borderColor: c.accent,
+                  transform: [{ scale: pulseAnim }],
+                },
+              ]}
+            />
+          )}
+          <View style={[vs.avatar, { backgroundColor: c.accentSoft }]}>
+            <Text style={vs.avatarIcon}>✦</Text>
           </View>
-          <Text style={styles.startTitle}>Talk to Aariv</Text>
-          <Text style={styles.startSubtitle}>Voice is available on Pro</Text>
+        </View>
 
+        {/* Status + Timer */}
+        <Text style={[vs.status, { color: c.textPri }]}>{statusText}</Text>
+        <Text style={[vs.timer, { color: c.textMut }]}>
+          {formatTime(seconds)}
+        </Text>
+
+        {/* Controls */}
+        <View style={vs.controls}>
           <TouchableOpacity
-            style={styles.startMicButton}
+            style={[
+              vs.ctrlBtn,
+              {
+                backgroundColor: c.card,
+                borderWidth: 1,
+                borderColor: c.border,
+              },
+            ]}
             onPress={handleMicPress}
-            activeOpacity={0.9}
+            activeOpacity={0.8}
           >
-            <Ionicons name="mic" size={20} color="#0B0B0D" />
+            <Text style={{ fontSize: 24 }}>{isRecording ? "🔇" : "🎤"}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[vs.ctrlBtn, vs.endBtn]}
+            onPress={() => router.back()}
+            activeOpacity={0.8}
+          >
+            <Text style={{ fontSize: 20, color: "#fff" }}>✕</Text>
           </TouchableOpacity>
         </View>
-      ) : (
-        <View style={styles.modeContent}>
-          <View
-            style={[
-              styles.orb,
-              isSpeakingView ? styles.orbSpeaking : styles.orbListening,
-            ]}
-          >
-            <Ionicons
-              name={isSpeakingView ? "sparkles" : "mic"}
-              size={22}
-              color={
-                isSpeakingView ? styles.sparkle.color : styles.listeningIcon.color
-              }
-            />
-          </View>
 
-          <Text style={styles.modeLabel}>
-            {isSpeakingView ? "AARIV" : "LISTENING"}
-          </Text>
-          <Text
-            style={[
-              styles.modeTitle,
-              isSpeakingView && styles.modeTitleSpeaking,
-            ]}
-          >
-            {isSpeakingView ? responseText : "I'm here. Take your time."}
-          </Text>
-
-          <View
-            style={[
-              styles.transcriptCard,
-              isSpeakingView && styles.transcriptCardSpeaking,
-            ]}
-          >
-            <Text style={styles.transcriptLabel}>{transcriptLabel}</Text>
-            <Text
-              style={[
-                styles.transcriptText,
-                isSpeakingView && styles.transcriptTextSpeaking,
-              ]}
+        {/* Transcript */}
+        {transcript || reply ? (
+          <View style={[vs.transcriptCard, { backgroundColor: c.card }]}>
+            <ScrollView
+              style={{ maxHeight: 150 }}
+              showsVerticalScrollIndicator={false}
             >
-              {transcriptText}
-            </Text>
+              {transcript ? (
+                <Text style={[vs.tLine, { color: c.textPri }]}>
+                  You: {transcript}
+                </Text>
+              ) : null}
+              {reply ? (
+                <Text style={[vs.tLine, { color: c.textSec }]}>
+                  Aariv: {reply}
+                </Text>
+              ) : null}
+            </ScrollView>
           </View>
-
-          <View style={styles.controlRow}>
-            <TouchableOpacity
-              style={styles.controlButton}
-              onPress={handleMicPress}
-              activeOpacity={0.8}
-            >
-              <Ionicons
-                name={isRecording ? "mic" : "mic-off"}
-                size={18}
-                color={styles.controlIcon.color}
-              />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.controlButton, styles.endButton]}
-              onPress={() => router.back()}
-              activeOpacity={0.8}
-            >
-              <Ionicons name="call" size={18} color="#FFFFFF" />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.controlButton} activeOpacity={0.8}>
-              <Ionicons
-                name="keypad-outline"
-                size={18}
-                color={styles.controlIcon.color}
-              />
-            </TouchableOpacity>
-          </View>
-        </View>
-      )}
+        ) : null}
+      </View>
     </SafeAreaView>
   );
 }
 
-const getStyles = (isDark: boolean) =>
-  StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: isDark ? "#0B0B0D" : "#F7F4F1",
-    },
-    sparkle: {
-      color: isDark ? "#E6D6C6" : "#7C6C5A",
-    },
-    startContent: {
-      flex: 1,
-      alignItems: "center",
-      justifyContent: "center",
-      paddingHorizontal: spacing[6],
-      gap: spacing[3],
-    },
-    sparkBadge: {
-      width: 64,
-      height: 64,
-      borderRadius: 20,
-      alignItems: "center",
-      justifyContent: "center",
-      backgroundColor: isDark ? "#1A1A1E" : "#FFFFFF",
-      borderWidth: 1,
-      borderColor: isDark ? "#24242A" : "#EEE7DF",
-      marginBottom: spacing[3],
-    },
-    startTitle: {
-      ...typography.textStyles.h3,
-      color: isDark ? "#F2EDE6" : "#2E2620",
-    },
-    startSubtitle: {
-      ...typography.textStyles.bodySmall,
-      color: isDark ? "rgba(255,255,255,0.55)" : "#6E6258",
-      marginBottom: spacing[6],
-    },
-    startMicButton: {
-      width: 60,
-      height: 60,
-      borderRadius: 30,
-      alignItems: "center",
-      justifyContent: "center",
-      backgroundColor: "#8BC79A",
-      shadowColor: "#8BC79A",
-      shadowOffset: { width: 0, height: 6 },
-      shadowOpacity: 0.25,
-      shadowRadius: 12,
-      elevation: 6,
-    },
-    modeContent: {
-      flex: 1,
-      alignItems: "center",
-      justifyContent: "center",
-      paddingHorizontal: spacing[6],
-    },
-    orb: {
-      width: 120,
-      height: 120,
-      borderRadius: 60,
-      alignItems: "center",
-      justifyContent: "center",
-      marginBottom: spacing[5],
-    },
-    orbListening: {
-      backgroundColor: isDark ? "#222328" : "#E8E6E3",
-    },
-    orbSpeaking: {
-      backgroundColor: isDark ? "#1F2025" : "#E4E1DD",
-    },
-    listeningIcon: {
-      color: isDark ? "#D5CDC4" : "#7B6F65",
-    },
-    modeLabel: {
-      ...typography.textStyles.caption,
-      letterSpacing: 2,
-      textTransform: "uppercase",
-      color: isDark ? "rgba(255,255,255,0.4)" : "#A39487",
-      marginBottom: spacing[2],
-    },
-    modeTitle: {
-      ...typography.textStyles.h4,
-      color: isDark ? "#F2EDE6" : "#2E2620",
-      textAlign: "center",
-      marginBottom: spacing[6],
-    },
-    modeTitleSpeaking: {
-      fontSize: 20,
-      lineHeight: 28,
-      fontWeight: "600",
-      maxWidth: 300,
-    },
-    transcriptCard: {
-      width: "100%",
-      maxWidth: 340,
-      backgroundColor: isDark ? "#15151A" : "#FFFFFF",
-      borderRadius: borderRadius.xl,
-      paddingHorizontal: spacing[5],
-      paddingVertical: spacing[4],
-      borderWidth: 1,
-      borderColor: isDark ? "#222228" : "#EFE6DC",
-      marginBottom: spacing[7],
-    },
-    transcriptCardSpeaking: {
-      backgroundColor: isDark ? "#17181C" : "#F2EFEB",
-      borderColor: isDark ? "#1F2025" : "#E5DED6",
-    },
-    transcriptLabel: {
-      ...typography.textStyles.caption,
-      color: isDark ? "rgba(255,255,255,0.35)" : "#A39487",
-      letterSpacing: 1.2,
-      marginBottom: spacing[2],
-    },
-    transcriptText: {
-      ...typography.textStyles.bodySmall,
-      color: isDark ? "#D8D1C8" : "#6E6258",
-      fontStyle: "italic",
-    },
-    transcriptTextSpeaking: {
-      fontSize: 13,
-      lineHeight: 18,
-    },
-    controlRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "center",
-      gap: spacing[4],
-    },
-    controlButton: {
-      width: 48,
-      height: 48,
-      borderRadius: 24,
-      alignItems: "center",
-      justifyContent: "center",
-      backgroundColor: isDark ? "#1B1C20" : "#EEE7DF",
-    },
-    controlIcon: {
-      color: isDark ? "#CFC8BF" : "#7C6C5A",
-    },
-    endButton: {
-      backgroundColor: "#D35D5D",
-      width: 56,
-      height: 56,
-      borderRadius: 28,
-    },
-  });
+/* ── styles ── */
+const vs = StyleSheet.create({
+  content: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 40,
+  },
+  avatarWrap: {
+    width: 120,
+    height: 120,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 24,
+  },
+  pulseRing: {
+    position: "absolute",
+    width: 136,
+    height: 136,
+    borderRadius: 68,
+    borderWidth: 2,
+  },
+  avatar: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  avatarIcon: {
+    fontSize: 48,
+  },
+  status: {
+    fontSize: 18,
+    marginBottom: 8,
+  },
+  timer: {
+    fontSize: 14,
+    marginBottom: 40,
+  },
+  controls: {
+    flexDirection: "row",
+    gap: 24,
+    justifyContent: "center",
+    marginBottom: 40,
+  },
+  ctrlBtn: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  endBtn: {
+    backgroundColor: "#c45c5c",
+  },
+  transcriptCard: {
+    width: "100%",
+    maxWidth: 340,
+    borderRadius: 16,
+    padding: 20,
+  },
+  tLine: {
+    fontSize: 14,
+    lineHeight: 22,
+    marginBottom: 8,
+  },
+});
