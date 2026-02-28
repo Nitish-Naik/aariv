@@ -12,9 +12,9 @@ export default function Navbar() {
                     <span className="text-sm text-zinc-500 mt-0.5">by Aariv</span>
                 </div>
                 <div className="flex items-center gap-6">
-                    <Link href="/login" className="text-sm font-medium text-zinc-400 hover:text-zinc-200 transition-colors">
+                    {/* <Link href="/login" className="text-sm font-medium text-zinc-400 hover:text-zinc-200 transition-colors">
                         Sign in
-                    </Link>
+                    </Link> */}
                     <Link href="/login" className="bg-zinc-800 hover:bg-zinc-700 text-zinc-100 px-5 py-2.5 rounded-full font-medium transition-all text-sm border border-zinc-700">
                         Get Started
                     </Link>
