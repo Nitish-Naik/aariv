@@ -1,5 +1,6 @@
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
 import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { Providers } from "./providers";
@@ -42,6 +43,7 @@ export default function RootLayout({
         <Providers>{children}</Providers>
         <ServiceWorkerRegister />
         <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );
