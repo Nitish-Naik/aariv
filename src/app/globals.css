@@ -1,0 +1,145 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-deep: #f7f6f4;
+  --bg-surface: #ffffff;
+  --bg-elevated: #ffffff;
+  --border: rgba(0, 0, 0, 0.06);
+  --text-primary: #1a1918;
+  --text-secondary: #6a6662;
+  --text-muted: #9a9794;
+  --accent: #6b7490;
+  --accent-soft: rgba(107, 116, 144, 0.1);
+}
+
+.dark {
+  --bg-deep: #0c0c0e;
+  --bg-surface: #141416;
+  --bg-elevated: #1a1a1d;
+  --border: rgba(255, 255, 255, 0.06);
+  --text-primary: #e4e2df;
+  --text-secondary: #908c88;
+  --text-muted: #5a5754;
+  --accent: #8b95b0;
+  --accent-soft: rgba(139, 149, 176, 0.12);
+}
+
+body {
+  background: var(--bg-deep);
+  color: var(--text-primary);
+  font-family:
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--text-muted);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
+
+/* Smooth transitions */
+* {
+  transition-property: background-color, border-color, color;
+  transition-duration: 150ms;
+  transition-timing-function: ease;
+}
+
+/* Markdown styling */
+.markdown-content h1,
+.markdown-content h2,
+.markdown-content h3 {
+  font-weight: 600;
+  margin-top: 1em;
+  margin-bottom: 0.5em;
+}
+.markdown-content h1 {
+  font-size: 1.25rem;
+}
+.markdown-content h2 {
+  font-size: 1.125rem;
+}
+.markdown-content h3 {
+  font-size: 1rem;
+}
+.markdown-content p {
+  margin-bottom: 0.75em;
+  line-height: 1.6;
+}
+.markdown-content ul,
+.markdown-content ol {
+  padding-left: 1.5em;
+  margin-bottom: 0.75em;
+}
+.markdown-content li {
+  margin-bottom: 0.25em;
+}
+.markdown-content code {
+  background: var(--accent-soft);
+  padding: 0.125em 0.375em;
+  border-radius: 4px;
+  font-size: 0.875em;
+}
+.markdown-content pre {
+  background: var(--bg-elevated);
+  padding: 1em;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin-bottom: 0.75em;
+}
+.markdown-content pre code {
+  background: none;
+  padding: 0;
+}
+.markdown-content a {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+/* Pulsing avatar animation */
+@keyframes pulse-ring {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.7;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 0.3;
+  }
+  100% {
+    transform: scale(0.9);
+    opacity: 0.7;
+  }
+}
+.pulse-ring {
+  animation: pulse-ring 1.8s ease-in-out infinite;
+}
+
+/* Float animation */
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
