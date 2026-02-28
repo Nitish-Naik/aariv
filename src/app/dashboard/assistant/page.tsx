@@ -221,7 +221,7 @@ export default function AssistantPage() {
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
+      <div className="flex-1 overflow-y-auto px-3 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6">
         {messages.length <= 1 && (
           <div className="flex flex-col items-center justify-center py-20 space-y-6">
             <p className="text-4xl">🌙</p>
@@ -260,7 +260,7 @@ export default function AssistantPage() {
 
               {/* Bubble */}
               <div
-                className={`max-w-[70%] rounded-2xl px-4 py-3 ${
+                className={`max-w-[85%] sm:max-w-[70%] rounded-2xl px-3 sm:px-4 py-2.5 sm:py-3 ${
                   isUser
                     ? "bg-[var(--accent)] text-white"
                     : "bg-[var(--bg-surface)] border border-[var(--border)] text-[var(--text-primary)]"
@@ -334,13 +334,13 @@ export default function AssistantPage() {
       </div>
 
       {/* Input */}
-      <div className="px-6 py-4 border-t border-[var(--border)] bg-[var(--bg-surface)]">
+      <div className="px-3 sm:px-6 py-3 sm:py-4 border-t border-[var(--border)] bg-[var(--bg-surface)]">
         <form
           onSubmit={(e) => {
             e.preventDefault();
             handleSend();
           }}
-          className="flex items-center gap-3"
+          className="flex items-center gap-2 sm:gap-3"
         >
           <input
             ref={inputRef}

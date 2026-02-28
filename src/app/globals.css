@@ -143,3 +143,62 @@ body {
 .animate-float {
   animation: float 3s ease-in-out infinite;
 }
+
+/* ─── PWA & Mobile ─── */
+
+/* Safe area insets for notched devices (iPhone X+, etc.) */
+.safe-top {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Slide-in animation for mobile drawer */
+@keyframes slide-in-right {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+.animate-slide-in-right {
+  animation: slide-in-right 0.25s ease-out;
+}
+
+/* Prevent pull-to-refresh on mobile */
+html {
+  overscroll-behavior-y: contain;
+}
+
+/* Touch action optimization for mobile */
+@media (max-width: 767px) {
+  /* Ensure bottom bar doesn't overlap content */
+  main {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Better tap targets on mobile */
+  button,
+  a {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Prevent text selection on nav items */
+  nav a,
+  nav button {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+}
+
+/* Standalone PWA mode adjustments */
+@media all and (display-mode: standalone) {
+  .safe-top {
+    padding-top: max(env(safe-area-inset-top, 0px), 12px);
+  }
+  .safe-bottom {
+    padding-bottom: max(env(safe-area-inset-bottom, 0px), 8px);
+  }
+}

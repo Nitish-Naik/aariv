@@ -48,7 +48,10 @@ export default function IntegrationsPage() {
 
     // Check if we returned from a successful connection
     const params = new URLSearchParams(window.location.search);
-    if (params.get("status") === "success" || params.get("status") === "ACTIVE") {
+    if (
+      params.get("status") === "success" ||
+      params.get("status") === "ACTIVE"
+    ) {
       const app = params.get("app") || "App";
       setToast(`${app.replace("-", " ")} connected successfully!`);
       // Clean URL
@@ -106,7 +109,7 @@ export default function IntegrationsPage() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto px-6 py-8">
+    <div className="max-w-2xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
       {/* Success toast */}
       {toast && (
         <div className="fixed top-4 right-4 z-50 flex items-center gap-2 bg-success/90 text-white px-5 py-3 rounded-xl shadow-lg text-sm font-medium animate-in slide-in-from-top fade-in duration-300">
@@ -142,7 +145,7 @@ export default function IntegrationsPage() {
             return (
               <div
                 key={integration.id}
-                className="flex items-center gap-4 bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl px-5 py-4"
+                className="flex items-center gap-3 sm:gap-4 bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl px-4 sm:px-5 py-3.5 sm:py-4"
               >
                 {/* Icon */}
                 <div

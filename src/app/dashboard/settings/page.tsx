@@ -15,7 +15,7 @@ import {
     Shield,
     Sparkles,
     Sun,
-    Zap
+    Zap,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -43,7 +43,7 @@ export default function SettingsPage() {
   const isPro = user?.subscriptionTier === "pro";
 
   return (
-    <div className="max-w-2xl mx-auto px-6 py-8 space-y-8">
+    <div className="max-w-2xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6 sm:space-y-8">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-serif font-semibold text-[var(--text-primary)]">
@@ -247,7 +247,7 @@ export default function SettingsPage() {
             className="absolute inset-0 bg-black/50 backdrop-blur-sm"
             onClick={() => setShowPricing(false)}
           />
-          <div className="relative bg-[var(--bg-deep)] border border-[var(--border)] rounded-2xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden">
+          <div className="relative bg-[var(--bg-deep)] border border-[var(--border)] rounded-2xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden max-h-[90vh] overflow-y-auto">
             {/* Pricing Header */}
             <div className="relative px-8 pt-8 pb-6 text-center bg-gradient-to-b from-[var(--accent)]/10 to-transparent">
               <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 mb-4 shadow-lg shadow-amber-500/25">

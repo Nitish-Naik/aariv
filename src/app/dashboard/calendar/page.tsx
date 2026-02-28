@@ -88,12 +88,12 @@ export default function CalendarPage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-6 py-8">
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
       <h1 className="text-2xl font-serif font-semibold text-[var(--text-primary)] mb-6">
         Calendar
       </h1>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[350px_1fr] gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-[350px_1fr] gap-4 sm:gap-6">
         {/* Mini calendar */}
         <div className="bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl p-5">
           <div className="flex items-center justify-between mb-4">

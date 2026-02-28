@@ -44,10 +44,10 @@ export default function InboxPage() {
   const unreadCount = messages.filter((m) => m.unread).length;
 
   return (
-    <div className="max-w-3xl mx-auto px-6 py-8">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-serif font-semibold text-[var(--text-primary)]">
+    <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+      <div className="flex items-center justify-between mb-4 sm:mb-6 gap-4">
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-2xl font-serif font-semibold text-[var(--text-primary)]">
             Inbox
           </h1>
           {unreadCount > 0 && (
