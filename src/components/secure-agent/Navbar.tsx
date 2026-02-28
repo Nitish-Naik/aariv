@@ -9,7 +9,7 @@ export default function Navbar() {
                         <span className="w-6 h-6 rounded-md bg-stone-300"></span>
                         SecureAgent
                     </Link>
-                    <span className="text-sm text-zinc-500 mt-0.5">by Aariv</span>
+                    {/* <span className="text-sm text-zinc-500 mt-0.5">by Aariv</span> */}
                 </div>
                 <div className="flex items-center gap-6">
                     {/* <Link href="/login" className="text-sm font-medium text-zinc-400 hover:text-zinc-200 transition-colors">

@@ -6,7 +6,8 @@ export default function Footer() {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center justify-center gap-2">
                 <p className="font-medium text-zinc-300">SecureAgent</p>
                 <p className="text-sm font-light">
-                    A quietly secure tool by <Link href="#" className="underline decoration-zinc-800 hover:text-zinc-300 transition-colors">Aariv</Link>
+                    A quiet secure tool 
+                    {/* by <Link href="#" className="underline decoration-zinc-800 hover:text-zinc-300 transition-colors">Aariv</Link> */}
                 </p>
             </div>
         </footer>
