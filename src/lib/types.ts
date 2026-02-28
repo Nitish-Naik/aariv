@@ -86,6 +86,7 @@ export interface ChatMessage {
     action_required?: { message: string, url: string };
   }[];
   is_proactive?: boolean;
+  auth_actions?: AuthAction[];
 }
 
 export interface Conversation {
