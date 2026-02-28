@@ -9,61 +9,69 @@ export default function AuthCallbackPage() {
   const [status, setStatus] = useState("Signing you in...");
 
   useEffect(() => {
-    // Listen for the auth state change — Supabase JS client will
-    // automatically detect the #access_token hash fragment and
-    // establish the session, firing this event.
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log("Auth callback event:", event, !!session);
+    const handleCallback = async () => {
+      // PKCE flow: Supabase sends ?code=... as a query parameter
+      const url = new URL(window.location.href);
+      const code = url.searchParams.get("code");
 
-      if (event === "SIGNED_IN" && session) {
-        setStatus("Success! Redirecting...");
-        router.replace("/dashboard");
+      if (code) {
+        // Exchange the code for a session
+        const { data, error } =
+          await supabase.auth.exchangeCodeForSession(code);
+        if (error) {
+          console.error("Code exchange failed:", error);
+          setStatus("Sign-in failed. Redirecting...");
+          setTimeout(() => router.replace("/login"), 1500);
+          return;
+        }
+        if (data.session) {
+          setStatus("Success! Redirecting...");
+          router.replace("/dashboard");
+          return;
+        }
       }
 
-      if (event === "TOKEN_REFRESHED" && session) {
-        router.replace("/dashboard");
-      }
-    });
+      // Fallback: implicit flow — hash fragment with #access_token=...
+      const hash = window.location.hash.substring(1);
+      if (hash) {
+        const params = new URLSearchParams(hash);
+        const accessToken = params.get("access_token");
+        const refreshToken = params.get("refresh_token");
 
-    // Fallback: if the hash fragment contains tokens, manually extract
-    // and set the session (in case auto-detect doesn't fire)
-    const hash = window.location.hash.substring(1);
-    if (hash) {
-      const params = new URLSearchParams(hash);
-      const accessToken = params.get("access_token");
-      const refreshToken = params.get("refresh_token");
-
-      if (accessToken && refreshToken) {
-        supabase.auth
-          .setSession({
+        if (accessToken && refreshToken) {
+          const { data, error } = await supabase.auth.setSession({
             access_token: accessToken,
             refresh_token: refreshToken,
-          })
-          .then(({ data, error }) => {
-            if (error) {
-              console.error("Failed to set session:", error);
-              setStatus("Sign-in failed. Redirecting...");
-              setTimeout(() => router.replace("/login"), 1500);
-            } else if (data.session) {
-              setStatus("Success! Redirecting...");
-              router.replace("/dashboard");
-            }
           });
+          if (error) {
+            console.error("Failed to set session:", error);
+            setStatus("Sign-in failed. Redirecting...");
+            setTimeout(() => router.replace("/login"), 1500);
+            return;
+          }
+          if (data.session) {
+            setStatus("Success! Redirecting...");
+            router.replace("/dashboard");
+            return;
+          }
+        }
       }
-    }
 
-    // Safety timeout — if nothing happens in 8 seconds, redirect to login
-    const timeout = setTimeout(() => {
+      // Last resort: check if session already exists
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (session) {
+        router.replace("/dashboard");
+        return;
+      }
+
+      // Nothing worked — redirect to login after a delay
       setStatus("Something went wrong. Redirecting...");
-      router.replace("/login");
-    }, 8000);
-
-    return () => {
-      subscription.unsubscribe();
-      clearTimeout(timeout);
+      setTimeout(() => router.replace("/login"), 2000);
     };
+
+    handleCallback();
   }, [router]);
 
   return (
