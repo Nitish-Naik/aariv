@@ -4,20 +4,18 @@ import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 import {
-  Check,
-  ChevronRight,
-  CreditCard,
-  Crown,
-  ExternalLink,
-  LogOut,
-  Mail,
-  Moon,
-  Palette,
-  Shield,
-  Sparkles,
-  Sun,
-  User,
-  Zap,
+    Check,
+    ChevronRight,
+    CreditCard,
+    Crown,
+    LogOut,
+    Mail,
+    Moon,
+    Palette,
+    Shield,
+    Sparkles,
+    Sun,
+    Zap
 } from "lucide-react";
 import { useState } from "react";
 
@@ -328,10 +326,7 @@ export default function SettingsPage() {
                       key={f}
                       className="flex items-center gap-2.5 text-sm text-[var(--text-secondary)]"
                     >
-                      <Check
-                        size={14}
-                        className="text-amber-500 shrink-0"
-                      />
+                      <Check size={14} className="text-amber-500 shrink-0" />
                       {f}
                     </li>
                   ))}
