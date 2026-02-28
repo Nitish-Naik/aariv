@@ -16,13 +16,13 @@ export interface PlatformConnection {
 export interface ActionItem {
   id: string;
   type:
-    | "email"
-    | "calendar"
-    | "slack"
-    | "notion"
-    | "linear"
-    | "discord"
-    | "maps";
+  | "email"
+  | "calendar"
+  | "slack"
+  | "notion"
+  | "linear"
+  | "discord"
+  | "maps";
   title: string;
   description: string;
   platform: Platform;
@@ -77,7 +77,21 @@ export interface ChatMessage {
   timestamp: Date;
   suggestions?: string[];
   actions?: ActionItem[];
-  auth_actions?: AuthAction[];
-  logs?: { label: string; status: string; tool: string }[];
+  logs?: {
+    label: string;
+    status: string;
+    tool: string;
+    args?: any;
+    result?: any;
+    action_required?: { message: string, url: string };
+  }[];
   is_proactive?: boolean;
+}
+
+export interface Conversation {
+  id: string;
+  title: string;
+  user_id: string;
+  created_at: Date;
+  updated_at: Date;
 }

@@ -3,18 +3,19 @@
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
+import { useBilling } from "@/context/useBilling";
 import {
-    Calendar,
-    Home,
-    Link2,
-    LogOut,
-    Mail,
-    Menu,
-    MessageSquare,
-    Moon,
-    Settings,
-    Sun,
-    X,
+  Calendar,
+  Home,
+  Link2,
+  LogOut,
+  Mail,
+  Menu,
+  MessageSquare,
+  Moon,
+  Settings,
+  Sun,
+  X,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -42,6 +43,7 @@ export function Sidebar() {
   const pathname = usePathname();
   const { isDark, toggleTheme } = useTheme();
   const { user, signOut } = useAuth();
+  const { balanceData } = useBilling();
   const [showSignOutDialog, setShowSignOutDialog] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -88,11 +90,10 @@ export function Sidebar() {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                  isActive
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${isActive
                     ? "bg-[var(--accent-soft)] text-[var(--accent)]"
                     : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--accent-soft)]"
-                }`}
+                  }`}
               >
                 <Icon size={18} strokeWidth={1.5} />
                 {item.label}
@@ -103,7 +104,7 @@ export function Sidebar() {
 
         {/* Bottom section */}
         <div className="px-3 py-4 border-t border-[var(--border)] space-y-2">
-          <button
+          {/* <button
             onClick={toggleTheme}
             className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--accent-soft)] w-full transition-colors"
           >
@@ -113,7 +114,7 @@ export function Sidebar() {
               <Moon size={18} strokeWidth={1.5} />
             )}
             {isDark ? "Light Mode" : "Dark Mode"}
-          </button>
+          </button> */}
 
           {user && (
             <div className="flex items-center gap-3 px-3 py-2 rounded-lg">
@@ -139,13 +140,26 @@ export function Sidebar() {
             </div>
           )}
 
-          <button
+          {/* {user && balanceData && (
+            <Link
+              href="/dashboard/usage"
+              className="flex items-center justify-between px-3 py-2 rounded-lg text-sm bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/20 transition-colors mx-3 mb-2"
+            >
+              <div className="flex items-center gap-2">
+                <div className="w-1.5 h-1.5 rounded-full bg-purple-500"></div>
+                <span className="font-medium text-purple-400">Credits</span>
+              </div>
+              <span className="font-bold text-purple-400">${balanceData.balance.toFixed(2)}</span>
+            </Link>
+          )} */}
+
+          {/* <button
             onClick={() => setShowSignOutDialog(true)}
             className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-error hover:bg-red-500/10 w-full transition-colors"
           >
             <LogOut size={18} strokeWidth={1.5} />
             Sign Out
-          </button>
+          </button> */}
         </div>
       </aside>
 
@@ -175,9 +189,8 @@ export function Sidebar() {
             <Link
               key={item.href}
               href={item.href}
-              className={`flex flex-col items-center gap-0.5 px-3 py-2 rounded-lg min-w-[56px] transition-colors ${
-                isActive ? "text-[var(--accent)]" : "text-[var(--text-muted)]"
-              }`}
+              className={`flex flex-col items-center gap-0.5 px-3 py-2 rounded-lg min-w-[56px] transition-colors ${isActive ? "text-[var(--accent)]" : "text-[var(--text-muted)]"
+                }`}
             >
               <Icon size={20} strokeWidth={1.5} />
               <span className="text-[10px] font-medium leading-tight">
@@ -253,11 +266,10 @@ export function Sidebar() {
                   <Link
                     key={item.href}
                     href={item.href}
-                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                      isActive
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${isActive
                         ? "bg-[var(--accent-soft)] text-[var(--accent)]"
                         : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--accent-soft)]"
-                    }`}
+                      }`}
                   >
                     <Icon size={18} strokeWidth={1.5} />
                     {item.label}
