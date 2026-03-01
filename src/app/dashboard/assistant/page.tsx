@@ -1,26 +1,26 @@
 "use client";
 
-import { DetailedLogEntry, PulsingAvatar } from "@/components";
+import { PulsingAvatar } from "@/components";
 import { useAuth } from "@/context/AuthContext";
 import { api } from "@/lib/api";
 import type { ChatMessage } from "@/lib/types";
 import {
-    ChevronDown,
-    ChevronRight,
-    MessageSquare,
-    Plus,
-    Send,
-    Terminal,
-    Zap
+  Check,
+  ChevronDown,
+  Clock,
+  Copy,
+  FileUp,
+  Menu,
+  MessageSquare,
+  PanelLeftClose,
+  Plus,
+  Send,
+  Shield,
+  Trash2,
+  Zap,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
-
-const SUGGESTION_CHIPS = [
-  { label: "Tomorrow's schedule", message: "What's on my calendar tomorrow?" },
-  { label: "Draft a reply", message: "Help me draft a reply to Sarah" },
-  { label: "Check emails", message: "What emails need my attention?" },
-];
 
 export default function AssistantPage() {
   const { user } = useAuth();
@@ -29,15 +29,30 @@ export default function AssistantPage() {
   const [activeConversationId, setActiveConversationId] = useState<
     string | null
   >(null);
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState<{
+    type: "single" | "all" | "range";
+    conversationId?: string;
+    days?: number;
+    label?: string;
+  } | null>(null);
+  const [isDeleteMenuOpen, setIsDeleteMenuOpen] = useState(false);
+  const [retentionDays, setRetentionDays] = useState<number | null>(null);
+  const [retentionSaving, setRetentionSaving] = useState(false);
 
   const [inputText, setInputText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isLogsOpen, setIsLogsOpen] = useState(true); // Right panel toggle
   const [selectedModel, setSelectedModel] = useState("gpt-4o");
+  const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
+  const [isDragOver, setIsDragOver] = useState(false);
+  const [suggestions, setSuggestions] = useState<
+    { label: string; message: string }[]
+  >([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const logsEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const dragCounter = useRef(0);
 
   // Auto-scroll to bottom of chat
   useEffect(() => {
@@ -55,6 +70,42 @@ export default function AssistantPage() {
     window.addEventListener("aariv-model-change", handler);
     return () => window.removeEventListener("aariv-model-change", handler);
   }, []);
+
+  // Fetch dynamic suggestion chips based on connected apps
+  useEffect(() => {
+    if (!user?.id) return;
+    const fetchSuggestions = async () => {
+      try {
+        const res = await api.get(`/chat/suggestions/${user.id}`);
+        if (res?.suggestions) {
+          setSuggestions(res.suggestions);
+        }
+      } catch (e) {
+        console.error("Failed to fetch suggestions", e);
+      }
+    };
+    fetchSuggestions();
+  }, [user?.id]);
+
+  // Load retention preference
+  useEffect(() => {
+    if (!user?.id) return;
+    const fetchRetention = async () => {
+      try {
+        const envUrl =
+          process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+        const baseUrl = envUrl.endsWith("/api") ? envUrl.slice(0, -4) : envUrl;
+        const res = await fetch(`${baseUrl}/api/history/retention/${user.id}`);
+        if (res.ok) {
+          const data = await res.json();
+          setRetentionDays(data.retention_days);
+        }
+      } catch (e) {
+        console.error("Failed to fetch retention", e);
+      }
+    };
+    fetchRetention();
+  }, [user?.id]);
 
   // Extract all logs to render in the right panel sequentially
   const allLogs = messages.flatMap((msg) => msg.logs || []).filter(Boolean);
@@ -78,19 +129,8 @@ export default function AssistantPage() {
         if (res.ok) {
           const data = await res.json();
           setConversations(data);
-          if (data.length > 0) {
-            setActiveConversationId(data[0].id);
-          } else {
-            // New user, show welcome
-            setMessages([
-              {
-                id: "welcome",
-                role: "assistant",
-                content: "Hello! I am Aariv. How can I help you today?",
-                timestamp: new Date(),
-              },
-            ]);
-          }
+          // Always start with a fresh new chat — previous chats available in sidebar
+          setMessages([]);
         }
       } catch (e) {
         console.error("Failed to fetch conversations", e);
@@ -132,16 +172,175 @@ export default function AssistantPage() {
 
   const handleNewChat = () => {
     setActiveConversationId(null);
-    setMessages([
-      {
-        id: "welcome",
-        role: "assistant",
-        content: "Hello! I am Aariv. How can I help you today?",
-        timestamp: new Date(),
-      },
-    ]);
-    setIsDropdownOpen(false);
+    setMessages([]);
+    setIsSidebarOpen(false);
   };
+
+  const handleDeleteConversation = async (conversationId: string) => {
+    try {
+      const envUrl =
+        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+      const baseUrl = envUrl.endsWith("/api") ? envUrl.slice(0, -4) : envUrl;
+      const res = await fetch(
+        `${baseUrl}/api/history/conversations/${conversationId}`,
+        { method: "DELETE" },
+      );
+      if (res.ok) {
+        setConversations((prev) => prev.filter((c) => c.id !== conversationId));
+        if (activeConversationId === conversationId) {
+          handleNewChat();
+        }
+      }
+    } catch (e) {
+      console.error("Failed to delete conversation", e);
+    } finally {
+      setDeleteConfirm(null);
+    }
+  };
+
+  const handleDeleteAllConversations = async (days?: number) => {
+    if (!user?.id) return;
+    try {
+      const envUrl =
+        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+      const baseUrl = envUrl.endsWith("/api") ? envUrl.slice(0, -4) : envUrl;
+      const url = days
+        ? `${baseUrl}/api/history/conversations/user/${user.id}?older_than_days=${days}`
+        : `${baseUrl}/api/history/conversations/user/${user.id}`;
+      const res = await fetch(url, { method: "DELETE" });
+      if (res.ok) {
+        // Re-fetch conversations to reflect remaining ones
+        try {
+          const convRes = await fetch(
+            `${baseUrl}/api/history/conversations/${user.id}`,
+          );
+          if (convRes.ok) {
+            const data = await convRes.json();
+            setConversations(data);
+            if (!data.find((c: any) => c.id === activeConversationId)) {
+              handleNewChat();
+            }
+          }
+        } catch {
+          setConversations([]);
+          handleNewChat();
+        }
+      }
+    } catch (e) {
+      console.error("Failed to delete conversations", e);
+    } finally {
+      setDeleteConfirm(null);
+      setIsDeleteMenuOpen(false);
+    }
+  };
+
+  const handleRetentionChange = async (days: number | null) => {
+    if (!user?.id) return;
+    setRetentionSaving(true);
+    try {
+      const envUrl =
+        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+      const baseUrl = envUrl.endsWith("/api") ? envUrl.slice(0, -4) : envUrl;
+      const res = await fetch(`${baseUrl}/api/history/retention/${user.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ days }),
+      });
+      if (res.ok) {
+        setRetentionDays(days);
+        // Re-fetch conversations since old ones may have been cleaned up
+        const convRes = await fetch(
+          `${baseUrl}/api/history/conversations/${user.id}`,
+        );
+        if (convRes.ok) {
+          const data = await convRes.json();
+          setConversations(data);
+          if (
+            activeConversationId &&
+            !data.find((c: any) => c.id === activeConversationId)
+          ) {
+            handleNewChat();
+          }
+        }
+      }
+    } catch (e) {
+      console.error("Failed to update retention", e);
+    } finally {
+      setRetentionSaving(false);
+    }
+  };
+
+  // Copy message content to clipboard
+  const handleCopyMessage = useCallback(
+    async (messageId: string, content: string) => {
+      try {
+        await navigator.clipboard.writeText(content);
+        setCopiedMessageId(messageId);
+        setTimeout(() => setCopiedMessageId(null), 2000);
+      } catch {
+        console.error("Failed to copy");
+      }
+    },
+    [],
+  );
+
+  // Drag & drop handlers
+  const handleDragEnter = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounter.current++;
+    if (e.dataTransfer.types.includes("Files")) {
+      setIsDragOver(true);
+    }
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounter.current--;
+    if (dragCounter.current === 0) {
+      setIsDragOver(false);
+    }
+  }, []);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounter.current = 0;
+    setIsDragOver(false);
+
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length > 0) {
+      // Read text files and paste content into the input
+      const textFiles = files.filter(
+        (f) =>
+          f.type.startsWith("text/") ||
+          f.name.endsWith(".txt") ||
+          f.name.endsWith(".md") ||
+          f.name.endsWith(".json") ||
+          f.name.endsWith(".csv"),
+      );
+      if (textFiles.length > 0) {
+        textFiles.forEach((file) => {
+          const reader = new FileReader();
+          reader.onload = (ev) => {
+            const text = ev.target?.result as string;
+            setInputText(
+              (prev) =>
+                prev + (prev ? "\n\n" : "") + `[File: ${file.name}]\n${text}`,
+            );
+            inputRef.current?.focus();
+          };
+          reader.readAsText(file);
+        });
+      }
+    }
+  }, []);
 
   // Notification SSE stream
   useEffect(() => {
@@ -345,214 +544,448 @@ export default function AssistantPage() {
 
   return (
     <div className="flex h-screen overflow-hidden bg-[var(--bg-deep)]">
-      {/* ─── LEFT PANEL (CHAT) ─── */}
-      <div
-        className={`flex flex-col h-full bg-[var(--bg-surface)] transition-all duration-300 ease-in-out ${
-          isLogsOpen
-            ? "w-full lg:w-[60%] border-r border-[var(--border)]"
-            : "w-full"
+      {/* ── SIDEBAR OVERLAY (mobile) ── */}
+      {isSidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-30 lg:hidden"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+
+      {/* ── LEFT SIDEBAR (Chat History) ── */}
+      <aside
+        className={`fixed lg:static top-0 left-0 h-full z-40 flex flex-col bg-[var(--bg-elevated)] border-r border-[var(--border)] transition-all duration-300 ease-in-out ${
+          isSidebarOpen
+            ? "w-72 translate-x-0"
+            : "w-0 -translate-x-full lg:translate-x-0 lg:w-0 overflow-hidden"
         }`}
       >
-        {/* Header */}
-        <div className="px-6 flex items-center justify-between h-16 border-b border-[var(--border)] shrink-0">
-          <div className="relative">
-            <button
-              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              className="flex items-center gap-2 text-left group"
-            >
-              <div>
-                <h1 className="text-lg font-serif font-semibold text-[var(--text-primary)] group-hover:text-white transition-colors">
-                  Assistant
-                </h1>
-                <p className="text-xs text-[var(--text-muted)] flex items-center gap-1">
-                  Powered by SecureAgent{" "}
-                  <ChevronDown
-                    size={12}
-                    className={`transition-transform ${isDropdownOpen ? "rotate-180" : ""}`}
-                  />
-                </p>
-              </div>
-            </button>
-
-            {/* Conversations Dropdown */}
-            {isDropdownOpen && (
-              <div className="absolute top-12 left-0 w-64 bg-[var(--bg-elevated)] border border-[var(--border)] rounded-xl shadow-2xl z-50 overflow-hidden">
-                <button
-                  onClick={handleNewChat}
-                  className="w-full flex items-center gap-2 px-4 py-3 text-sm text-[var(--text-primary)] hover:bg-[var(--accent-soft)] hover:text-[var(--accent)] border-b border-[var(--border)] transition-colors"
-                >
-                  <Plus size={16} />
-                  New Chat
-                </button>
-                <div className="max-h-64 overflow-y-auto">
-                  {conversations.length === 0 ? (
-                    <div className="px-4 py-3 text-xs text-[var(--text-muted)] italic">
-                      No recent chats.
-                    </div>
-                  ) : (
-                    conversations.map((conv) => (
-                      <button
-                        key={conv.id}
-                        onClick={() => {
-                          setActiveConversationId(conv.id);
-                          setIsDropdownOpen(false);
-                        }}
-                        className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors ${
-                          activeConversationId === conv.id
-                            ? "bg-[rgba(255,255,255,0.05)] text-white"
-                            : "text-[var(--text-secondary)] hover:bg-[rgba(255,255,255,0.02)]"
-                        }`}
-                      >
-                        <MessageSquare
-                          size={14}
-                          className="shrink-0 opacity-50"
-                        />
-                        <span className="text-sm truncate">{conv.title}</span>
-                      </button>
-                    ))
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-          {/* Toggle Log Panel Button (Desktop) */}
+        {/* Sidebar Header */}
+        <div className="h-16 flex items-center justify-between px-4 border-b border-[var(--border)] shrink-0">
+          <span className="text-sm font-semibold text-[var(--text-primary)] tracking-wide">
+            Chat History
+          </span>
           <button
-            onClick={() => setIsLogsOpen(!isLogsOpen)}
-            className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--accent-soft)] hover:text-[var(--text-primary)] transition-colors"
+            onClick={() => setIsSidebarOpen(false)}
+            className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[rgba(255,255,255,0.05)] transition-colors"
           >
-            <Terminal size={16} />
-            {isLogsOpen ? "Hide Tools" : "Show Tools"}
+            <PanelLeftClose size={18} />
           </button>
         </div>
 
-        {/* Messages List */}
-        <div className="flex-1 overflow-y-auto px-4 sm:px-8 lg:px-12 py-6 space-y-6 scroll-smooth">
-          {messages.length <= 1 && (
-            <div className="flex flex-col py-10 space-y-8 max-w-2xl mx-auto w-full">
-              <h2 className="text-2xl font-serif text-[var(--text-primary)]">
-                What do you want to achieve?
-              </h2>
-              <div className="flex flex-wrap gap-2">
-                {SUGGESTION_CHIPS.map((chip, i) => (
-                  <button
-                    key={i}
-                    onClick={() => handleSend(chip.message)}
-                    className="px-4 py-2.5 rounded-xl bg-[var(--bg-elevated)] border border-[rgba(255,255,255,0.05)] text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--accent)] transition-all text-left"
-                  >
-                    {chip.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <div className="max-w-3xl mx-auto w-full space-y-8">
-            {messages.map((msg) => {
-              const isUser = msg.role === "user";
-              const isThinking = !msg.content && (msg.logs?.length || 0) > 0;
-
-              // Only render the AI bubble if it has text ORauth actions OR if it's currently thinking and logs are hidden
-              // Wait, if we want a clean chat stream we only show AI when content or auth arrives.
-              const shouldRenderAiBubble =
-                msg.content ||
-                (msg.auth_actions && msg.auth_actions.length > 0) ||
-                (isThinking && !isLogsOpen);
-
-              if (!isUser && !shouldRenderAiBubble && !msg.is_proactive)
-                return null;
-
-              return (
-                <div
-                  key={msg.id}
-                  className={`flex gap-4 ${isUser ? "flex-row-reverse" : "flex-row"}`}
-                >
-                  {/* Avatar for AI */}
-                  {!isUser && (
-                    <div className="flex-shrink-0 mt-1">
-                      <PulsingAvatar isThinking={isThinking} size={36} />
-                    </div>
-                  )}
-
-                  {/* Bubble Container */}
-                  <div
-                    className={`flex flex-col group ${
-                      isUser ? "items-end" : "items-start w-full"
-                    }`}
-                  >
-                    <div
-                      className={`max-w-[85%] lg:max-w-[90%] rounded-2xl px-5 py-3.5 ${
-                        isUser
-                          ? "bg-zinc-800 text-[var(--text-primary)]"
-                          : "bg-transparent text-[var(--text-primary)]"
-                      } ${msg.is_proactive ? "border-l-2 border-l-yellow-500 pl-4 bg-yellow-500/5 rounded-l-none" : ""}`}
-                    >
-                      {/* Proactive badge */}
-                      {msg.is_proactive && (
-                        <div className="flex items-center gap-1.5 mb-2">
-                          <Zap size={14} className="text-yellow-500" />
-                          <span className="text-xs uppercase tracking-wider font-semibold text-yellow-500">
-                            Proactive Summary
-                          </span>
-                        </div>
-                      )}
-
-                      {/* Content */}
-                      {isUser ? (
-                        <p className="text-[15px] leading-relaxed text-zinc-200">
-                          {msg.content}
-                        </p>
-                      ) : msg.content ? (
-                        <div className="markdown-content text-[15px] leading-relaxed text-zinc-300">
-                          <ReactMarkdown>{msg.content}</ReactMarkdown>
-                        </div>
-                      ) : (
-                        isThinking &&
-                        !isLogsOpen && (
-                          <div className="flex items-center gap-3 text-[var(--text-muted)] text-sm">
-                            <span className="flex h-2 w-2 relative">
-                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--accent)] opacity-75"></span>
-                              <span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--accent)]"></span>
-                            </span>
-                            Executing tasks... open Tool panel to specify.
-                          </div>
-                        )
-                      )}
-
-                      {/* Auth actions */}
-                      {msg.auth_actions && msg.auth_actions.length > 0 && (
-                        <div className="mt-4 space-y-2 max-w-md w-full">
-                          {msg.auth_actions.map((action, idx) => (
-                            <a
-                              key={idx}
-                              href={action.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center justify-between px-4 py-3 rounded-lg bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] hover:border-[var(--accent)] hover:bg-[var(--accent-soft)] transition-colors group/link"
-                            >
-                              <span className="text-sm text-[var(--text-primary)] font-medium">
-                                Connect {action.appName}
-                              </span>
-                              <span className="text-xs text-[var(--accent)] font-medium group-hover/link:translate-x-1 transition-transform">
-                                Authenticate →
-                              </span>
-                            </a>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-            <div ref={messagesEndRef} className="h-4" />
-          </div>
+        {/* New Chat Button */}
+        <div className="px-3 pt-3 pb-1">
+          <button
+            onClick={handleNewChat}
+            className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium text-[var(--text-primary)] bg-[var(--accent-soft)] hover:bg-[var(--accent)] hover:text-black transition-colors"
+          >
+            <Plus size={16} />
+            New Chat
+          </button>
         </div>
 
-        {/* Input Area */}
-        <div className="p-4 sm:p-6 lg:p-8 shrink-0 relative bg-gradient-to-t from-[var(--bg-surface)] to-transparent via-[var(--bg-surface)]">
-          <div className="max-w-3xl mx-auto w-full relative">
-            {/* Model Toggle */}
-            {/* <div className="flex items-center gap-1 mb-2.5 ml-1">
+        {/* Conversations List */}
+        <div className="flex-1 overflow-y-auto px-2 py-2 space-y-0.5">
+          {conversations.length === 0 ? (
+            <div className="px-3 py-6 text-xs text-[var(--text-muted)] italic text-center">
+              No recent chats.
+            </div>
+          ) : (
+            conversations.map((conv) => (
+              <div
+                key={conv.id}
+                className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-left transition-colors group/conv cursor-pointer ${
+                  activeConversationId === conv.id
+                    ? "bg-[rgba(255,255,255,0.08)] text-white"
+                    : "text-[var(--text-secondary)] hover:bg-[rgba(255,255,255,0.04)]"
+                }`}
+              >
+                <button
+                  onClick={() => {
+                    setActiveConversationId(conv.id);
+                    setIsSidebarOpen(false);
+                  }}
+                  className="flex items-center gap-2.5 flex-1 min-w-0"
+                >
+                  <MessageSquare size={14} className="shrink-0 opacity-50" />
+                  <span className="text-[13px] truncate">{conv.title}</span>
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setDeleteConfirm({
+                      type: "single",
+                      conversationId: conv.id,
+                    });
+                  }}
+                  className="shrink-0 p-1 rounded-md opacity-0 group-hover/conv:opacity-100 text-[var(--text-muted)] hover:text-red-400 hover:bg-red-400/10 transition-all"
+                  title="Delete conversation"
+                >
+                  <Trash2 size={13} />
+                </button>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Manage History Section */}
+        {conversations.length > 0 && (
+          <div className="border-t border-[var(--border)] shrink-0">
+            <button
+              onClick={() => setIsDeleteMenuOpen(!isDeleteMenuOpen)}
+              className="w-full flex items-center justify-between px-4 py-3 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[rgba(255,255,255,0.03)] transition-colors"
+            >
+              <span className="flex items-center gap-2 text-xs font-medium">
+                <Shield size={14} className="opacity-60" />
+                Manage History
+              </span>
+              <ChevronDown
+                size={12}
+                className={`transition-transform ${isDeleteMenuOpen ? "rotate-180" : ""}`}
+              />
+            </button>
+            {isDeleteMenuOpen && (
+              <div className="bg-[rgba(0,0,0,0.15)] pb-2">
+                {/* Auto-delete retention setting */}
+                <div className="px-4 py-3 border-b border-[rgba(255,255,255,0.05)]">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Clock
+                      size={12}
+                      className="text-[var(--accent)] opacity-80"
+                    />
+                    <span className="text-[11px] font-medium text-[var(--text-primary)] uppercase tracking-wider">
+                      Auto-delete
+                    </span>
+                    {retentionDays && (
+                      <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded-full bg-[var(--accent-soft)] text-[var(--accent)]">
+                        Active
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[10px] text-[var(--text-muted)] mb-2.5">
+                    Automatically delete history older than:
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {[
+                      { value: 7, label: "7d" },
+                      { value: 30, label: "30d" },
+                      { value: 90, label: "90d" },
+                      { value: 180, label: "6mo" },
+                      { value: null as number | null, label: "Never" },
+                    ].map((opt) => (
+                      <button
+                        key={opt.label}
+                        onClick={() => handleRetentionChange(opt.value)}
+                        disabled={retentionSaving}
+                        className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-all ${
+                          retentionDays === opt.value
+                            ? "bg-[var(--accent)] text-black"
+                            : "bg-[rgba(255,255,255,0.05)] text-[var(--text-secondary)] hover:bg-[rgba(255,255,255,0.1)] hover:text-[var(--text-primary)]"
+                        } disabled:opacity-50`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Manual delete options */}
+                {[
+                  { days: 1, label: "Last 24 hours" },
+                  { days: 7, label: "Last 7 days" },
+                  { days: 30, label: "Last 30 days" },
+                  { days: 90, label: "Last 90 days" },
+                ].map((opt) => (
+                  <button
+                    key={opt.days}
+                    onClick={() =>
+                      setDeleteConfirm({
+                        type: "range",
+                        days: opt.days,
+                        label: opt.label,
+                      })
+                    }
+                    className="w-full flex items-center gap-2 px-5 py-2 text-xs text-[var(--text-secondary)] hover:text-red-400 hover:bg-red-400/10 transition-colors"
+                  >
+                    <Clock size={12} className="opacity-60" />
+                    Delete {opt.label}
+                  </button>
+                ))}
+                <button
+                  onClick={() => setDeleteConfirm({ type: "all" })}
+                  className="w-full flex items-center gap-2 px-5 py-2 text-xs text-red-500 font-medium hover:bg-red-400/10 transition-colors border-t border-[rgba(255,255,255,0.03)]"
+                >
+                  <Trash2 size={12} />
+                  Delete Everything
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+      </aside>
+
+      {/* ─── MAIN CHAT PANEL ─── */}
+      <div
+        className="flex flex-col h-full flex-1 bg-[var(--bg-surface)] relative"
+        onDragEnter={handleDragEnter}
+        onDragLeave={handleDragLeave}
+        onDragOver={handleDragOver}
+        onDrop={handleDrop}
+      >
+        {/* Drag & Drop Overlay */}
+        {isDragOver && (
+          <div className="absolute inset-0 z-20 flex items-center justify-center bg-[var(--bg-surface)]/90 backdrop-blur-sm border-2 border-dashed border-[var(--accent)] rounded-xl m-4 pointer-events-none">
+            <div className="flex flex-col items-center gap-3 text-[var(--accent)]">
+              <FileUp size={40} strokeWidth={1.5} />
+              <span className="text-lg font-medium">Drop files here</span>
+              <span className="text-xs text-[var(--text-muted)]">
+                Text, Markdown, JSON, CSV files supported
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Header */}
+        <div className="px-6 flex items-center justify-between h-16 border-b border-[var(--border)] shrink-0">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+              className="p-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[rgba(255,255,255,0.05)] transition-colors"
+              title={isSidebarOpen ? "Close sidebar" : "Open sidebar"}
+            >
+              <Menu size={18} />
+            </button>
+            <div>
+              <h1 className="text-lg font-serif font-semibold text-[var(--text-primary)]">
+                Assistant
+              </h1>
+              <p className="text-[11px] text-[var(--text-muted)]">
+                Powered by SecureAgent
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={handleNewChat}
+            className="p-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[rgba(255,255,255,0.05)] transition-colors"
+            title="New chat"
+          >
+            <Plus size={18} />
+          </button>
+        </div>
+
+        {/* Empty State — Centered landing */}
+        {messages.length === 0 ? (
+          <div className="flex-1 flex flex-col items-center justify-center px-4 sm:px-8">
+            <div className="flex flex-col items-center text-center max-w-2xl w-full space-y-6">
+              {/* Gradient headline */}
+              <h1
+                className="text-3xl sm:text-4xl font-bold tracking-tight"
+                style={{
+                  background:
+                    "linear-gradient(90deg, #60a5fa, #a78bfa, #f472b6, #fb923c)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                }}
+              >
+                Chat with over 1000+ Apps
+              </h1>
+              <p className="text-sm text-[var(--text-muted)] -mt-2">
+                Connect your favorite tools and let Aariv automate your work.
+              </p>
+
+              {/* Centered input */}
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleSend();
+                }}
+                className="w-full max-w-xl relative flex items-end rounded-2xl overflow-hidden bg-[var(--bg-elevated)] border border-[rgba(255,255,255,0.1)] focus-within:border-[rgba(255,255,255,0.2)] focus-within:ring-1 focus-within:ring-[rgba(255,255,255,0.1)] shadow-lg transition-all"
+              >
+                <textarea
+                  ref={inputRef}
+                  value={inputText}
+                  onChange={(e) => setInputText(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSend();
+                    }
+                  }}
+                  placeholder="Ask me anything..."
+                  disabled={isLoading}
+                  rows={1}
+                  className="w-full max-h-32 min-h-[56px] py-4 pl-5 pr-14 bg-transparent text-[15px] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] resize-none outline-none disabled:opacity-50"
+                  style={{ height: "auto", overflowY: "auto" }}
+                />
+                <button
+                  type="submit"
+                  disabled={!inputText.trim() || isLoading}
+                  className="absolute right-2 bottom-2 p-2 rounded-xl bg-white text-black hover:bg-gray-200 transition-colors disabled:opacity-30 disabled:bg-transparent disabled:text-[var(--text-muted)]"
+                >
+                  <Send size={18} className="ml-0.5" />
+                </button>
+              </form>
+
+              {/* Suggestion chips */}
+              {suggestions.length > 0 && (
+                <div className="flex flex-wrap justify-center gap-2 mt-2">
+                  {suggestions.map((chip, i) => (
+                    <button
+                      key={i}
+                      onClick={() => {
+                        setInputText(chip.message);
+                        inputRef.current?.focus();
+                      }}
+                      className="px-4 py-2.5 rounded-full bg-[var(--bg-elevated)] border border-[rgba(255,255,255,0.08)] text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--accent)] transition-all"
+                    >
+                      {chip.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        ) : (
+          /* Messages List */
+          <div className="flex-1 overflow-y-auto px-4 sm:px-8 lg:px-12 py-6 space-y-6 scroll-smooth">
+            <div className="max-w-3xl mx-auto w-full space-y-8">
+              {messages.map((msg) => {
+                const isUser = msg.role === "user";
+                const isThinking = !msg.content && (msg.logs?.length || 0) > 0;
+
+                // Only render the AI bubble if it has text ORauth actions OR if it's currently thinking and logs are hidden
+                // Wait, if we want a clean chat stream we only show AI when content or auth arrives.
+                const shouldRenderAiBubble =
+                  msg.content ||
+                  (msg.auth_actions && msg.auth_actions.length > 0) ||
+                  (isThinking && !isLogsOpen);
+
+                if (!isUser && !shouldRenderAiBubble && !msg.is_proactive)
+                  return null;
+
+                return (
+                  <div
+                    key={msg.id}
+                    className={`flex gap-4 ${isUser ? "flex-row-reverse" : "flex-row"}`}
+                  >
+                    {/* Avatar for AI */}
+                    {!isUser && (
+                      <div className="flex-shrink-0 mt-1">
+                        <PulsingAvatar isThinking={isThinking} size={36} />
+                      </div>
+                    )}
+
+                    {/* Bubble Container */}
+                    <div
+                      className={`flex flex-col group ${
+                        isUser ? "items-end" : "items-start w-full"
+                      }`}
+                    >
+                      <div
+                        className={`max-w-[85%] lg:max-w-[90%] rounded-2xl px-5 py-3.5 ${
+                          isUser
+                            ? "bg-zinc-800 text-[var(--text-primary)]"
+                            : "bg-transparent text-[var(--text-primary)]"
+                        } ${msg.is_proactive ? "border-l-2 border-l-cyan-400 pl-4 bg-cyan-400/5 rounded-l-none" : ""}`}
+                      >
+                        {/* Proactive badge */}
+                        {msg.is_proactive && (
+                          <div className="flex items-center gap-1.5 mb-2">
+                            <Zap size={14} className="text-cyan-400" />
+                            <span className="text-xs uppercase tracking-wider font-semibold text-cyan-400">
+                              Proactive Summary
+                            </span>
+                          </div>
+                        )}
+
+                        {/* Content */}
+                        {isUser ? (
+                          <p className="text-[15px] leading-relaxed text-zinc-200">
+                            {msg.content}
+                          </p>
+                        ) : msg.content ? (
+                          <div className="markdown-content text-[15px] leading-relaxed text-zinc-300">
+                            <ReactMarkdown>{msg.content}</ReactMarkdown>
+                          </div>
+                        ) : (
+                          isThinking &&
+                          !isLogsOpen && (
+                            <div className="flex items-center gap-1.5 py-1">
+                              <span
+                                className="inline-block w-2 h-2 rounded-full bg-[var(--accent)] animate-bounce"
+                                style={{ animationDelay: "0ms" }}
+                              />
+                              <span
+                                className="inline-block w-2 h-2 rounded-full bg-[var(--accent)] animate-bounce"
+                                style={{ animationDelay: "150ms" }}
+                              />
+                              <span
+                                className="inline-block w-2 h-2 rounded-full bg-[var(--accent)] animate-bounce"
+                                style={{ animationDelay: "300ms" }}
+                              />
+                              <span className="ml-2 text-sm text-[var(--text-muted)]">
+                                Working on it...
+                              </span>
+                            </div>
+                          )
+                        )}
+
+                        {/* Copy button for AI messages */}
+                        {!isUser && msg.content && (
+                          <div className="flex justify-end mt-1 -mb-1">
+                            <button
+                              onClick={() =>
+                                handleCopyMessage(msg.id, msg.content)
+                              }
+                              className="p-1 rounded-md text-[var(--text-muted)] opacity-0 group-hover:opacity-100 hover:text-[var(--text-primary)] hover:bg-[rgba(255,255,255,0.06)] transition-all"
+                              title="Copy response"
+                            >
+                              {copiedMessageId === msg.id ? (
+                                <Check size={14} className="text-green-400" />
+                              ) : (
+                                <Copy size={14} />
+                              )}
+                            </button>
+                          </div>
+                        )}
+
+                        {/* Auth actions */}
+                        {msg.auth_actions && msg.auth_actions.length > 0 && (
+                          <div className="mt-4 space-y-2 max-w-md w-full">
+                            {msg.auth_actions.map((action, idx) => (
+                              <a
+                                key={idx}
+                                href={action.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center justify-between px-4 py-3 rounded-lg bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] hover:border-[var(--accent)] hover:bg-[var(--accent-soft)] transition-colors group/link"
+                              >
+                                <span className="text-sm text-[var(--text-primary)] font-medium">
+                                  Connect {action.appName}
+                                </span>
+                                <span className="text-xs text-[var(--accent)] font-medium group-hover/link:translate-x-1 transition-transform">
+                                  Authenticate →
+                                </span>
+                              </a>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+              <div ref={messagesEndRef} className="h-4" />
+            </div>
+          </div>
+        )}
+
+        {/* Input Area — hidden on empty state since input is in the hero */}
+        {messages.length > 0 && (
+          <div className="p-4 sm:p-6 lg:p-8 shrink-0 relative bg-gradient-to-t from-[var(--bg-surface)] to-transparent via-[var(--bg-surface)]">
+            <div className="max-w-3xl mx-auto w-full relative">
+              {/* Model Toggle */}
+              {/* <div className="flex items-center gap-1 mb-2.5 ml-1">
               <div className="inline-flex items-center bg-[var(--bg-elevated)] border border-[rgba(255,255,255,0.08)] rounded-full p-0.5">
                 <button
                   type="button"
@@ -581,48 +1014,49 @@ export default function AssistantPage() {
                 {selectedModel.includes("mini") ? "Quicker responses, lower cost" : "Better reasoning, more accurate"}
               </span>
             </div> */}
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                handleSend();
-              }}
-              className="relative flex items-end shadow-lg rounded-2xl overflow-hidden bg-[var(--bg-elevated)] border border-[rgba(255,255,255,0.1)] focus-within:border-[rgba(255,255,255,0.2)] focus-within:ring-1 focus-within:ring-[rgba(255,255,255,0.1)] transition-all"
-            >
-              <textarea
-                ref={inputRef}
-                value={inputText}
-                onChange={(e) => setInputText(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    handleSend();
-                  }
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleSend();
                 }}
-                placeholder="Ask Aariv to do something..."
-                disabled={isLoading}
-                rows={1}
-                className="w-full max-h-32 min-h-[56px] py-4 pl-5 pr-14 bg-transparent text-[15px] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] resize-none outline-none disabled:opacity-50"
-                style={{ height: "auto", overflowY: "auto" }}
-              />
-              <button
-                type="submit"
-                disabled={!inputText.trim() || isLoading}
-                className="absolute right-2 bottom-2 p-2 rounded-xl bg-white text-black hover:bg-gray-200 transition-colors disabled:opacity-30 disabled:bg-transparent disabled:text-[var(--text-muted)]"
+                className="relative flex items-end shadow-lg rounded-2xl overflow-hidden bg-[var(--bg-elevated)] border border-[rgba(255,255,255,0.1)] focus-within:border-[rgba(255,255,255,0.2)] focus-within:ring-1 focus-within:ring-[rgba(255,255,255,0.1)] transition-all"
               >
-                <Send size={18} className="ml-0.5" />
-              </button>
-            </form>
-            <div className="text-center mt-3">
-              <span className="text-[10px] text-[var(--text-muted)]">
-                Press Enter to send, Shift+Enter for new line
-              </span>
+                <textarea
+                  ref={inputRef}
+                  value={inputText}
+                  onChange={(e) => setInputText(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSend();
+                    }
+                  }}
+                  placeholder="Ask Aariv to do something..."
+                  disabled={isLoading}
+                  rows={1}
+                  className="w-full max-h-32 min-h-[56px] py-4 pl-5 pr-14 bg-transparent text-[15px] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] resize-none outline-none disabled:opacity-50"
+                  style={{ height: "auto", overflowY: "auto" }}
+                />
+                <button
+                  type="submit"
+                  disabled={!inputText.trim() || isLoading}
+                  className="absolute right-2 bottom-2 p-2 rounded-xl bg-white text-black hover:bg-gray-200 transition-colors disabled:opacity-30 disabled:bg-transparent disabled:text-[var(--text-muted)]"
+                >
+                  <Send size={18} className="ml-0.5" />
+                </button>
+              </form>
+              <div className="text-center mt-3">
+                <span className="text-[10px] text-[var(--text-muted)]">
+                  Press Enter to send, Shift+Enter for new line
+                </span>
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* ─── RIGHT PANEL (TOOL EXECUTION LOGS) ─── */}
-      <div
+      {/* <div
         className={`fixed lg:static top-0 right-0 h-full bg-[#111111] z-40 transition-all duration-300 ease-in-out transform flex flex-col border-l border-[rgba(255,255,255,0.05)] ${
           isLogsOpen
             ? "translate-x-0 w-[320px] lg:w-[40%]"
@@ -655,7 +1089,54 @@ export default function AssistantPage() {
           )}
           <div ref={logsEndRef} />
         </div>
-      </div>
+      </div> */}
+
+      {/* Delete Confirmation Dialog */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="bg-[var(--bg-elevated)] border border-[var(--border)] rounded-2xl shadow-2xl p-6 max-w-sm w-full mx-4">
+            <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-2">
+              {deleteConfirm.type === "all"
+                ? "Delete All History?"
+                : deleteConfirm.type === "range"
+                  ? `Delete ${deleteConfirm.label}?`
+                  : "Delete Conversation?"}
+            </h3>
+            <p className="text-sm text-[var(--text-muted)] mb-6">
+              {deleteConfirm.type === "all"
+                ? "This will permanently delete all your conversations and their messages. This action cannot be undone."
+                : deleteConfirm.type === "range"
+                  ? `This will permanently delete all conversations from the ${deleteConfirm.label?.toLowerCase()}. This action cannot be undone.`
+                  : "This will permanently delete this conversation and all its messages. This action cannot be undone."}
+            </p>
+            <div className="flex items-center justify-end gap-3">
+              <button
+                onClick={() => setDeleteConfirm(null)}
+                className="px-4 py-2 rounded-lg text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[rgba(255,255,255,0.05)] transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  if (deleteConfirm.type === "all") {
+                    handleDeleteAllConversations();
+                  } else if (
+                    deleteConfirm.type === "range" &&
+                    deleteConfirm.days
+                  ) {
+                    handleDeleteAllConversations(deleteConfirm.days);
+                  } else if (deleteConfirm.conversationId) {
+                    handleDeleteConversation(deleteConfirm.conversationId);
+                  }
+                }}
+                className="px-4 py-2 rounded-lg text-sm font-medium bg-red-500 text-white hover:bg-red-600 transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -11,7 +11,7 @@ import {
   Mail,
   MessageSquare,
   RefreshCw,
-  Zap
+  Zap,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -106,13 +106,17 @@ const getSubMessage = () => {
 function StatusBadge({ status }: { status: TriggerEvent["status"] }) {
   const cfg = {
     received: {
-      bg: "var(--accent-soft)",
-      text: "var(--accent)",
+      bg: "rgba(99,102,241,0.15)",
+      text: "#a5b4fc",
       label: "Received",
     },
-    processing: { bg: "#FFF3CD", text: "#856404", label: "Processing" },
-    completed: { bg: "#D4EDDA", text: "#155724", label: "Done" },
-    failed: { bg: "#F8D7DA", text: "#721C24", label: "Failed" },
+    processing: {
+      bg: "rgba(234,179,8,0.15)",
+      text: "#fbbf24",
+      label: "Processing",
+    },
+    completed: { bg: "rgba(34,197,94,0.15)", text: "#4ade80", label: "Done" },
+    failed: { bg: "rgba(239,68,68,0.15)", text: "#f87171", label: "Failed" },
   }[status] || {
     bg: "var(--bg-surface)",
     text: "var(--text-muted)",
@@ -319,18 +323,18 @@ export default function DashboardHome() {
 
                 {/* Content */}
                 {displayText && (
-                  <p className="text-sm text-[var(--text-primary)] leading-relaxed whitespace-pre-line">
+                  <p className="text-sm text-[var(--text-primary)] leading-relaxed whitespace-pre-line font-medium">
                     {displayText}
                   </p>
                 )}
 
                 {/* Trigger slug */}
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] text-[var(--text-muted)] font-mono">
+                  <span className="text-[10px] text-[var(--text-secondary)] font-mono opacity-70">
                     {event.triggerSlug}
                   </span>
                   {event.processingTimeMs != null && (
-                    <span className="text-[10px] text-[var(--text-muted)]">
+                    <span className="text-[10px] text-[var(--text-secondary)] opacity-70">
                       · {event.processingTimeMs}ms
                     </span>
                   )}
