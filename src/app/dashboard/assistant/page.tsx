@@ -184,17 +184,17 @@ export default function AssistantPage() {
                   "discord_summary",
                 ]);
                 if (triggerTypes.has(event.type)) {
-                  const label =
-                    {
-                      email_summary: "📧 Email",
-                      github_update: "🐙 GitHub",
-                      slack_summary: "💬 Slack",
-                      calendar_alert: "📅 Calendar",
-                      notion_update: "📝 Notion",
-                      linear_update: "📋 Linear",
-                      discord_summary: "🎮 Discord",
-                      proactive_summary: "🔔 Update",
-                    }[event.type] || "🔔 Update";
+                  const labelMap: Record<string, string> = {
+                    email_summary: "📧 Email",
+                    github_update: "🐙 GitHub",
+                    slack_summary: "💬 Slack",
+                    calendar_alert: "📅 Calendar",
+                    notion_update: "📝 Notion",
+                    linear_update: "📋 Linear",
+                    discord_summary: "🎮 Discord",
+                    proactive_summary: "🔔 Update",
+                  };
+                  const label = labelMap[event.type as string] || "🔔 Update";
 
                   setMessages((prev) => [
                     ...prev,
