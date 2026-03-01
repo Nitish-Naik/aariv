@@ -66,12 +66,12 @@ export default function DashboardHome() {
       </div>
 
       {/* Status pill */}
-      <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--bg-surface)] border border-[var(--border)] mb-6 sm:mb-10">
+      {/* <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--bg-surface)] border border-[var(--border)] mb-6 sm:mb-10">
         <span className="w-2 h-2 rounded-full bg-success animate-pulse" />
         <span className="text-sm text-[var(--text-secondary)]">
           All systems running
         </span>
-      </div>
+      </div> */}
 
       {/* Proposals */}
       {proposals.length > 0 && (

@@ -3,7 +3,7 @@
 import { useAuth } from "@/context/AuthContext";
 import { api } from "@/lib/api";
 import { AnimatePresence, motion } from "framer-motion";
-import { Check, Loader2, Search } from "lucide-react";
+import { AlertCircle, Check, Loader2, Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 interface Integration {
@@ -47,6 +47,7 @@ export default function IntegrationsPage() {
   const [loading, setLoading] = useState(true);
   const [connecting, setConnecting] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  const [errorToast, setErrorToast] = useState<string | null>(null);
 
   // UI State
   const [activeTab, setActiveTab] = useState<"all" | "connected">("all");
@@ -121,6 +122,10 @@ export default function IntegrationsPage() {
     } catch (e: any) {
       console.error("Failed to connect:", e.message);
       setConnecting(null);
+      // Try to extract the backend's detail message
+      const errorMsg = e.response?.data?.detail?.message || e.response?.data?.detail || "Failed to initiate connection. Please try again.";
+      setErrorToast(errorMsg);
+      setTimeout(() => setErrorToast(null), 5000);
     }
   };
 
@@ -148,6 +153,14 @@ export default function IntegrationsPage() {
           <div className="fixed top-4 right-4 z-50 flex items-center gap-2 bg-emerald-500/90 text-white px-5 py-3 rounded-xl shadow-lg text-sm font-medium animate-in slide-in-from-top fade-in duration-300">
             <Check size={16} />
             {toast}
+          </div>
+        )}
+
+        {/* Error toast */}
+        {errorToast && (
+          <div className="fixed top-4 right-4 z-50 flex items-center gap-2 bg-red-500/90 text-white px-5 py-3 rounded-xl shadow-lg text-sm font-medium animate-in slide-in-from-top fade-in duration-300">
+            <AlertCircle size={16} />
+            {errorToast}
           </div>
         )}
 
