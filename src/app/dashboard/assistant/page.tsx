@@ -4,7 +4,15 @@ import { DetailedLogEntry, PulsingAvatar } from "@/components";
 import { useAuth } from "@/context/AuthContext";
 import { api } from "@/lib/api";
 import type { ChatMessage } from "@/lib/types";
-import { Brain, ChevronDown, ChevronRight, MessageSquare, Plus, Send, Terminal, Zap } from "lucide-react";
+import {
+    ChevronDown,
+    ChevronRight,
+    MessageSquare,
+    Plus,
+    Send,
+    Terminal,
+    Zap
+} from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 
@@ -18,7 +26,9 @@ export default function AssistantPage() {
   const { user } = useAuth();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [conversations, setConversations] = useState<any[]>([]);
-  const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
+  const [activeConversationId, setActiveConversationId] = useState<
+    string | null
+  >(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   const [inputText, setInputText] = useState("");
@@ -47,7 +57,7 @@ export default function AssistantPage() {
   }, []);
 
   // Extract all logs to render in the right panel sequentially
-  const allLogs = messages.flatMap(msg => msg.logs || []).filter(Boolean);
+  const allLogs = messages.flatMap((msg) => msg.logs || []).filter(Boolean);
 
   // Auto-scroll logs
   useEffect(() => {
@@ -59,9 +69,12 @@ export default function AssistantPage() {
     if (!user?.id) return;
     const fetchHistory = async () => {
       try {
-        const envUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
-        const baseUrl = envUrl.endsWith('/api') ? envUrl.slice(0, -4) : envUrl;
-        const res = await fetch(`${baseUrl}/api/history/conversations/${user.id}`);
+        const envUrl =
+          process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+        const baseUrl = envUrl.endsWith("/api") ? envUrl.slice(0, -4) : envUrl;
+        const res = await fetch(
+          `${baseUrl}/api/history/conversations/${user.id}`,
+        );
         if (res.ok) {
           const data = await res.json();
           setConversations(data);
@@ -91,9 +104,12 @@ export default function AssistantPage() {
     if (!activeConversationId) return;
     const fetchMessages = async () => {
       try {
-        const envUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
-        const baseUrl = envUrl.endsWith('/api') ? envUrl.slice(0, -4) : envUrl;
-        const res = await fetch(`${baseUrl}/api/history/messages/${activeConversationId}`);
+        const envUrl =
+          process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+        const baseUrl = envUrl.endsWith("/api") ? envUrl.slice(0, -4) : envUrl;
+        const res = await fetch(
+          `${baseUrl}/api/history/messages/${activeConversationId}`,
+        );
         if (res.ok) {
           const data = await res.json();
           if (data.length > 0) {
@@ -102,7 +118,7 @@ export default function AssistantPage() {
               role: msg.role,
               content: msg.content,
               timestamp: new Date(msg.timestamp),
-              logs: msg.logs || []
+              logs: msg.logs || [],
             }));
             setMessages(mapped);
           }
@@ -136,7 +152,7 @@ export default function AssistantPage() {
       try {
         const response = await fetch(
           `${api.getBaseUrl()}/notifications/${user.id}`,
-          { signal: controller.signal }
+          { signal: controller.signal },
         );
         if (!response.body) return;
 
@@ -156,19 +172,42 @@ export default function AssistantPage() {
             if (part.startsWith("data: ")) {
               try {
                 const event = JSON.parse(part.substring(6));
-                if (event.type === "proactive_summary") {
+                // Handle all trigger notification types
+                const triggerTypes = new Set([
+                  "proactive_summary",
+                  "email_summary",
+                  "github_update",
+                  "slack_summary",
+                  "calendar_alert",
+                  "notion_update",
+                  "linear_update",
+                  "discord_summary",
+                ]);
+                if (triggerTypes.has(event.type)) {
+                  const label =
+                    {
+                      email_summary: "📧 Email",
+                      github_update: "🐙 GitHub",
+                      slack_summary: "💬 Slack",
+                      calendar_alert: "📅 Calendar",
+                      notion_update: "📝 Notion",
+                      linear_update: "📋 Linear",
+                      discord_summary: "🎮 Discord",
+                      proactive_summary: "🔔 Update",
+                    }[event.type] || "🔔 Update";
+
                   setMessages((prev) => [
                     ...prev,
                     {
                       id: event.data.id || Date.now().toString(),
                       role: "assistant",
-                      content: event.data.content,
+                      content: `**${label}**\n\n${event.data.content}`,
                       timestamp: new Date(event.data.timestamp),
                       is_proactive: true,
                     },
                   ]);
                 }
-              } catch { }
+              } catch {}
             }
           }
         }
@@ -216,7 +255,9 @@ export default function AssistantPage() {
         userId: user.id,
         message: messageText,
         model: selectedModel,
-        ...((activeConversationId) ? { conversationId: activeConversationId } : {})
+        ...(activeConversationId
+          ? { conversationId: activeConversationId }
+          : {}),
       });
 
       if (!response.body) throw new Error("No response body from server");
@@ -262,9 +303,8 @@ export default function AssistantPage() {
                   } else if (event.type === "result") {
                     // Only replace logs if result has actual log entries,
                     // otherwise keep the streaming logs we accumulated
-                    const finalLogs = event.data.logs?.length > 0
-                      ? event.data.logs
-                      : msg.logs;
+                    const finalLogs =
+                      event.data.logs?.length > 0 ? event.data.logs : msg.logs;
                     return {
                       ...msg,
                       content: event.data.response,
@@ -280,7 +320,7 @@ export default function AssistantPage() {
                   return msg;
                 }),
               );
-            } catch { }
+            } catch {}
           }
         }
       }
@@ -289,11 +329,11 @@ export default function AssistantPage() {
         prev.map((msg) =>
           msg.id === aiMessageId
             ? {
-              ...msg,
-              content:
-                "Sorry, I encountered an error: " +
-                (e.message || "Unknown error"),
-            }
+                ...msg,
+                content:
+                  "Sorry, I encountered an error: " +
+                  (e.message || "Unknown error"),
+              }
             : msg,
         ),
       );
@@ -307,8 +347,11 @@ export default function AssistantPage() {
     <div className="flex h-screen overflow-hidden bg-[var(--bg-deep)]">
       {/* ─── LEFT PANEL (CHAT) ─── */}
       <div
-        className={`flex flex-col h-full bg-[var(--bg-surface)] transition-all duration-300 ease-in-out ${isLogsOpen ? "w-full lg:w-[60%] border-r border-[var(--border)]" : "w-full"
-          }`}
+        className={`flex flex-col h-full bg-[var(--bg-surface)] transition-all duration-300 ease-in-out ${
+          isLogsOpen
+            ? "w-full lg:w-[60%] border-r border-[var(--border)]"
+            : "w-full"
+        }`}
       >
         {/* Header */}
         <div className="px-6 flex items-center justify-between h-16 border-b border-[var(--border)] shrink-0">
@@ -322,7 +365,11 @@ export default function AssistantPage() {
                   Assistant
                 </h1>
                 <p className="text-xs text-[var(--text-muted)] flex items-center gap-1">
-                  Powered by SecureAgent <ChevronDown size={12} className={`transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+                  Powered by SecureAgent{" "}
+                  <ChevronDown
+                    size={12}
+                    className={`transition-transform ${isDropdownOpen ? "rotate-180" : ""}`}
+                  />
                 </p>
               </div>
             </button>
@@ -339,19 +386,27 @@ export default function AssistantPage() {
                 </button>
                 <div className="max-h-64 overflow-y-auto">
                   {conversations.length === 0 ? (
-                    <div className="px-4 py-3 text-xs text-[var(--text-muted)] italic">No recent chats.</div>
+                    <div className="px-4 py-3 text-xs text-[var(--text-muted)] italic">
+                      No recent chats.
+                    </div>
                   ) : (
-                    conversations.map(conv => (
+                    conversations.map((conv) => (
                       <button
                         key={conv.id}
                         onClick={() => {
                           setActiveConversationId(conv.id);
                           setIsDropdownOpen(false);
                         }}
-                        className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors ${activeConversationId === conv.id ? 'bg-[rgba(255,255,255,0.05)] text-white' : 'text-[var(--text-secondary)] hover:bg-[rgba(255,255,255,0.02)]'
-                          }`}
+                        className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors ${
+                          activeConversationId === conv.id
+                            ? "bg-[rgba(255,255,255,0.05)] text-white"
+                            : "text-[var(--text-secondary)] hover:bg-[rgba(255,255,255,0.02)]"
+                        }`}
                       >
-                        <MessageSquare size={14} className="shrink-0 opacity-50" />
+                        <MessageSquare
+                          size={14}
+                          className="shrink-0 opacity-50"
+                        />
                         <span className="text-sm truncate">{conv.title}</span>
                       </button>
                     ))
@@ -374,7 +429,9 @@ export default function AssistantPage() {
         <div className="flex-1 overflow-y-auto px-4 sm:px-8 lg:px-12 py-6 space-y-6 scroll-smooth">
           {messages.length <= 1 && (
             <div className="flex flex-col py-10 space-y-8 max-w-2xl mx-auto w-full">
-              <h2 className="text-2xl font-serif text-[var(--text-primary)]">What do you want to achieve?</h2>
+              <h2 className="text-2xl font-serif text-[var(--text-primary)]">
+                What do you want to achieve?
+              </h2>
               <div className="flex flex-wrap gap-2">
                 {SUGGESTION_CHIPS.map((chip, i) => (
                   <button
@@ -396,9 +453,13 @@ export default function AssistantPage() {
 
               // Only render the AI bubble if it has text ORauth actions OR if it's currently thinking and logs are hidden
               // Wait, if we want a clean chat stream we only show AI when content or auth arrives.
-              const shouldRenderAiBubble = msg.content || (msg.auth_actions && msg.auth_actions.length > 0) || (isThinking && !isLogsOpen);
+              const shouldRenderAiBubble =
+                msg.content ||
+                (msg.auth_actions && msg.auth_actions.length > 0) ||
+                (isThinking && !isLogsOpen);
 
-              if (!isUser && !shouldRenderAiBubble && !msg.is_proactive) return null;
+              if (!isUser && !shouldRenderAiBubble && !msg.is_proactive)
+                return null;
 
               return (
                 <div
@@ -414,14 +475,16 @@ export default function AssistantPage() {
 
                   {/* Bubble Container */}
                   <div
-                    className={`flex flex-col group ${isUser ? "items-end" : "items-start w-full"
-                      }`}
+                    className={`flex flex-col group ${
+                      isUser ? "items-end" : "items-start w-full"
+                    }`}
                   >
                     <div
-                      className={`max-w-[85%] lg:max-w-[90%] rounded-2xl px-5 py-3.5 ${isUser
-                        ? "bg-zinc-800 text-[var(--text-primary)]"
-                        : "bg-transparent text-[var(--text-primary)]"
-                        } ${msg.is_proactive ? "border-l-2 border-l-yellow-500 pl-4 bg-yellow-500/5 rounded-l-none" : ""}`}
+                      className={`max-w-[85%] lg:max-w-[90%] rounded-2xl px-5 py-3.5 ${
+                        isUser
+                          ? "bg-zinc-800 text-[var(--text-primary)]"
+                          : "bg-transparent text-[var(--text-primary)]"
+                      } ${msg.is_proactive ? "border-l-2 border-l-yellow-500 pl-4 bg-yellow-500/5 rounded-l-none" : ""}`}
                     >
                       {/* Proactive badge */}
                       {msg.is_proactive && (
@@ -435,13 +498,16 @@ export default function AssistantPage() {
 
                       {/* Content */}
                       {isUser ? (
-                        <p className="text-[15px] leading-relaxed text-zinc-200">{msg.content}</p>
+                        <p className="text-[15px] leading-relaxed text-zinc-200">
+                          {msg.content}
+                        </p>
                       ) : msg.content ? (
                         <div className="markdown-content text-[15px] leading-relaxed text-zinc-300">
                           <ReactMarkdown>{msg.content}</ReactMarkdown>
                         </div>
                       ) : (
-                        isThinking && !isLogsOpen && (
+                        isThinking &&
+                        !isLogsOpen && (
                           <div className="flex items-center gap-3 text-[var(--text-muted)] text-sm">
                             <span className="flex h-2 w-2 relative">
                               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--accent)] opacity-75"></span>
@@ -547,7 +613,9 @@ export default function AssistantPage() {
               </button>
             </form>
             <div className="text-center mt-3">
-              <span className="text-[10px] text-[var(--text-muted)]">Press Enter to send, Shift+Enter for new line</span>
+              <span className="text-[10px] text-[var(--text-muted)]">
+                Press Enter to send, Shift+Enter for new line
+              </span>
             </div>
           </div>
         </div>
@@ -555,13 +623,18 @@ export default function AssistantPage() {
 
       {/* ─── RIGHT PANEL (TOOL EXECUTION LOGS) ─── */}
       <div
-        className={`fixed lg:static top-0 right-0 h-full bg-[#111111] z-40 transition-all duration-300 ease-in-out transform flex flex-col border-l border-[rgba(255,255,255,0.05)] ${isLogsOpen ? "translate-x-0 w-[320px] lg:w-[40%]" : "translate-x-full lg:translate-x-0 lg:w-0 lg:overflow-hidden lg:border-none"
-          }`}
+        className={`fixed lg:static top-0 right-0 h-full bg-[#111111] z-40 transition-all duration-300 ease-in-out transform flex flex-col border-l border-[rgba(255,255,255,0.05)] ${
+          isLogsOpen
+            ? "translate-x-0 w-[320px] lg:w-[40%]"
+            : "translate-x-full lg:translate-x-0 lg:w-0 lg:overflow-hidden lg:border-none"
+        }`}
       >
         <div className="h-16 flex items-center justify-between px-6 border-b border-[rgba(255,255,255,0.05)] bg-[#1A1A1A]/80 backdrop-blur shrink-0">
           <div className="flex items-center gap-2">
             <Terminal size={16} className="text-zinc-400" />
-            <span className="text-xs font-mono font-medium tracking-wider text-zinc-300 uppercase">Execution Logs</span>
+            <span className="text-xs font-mono font-medium tracking-wider text-zinc-300 uppercase">
+              Execution Logs
+            </span>
           </div>
           <button
             onClick={() => setIsLogsOpen(false)}
@@ -578,9 +651,7 @@ export default function AssistantPage() {
               <span>Waiting for tasks...</span>
             </div>
           ) : (
-            allLogs.map((log, idx) => (
-              <DetailedLogEntry key={idx} log={log} />
-            ))
+            allLogs.map((log, idx) => <DetailedLogEntry key={idx} log={log} />)
           )}
           <div ref={logsEndRef} />
         </div>

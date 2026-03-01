@@ -219,7 +219,7 @@ export default function SettingsPage() {
           </Link>
 
           {/* ─── Subscription ─── */}
-          <section className="bg-[var(--bg-surface)] rounded-2xl p-6">
+          {/* <section className="bg-[var(--bg-surface)] rounded-2xl p-6">
             <h3 className="text-sm font-medium text-[var(--text-primary)] mb-0.5">
               Plan
             </h3>
@@ -248,7 +248,7 @@ export default function SettingsPage() {
                 </button>
               )}
             </div>
-          </section>
+          </section> */}
 
           {/* ─── Danger Zone ─── */}
           <section className="bg-[var(--bg-surface)] rounded-2xl p-6">

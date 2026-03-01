@@ -389,7 +389,7 @@ export default function IntegrationsPage() {
                       </div>
 
                       {/* Manage Button Overlay (Connected State Hover) */}
-                      {isConnected && (
+                      {/* {isConnected && (
                         <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all duration-500 z-20">
                           <motion.button
                             whileHover={{ scale: 1.02 }}
@@ -400,7 +400,7 @@ export default function IntegrationsPage() {
                             Manage App
                           </motion.button>
                         </div>
-                      )}
+                      )} */}
                     </div>
                   </motion.div>
                 );
