@@ -30,6 +30,70 @@ const PLATFORM_COLORS: Record<string, string> = {
   hackernews: "#FF6600",
 };
 
+// Manual overrides for multi-color brand logos: [topLeft, topRight, bottomRight, bottomLeft]
+const PLATFORM_CORNER_COLORS: Record<string, [string, string, string, string]> = {
+  gmail:           ["#EA4335", "#FBBC05", "#34A853", "#4285F4"],
+  googlecalendar:  ["#4285F4", "#34A853", "#EA4335", "#FBBC05"],
+  slack:           ["#36C5F0", "#2EB67D", "#E01E5A", "#ECB22E"],
+  discord:         ["#5865F2", "#57F287", "#FEE75C", "#EB459E"],
+};
+
+/**
+ * Derive 4 corner colors from a single hex brand color.
+ * Shifts hue ±30° and adjusts lightness to create variety,
+ * so each corner gets a distinct but related color.
+ */
+function deriveCornerColors(hex: string): [string, string, string, string] {
+  // Parse hex to RGB
+  const r = parseInt(hex.slice(1, 3), 16) / 255;
+  const g = parseInt(hex.slice(3, 5), 16) / 255;
+  const b = parseInt(hex.slice(5, 7), 16) / 255;
+
+  // RGB → HSL
+  const max = Math.max(r, g, b), min = Math.min(r, g, b);
+  let h = 0, s = 0;
+  const l = (max + min) / 2;
+
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
+    else if (max === g) h = ((b - r) / d + 2) / 6;
+    else h = ((r - g) / d + 4) / 6;
+  }
+
+  // HSL → hex helper
+  const hslToHex = (h: number, s: number, l: number): string => {
+    h = ((h % 1) + 1) % 1; // normalize
+    l = Math.max(0.15, Math.min(0.85, l));
+    s = Math.max(0.2, Math.min(1, s));
+    const hue2rgb = (p: number, q: number, t: number) => {
+      if (t < 0) t += 1;
+      if (t > 1) t -= 1;
+      if (t < 1 / 6) return p + (q - p) * 6 * t;
+      if (t < 1 / 2) return q;
+      if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+      return p;
+    };
+    const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+    const p = 2 * l - q;
+    const toHex = (v: number) => Math.round(v * 255).toString(16).padStart(2, "0");
+    return `#${toHex(hue2rgb(p, q, h + 1 / 3))}${toHex(hue2rgb(p, q, h))}${toHex(hue2rgb(p, q, h - 1 / 3))}`;
+  };
+
+  return [
+    hslToHex(h - 0.06, s * 1.1, l * 1.15),   // top-left: slightly warmer, brighter
+    hslToHex(h + 0.06, s * 0.9, l * 0.85),    // top-right: slightly cooler, darker
+    hslToHex(h + 0.12, s * 1.0, l * 1.1),     // bottom-right: more hue shift
+    hslToHex(h - 0.12, s * 1.05, l * 0.9),    // bottom-left: opposite hue shift
+  ];
+}
+
+/** Get corner colors: use manual override for multi-color brands, otherwise auto-derive */
+function getCornerColors(appSlug: string, brandColor: string): [string, string, string, string] {
+  return PLATFORM_CORNER_COLORS[appSlug] || deriveCornerColors(brandColor);
+}
+
 // TrustClaw Toolkits style SVG base64 or inline paths
 const PLATFORM_LOGOS: Record<string, string> = {
   gmail: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0iI2YyYTIwYyIgZD0iTTE4Ljc1LDExLjI1TDEyLDE1TDUuMjUsMTEuMjVDNS4yNSwxMS4yNSw1LjI1LDUuMjUsNS4yNSw1LjI1QzUsNSw1LjI1LDQsNi43NSw0SDcuNUwxMiw4LjI1TDE2LjUsNEgxNy4yNUMxOC43NSw0LDE5LDUsMTguNzUsNS4yNVYxMS4yNVoiLz48cGF0aCBmaWxsPSIjZWE0MzM1IiBkPSJNMTYuNSw0TDEyLDguMjVMNy41LDRINi43NUM1LjI1LDQsNSw1LDUuMjUsNS4yNVYyMENNS4yNSwyMCwyMCwyMCwyMCwyMFY1LjI1QzE5LDUsMTguNzUsNCwxNy4yNSw0SDE2LjVaIi8+PHBhdGggZmlsbD0iIzM0YThmZSIgZD0iTTE4Ljc1LDIwQzE5LDIwLDIwLDE5LjI1LDIwLDE4Ljc1VjExLjI1TDE2LjUsMTNWMTguNzVDMTYuNSwxOS4yNSwxNy4yNSwyMCwxOC43NSwyMFoiLz48cGF0aCBmaWxsPSIjMzRkZTUwIiBkPSJNNi43NSwyMEM1LDIwLDQsMTkuMjUsNCwxOC43NVYxMS4yNUw3LjUsMTNWMTguNzVDNy41LDE5LjI1LDYuNzUsMjAsNi43NSwyMFoiLz48cGF0aCBmaWxsPSIjZjNhNTEwIiBkPSJNNi43NSw0SDcuNUwxMiw4LjI1TDE2LjUsNEgxNy4yNUMxOC43NSw0LDE5LDUsMTguNzUsNS4yNVYxMS4yNUwwLjUsMjBWNS4yNUMwLjUsNSwxLDQsMi41LDRINi43NVoiLz48L3N2Zz4=",
@@ -233,15 +297,17 @@ export default function IntegrationsPage() {
                 const isConnected = integration.status === "connected";
                 const isConnecting = connecting === integration.appName;
 
-                // Derive hover aurora glow colors based on brand
-                let glowGradient = "from-slate-500/20 via-slate-600/10 to-transparent";
-                if (appSlug === "gmail") glowGradient = "from-red-500/30 via-yellow-400/20 to-blue-500/20"; // +green implied in diffusion
-                else if (appSlug === "github") glowGradient = "from-white/15 via-slate-400/10 to-transparent";
-                else if (appSlug === "googlecalendar") glowGradient = "from-blue-500/30 via-green-400/20 to-yellow-400/10";
-                else if (appSlug === "slack") glowGradient = "from-rose-500/30 via-amber-400/20 to-transparent";
-                else if (appSlug === "composio") glowGradient = "from-[#8E24AA]/40 via-[#8E24AA]/15 to-transparent";
-                else if (appSlug === "twitter") glowGradient = "from-[#1DA1F2]/30 via-blue-400/10 to-transparent";
-                else if (appSlug === "notion") glowGradient = "from-neutral-400/20 via-neutral-500/10 to-transparent";
+                // Get brand corner colors or derive from single brand color
+                const cornerColors = getCornerColors(appSlug, color);
+                const [tl, tr, br, bl] = cornerColors;
+
+                // Build corner glow background: radial gradients at each corner using brand colors
+                const cornerGlowBg = `
+                  radial-gradient(circle at 0% 0%, ${tl} 0%, transparent 50%),
+                  radial-gradient(circle at 100% 0%, ${tr} 0%, transparent 50%),
+                  radial-gradient(circle at 100% 100%, ${br} 0%, transparent 50%),
+                  radial-gradient(circle at 0% 100%, ${bl} 0%, transparent 50%)
+                `;
 
                 return (
                   <motion.div
@@ -251,81 +317,91 @@ export default function IntegrationsPage() {
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.95 }}
                     transition={{ duration: 0.2, ease: "easeOut" }}
-                    className="group relative flex flex-col p-5 rounded-2xl border outline-none transition-all duration-500 ease-out bg-gradient-to-br from-[#1c1c1c] to-[#0a0a0a] border-[#2a2a2a] hover:border-[#404040] hover:-translate-y-1 hover:shadow-[0_8px_30px_rgb(0,0,0,0.4)] overflow-hidden min-h-[220px]"
+                    className="group relative rounded-2xl p-[1.5px] hover:-translate-y-1 transition-all duration-500 ease-out min-h-[220px]"
                   >
-                    {/* Subtle inner card bloom */}
-                    <div className="absolute inset-0 bg-gradient-to-b from-white/[0.03] to-transparent pointer-events-none" />
-
-                    {/* Persistent subtle green glow for Active state */}
-                    {isConnected && (
-                      <div className="absolute -top-10 -right-10 w-40 h-40 bg-emerald-500/10 blur-3xl pointer-events-none rounded-full" />
-                    )}
-
-                    {/* Aurora Background Glow - Appears on Hover */}
+                    {/* Brand-colored corner border – visible on hover */}
                     <div
-                      className={`absolute inset-0 sm:-top-16 sm:-right-16 sm:w-80 sm:h-80 bg-gradient-to-bl ${glowGradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-3xl pointer-events-none rounded-full mix-blend-screen scale-110 group-hover:scale-100 ease-out transform-gpu`}
+                      className="absolute inset-[-1px] rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none z-0"
+                      style={{ background: cornerGlowBg }}
                     />
 
-                    {/* Top Row: Button & Status */}
-                    <div className="flex justify-end w-full relative z-10">
-                      {isConnected ? (
-                        <div className="px-3 py-1 bg-emerald-500/10 text-emerald-400 text-xs font-semibold tracking-wide rounded-full border border-emerald-500/20 flex items-center gap-1.5 shadow-[0_0_10px_rgba(52,211,153,0.05)] backdrop-blur-sm">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_5px_rgba(52,211,153,0.8)]" />
-                          Active
-                        </div>
-                      ) : (
-                        <button
-                          onClick={() => handleConnect(integration.appName, isConnected)}
-                          disabled={isConnecting}
-                          className="px-4 py-1.5 bg-[#e8e8e8] hover:bg-white text-black text-xs font-medium rounded-full transition-all duration-300 disabled:opacity-50 hover:shadow-[0_0_15px_rgba(255,255,255,0.2)] hover:scale-[1.02] active:scale-95"
-                        >
-                          {isConnecting ? (
-                            <Loader2 size={12} className="animate-spin" />
-                          ) : (
-                            "Connect"
-                          )}
-                        </button>
-                      )}
-                    </div>
+                    {/* Diffused outer glow on hover – brand colors bleeding outward */}
+                    <div
+                      className="absolute inset-[-4px] rounded-2xl opacity-0 group-hover:opacity-30 transition-opacity duration-500 blur-xl pointer-events-none z-0"
+                      style={{ background: cornerGlowBg }}
+                    />
 
-                    {/* Center Content: Logo & Name */}
-                    <div className="flex flex-col items-center justify-center flex-1 mt-[-10px] relative z-10 w-full pointer-events-none">
-                      {logoSvg ? (
-                        <motion.img
-                          src={logoSvg}
-                          alt={displayName}
-                          className="w-14 h-14 object-contain mb-5 drop-shadow-md filter transition-all duration-500"
-                          whileHover={{ scale: 1.05 }}
-                          transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                        />
-                      ) : (
-                        <motion.div
-                          className="w-14 h-14 rounded-2xl flex items-center justify-center text-white font-bold text-2xl mb-5 shadow-lg shrink-0 transition-all duration-500"
-                          style={{ backgroundColor: color }}
-                          whileHover={{ scale: 1.05 }}
-                          transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                        >
-                          {displayName.charAt(0)}
-                        </motion.div>
-                      )}
-                      <h3 className="text-[15px] font-medium text-white/90 truncate max-w-full px-2 text-center tracking-wide">
-                        {displayName}
-                      </h3>
-                    </div>
+                    {/* Card content */}
+                    <div className="relative flex flex-col p-5 rounded-[calc(1rem-1.5px)] bg-gradient-to-br from-[#1c1c1c] to-[#0a0a0a] min-h-[220px] overflow-hidden z-10">
+                      {/* Subtle inner card bloom */}
+                      <div className="absolute inset-0 bg-gradient-to-b from-white/[0.03] to-transparent pointer-events-none" />
 
-                    {/* Manage Button Overlay (Connected State Hover) */}
-                    {isConnected && (
-                      <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all duration-500 z-20">
-                        <motion.button
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
-                          onClick={() => handleConnect(integration.appName, isConnected)}
-                          className="px-6 py-2 bg-[#1a1a1a] hover:bg-[#252525] border border-white/10 text-white text-sm font-medium rounded-full transition-all duration-300 shadow-[0_4px_20px_rgba(0,0,0,0.5)] backdrop-blur-md"
-                        >
-                          Manage App
-                        </motion.button>
+                      {/* Persistent subtle green glow for Active state */}
+                      {isConnected && (
+                        <div className="absolute -top-10 -right-10 w-40 h-40 bg-emerald-500/10 blur-3xl pointer-events-none rounded-full" />
+                      )}
+
+                      {/* Top Row: Button & Status */}
+                      <div className="flex justify-end w-full relative z-10">
+                        {isConnected ? (
+                          <div className="px-3 py-1 bg-emerald-500/10 text-emerald-400 text-xs font-semibold tracking-wide rounded-full border border-emerald-500/20 flex items-center gap-1.5 shadow-[0_0_10px_rgba(52,211,153,0.05)] backdrop-blur-sm">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_5px_rgba(52,211,153,0.8)]" />
+                            Active
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => handleConnect(integration.appName, isConnected)}
+                            disabled={isConnecting}
+                            className="px-4 py-1.5 bg-[#e8e8e8] hover:bg-white text-black text-xs font-medium rounded-full transition-all duration-300 disabled:opacity-50 hover:shadow-[0_0_15px_rgba(255,255,255,0.2)] hover:scale-[1.02] active:scale-95"
+                          >
+                            {isConnecting ? (
+                              <Loader2 size={12} className="animate-spin" />
+                            ) : (
+                              "Connect"
+                            )}
+                          </button>
+                        )}
                       </div>
-                    )}
+
+                      {/* Center Content: Logo & Name */}
+                      <div className="flex flex-col items-center justify-center flex-1 mt-[-10px] relative z-10 w-full pointer-events-none">
+                        {logoSvg ? (
+                          <motion.img
+                            src={logoSvg}
+                            alt={displayName}
+                            className="w-14 h-14 object-contain mb-5 drop-shadow-md filter transition-all duration-500"
+                            whileHover={{ scale: 1.05 }}
+                            transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                          />
+                        ) : (
+                          <motion.div
+                            className="w-14 h-14 rounded-2xl flex items-center justify-center text-white font-bold text-2xl mb-5 shadow-lg shrink-0 transition-all duration-500"
+                            style={{ backgroundColor: color }}
+                            whileHover={{ scale: 1.05 }}
+                            transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                          >
+                            {displayName.charAt(0)}
+                          </motion.div>
+                        )}
+                        <h3 className="text-[15px] font-medium text-white/90 truncate max-w-full px-2 text-center tracking-wide">
+                          {displayName}
+                        </h3>
+                      </div>
+
+                      {/* Manage Button Overlay (Connected State Hover) */}
+                      {isConnected && (
+                        <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all duration-500 z-20">
+                          <motion.button
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            onClick={() => handleConnect(integration.appName, isConnected)}
+                            className="px-6 py-2 bg-[#1a1a1a] hover:bg-[#252525] border border-white/10 text-white text-sm font-medium rounded-full transition-all duration-300 shadow-[0_4px_20px_rgba(0,0,0,0.5)] backdrop-blur-md"
+                          >
+                            Manage App
+                          </motion.button>
+                        </div>
+                      )}
+                    </div>
                   </motion.div>
                 );
               })}
