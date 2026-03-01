@@ -1,5 +1,12 @@
 /** @type {import('next').NextConfig} */
-const nextConfig = {
+const withPWA = require("next-pwa")({
+  dest: "public",
+  register: true,
+  skipWaiting: true,
+  disable: process.env.NODE_ENV === "development",
+});
+
+const nextConfig = withPWA({
   env: {
     NEXT_PUBLIC_API_URL:
       process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api",
@@ -23,6 +30,6 @@ const nextConfig = {
       },
     ];
   },
-};
+});
 
 module.exports = nextConfig;
