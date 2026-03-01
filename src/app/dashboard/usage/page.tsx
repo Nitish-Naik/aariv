@@ -356,25 +356,35 @@ export default function UsagePage() {
                                     className="w-full py-2.5 pl-7 pr-4 rounded-xl bg-[var(--bg-deep)] border border-[var(--border)] text-[var(--text-primary)] text-sm placeholder:text-[var(--text-muted)] outline-none focus:border-[var(--accent)] transition-colors"
                                 />
                             </div>
+                            {customAmount && parseFloat(customAmount) < 5 && (
+                                <p className="text-[11px] text-red-400 mt-1.5">Minimum $5.00</p>
+                            )}
                         </div>
 
                         {/* Pay */}
-                        <button
-                            onClick={() => {
-                                const amount = customAmount
-                                    ? parseFloat(customAmount)
-                                    : selectedAmount;
-                                if (!amount || amount < 5 || amount > 500) return;
-                                // TODO: Redirect to Stripe Checkout
-                                console.log(`Redirect to Stripe for $${amount}`);
-                                setShowAddCredits(false);
-                            }}
-                            className="w-full py-3 rounded-xl bg-[var(--accent-soft)] text-[var(--accent)] font-medium text-sm hover:opacity-80 transition-opacity flex items-center justify-center gap-2"
-                        >
-                            <CreditCard size={15} />
-                            Pay with Stripe
-                            <ExternalLink size={13} />
-                        </button>
+                        {(() => {
+                            const amount = customAmount ? parseFloat(customAmount) : selectedAmount;
+                            const isValid = amount && amount >= 5 && amount <= 500;
+                            return (
+                                <button
+                                    onClick={() => {
+                                        if (!isValid) return;
+                                        // TODO: Redirect to Stripe Checkout
+                                        console.log(`Redirect to Stripe for $${amount}`);
+                                        setShowAddCredits(false);
+                                    }}
+                                    disabled={!isValid}
+                                    className={`w-full py-3 rounded-xl font-medium text-sm flex items-center justify-center gap-2 transition-opacity ${isValid
+                                        ? "bg-[var(--accent-soft)] text-[var(--accent)] hover:opacity-80 cursor-pointer"
+                                        : "bg-[var(--bg-deep)] text-[var(--text-muted)] cursor-not-allowed opacity-50"
+                                        }`}
+                                >
+                                    <CreditCard size={15} />
+                                    Pay with Stripe
+                                    <ExternalLink size={13} />
+                                </button>
+                            );
+                        })()}
 
                         <p className="text-[10px] text-[var(--text-muted)] text-center mt-3">
                             You will be redirected to Stripe to complete your payment.
