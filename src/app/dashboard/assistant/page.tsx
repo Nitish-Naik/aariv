@@ -61,14 +61,14 @@ export default function AssistantPage() {
 
   // Load model preference from Settings
   useEffect(() => {
-    const saved = localStorage.getItem("aariv_model");
+    const saved = localStorage.getItem("Alias_model");
     if (saved) setSelectedModel(saved);
     const handler = (e: Event) => {
       const model = (e as CustomEvent).detail;
       if (model) setSelectedModel(model);
     };
-    window.addEventListener("aariv-model-change", handler);
-    return () => window.removeEventListener("aariv-model-change", handler);
+    window.addEventListener("Alias-model-change", handler);
+    return () => window.removeEventListener("Alias-model-change", handler);
   }, []);
 
   // Fetch dynamic suggestion chips based on connected apps
@@ -513,6 +513,12 @@ export default function AssistantPage() {
                           : msg.auth_actions,
                       logs: finalLogs,
                     };
+                  } else if (event.type === "insufficient_credits") {
+                    return {
+                      ...msg,
+                      content:
+                        "You've run out of credits. Please add credits in **Usage & Billing** to continue using Alias.\n\n[Go to Usage & Billing →](/dashboard/usage)",
+                    };
                   } else if (event.type === "error") {
                     return { ...msg, content: `Error: ${event.data}` };
                   }
@@ -760,7 +766,7 @@ export default function AssistantPage() {
                 Assistant
               </h1>
               <p className="text-[11px] text-[var(--text-muted)]">
-                Powered by SecureAgent
+                Your calm thinking partner
               </p>
             </div>
           </div>
@@ -790,7 +796,7 @@ export default function AssistantPage() {
                 Chat with over 1000+ Apps
               </h1>
               <p className="text-sm text-[var(--text-muted)] -mt-2">
-                Connect your favorite tools and let Aariv automate your work.
+                Connect your favorite tools and let Alias automate your work.
               </p>
 
               {/* Centered input */}
@@ -882,11 +888,11 @@ export default function AssistantPage() {
                       }`}
                     >
                       <div
-                        className={`max-w-[85%] lg:max-w-[90%] rounded-2xl px-5 py-3.5 ${
-                          isUser
-                            ? "bg-zinc-800 text-[var(--text-primary)]"
-                            : "bg-transparent text-[var(--text-primary)]"
-                        } ${msg.is_proactive ? "border-l-2 border-l-cyan-400 pl-4 bg-cyan-400/5 rounded-l-none" : ""}`}
+                        className={`max-w-[85%] lg:max-w-[90%] rounded-2xl px-5 py-4 bg-[var(--bg-elevated)] border border-[rgba(255,255,255,0.02)] shadow-sm ${
+                          msg.is_proactive
+                            ? "border-l-2 border-l-cyan-400 pl-4 rounded-l-none"
+                            : ""
+                        }`}
                       >
                         {/* Proactive badge */}
                         {msg.is_proactive && (
@@ -900,32 +906,39 @@ export default function AssistantPage() {
 
                         {/* Content */}
                         {isUser ? (
-                          <p className="text-[15px] leading-relaxed text-zinc-200">
-                            {msg.content}
-                          </p>
+                          <>
+                            <p className="text-[15px] leading-relaxed text-[var(--text-primary)]">
+                              {msg.content}
+                            </p>
+                            <span className="block mt-3 text-[11px] font-medium text-[var(--text-muted)]">
+                              Now
+                            </span>
+                          </>
                         ) : msg.content ? (
-                          <div className="markdown-content text-[15px] leading-relaxed text-zinc-300">
-                            <ReactMarkdown>{msg.content}</ReactMarkdown>
-                          </div>
+                          <>
+                            <div className="markdown-content text-[15px] leading-relaxed text-[var(--text-primary)]">
+                              <ReactMarkdown>{msg.content}</ReactMarkdown>
+                            </div>
+                            <span className="block mt-3 text-[11px] font-medium text-[var(--text-muted)]">
+                              Just now
+                            </span>
+                          </>
                         ) : (
                           isThinking &&
                           !isLogsOpen && (
-                            <div className="flex items-center gap-1.5 py-1">
+                            <div className="flex items-center gap-1.5 py-1 px-1">
                               <span
-                                className="inline-block w-2 h-2 rounded-full bg-[var(--accent)] animate-bounce"
+                                className="inline-block w-2 h-2 rounded-full bg-[var(--text-muted)] animate-bounce"
                                 style={{ animationDelay: "0ms" }}
                               />
                               <span
-                                className="inline-block w-2 h-2 rounded-full bg-[var(--accent)] animate-bounce"
+                                className="inline-block w-2 h-2 rounded-full bg-[var(--text-muted)] animate-bounce"
                                 style={{ animationDelay: "150ms" }}
                               />
                               <span
-                                className="inline-block w-2 h-2 rounded-full bg-[var(--accent)] animate-bounce"
+                                className="inline-block w-2 h-2 rounded-full bg-[var(--text-muted)] animate-bounce"
                                 style={{ animationDelay: "300ms" }}
                               />
-                              <span className="ml-2 text-sm text-[var(--text-muted)]">
-                                Working on it...
-                              </span>
                             </div>
                           )
                         )}
@@ -989,7 +1002,7 @@ export default function AssistantPage() {
               <div className="inline-flex items-center bg-[var(--bg-elevated)] border border-[rgba(255,255,255,0.08)] rounded-full p-0.5">
                 <button
                   type="button"
-                  onClick={() => { setSelectedModel("gpt-4o-mini"); localStorage.setItem("aariv_model", "gpt-4o-mini"); }}
+                  onClick={() => { setSelectedModel("gpt-4o-mini"); localStorage.setItem("Alias_model", "gpt-4o-mini"); }}
                   className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-all duration-200 ${selectedModel.includes("mini")
                     ? "bg-[rgba(255,255,255,0.1)] text-amber-400 shadow-sm"
                     : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
@@ -1000,7 +1013,7 @@ export default function AssistantPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => { setSelectedModel("gpt-4o"); localStorage.setItem("aariv_model", "gpt-4o"); }}
+                  onClick={() => { setSelectedModel("gpt-4o"); localStorage.setItem("Alias_model", "gpt-4o"); }}
                   className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-all duration-200 ${!selectedModel.includes("mini")
                     ? "bg-[rgba(255,255,255,0.1)] text-purple-400 shadow-sm"
                     : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
@@ -1031,7 +1044,7 @@ export default function AssistantPage() {
                       handleSend();
                     }
                   }}
-                  placeholder="Ask Aariv to do something..."
+                  placeholder="Ask Alias to do something..."
                   disabled={isLoading}
                   rows={1}
                   className="w-full max-h-32 min-h-[56px] py-4 pl-5 pr-14 bg-transparent text-[15px] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] resize-none outline-none disabled:opacity-50"

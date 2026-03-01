@@ -3,133 +3,422 @@
 import { useAuth } from "@/context/AuthContext";
 import { api } from "@/lib/api";
 import {
-  ArrowRight,
-  Bell,
+  Calendar,
+  CheckCircle2,
   Clock,
-  Github,
+  Cloud,
+  Eye,
   Loader2,
   Mail,
   MessageSquare,
-  RefreshCw,
+  Sparkles,
+  Target,
   Zap,
 } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
 
 /* ─── Types ──────────────────────────────────────────────── */
 
-interface TriggerEvent {
-  id: string;
-  triggerSlug: string;
+interface Proposal {
   app: string;
-  status: "received" | "processing" | "completed" | "failed";
-  preview: string;
-  processingTimeMs?: number;
-  error?: string;
-  createdAt: string;
-  // Live SSE events carry content instead of preview
-  content?: string;
-  isLive?: boolean;
+  title: string;
+  description: string;
+  priority: "high" | "medium" | "low";
+  actions: string[];
+}
+
+interface CalendarEvent {
+  id: string;
+  title: string;
+  startTime: string;
+  endTime: string;
+  color?: string;
+}
+
+interface Briefing {
+  subtitle: string;
+  is_calm: boolean;
+  counts: {
+    meetings: number;
+    emails: number;
+    focus_hours: number;
+    needs_judgment: number;
+  };
+  proposals: Proposal[];
+  events: CalendarEvent[];
+  insight: string;
 }
 
 /* ─── Helpers ────────────────────────────────────────────── */
 
-const APP_META: Record<
-  string,
-  { icon: React.ReactNode; label: string; color: string }
-> = {
-  gmail: { icon: <Mail size={16} />, label: "Email", color: "#EA4335" },
-  github: { icon: <Github size={16} />, label: "GitHub", color: "#333" },
-  slack: {
-    icon: <MessageSquare size={16} />,
-    label: "Slack",
-    color: "#4A154B",
-  },
-  googlecalendar: {
-    icon: <Clock size={16} />,
-    label: "Calendar",
-    color: "#4285F4",
-  },
-  notion: { icon: <Zap size={16} />, label: "Notion", color: "#000" },
-  linear: { icon: <Zap size={16} />, label: "Linear", color: "#5E6AD2" },
-  discord: {
-    icon: <MessageSquare size={16} />,
-    label: "Discord",
-    color: "#5865F2",
-  },
+const APP_ICON: Record<string, React.ReactNode> = {
+  gmail: <Mail size={15} />,
+  googlecalendar: <Calendar size={15} />,
+  slack: <MessageSquare size={15} />,
+  github: <Target size={15} />,
+  notion: <Zap size={15} />,
+  linear: <Zap size={15} />,
+  discord: <MessageSquare size={15} />,
 };
 
-const TRIGGER_EVENT_TYPES = new Set([
-  "proactive_summary",
-  "email_summary",
-  "github_update",
-  "slack_summary",
-  "calendar_alert",
-  "notion_update",
-  "linear_update",
-  "discord_summary",
-]);
-
-const getAppMeta = (app: string) =>
-  APP_META[app] || {
-    icon: <Bell size={16} />,
-    label: app || "Update",
-    color: "var(--accent)",
-  };
-
-const timeAgo = (iso: string) => {
-  const diff = Date.now() - new Date(iso).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return "just now";
-  if (mins < 60) return `${mins}m ago`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
-  return `${Math.floor(hrs / 24)}d ago`;
+const APP_COLOR: Record<string, string> = {
+  gmail: "#EA4335",
+  googlecalendar: "#4285F4",
+  slack: "#4A154B",
+  github: "#333",
+  notion: "#000",
+  linear: "#5E6AD2",
+  discord: "#5865F2",
 };
 
 const getGreeting = () => {
   const hour = new Date().getHours();
   if (hour < 12) return "Good morning";
   if (hour < 18) return "Good afternoon";
-  return "Good evening";
+  return "Rest easy";
 };
 
-const getSubMessage = () => {
-  const hour = new Date().getHours();
-  if (hour >= 21 || hour < 6)
-    return "Enjoy your evening. I'll let you know if anything comes up.";
-  if (hour < 12) return "A fresh start. I'll handle the rest.";
-  return "Everything's under control.";
+const formatDate = () => {
+  const d = new Date();
+  return d.toLocaleDateString("en-US", {
+    weekday: "long",
+    month: "short",
+    day: "numeric",
+  });
 };
 
-/* ─── Status Badge ───────────────────────────────────────── */
+const formatTime = (iso: string) => {
+  try {
+    const d = new Date(iso);
+    return d.toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    });
+  } catch {
+    return "";
+  }
+};
 
-function StatusBadge({ status }: { status: TriggerEvent["status"] }) {
-  const cfg = {
-    received: {
-      bg: "rgba(99,102,241,0.15)",
-      text: "#a5b4fc",
-      label: "Received",
-    },
-    processing: {
-      bg: "rgba(234,179,8,0.15)",
-      text: "#fbbf24",
-      label: "Processing",
-    },
-    completed: { bg: "rgba(34,197,94,0.15)", text: "#4ade80", label: "Done" },
-    failed: { bg: "rgba(239,68,68,0.15)", text: "#f87171", label: "Failed" },
-  }[status] || {
-    bg: "var(--bg-surface)",
-    text: "var(--text-muted)",
-    label: status,
-  };
+const formatFullDateTime = () => {
+  const d = new Date();
+  const date = d.toLocaleDateString("en-US", {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+  });
+  const time = d.toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
+  return `${date} · ${time}`;
+};
+
+/* ─── Stat Card ──────────────────────────────────────────── */
+
+function StatCard({
+  label,
+  value,
+  icon,
+}: {
+  label: string;
+  value: string | number;
+  icon: React.ReactNode;
+}) {
+  return (
+    <div className="bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl px-4 py-3 flex flex-col gap-1 min-w-0">
+      <div className="flex items-center gap-2 text-[var(--text-muted)]">
+        {icon}
+        <span className="text-[11px] font-medium uppercase tracking-wider truncate">
+          {label}
+        </span>
+      </div>
+      <span className="text-xl font-semibold text-[var(--text-primary)]">
+        {value}
+      </span>
+    </div>
+  );
+}
+
+/* ─── Proposal Card ──────────────────────────────────────── */
+
+function ProposalCard({
+  proposal,
+  logoUrl,
+}: {
+  proposal: Proposal;
+  logoUrl?: string;
+}) {
+  const icon = APP_ICON[proposal.app] || <Zap size={15} />;
+  const color = APP_COLOR[proposal.app] || "var(--accent)";
+  const isHigh = proposal.priority === "high";
 
   return (
-    <span
-      style={{ background: cfg.bg, color: cfg.text }}
-      className="text-[10px] font-medium px-2 py-0.5 rounded-full"
+    <div
+      className={`bg-[var(--bg-surface)] border rounded-xl p-4 space-y-3 ${
+        isHigh ? "border-amber-500/30" : "border-[var(--border)]"
+      }`}
     >
-      {cfg.label}
-    </span>
+      {/* Tag */}
+      {isHigh && (
+        <span className="inline-block text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-500">
+          Needs Attention
+        </span>
+      )}
+
+      {/* Header */}
+      <div className="flex items-start gap-3">
+        {logoUrl ? (
+          <img
+            src={logoUrl}
+            alt={proposal.app}
+            className="w-7 h-7 rounded-lg object-contain shrink-0 mt-0.5"
+          />
+        ) : (
+          <span
+            className="flex items-center justify-center w-7 h-7 rounded-lg text-white shrink-0 mt-0.5"
+            style={{ background: color }}
+          >
+            {icon}
+          </span>
+        )}
+        <div className="min-w-0">
+          <h4 className="text-sm font-semibold text-[var(--text-primary)] leading-snug">
+            {proposal.title}
+          </h4>
+          <p className="text-xs text-[var(--text-secondary)] mt-1 leading-relaxed">
+            {proposal.description}
+          </p>
+        </div>
+      </div>
+
+      {/* Actions */}
+      {proposal.actions.length > 0 && (
+        <div className="flex items-center gap-2 pt-1">
+          {proposal.actions.map((action, i) => (
+            <button
+              key={i}
+              className={`text-xs font-medium px-3 py-1.5 rounded-lg transition-colors ${
+                i === 0
+                  ? "bg-[var(--accent)] text-white hover:opacity-90"
+                  : "bg-[var(--accent-soft)] text-[var(--accent)] hover:opacity-80"
+              }`}
+            >
+              {action}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─── Timeline Event ─────────────────────────────────────── */
+
+function TimelineEvent({
+  event,
+  isLast,
+}: {
+  event: CalendarEvent;
+  isLast: boolean;
+}) {
+  const time = formatTime(event.startTime);
+  const isPast = new Date(event.startTime) < new Date();
+
+  return (
+    <div className="flex gap-3 relative">
+      {/* Timeline line */}
+      <div className="flex flex-col items-center">
+        <div
+          className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${
+            isPast ? "bg-[var(--text-muted)]" : "bg-[var(--accent)]"
+          }`}
+        />
+        {!isLast && <div className="w-px flex-1 bg-[var(--border)] mt-1" />}
+      </div>
+
+      {/* Content */}
+      <div className={`pb-4 min-w-0 ${isPast ? "opacity-50" : ""}`}>
+        <span className="text-[11px] font-medium text-[var(--text-muted)] uppercase tracking-wider">
+          {time}
+        </span>
+        <p className="text-sm text-[var(--text-primary)] font-medium mt-0.5 leading-snug">
+          {event.title}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Calm State ─────────────────────────────────────────── */
+
+function CalmState({ firstName }: { firstName: string }) {
+  const router = useRouter();
+
+  return (
+    <div className="flex flex-col items-center justify-center min-h-[70vh] px-4 text-center">
+      {/* Cloud Icon */}
+      <div className="mb-6 text-[var(--text-muted)]">
+        <Cloud size={48} strokeWidth={1.2} />
+      </div>
+
+      {/* Heading */}
+      <h1 className="text-2xl sm:text-3xl font-serif text-[var(--text-primary)] mb-3">
+        Rest easy, {firstName}
+      </h1>
+      <p className="text-sm text-[var(--text-secondary)] max-w-sm leading-relaxed mb-10">
+        Nothing needs your attention right now. Your day is unfolding exactly as
+        it should.
+      </p>
+
+      {/* Action Buttons */}
+      <div className="flex flex-col sm:flex-row gap-3 w-full max-w-md">
+        <button
+          onClick={() => router.push("/dashboard/assistant")}
+          className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[var(--bg-surface)] border border-[var(--border)] text-sm font-medium text-[var(--text-primary)] hover:border-[var(--accent)] transition-colors"
+        >
+          <Sparkles size={15} className="text-[var(--accent)]" />
+          Ask Alias something
+        </button>
+        <button
+          onClick={() => router.push("/dashboard/triggers")}
+          className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[var(--bg-surface)] border border-[var(--border)] text-sm font-medium text-[var(--text-primary)] hover:border-[var(--accent)] transition-colors"
+        >
+          <Eye size={15} className="text-[var(--accent)]" />
+          Check my horizon
+        </button>
+        <button
+          onClick={() => router.push("/dashboard/review")}
+          className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[var(--bg-surface)] border border-[var(--border)] text-sm font-medium text-[var(--text-primary)] hover:border-[var(--accent)] transition-colors"
+        >
+          <CheckCircle2 size={15} className="text-[var(--accent)]" />
+          Review items
+        </button>
+      </div>
+
+      {/* Date/time footer */}
+      <p className="mt-12 text-xs text-[var(--text-muted)]">
+        {formatFullDateTime()}
+      </p>
+    </div>
+  );
+}
+
+/* ─── Active State ───────────────────────────────────────── */
+
+function ActiveState({
+  firstName,
+  briefing,
+  logoMap,
+}: {
+  firstName: string;
+  briefing: Briefing;
+  logoMap: Record<string, string>;
+}) {
+  const { counts, proposals, events, insight } = briefing;
+
+  return (
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
+      {/* Header */}
+      <div className="flex items-start justify-between mb-2">
+        <h1 className="text-2xl sm:text-3xl font-serif text-[var(--text-primary)]">
+          {getGreeting()}, {firstName}
+        </h1>
+        <span className="text-sm text-[var(--text-muted)] mt-1 hidden sm:block">
+          {formatDate()}
+        </span>
+      </div>
+      <p className="text-sm text-[var(--text-secondary)] mb-8">
+        {briefing.subtitle}
+      </p>
+
+      {/* Stats Row */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
+        <StatCard
+          label="Meetings"
+          value={counts.meetings}
+          icon={<Calendar size={13} />}
+        />
+        <StatCard
+          label="Focus Hours"
+          value={`${counts.focus_hours}h`}
+          icon={<Clock size={13} />}
+        />
+        <StatCard
+          label="Emails to Review"
+          value={counts.emails}
+          icon={<Mail size={13} />}
+        />
+        <StatCard
+          label="Needs Judgment"
+          value={counts.needs_judgment}
+          icon={<Target size={13} />}
+        />
+      </div>
+
+      {/* Two-column layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+        {/* Left: Proposals */}
+        <div className="lg:col-span-3 space-y-4">
+          <h2 className="text-xs font-medium uppercase tracking-widest text-[var(--text-muted)] mb-1">
+            Alias&apos;s proposals
+          </h2>
+          {proposals.length > 0 ? (
+            <div className="space-y-3">
+              {proposals.map((p, i) => (
+                <ProposalCard
+                  key={i}
+                  proposal={p}
+                  logoUrl={logoMap[p.app?.toLowerCase()]}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl p-6 text-center">
+              <p className="text-sm text-[var(--text-secondary)]">
+                No proposals right now. You&apos;re all caught up.
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Right: Calendar Timeline */}
+        <div className="lg:col-span-2">
+          <h2 className="text-xs font-medium uppercase tracking-widest text-[var(--text-muted)] mb-3">
+            What&apos;s ahead
+          </h2>
+          {events.length > 0 ? (
+            <div className="bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl p-4">
+              {events.map((event, i) => (
+                <TimelineEvent
+                  key={event.id || i}
+                  event={event}
+                  isLast={i === events.length - 1}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl p-6 text-center">
+              <p className="text-sm text-[var(--text-secondary)]">
+                No events scheduled
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Bottom Insight Bar */}
+      {insight && (
+        <div className="mt-8 flex items-center gap-3 bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl px-4 py-3">
+          <Sparkles size={16} className="text-[var(--accent)] shrink-0" />
+          <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
+            {insight}
+          </p>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -137,244 +426,67 @@ function StatusBadge({ status }: { status: TriggerEvent["status"] }) {
 
 export default function DashboardHome() {
   const { user } = useAuth();
-  const [events, setEvents] = useState<TriggerEvent[]>([]);
+  const [briefing, setBriefing] = useState<Briefing | null>(null);
+  const [logoMap, setLogoMap] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const liveIdSet = useRef(new Set<string>());
+  const [error, setError] = useState(false);
 
-  // Fetch recent events from DB
-  const fetchEvents = useCallback(
-    async (showSpinner = true) => {
-      if (!user?.id) return;
-      if (showSpinner) setLoading(true);
-      else setRefreshing(true);
-      try {
-        const data = await api.get(
-          `/dashboard/recent-events?userId=${user.id}&limit=20`,
-        );
-        setEvents((prev) => {
-          // Merge: keep live SSE events on top, replace DB events
-          const liveEvents = prev.filter((e) => e.isLive);
-          const dbIds = new Set(
-            (data.events || []).map((e: TriggerEvent) => e.id),
-          );
-          const uniqueLive = liveEvents.filter((e) => !dbIds.has(e.id));
-          return [...uniqueLive, ...(data.events || [])];
-        });
-      } catch (err) {
-        console.error("Failed to fetch recent events:", err);
-      } finally {
-        setLoading(false);
-        setRefreshing(false);
-      }
-    },
-    [user?.id],
-  );
-
-  useEffect(() => {
-    fetchEvents();
-  }, [fetchEvents]);
-
-  // Live SSE stream
-  useEffect(() => {
+  const fetchBriefing = useCallback(async () => {
     if (!user?.id) return;
-    const controller = new AbortController();
+    setLoading(true);
+    setError(false);
+    try {
+      const [data, intData] = await Promise.all([
+        api.get(`/dashboard/briefing?userId=${user.id}`),
+        api.get(`/integrations?userId=${user.id}`).catch(() => null),
+      ]);
+      setBriefing(data);
 
-    const startStream = async () => {
-      try {
-        const response = await fetch(
-          `${api.getBaseUrl()}/notifications/${user.id}`,
-          { signal: controller.signal },
-        );
-        if (!response.body) return;
-
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-        let accumulated = "";
-
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-
-          accumulated += decoder.decode(value, { stream: true });
-          const parts = accumulated.split("\n\n");
-          accumulated = parts.pop() || "";
-
-          for (const part of parts) {
-            if (!part.startsWith("data: ")) continue;
-            try {
-              const evt = JSON.parse(part.substring(6));
-              if (!TRIGGER_EVENT_TYPES.has(evt.type)) continue;
-
-              const evtData = evt.data || {};
-              const liveId = evtData.id || `live_${Date.now()}`;
-              if (liveIdSet.current.has(liveId)) continue;
-              liveIdSet.current.add(liveId);
-
-              const newEvent: TriggerEvent = {
-                id: liveId,
-                triggerSlug: evtData.trigger_slug || "",
-                app: evtData.app || "unknown",
-                status: "completed",
-                preview: "",
-                content: evtData.content || "",
-                createdAt: evtData.timestamp || new Date().toISOString(),
-                processingTimeMs: evtData.processing_time_ms,
-                isLive: true,
-              };
-
-              setEvents((prev) => [newEvent, ...prev]);
-            } catch {
-              /* ignore parse errors */
-            }
+      // Build app → logo map from integrations
+      if (intData?.integrations) {
+        const map: Record<string, string> = {};
+        for (const int of intData.integrations) {
+          if (int.logo && int.appName) {
+            map[int.appName.toLowerCase()] = int.logo;
           }
         }
-      } catch (e: any) {
-        if (e.name !== "AbortError") {
-          console.error("SSE stream error:", e);
-          setTimeout(startStream, 5000);
-        }
+        setLogoMap(map);
       }
-    };
-
-    startStream();
-    return () => controller.abort();
+    } catch (err) {
+      console.error("Failed to fetch briefing:", err);
+      setError(true);
+    } finally {
+      setLoading(false);
+    }
   }, [user?.id]);
 
+  useEffect(() => {
+    fetchBriefing();
+  }, [fetchBriefing]);
+
   const firstName = user?.name?.split(" ")[0] || "there";
-  const hasEvents = events.length > 0;
+
+  // Loading
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[70vh] gap-3">
+        <Loader2 size={24} className="animate-spin text-[var(--text-muted)]" />
+        <p className="text-sm text-[var(--text-muted)]">Preparing your day…</p>
+      </div>
+    );
+  }
+
+  // Error fallback → show calm state
+  if (error || !briefing) {
+    return <CalmState firstName={firstName} />;
+  }
+
+  // Calm vs Active
+  if (briefing.is_calm) {
+    return <CalmState firstName={firstName} />;
+  }
 
   return (
-    <div className="max-w-2xl mx-auto px-4 sm:px-6 py-6 sm:py-12">
-      {/* Greeting */}
-      <div className="mb-8">
-        <h1 className="text-2xl sm:text-3xl font-serif text-[var(--text-primary)] mb-2">
-          {getGreeting()}, {firstName}
-        </h1>
-        <p className="text-base text-[var(--text-secondary)]">
-          {getSubMessage()}
-        </p>
-      </div>
-
-      {/* Activity Feed Header */}
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xs font-medium uppercase tracking-widest text-[var(--text-muted)]">
-          Recent Activity
-        </h2>
-        <button
-          onClick={() => fetchEvents(false)}
-          disabled={refreshing}
-          className="flex items-center gap-1.5 text-xs text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors disabled:opacity-50"
-        >
-          <RefreshCw size={12} className={refreshing ? "animate-spin" : ""} />
-          Refresh
-        </button>
-      </div>
-
-      {/* Loading */}
-      {loading && (
-        <div className="flex items-center justify-center py-16">
-          <Loader2
-            size={24}
-            className="animate-spin text-[var(--text-muted)]"
-          />
-        </div>
-      )}
-
-      {/* Event Cards */}
-      {!loading && hasEvents && (
-        <div className="space-y-3">
-          {events.map((event) => {
-            const meta = getAppMeta(event.app);
-            const displayText = event.content || event.preview;
-
-            return (
-              <div
-                key={event.id}
-                className={`bg-[var(--bg-surface)] border rounded-xl p-4 space-y-2 transition-all ${
-                  event.isLive
-                    ? "border-[var(--accent)] shadow-sm"
-                    : "border-[var(--border)]"
-                }`}
-              >
-                {/* Header row */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span
-                      className="flex items-center justify-center w-6 h-6 rounded-md text-white"
-                      style={{ background: meta.color }}
-                    >
-                      {meta.icon}
-                    </span>
-                    <span className="text-xs font-medium text-[var(--text-secondary)]">
-                      {meta.label}
-                    </span>
-                    {event.isLive && (
-                      <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-[var(--accent)] text-white">
-                        NEW
-                      </span>
-                    )}
-                    <StatusBadge status={event.status} />
-                  </div>
-                  <span className="text-[11px] text-[var(--text-muted)]">
-                    {timeAgo(event.createdAt)}
-                  </span>
-                </div>
-
-                {/* Content */}
-                {displayText && (
-                  <p className="text-sm text-[var(--text-primary)] leading-relaxed whitespace-pre-line font-medium">
-                    {displayText}
-                  </p>
-                )}
-
-                {/* Trigger slug */}
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] text-[var(--text-secondary)] font-mono opacity-70">
-                    {event.triggerSlug}
-                  </span>
-                  {event.processingTimeMs != null && (
-                    <span className="text-[10px] text-[var(--text-secondary)] opacity-70">
-                      · {event.processingTimeMs}ms
-                    </span>
-                  )}
-                </div>
-
-                {/* Error */}
-                {event.error && (
-                  <p className="text-xs text-red-500 bg-red-50 rounded-lg px-3 py-1.5">
-                    {event.error}
-                  </p>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Empty state */}
-      {!loading && !hasEvents && (
-        <div className="text-center py-16 space-y-4">
-          <p className="text-4xl">🌙</p>
-          <p className="text-base text-[var(--text-secondary)]">
-            No trigger activity yet. Set up triggers to see events here.
-          </p>
-          <div className="flex items-center justify-center gap-4">
-            <a
-              href="/dashboard/triggers"
-              className="inline-flex items-center gap-2 text-sm text-[var(--accent)] hover:underline"
-            >
-              Set up triggers <ArrowRight size={14} />
-            </a>
-            <a
-              href="/dashboard/assistant"
-              className="inline-flex items-center gap-2 text-sm text-[var(--text-muted)] hover:underline"
-            >
-              Talk to Aariv <ArrowRight size={14} />
-            </a>
-          </div>
-        </div>
-      )}
-    </div>
+    <ActiveState firstName={firstName} briefing={briefing} logoMap={logoMap} />
   );
 }

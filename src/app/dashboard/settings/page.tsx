@@ -55,7 +55,7 @@ export default function SettingsPage() {
   const [toast, setToast] = useState<{ message: string, type: "success" | "error" } | null>(null);
 
   useEffect(() => {
-    const saved = localStorage.getItem("aariv_model");
+    const saved = localStorage.getItem("Alias_model");
     if (saved) setSelectedModel(saved);
   }, []);
 
@@ -108,9 +108,9 @@ export default function SettingsPage() {
   };
 
   const handleModelSave = () => {
-    localStorage.setItem("aariv_model", selectedModel);
+    localStorage.setItem("Alias_model", selectedModel);
     window.dispatchEvent(
-      new CustomEvent("aariv-model-change", { detail: selectedModel })
+      new CustomEvent("Alias-model-change", { detail: selectedModel })
     );
     showToast("Model preference saved successfully");
   };
@@ -143,7 +143,7 @@ export default function SettingsPage() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 py-10">
             <div className="lg:col-span-1 pr-8">
               <h3 className="text-base font-medium text-[var(--text-primary)]">Profile</h3>
-              <p className="text-sm text-[var(--text-muted)] mt-1.5 font-medium leading-relaxed">Customize your public presence and how Aariv identifies you.</p>
+              <p className="text-sm text-[var(--text-muted)] mt-1.5 font-medium leading-relaxed">Customize your public presence and how Alias identifies you.</p>
             </div>
             <div className="lg:col-span-2">
               <section className="bg-[var(--bg-elevated)] border border-[rgba(255,255,255,0.02)] rounded-3xl p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-6 shadow-sm">
@@ -164,7 +164,7 @@ export default function SettingsPage() {
                       {user?.name || "User"}
                     </p>
                     <p className="text-sm text-[var(--text-muted)] truncate font-medium">
-                      {user?.email || "user@aariv.app"}
+                      {user?.email || "user@Alias.app"}
                     </p>
                   </div>
                 </div>
@@ -302,15 +302,15 @@ export default function SettingsPage() {
           </div>
 
         {/* ─── Keyboard Shortcuts ─── */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 py-10">
+        {/* <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 py-10">
           <div className="lg:col-span-1 pr-8">
             <h3 className="text-base font-medium text-[var(--text-primary)]">Keyboard Shortcuts</h3>
-            <p className="text-sm text-[var(--text-muted)] mt-1.5 font-medium leading-relaxed">Master the interface. Navigate Aariv efficiently without leaving your keyboard.</p>
+            <p className="text-sm text-[var(--text-muted)] mt-1.5 font-medium leading-relaxed">Master the interface. Navigate Alias efficiently without leaving your keyboard.</p>
           </div>
           <div className="lg:col-span-2">
             <section className="bg-[var(--bg-elevated)] border border-[rgba(255,255,255,0.02)] rounded-3xl p-8 shadow-sm">
               <div className="flex items-center gap-3 mb-1">
-                <Command size={20} className="text-[var(--text-secondary)]" />
+                <Command size={20} className="text-[var(--text-secondary)]" /> 
                 <h3 className="text-base font-medium text-[var(--text-primary)]">
                   Local Bindings
                 </h3>
@@ -340,7 +340,7 @@ export default function SettingsPage() {
               </div>
             </section>
           </div>
-        </div>
+        </div> */}
 
         {/* ─── History & Privacy ─── */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 py-10">

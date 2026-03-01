@@ -5,18 +5,17 @@ import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 import { useBilling } from "@/context/useBilling";
 import {
-    Calendar,
     Home,
     Link2,
+    ListChecks,
     LogOut,
-    Mail,
     Menu,
     MessageSquare,
     Moon,
     Settings,
     Sun,
     X,
-    Zap,
+    Zap
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -24,9 +23,9 @@ import { useEffect, useState } from "react";
 
 const navItems = [
     { href: "/dashboard", label: "Home", icon: Home },
-    { href: "/dashboard/assistant", label: "Assistant", icon: MessageSquare },
-    { href: "/dashboard/calendar", label: "Calendar", icon: Calendar },
-    { href: "/dashboard/inbox", label: "Inbox", icon: Mail },
+    { href: "/dashboard/assistant", label: "Assitant", icon: MessageSquare },
+    // { href: "/dashboard/calendar", label: "Calendar", icon: Calendar },
+    { href: "/dashboard/review", label: "Review", icon: ListChecks },
     { href: "/dashboard/integrations", label: "Integrations", icon: Link2 },
     { href: "/dashboard/triggers", label: "Triggers", icon: Zap },
     { href: "/dashboard/settings", label: "Settings", icon: Settings },
@@ -35,10 +34,10 @@ const navItems = [
 // Bottom bar: swap Assistant and Calendar for mobile, show first 5
 const bottomBarItems = [
     navItems[0], // Home
-    navItems[2], // Calendar
-    navItems[1], // Assistant
-    navItems[3], // Inbox
-    navItems[4], // Integrations
+    navItems[1], // Copilot
+    navItems[2], // Review
+    navItems[3], // Integrations
+    navItems[5], // Settings
 ];
 
 export function Sidebar() {

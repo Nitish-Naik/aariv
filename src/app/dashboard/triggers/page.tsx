@@ -3,20 +3,20 @@
 import { useAuth } from "@/context/AuthContext";
 import { api } from "@/lib/api";
 import {
-    Activity,
-    Check,
-    ChevronDown,
-    ChevronRight,
-    Globe,
-    Info,
-    Loader2,
-    Pause,
-    Play,
-    Plus,
-    RefreshCw,
-    Trash2,
-    X,
-    Zap,
+  Activity,
+  Check,
+  ChevronDown,
+  ChevronRight,
+  Globe,
+  Info,
+  Loader2,
+  Pause,
+  Play,
+  Plus,
+  RefreshCw,
+  Trash2,
+  X,
+  Zap,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
@@ -72,6 +72,21 @@ interface Integration {
 }
 
 /* ─── Constants ──────────────────────────────────────────────────── */
+
+const PLATFORM_LOGOS: Record<string, string> = {
+  gmail:
+    "data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect fill='%23f2f2f2' x='2' y='4' width='20' height='16' rx='2'/%3E%3Cpath fill='%23ea4335' d='M2 6l10 7 10-7'/%3E%3Cpath fill='%23ea4335' d='M2 4l10 8 10-8' stroke='%23ea4335' stroke-width='1.5' fill='none'/%3E%3C/svg%3E",
+  googlecalendar:
+    "data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect fill='%234285f4' x='2' y='2' width='20' height='20' rx='3'/%3E%3Crect fill='%23fff' x='5' y='7' width='14' height='13' rx='1'/%3E%3Crect fill='%23ea4335' x='5' y='7' width='14' height='3'/%3E%3Crect fill='%234285f4' x='8' y='12' width='3' height='2' rx='.5'/%3E%3Crect fill='%234285f4' x='13' y='12' width='3' height='2' rx='.5'/%3E%3Crect fill='%234285f4' x='8' y='16' width='3' height='2' rx='.5'/%3E%3Crect fill='%234285f4' x='13' y='16' width='3' height='2' rx='.5'/%3E%3C/svg%3E",
+  slack:
+    "data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle fill='%23e01e5a' cx='6' cy='15' r='2'/%3E%3Crect fill='%23e01e5a' x='8' y='13' width='4' height='4' rx='2'/%3E%3Ccircle fill='%2336c5f0' cx='9' cy='6' r='2'/%3E%3Crect fill='%2336c5f0' x='7' y='8' width='4' height='4' rx='2'/%3E%3Ccircle fill='%232eb67d' cx='18' cy='9' r='2'/%3E%3Crect fill='%232eb67d' x='12' y='7' width='4' height='4' rx='2'/%3E%3Ccircle fill='%23ecb22e' cx='15' cy='18' r='2'/%3E%3Crect fill='%23ecb22e' x='13' y='12' width='4' height='4' rx='2'/%3E%3C/svg%3E",
+  github:
+    "data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23fff' d='M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.009-.866-.013-1.7-2.782.604-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.464-1.11-1.464-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0112 6.836a9.59 9.59 0 012.504.337c1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.163 22 16.418 22 12c0-5.523-4.477-10-10-10z'/%3E%3C/svg%3E",
+  notion:
+    "data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23fff' fill-rule='evenodd' d='M4 3.5C4 2.672 4.56 2 5.25 2h9.792L20.25 7v13.5c0 .828-.56 1.5-1.25 1.5H5.25C4.56 22 4 21.328 4 20.5zM6 5.5v15h12v-11h-4.5a.5.5 0 01-.5-.5V5.5zm9 .707V9h2.793zM7.5 12a.5.5 0 01.5-.5h8a.5.5 0 010 1H8a.5.5 0 01-.5-.5zm0 3a.5.5 0 01.5-.5h8a.5.5 0 010 1H8a.5.5 0 01-.5-.5zm0 3a.5.5 0 01.5-.5h5a.5.5 0 010 1H8a.5.5 0 01-.5-.5z'/%3E%3C/svg%3E",
+  twitter:
+    "data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23fff' d='M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z'/%3E%3C/svg%3E",
+};
 
 const TOOLKIT_COLORS: Record<string, string> = {
   github: "#24292e",
@@ -136,6 +151,9 @@ function ConfigFormModal({
     for (const [key, prop] of fields) {
       if (prop.default !== undefined && prop.default !== null) {
         defaults[key] = String(prop.default);
+      } else if (prop.type === "number" || prop.type === "integer") {
+        // Sensible default for numeric fields like polling interval
+        defaults[key] = "1";
       }
     }
     return defaults;
@@ -183,15 +201,15 @@ function ConfigFormModal({
           className="flex-1 overflow-y-auto px-5 py-4 space-y-4"
         >
           {trigger.description && (
-            <p className="text-xs text-[var(--text-muted)] leading-relaxed">
+            <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
               {trigger.description}
             </p>
           )}
 
           {trigger.instructions && (
-            <div className="flex items-start gap-2 bg-blue-500/5 border border-blue-500/10 rounded-lg px-3 py-2.5">
+            <div className="flex items-start gap-2 bg-blue-500/8 border border-blue-500/15 rounded-lg px-3 py-2.5">
               <Info size={14} className="text-blue-400 mt-0.5 flex-shrink-0" />
-              <p className="text-xs text-blue-300 leading-relaxed">
+              <p className="text-xs text-blue-200 leading-relaxed">
                 {trigger.instructions}
               </p>
             </div>
@@ -199,19 +217,19 @@ function ConfigFormModal({
 
           {hasFields ? (
             <div className="space-y-3">
-              <p className="text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
+              <p className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">
                 Configuration
               </p>
               {fields.map(([key, prop]) => {
                 const isRequired = required.includes(key);
                 return (
                   <div key={key} className="space-y-1">
-                    <label className="flex items-center gap-1 text-xs font-medium text-[var(--text-secondary)]">
+                    <label className="flex items-center gap-1 text-xs font-semibold text-[var(--text-primary)]">
                       {prop.title || key}
                       {isRequired && <span className="text-red-400">*</span>}
                     </label>
                     {prop.description && (
-                      <p className="text-[10px] text-[var(--text-muted)]">
+                      <p className="text-[11px] text-neutral-400 leading-relaxed">
                         {prop.description}
                       </p>
                     )}
@@ -233,11 +251,20 @@ function ConfigFormModal({
                       </select>
                     ) : (
                       <input
-                        type={prop.type === "number" ? "number" : "text"}
+                        type={
+                          prop.type === "number" || prop.type === "integer"
+                            ? "number"
+                            : "text"
+                        }
+                        min={
+                          prop.type === "number" || prop.type === "integer"
+                            ? 1
+                            : undefined
+                        }
                         placeholder={
-                          prop.default !== undefined
+                          prop.default !== undefined && prop.default !== ""
                             ? `Default: ${prop.default}`
-                            : `Enter ${prop.title || key}`
+                            : `Enter ${(prop.title || key).toLowerCase()}…`
                         }
                         value={values[key] || ""}
                         onChange={(e) =>
@@ -524,10 +551,24 @@ export default function TriggersPage() {
         )}
       </div>
 
-      {/* Loading */}
+      {/* Loading — skeleton cards */}
       {loading ? (
-        <div className="flex items-center justify-center py-16">
-          <div className="animate-spin w-6 h-6 border-2 border-[var(--accent)] border-t-transparent rounded-full" />
+        <div className="space-y-3">
+          <div className="h-4 w-36 rounded bg-[var(--bg-surface)] animate-pulse mb-2" />
+          {[1, 2, 3].map((i) => (
+            <div
+              key={i}
+              className="bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl px-4 sm:px-5 py-4"
+            >
+              <div className="flex items-start gap-3">
+                <div className="w-9 h-9 rounded-lg bg-[var(--border)] animate-pulse" />
+                <div className="flex-1 space-y-2 pt-0.5">
+                  <div className="h-3.5 w-40 rounded bg-[var(--border)] animate-pulse" />
+                  <div className="h-3 w-24 rounded bg-[var(--border)] animate-pulse" />
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       ) : (
         <>
@@ -558,20 +599,37 @@ export default function TriggersPage() {
                         }
                         className="w-full flex items-center gap-3 bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl px-4 py-3 hover:border-[var(--accent)]/30 transition-colors"
                       >
-                        {integration.logo ? (
-                          <img
-                            src={integration.logo}
-                            alt={displayName}
-                            className="w-8 h-8 rounded-lg object-contain"
-                          />
-                        ) : (
-                          <div
-                            className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-xs"
-                            style={{ backgroundColor: color }}
-                          >
-                            {displayName.charAt(0)}
-                          </div>
-                        )}
+                        {(() => {
+                          const logoSrc =
+                            integration.logo || PLATFORM_LOGOS[appKey];
+                          return logoSrc ? (
+                            <img
+                              src={logoSrc}
+                              alt={displayName}
+                              className="w-8 h-8 rounded-lg object-contain"
+                              onError={(e) => {
+                                // Hide broken image, show letter fallback
+                                const parent = e.currentTarget.parentElement;
+                                e.currentTarget.style.display = "none";
+                                if (parent) {
+                                  const fb = document.createElement("div");
+                                  fb.className =
+                                    "w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-xs";
+                                  fb.style.backgroundColor = color;
+                                  fb.textContent = displayName.charAt(0);
+                                  parent.prepend(fb);
+                                }
+                              }}
+                            />
+                          ) : (
+                            <div
+                              className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-xs"
+                              style={{ backgroundColor: color }}
+                            >
+                              {displayName.charAt(0)}
+                            </div>
+                          );
+                        })()}
                         <span className="flex-1 text-left text-sm font-medium text-[var(--text-primary)]">
                           {displayName}
                         </span>
@@ -616,7 +674,7 @@ export default function TriggersPage() {
                                     <TriggerTypeBadge type={trigger.type} />
                                   </div>
                                   {trigger.description && (
-                                    <p className="text-xs text-[var(--text-muted)] truncate mt-0.5">
+                                    <p className="text-xs text-[var(--text-secondary)] truncate mt-0.5">
                                       {trigger.description}
                                     </p>
                                   )}
@@ -676,12 +734,38 @@ export default function TriggersPage() {
                   >
                     {/* Top row */}
                     <div className="flex items-start gap-3">
-                      <div
-                        className="w-9 h-9 rounded-lg flex items-center justify-center text-white font-bold text-xs mt-0.5"
-                        style={{ backgroundColor: color }}
-                      >
-                        {toolkitName.charAt(0)}
-                      </div>
+                      {(() => {
+                        const logo =
+                          integrations.find(
+                            (i) => i.appName.toLowerCase() === toolkitKey,
+                          )?.logo || PLATFORM_LOGOS[toolkitKey];
+                        return logo ? (
+                          <img
+                            src={logo}
+                            alt={toolkitName}
+                            className="w-9 h-9 rounded-lg object-contain mt-0.5"
+                            onError={(e) => {
+                              const parent = e.currentTarget.parentElement;
+                              e.currentTarget.style.display = "none";
+                              if (parent) {
+                                const fb = document.createElement("div");
+                                fb.className =
+                                  "w-9 h-9 rounded-lg flex items-center justify-center text-white font-bold text-xs mt-0.5";
+                                fb.style.backgroundColor = color;
+                                fb.textContent = toolkitName.charAt(0);
+                                parent.prepend(fb);
+                              }
+                            }}
+                          />
+                        ) : (
+                          <div
+                            className="w-9 h-9 rounded-lg flex items-center justify-center text-white font-bold text-xs mt-0.5"
+                            style={{ backgroundColor: color }}
+                          >
+                            {toolkitName.charAt(0)}
+                          </div>
+                        );
+                      })()}
 
                       <div className="flex-1 min-w-0">
                         <h3 className="text-sm font-medium text-[var(--text-primary)]">

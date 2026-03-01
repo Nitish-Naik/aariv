@@ -1,15 +1,15 @@
 import Link from "next/link";
+import { Logo } from "./Logo";
 
 export default function Navbar() {
     return (
         <nav className="sticky top-0 z-50 w-full backdrop-blur-xl bg-zinc-950/70 border-b border-zinc-800/50">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                    <Link href="/" className="text-xl font-medium text-zinc-100 tracking-tight flex items-center gap-2">
-                        <span className="w-6 h-6 rounded-md bg-stone-300"></span>
-                        SecureAgent
+                    <Link href="/" className="text-xl font-semibold text-white tracking-tight flex items-center gap-2.5 group hover:text-zinc-200 transition-colors">
+                        <Logo className="w-7 h-7 transition-transform group-hover:scale-110" />
+                        YourProxy
                     </Link>
-                    {/* <span className="text-sm text-zinc-500 mt-0.5">by Aariv</span> */}
                 </div>
                 <div className="flex items-center gap-6">
                     {/* <Link href="/login" className="text-sm font-medium text-zinc-400 hover:text-zinc-200 transition-colors">

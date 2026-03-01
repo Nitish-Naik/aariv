@@ -31,12 +31,13 @@ const PLATFORM_COLORS: Record<string, string> = {
 };
 
 // Manual overrides for multi-color brand logos: [topLeft, topRight, bottomRight, bottomLeft]
-const PLATFORM_CORNER_COLORS: Record<string, [string, string, string, string]> = {
-  gmail:           ["#EA4335", "#FBBC05", "#34A853", "#4285F4"],
-  googlecalendar:  ["#4285F4", "#34A853", "#EA4335", "#FBBC05"],
-  slack:           ["#36C5F0", "#2EB67D", "#E01E5A", "#ECB22E"],
-  discord:         ["#5865F2", "#57F287", "#FEE75C", "#EB459E"],
-};
+const PLATFORM_CORNER_COLORS: Record<string, [string, string, string, string]> =
+  {
+    gmail: ["#EA4335", "#FBBC05", "#34A853", "#4285F4"],
+    googlecalendar: ["#4285F4", "#34A853", "#EA4335", "#FBBC05"],
+    slack: ["#36C5F0", "#2EB67D", "#E01E5A", "#ECB22E"],
+    discord: ["#5865F2", "#57F287", "#FEE75C", "#EB459E"],
+  };
 
 /**
  * Derive 4 corner colors from a single hex brand color.
@@ -50,8 +51,10 @@ function deriveCornerColors(hex: string): [string, string, string, string] {
   const b = parseInt(hex.slice(5, 7), 16) / 255;
 
   // RGB → HSL
-  const max = Math.max(r, g, b), min = Math.min(r, g, b);
-  let h = 0, s = 0;
+  const max = Math.max(r, g, b),
+    min = Math.min(r, g, b);
+  let h = 0,
+    s = 0;
   const l = (max + min) / 2;
 
   if (max !== min) {
@@ -77,32 +80,45 @@ function deriveCornerColors(hex: string): [string, string, string, string] {
     };
     const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
     const p = 2 * l - q;
-    const toHex = (v: number) => Math.round(v * 255).toString(16).padStart(2, "0");
+    const toHex = (v: number) =>
+      Math.round(v * 255)
+        .toString(16)
+        .padStart(2, "0");
     return `#${toHex(hue2rgb(p, q, h + 1 / 3))}${toHex(hue2rgb(p, q, h))}${toHex(hue2rgb(p, q, h - 1 / 3))}`;
   };
 
   return [
-    hslToHex(h - 0.06, s * 1.1, l * 1.15),   // top-left: slightly warmer, brighter
-    hslToHex(h + 0.06, s * 0.9, l * 0.85),    // top-right: slightly cooler, darker
-    hslToHex(h + 0.12, s * 1.0, l * 1.1),     // bottom-right: more hue shift
-    hslToHex(h - 0.12, s * 1.05, l * 0.9),    // bottom-left: opposite hue shift
+    hslToHex(h - 0.06, s * 1.1, l * 1.15), // top-left: slightly warmer, brighter
+    hslToHex(h + 0.06, s * 0.9, l * 0.85), // top-right: slightly cooler, darker
+    hslToHex(h + 0.12, s * 1.0, l * 1.1), // bottom-right: more hue shift
+    hslToHex(h - 0.12, s * 1.05, l * 0.9), // bottom-left: opposite hue shift
   ];
 }
 
 /** Get corner colors: use manual override for multi-color brands, otherwise auto-derive */
-function getCornerColors(appSlug: string, brandColor: string): [string, string, string, string] {
+function getCornerColors(
+  appSlug: string,
+  brandColor: string,
+): [string, string, string, string] {
   return PLATFORM_CORNER_COLORS[appSlug] || deriveCornerColors(brandColor);
 }
 
 // TrustClaw Toolkits style SVG base64 or inline paths
 const PLATFORM_LOGOS: Record<string, string> = {
-  gmail: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0iI2YyYTIwYyIgZD0iTTE4Ljc1LDExLjI1TDEyLDE1TDUuMjUsMTEuMjVDNS4yNSwxMS4yNSw1LjI1LDUuMjUsNS4yNSw1LjI1QzUsNSw1LjI1LDQsNi43NSw0SDcuNUwxMiw4LjI1TDE2LjUsNEgxNy4yNUMxOC43NSw0LDE5LDUsMTguNzUsNS4yNVYxMS4yNVoiLz48cGF0aCBmaWxsPSIjZWE0MzM1IiBkPSJNMTYuNSw0TDEyLDguMjVMNy41LDRINi43NUM1LjI1LDQsNSw1LDUuMjUsNS4yNVYyMENNS4yNSwyMCwyMCwyMCwyMCwyMFY1LjI1QzE5LDUsMTguNzUsNCwxNy4yNSw0SDE2LjVaIi8+PHBhdGggZmlsbD0iIzM0YThmZSIgZD0iTTE4Ljc1LDIwQzE5LDIwLDIwLDE5LjI1LDIwLDE4Ljc1VjExLjI1TDE2LjUsMTNWMTguNzVDMTYuNSwxOS4yNSwxNy4yNSwyMCwxOC43NSwyMFoiLz48cGF0aCBmaWxsPSIjMzRkZTUwIiBkPSJNNi43NSwyMEM1LDIwLDQsMTkuMjUsNCwxOC43NVYxMS4yNUw3LjUsMTNWMTguNzVDNy41LDE5LjI1LDYuNzUsMjAsNi43NSwyMFoiLz48cGF0aCBmaWxsPSIjZjNhNTEwIiBkPSJNNi43NSw0SDcuNUwxMiw4LjI1TDE2LjUsNEgxNy4yNUMxOC43NSw0LDE5LDUsMTguNzUsNS4yNVYxMS4yNUwwLjUsMjBWNS4yNUMwLjUsNSwxLDQsMi41LDRINi43NVoiLz48L3N2Zz4=",
-  googlecalendar: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0iIzQyODVmNCIgZD0iTTIuNyAxMkwyLjcgMTloNy44TDE1LjUgMi4ybC0yLjctMi4ySDYuM2MtMS45IDAtMy42IDEuNi0zLjYgMy42djguNEgyLjd6Ii8+PHBhdGggZmlsbD0iIzM0YThmZSIgZD0iTTIuNyAxMnY3YzAgMS45IDEuNiAzLjYgMy42IDMuNmg0LjJWMTJMNS4yIDVMMi43IDEyeiIvPjxwYXRoIGZpbGw9IiNmYmJjMDUiIGQ9Ik0xOC40IDIyLjZoMy4ydjBoLTEwLjZ2MGgtLjV2MGgxMS4xcS4wOCAwIC4xNS0uMDEuMTIgMCAuMjEtLjAyYTMuMSAzLjEgMCAwIDAtLjk4LS43NWwtLTA1LS4wMy0xLjgtMS41Ljg5Ljg5LTYuNyA2LjdWMTIuN2wxLjUtMS41djEwLjN6Ii8+PHBhdGggZmlsbD0iI2VhNDMzNSIgZD0iTTEwLjUgMTJsMi43LTIuMnYxMGgyLjN2MGguNXYwSDE4LjRjMS45IDAgMy42LTEuNiAzLjYtMy42VjcuOEwxOS44IDVMMTAuNSAxMnoiLz48cGF0aCBmaWxsPSIjMzRkZTUwIiBkPSJNMTEuOSAxLjNsLTA1LS4wMy0xLjQtMS4ydjEwLjNsNC0zaDMuMlYzLjZDMjEuNiAxLjYgMjAgMCAxOC4xIDBINi4ydjBsNC0xbC40LjR6Ii8+PC9zdmc+",
-  slack: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0iI2UwMWU1YSIgZD0iTTcuMywxMkExLjksMS45LDAsMSwxLDUuNCwxMC4xSDcuM1oiLz48cGF0aCBmaWxsPSIjZTAxZTVhIiBkPSJNOC4zLDEyQTEuOSwxLjksMCwxLDEsMTIsMTMuOEg4LjNaIi8+PHBhdGggZmlsbD0iIzM2YzVmMCIgZD0iTTEyLDcuM0ExLjksMS45LDAsMSwxLDEzLjksNS40VjcuM1oiLz48cGF0aCBmaWxsPSIjMzZjNWYwIiBkPSJNMTIsOC4zQTEuOSwxLjksMCwxLDEsMTAuMiwxMlY4LjNaIi8+PHBhdGggZmlsbD0iIzJiYWM3NiIgZD0iTTE2LjcsMTJBMS45LDEuOSwwLDEsMSwxOC42LDEzLjlIMTYuN1oiLz48cGF0aCBmaWxsPSIjMmJhYzc2IiBkPSJNMTUuNywxMkExLjksMS45LDAsMSwxLDEyLDEwLjJIMTguMloiLz48cGF0aCBmaWxsPSIjZWNkYTMyIiBkPSJNMTIsMTYuN0ExLjksMS45LDAsMSwxLDEwLjEsMTguNlYxNi43WiIvPjxwYXRoIGZpbGw9IiNlY2RhMzIiIGQ9Ik0xMiwxNS43QTEuOSwxLjksMCwxLDEsMTMuOCwxMlYxNS43WiIvPjwvc3ZnPg==",
-  github: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0iI2ZmZiIgZD0iTTEyIC4yOTdjLTYuNjMgMC0xMiA1LjM3My0xMiAxMiAwIDUuMzAzIDMuNDM4IDkuOCA4LjIwNSAxMS4zODUuNi4xMTMuODItLjI1OC44Mi0uNTc3IDAtLjI4NS0uMDExLTEuMDQtLjAxNS0yLjA0LTMuMzM4LjcyNC00LjA0Mi0xLjYxLTQuMDQyLTEuNjFDNC40MjIgMTguMDcgMy42MzMgMTcuNyAzLjYzMyAxNy43Yy0xLjA4Ny0uNzQ0LjA4NC0uNzI5LjA4NC0uNzI5IDEuMjA1LjA4NCAxLjgzOCAxLjIzNiAxLjgzOCAxLjIzNiAxLjA3IDEuODM1IDIuODA5IDEuMzA1IDMuNDk1Ljk5OC4xMDgtLjc3Ni40MTgtMS4zMDUuNzYtMS42MDUtMi42NjUtLjMwMy01LjQ2Ni0xLjMzMi01LjQ2Ni01LjkzIDAtMS4zMS40NjUtMi4zOCAxLjIzNS0zLjIyLS4xMzUtLjMwMy0uNTQtMS41MjMuMTA1LTMuMTc2IDAgMCAxLjAwNS0uMzIyIDMuMyAxLjIzLjk2LS4yNjcgOS45OC0uMjc21Ni4yNiAzLjItLTIuMjkyLTMuMy0yLjI5MiAzLjMtLjAwOC42NTIuMTA0IDEuODc1IDEuMjM0IDAuMjA0IDEuOTEyLjU2IDIuMzY0LjEyMiAyLjY2Ny4zLjM0My44MjguODI1LjgzIDItLjAwOC0xLjA0LjAyLTIuMjMuMDIuNjYuMzE3Ljk0NS42MTMuOTQ1一点六1.2z\"/>PC9zdmc+",
-  notion: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0iI2ZmZiIgZD0iTTE0LjM4IDcuMGE2LjAgNi4wIDAgMCAxLTIuNiA1LjdWNTBjLTMuNC0zLjAtNy4yLTUuMi0xMS41LTcuMWwtNC40LS4xeiIvPjwvc3ZnPg==",
-  twitter: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0iI2ZmZiIgZD0iTTE4LjI0NCAyLjI1aDMuMzA4bC03LjIyNyA4LjI2IDguNTAyIDExLjI0SDE2LjE3bC01LjIxNC02LjgybC02LjYxMSA2LjE4SDguMTI2bDcuODkxLTkuMDI2TDcuNjk4IDIuMjVoMjk1LjU5M2wyLjM0IDYuMDQybDQuMjk0LTRtLjcxMy4yMTVzLjc4LjQyLTEuNigxMGMudzc0LjUuNC42LjcuMTA4KWMtNDYuOEEuOS44IDAgMCAxIDEzLjQ5NyAyMmw0LjM4LTIuOTU2LTMuNjMtMi45NiAyLTEuNDZMODQuNSAxMC4yeiIvPjwvc3ZnPg==",
-  composio: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0iIzhFMjRBQSIgZD0iTTEwLjggMy42YzAgMS41IDEuNiAzIDMuMiAzczMuMi0xLjUgMy4yLTN6TTguNSAxMmMtMS42IDAtMy0xLjQtMy0zczEuNC0zIDMtMyAzIDEuNCAzIDMtMS40IDMtMyAzem02LjUgMGMwIDEuNiAxLjQgMyAzIDNzMy0xLjQgMy0zLTEuNC0zLTMtM3ptLTguNS0yem8yIi8+PC9zdmc+",
+  gmail:
+    "data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect fill='%23f2f2f2' x='2' y='4' width='20' height='16' rx='2'/%3E%3Cpath fill='%23ea4335' d='M2 6l10 7 10-7'/%3E%3Cpath fill='%23ea4335' d='M2 4l10 8 10-8' stroke='%23ea4335' stroke-width='1.5' fill='none'/%3E%3C/svg%3E",
+  googlecalendar:
+    "data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect fill='%234285f4' x='2' y='2' width='20' height='20' rx='3'/%3E%3Crect fill='%23fff' x='5' y='7' width='14' height='13' rx='1'/%3E%3Crect fill='%23ea4335' x='5' y='7' width='14' height='3'/%3E%3Crect fill='%234285f4' x='8' y='12' width='3' height='2' rx='.5'/%3E%3Crect fill='%234285f4' x='13' y='12' width='3' height='2' rx='.5'/%3E%3Crect fill='%234285f4' x='8' y='16' width='3' height='2' rx='.5'/%3E%3Crect fill='%234285f4' x='13' y='16' width='3' height='2' rx='.5'/%3E%3C/svg%3E",
+  slack:
+    "data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle fill='%23e01e5a' cx='6' cy='15' r='2'/%3E%3Crect fill='%23e01e5a' x='8' y='13' width='4' height='4' rx='2'/%3E%3Ccircle fill='%2336c5f0' cx='9' cy='6' r='2'/%3E%3Crect fill='%2336c5f0' x='7' y='8' width='4' height='4' rx='2'/%3E%3Ccircle fill='%232eb67d' cx='18' cy='9' r='2'/%3E%3Crect fill='%232eb67d' x='12' y='7' width='4' height='4' rx='2'/%3E%3Ccircle fill='%23ecb22e' cx='15' cy='18' r='2'/%3E%3Crect fill='%23ecb22e' x='13' y='12' width='4' height='4' rx='2'/%3E%3C/svg%3E",
+  github:
+    "data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23fff' d='M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.009-.866-.013-1.7-2.782.604-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.464-1.11-1.464-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0112 6.836a9.59 9.59 0 012.504.337c1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.163 22 16.418 22 12c0-5.523-4.477-10-10-10z'/%3E%3C/svg%3E",
+  notion:
+    "data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23fff' fill-rule='evenodd' d='M4 3.5C4 2.672 4.56 2 5.25 2h9.792L20.25 7v13.5c0 .828-.56 1.5-1.25 1.5H5.25C4.56 22 4 21.328 4 20.5zM6 5.5v15h12v-11h-4.5a.5.5 0 01-.5-.5V5.5zm9 .707V9h2.793zM7.5 12a.5.5 0 01.5-.5h8a.5.5 0 010 1H8a.5.5 0 01-.5-.5zm0 3a.5.5 0 01.5-.5h8a.5.5 0 010 1H8a.5.5 0 01-.5-.5zm0 3a.5.5 0 01.5-.5h5a.5.5 0 010 1H8a.5.5 0 01-.5-.5z'/%3E%3C/svg%3E",
+  twitter:
+    "data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23fff' d='M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z'/%3E%3C/svg%3E",
+  composio:
+    "data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle fill='%238E24AA' cx='12' cy='12' r='10'/%3E%3Cpath fill='%23fff' d='M8 8h8v8H8z' rx='2'/%3E%3C/svg%3E",
 };
 
 export default function IntegrationsPage() {
@@ -187,7 +203,10 @@ export default function IntegrationsPage() {
       console.error("Failed to connect:", e.message);
       setConnecting(null);
       // Try to extract the backend's detail message
-      const errorMsg = e.response?.data?.detail?.message || e.response?.data?.detail || "Failed to initiate connection. Please try again.";
+      const errorMsg =
+        e.response?.data?.detail?.message ||
+        e.response?.data?.detail ||
+        "Failed to initiate connection. Please try again.";
       setErrorToast(errorMsg);
       setTimeout(() => setErrorToast(null), 5000);
     }
@@ -196,9 +215,7 @@ export default function IntegrationsPage() {
   // Filter integrations based on search and tab
   const filteredIntegrations = useMemo(() => {
     return integrations.filter((integration) => {
-      const displayName =
-        integration.label ||
-        integration.appName;
+      const displayName = integration.label || integration.appName;
 
       const matchesSearch = displayName
         .toLowerCase()
@@ -230,9 +247,7 @@ export default function IntegrationsPage() {
 
         {/* Header Section */}
         <div className="mb-10">
-          <h1 className="text-3xl font-bold tracking-tight mb-6">
-            Toolkits
-          </h1>
+          <h1 className="text-3xl font-bold tracking-tight mb-6">Toolkits</h1>
 
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             {/* Segmented Control */}
@@ -241,20 +256,27 @@ export default function IntegrationsPage() {
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
-                  className={`relative px-4 py-1.5 text-sm font-medium rounded-lg transition-colors focus-visible:outline-none ${activeTab === tab
-                    ? "text-white"
-                    : "text-[#a0a0a0] hover:text-white"
-                    }`}
+                  className={`relative px-4 py-1.5 text-sm font-medium rounded-lg transition-colors focus-visible:outline-none ${
+                    activeTab === tab
+                      ? "text-white"
+                      : "text-[#a0a0a0] hover:text-white"
+                  }`}
                 >
                   {activeTab === tab && (
                     <motion.div
                       layoutId="activeTabBadge"
                       className="absolute inset-0 rounded-lg shadow-sm bg-[#3a3a3a]"
                       style={{ zIndex: -1 }}
-                      transition={{ type: "spring", bounce: 0.2, duration: 0.5 }}
+                      transition={{
+                        type: "spring",
+                        bounce: 0.2,
+                        duration: 0.5,
+                      }}
                     />
                   )}
-                  <span className="capitalize">{tab === "all" ? "All" : "Connected"}</span>
+                  <span className="capitalize">
+                    {tab === "all" ? "All" : "Connected"}
+                  </span>
                 </button>
               ))}
             </div>
@@ -290,10 +312,13 @@ export default function IntegrationsPage() {
           >
             <AnimatePresence mode="popLayout">
               {filteredIntegrations.map((integration) => {
-                const appSlug = integration.appName.toLowerCase().replace("-", "");
+                const appSlug = integration.appName
+                  .toLowerCase()
+                  .replace("-", "");
                 const displayName = integration.label || integration.appName;
                 const color = PLATFORM_COLORS[appSlug] || "#8b95b0";
-                const logoSvg = (integration as any).logo || PLATFORM_LOGOS[appSlug];
+                const logoSvg =
+                  (integration as any).logo || PLATFORM_LOGOS[appSlug];
                 const isConnected = integration.status === "connected";
                 const isConnecting = connecting === integration.appName;
 
@@ -350,7 +375,9 @@ export default function IntegrationsPage() {
                           </div>
                         ) : (
                           <button
-                            onClick={() => handleConnect(integration.appName, isConnected)}
+                            onClick={() =>
+                              handleConnect(integration.appName, isConnected)
+                            }
                             disabled={isConnecting}
                             className="px-4 py-1.5 bg-[#e8e8e8] hover:bg-white text-black text-xs font-medium rounded-full transition-all duration-300 disabled:opacity-50 hover:shadow-[0_0_15px_rgba(255,255,255,0.2)] hover:scale-[1.02] active:scale-95"
                           >
@@ -371,14 +398,34 @@ export default function IntegrationsPage() {
                             alt={displayName}
                             className="w-14 h-14 object-contain mb-5 drop-shadow-md filter transition-all duration-500"
                             whileHover={{ scale: 1.05 }}
-                            transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                            transition={{
+                              type: "spring",
+                              stiffness: 400,
+                              damping: 30,
+                            }}
+                            onError={(e: any) => {
+                              const parent = e.currentTarget.parentElement;
+                              e.currentTarget.style.display = "none";
+                              if (parent) {
+                                const fb = document.createElement("div");
+                                fb.className =
+                                  "w-14 h-14 rounded-2xl flex items-center justify-center text-white font-bold text-2xl mb-5 shadow-lg shrink-0";
+                                fb.style.backgroundColor = color;
+                                fb.textContent = displayName.charAt(0);
+                                parent.prepend(fb);
+                              }
+                            }}
                           />
                         ) : (
                           <motion.div
                             className="w-14 h-14 rounded-2xl flex items-center justify-center text-white font-bold text-2xl mb-5 shadow-lg shrink-0 transition-all duration-500"
                             style={{ backgroundColor: color }}
                             whileHover={{ scale: 1.05 }}
-                            transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                            transition={{
+                              type: "spring",
+                              stiffness: 400,
+                              damping: 30,
+                            }}
                           >
                             {displayName.charAt(0)}
                           </motion.div>
@@ -413,7 +460,8 @@ export default function IntegrationsPage() {
                 animate={{ opacity: 1 }}
                 className="col-span-full py-20 text-center text-sm text-[#888]"
               >
-                No toolkits found {searchQuery ? `matching "${searchQuery}"` : ""}.
+                No toolkits found{" "}
+                {searchQuery ? `matching "${searchQuery}"` : ""}.
               </motion.div>
             )}
           </motion.div>
