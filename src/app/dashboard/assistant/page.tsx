@@ -962,16 +962,35 @@ export default function AssistantPage() {
                           </div>
                         )}
 
-                        {/* Auth actions */}
+                        {/* Auth actions — popup style */}
                         {msg.auth_actions && msg.auth_actions.length > 0 && (
                           <div className="mt-4 space-y-2 max-w-md w-full">
                             {msg.auth_actions.map((action, idx) => (
-                              <a
+                              <button
                                 key={idx}
-                                href={action.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center justify-between px-4 py-3 rounded-lg bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] hover:border-[var(--accent)] hover:bg-[var(--accent-soft)] transition-colors group/link"
+                                onClick={() => {
+                                  const popup = window.open(
+                                    action.url,
+                                    "composio_connect",
+                                    "width=600,height=700,left=200,top=100",
+                                  );
+                                  const pollTimer = setInterval(() => {
+                                    if (!popup || popup.closed) {
+                                      clearInterval(pollTimer);
+                                      // Refresh suggestions after successful connect
+                                      if (user?.id) {
+                                        api
+                                          .get(`/chat/suggestions/${user.id}`)
+                                          .then((res) => {
+                                            if (res?.suggestions)
+                                              setSuggestions(res.suggestions);
+                                          })
+                                          .catch(() => {});
+                                      }
+                                    }
+                                  }, 1000);
+                                }}
+                                className="flex items-center justify-between w-full px-4 py-3 rounded-lg bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] hover:border-[var(--accent)] hover:bg-[var(--accent-soft)] transition-colors group/link cursor-pointer"
                               >
                                 <span className="text-sm text-[var(--text-primary)] font-medium">
                                   Connect {action.appName}
@@ -979,7 +998,7 @@ export default function AssistantPage() {
                                 <span className="text-xs text-[var(--accent)] font-medium group-hover/link:translate-x-1 transition-transform">
                                   Authenticate →
                                 </span>
-                              </a>
+                              </button>
                             ))}
                           </div>
                         )}

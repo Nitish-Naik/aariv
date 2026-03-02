@@ -31,8 +31,8 @@ async function handleResponse(response: Response) {
     }
     throw new Error(
       errorData.message ||
-        errorData.error ||
-        `Request failed with status ${response.status}`,
+      errorData.error ||
+      `Request failed with status ${response.status}`,
     );
   }
 
@@ -42,21 +42,24 @@ async function handleResponse(response: Response) {
 export const api = {
   getBaseUrl: () => API_URL,
 
-  get: async (endpoint: string) => {
+  get: async (endpoint: string, options?: RequestInit) => {
     const headers = await getAuthHeaders();
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 30000);
 
+    const signal = options?.signal || controller.signal;
+
     try {
       const response = await fetch(`${API_URL}${endpoint}`, {
-        headers,
-        signal: controller.signal,
+        ...options,
+        headers: { ...headers, ...options?.headers },
+        signal,
       });
       clearTimeout(timeoutId);
       return handleResponse(response);
     } catch (error: any) {
       clearTimeout(timeoutId);
-      if (error.name === "AbortError") {
+      if (error.name === "AbortError" && !options?.signal?.aborted) {
         throw new Error("Request timeout. Please try again.");
       }
       if (error.message?.includes("Failed to fetch")) {
@@ -66,23 +69,26 @@ export const api = {
     }
   },
 
-  post: async (endpoint: string, body: any) => {
+  post: async (endpoint: string, body: any, options?: RequestInit) => {
     const headers = await getAuthHeaders();
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 30000);
 
+    const signal = options?.signal || controller.signal;
+
     try {
       const response = await fetch(`${API_URL}${endpoint}`, {
+        ...options,
         method: "POST",
-        headers,
+        headers: { ...headers, ...options?.headers },
         body: JSON.stringify(body),
-        signal: controller.signal,
+        signal,
       });
       clearTimeout(timeoutId);
       return handleResponse(response);
     } catch (error: any) {
       clearTimeout(timeoutId);
-      if (error.name === "AbortError") {
+      if (error.name === "AbortError" && !options?.signal?.aborted) {
         throw new Error("Request timeout. Please try again.");
       }
       if (error.message?.includes("Failed to fetch")) {

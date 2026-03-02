@@ -11,14 +11,15 @@ interface Integration {
   appName: string;
   status: string;
   label?: string;
-  description?: string;
   connectedAt?: string;
   email?: string;
+  canDisconnect?: boolean;
 }
 
 const PLATFORM_COLORS: Record<string, string> = {
   gmail: "#EA4335",
   googlecalendar: "#4285F4",
+  googlesheets: "#34A853",
   slack: "#E01E5A",
   notion: "#000000",
   linear: "#5E6AD2",
@@ -31,18 +32,24 @@ const PLATFORM_COLORS: Record<string, string> = {
 };
 
 // Manual overrides for multi-color brand logos: [topLeft, topRight, bottomRight, bottomLeft]
-const PLATFORM_CORNER_COLORS: Record<string, [string, string, string, string]> =
-  {
-    gmail: ["#EA4335", "#FBBC05", "#34A853", "#4285F4"],
-    googlecalendar: ["#4285F4", "#34A853", "#EA4335", "#FBBC05"],
-    slack: ["#36C5F0", "#2EB67D", "#E01E5A", "#ECB22E"],
-    discord: ["#5865F2", "#57F287", "#FEE75C", "#EB459E"],
-  };
+const PLATFORM_CORNER_COLORS: Record<string, [string, string, string, string]> = {
+  gmail: ["#EA4335", "#FBBC05", "#34A853", "#4285F4"],
+  googlecalendar: ["#4285F4", "#34A853", "#EA4335", "#FBBC05"],
+  googlesheets: ["#34A853", "#FBBC05", "#4285F4", "#1E8E3E"],
+  slack: ["#36C5F0", "#2EB67D", "#E01E5A", "#ECB22E"],
+  discord: ["#5865F2", "#57F287", "#FEE75C", "#EB459E"],
+  notion: ["#FFFFFF", "#CCCCCC", "#666666", "#000000"], // monochrome gradient
+  linear: ["#5E6AD2", "#7E8AE2", "#3E4AB2", "#5E6AD2"], // purple hues
+  github: ["#fafbfc", "#e1e4e8", "#24292e", "#6a737d"], // greyscale github scheme
+  twitter: ["#1DA1F2", "#71C9F8", "#1A91DA", "#1DA1F2"], // distinct twitter blues
+  composio: ["#8E24AA", "#AB47BC", "#6A1B9A", "#8E24AA"], // violet/purple
+  codeinterpreter: ["#4A5568", "#718096", "#2D3748", "#4A5568"], // terminal slate
+  hackernews: ["#FF6600", "#FF8533", "#CC5200", "#FF6600"], // Y-combinator orange
+};
 
 /**
  * Derive 4 corner colors from a single hex brand color.
- * Shifts hue ±30° and adjusts lightness to create variety,
- * so each corner gets a distinct but related color.
+ * Shifts hue ±30° and adjusts lightness to create variety.
  */
 function deriveCornerColors(hex: string): [string, string, string, string] {
   // Parse hex to RGB
@@ -88,10 +95,10 @@ function deriveCornerColors(hex: string): [string, string, string, string] {
   };
 
   return [
-    hslToHex(h - 0.06, s * 1.1, l * 1.15), // top-left: slightly warmer, brighter
-    hslToHex(h + 0.06, s * 0.9, l * 0.85), // top-right: slightly cooler, darker
-    hslToHex(h + 0.12, s * 1.0, l * 1.1), // bottom-right: more hue shift
-    hslToHex(h - 0.12, s * 1.05, l * 0.9), // bottom-left: opposite hue shift
+    hslToHex(h - 0.06, s * 1.1, l * 1.15), // top-left
+    hslToHex(h + 0.06, s * 0.9, l * 0.85), // top-right
+    hslToHex(h + 0.12, s * 1.0, l * 1.1),  // bottom-right
+    hslToHex(h - 0.12, s * 1.05, l * 0.9), // bottom-left
   ];
 }
 
@@ -103,12 +110,36 @@ function getCornerColors(
   return PLATFORM_CORNER_COLORS[appSlug] || deriveCornerColors(brandColor);
 }
 
+// Map apps to broad categories for filtering
+const APP_CATEGORIES: Record<string, string> = {
+  gmail: "communication",
+  googlecalendar: "productivity",
+  googlesheets: "productivity",
+  slack: "communication",
+  notion: "productivity",
+  linear: "dev-tools",
+  discord: "communication",
+  github: "dev-tools",
+  twitter: "social",
+  hackernews: "social",
+};
+
+const CATEGORIES = [
+  { id: "all", label: "All" },
+  { id: "productivity", label: "Productivity" },
+  { id: "communication", label: "Communication" },
+  { id: "dev-tools", label: "Dev Tools" },
+  { id: "social", label: "Social" },
+];
+
 // TrustClaw Toolkits style SVG base64 or inline paths
 const PLATFORM_LOGOS: Record<string, string> = {
   gmail:
     "data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect fill='%23f2f2f2' x='2' y='4' width='20' height='16' rx='2'/%3E%3Cpath fill='%23ea4335' d='M2 6l10 7 10-7'/%3E%3Cpath fill='%23ea4335' d='M2 4l10 8 10-8' stroke='%23ea4335' stroke-width='1.5' fill='none'/%3E%3C/svg%3E",
   googlecalendar:
     "data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect fill='%234285f4' x='2' y='2' width='20' height='20' rx='3'/%3E%3Crect fill='%23fff' x='5' y='7' width='14' height='13' rx='1'/%3E%3Crect fill='%23ea4335' x='5' y='7' width='14' height='3'/%3E%3Crect fill='%234285f4' x='8' y='12' width='3' height='2' rx='.5'/%3E%3Crect fill='%234285f4' x='13' y='12' width='3' height='2' rx='.5'/%3E%3Crect fill='%234285f4' x='8' y='16' width='3' height='2' rx='.5'/%3E%3Crect fill='%234285f4' x='13' y='16' width='3' height='2' rx='.5'/%3E%3C/svg%3E",
+  googlesheets:
+    "data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect fill='%230F9D58' x='2' y='2' width='20' height='20' rx='3'/%3E%3Cpath fill='%23fff' d='M7 6h10v2H7zm0 4h10v2H7zm0 4h10v2H7z'/%3E%3C/svg%3E",
   slack:
     "data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle fill='%23e01e5a' cx='6' cy='15' r='2'/%3E%3Crect fill='%23e01e5a' x='8' y='13' width='4' height='4' rx='2'/%3E%3Ccircle fill='%2336c5f0' cx='9' cy='6' r='2'/%3E%3Crect fill='%2336c5f0' x='7' y='8' width='4' height='4' rx='2'/%3E%3Ccircle fill='%232eb67d' cx='18' cy='9' r='2'/%3E%3Crect fill='%232eb67d' x='12' y='7' width='4' height='4' rx='2'/%3E%3Ccircle fill='%23ecb22e' cx='15' cy='18' r='2'/%3E%3Crect fill='%23ecb22e' x='13' y='12' width='4' height='4' rx='2'/%3E%3C/svg%3E",
   github:
@@ -126,11 +157,13 @@ export default function IntegrationsPage() {
   const [integrations, setIntegrations] = useState<Integration[]>([]);
   const [loading, setLoading] = useState(true);
   const [connecting, setConnecting] = useState<string | null>(null);
+  const [disconnecting, setDisconnecting] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [errorToast, setErrorToast] = useState<string | null>(null);
 
   // UI State
   const [activeTab, setActiveTab] = useState<"all" | "connected">("all");
+  const [activeCategory, setActiveCategory] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
@@ -212,9 +245,34 @@ export default function IntegrationsPage() {
     }
   };
 
-  // Filter integrations based on search and tab
+  const handleDisconnect = async (connectionId: string, appName: string) => {
+    try {
+      setDisconnecting(appName);
+      await api.post("/integrations/disconnect", {
+        userId: user!.id,
+        connectionId,
+      });
+
+      setToast(`${appName.replace("-", " ")} disconnected successfully!`);
+      setTimeout(() => setToast(null), 4000);
+      loadIntegrations();
+    } catch (e: any) {
+      console.error("Failed to disconnect:", e.message);
+      const errorMsg =
+        e.response?.data?.detail?.message ||
+        e.response?.data?.detail ||
+        "Failed to disconnect. Please try again.";
+      setErrorToast(errorMsg);
+      setTimeout(() => setErrorToast(null), 5000);
+    } finally {
+      setDisconnecting(null);
+    }
+  };
+
+  // Filter integrations based on search, tab, and category
   const filteredIntegrations = useMemo(() => {
     return integrations.filter((integration) => {
+      const appSlug = integration.appName.toLowerCase().replace("-", "");
       const displayName = integration.label || integration.appName;
 
       const matchesSearch = displayName
@@ -222,9 +280,146 @@ export default function IntegrationsPage() {
         .includes(searchQuery.toLowerCase());
       const isConnected = integration.status === "connected";
       const matchesTab = activeTab === "all" || isConnected;
-      return matchesSearch && matchesTab;
+
+      const appCategory = APP_CATEGORIES[appSlug] || "other";
+      const matchesCategory = activeCategory === "all" || appCategory === activeCategory;
+
+      return matchesSearch && matchesTab && matchesCategory;
     });
-  }, [integrations, searchQuery, activeTab]);
+  }, [integrations, searchQuery, activeTab, activeCategory]);
+
+  const renderIntegrationCard = (integration: Integration) => {
+    const appSlug = integration.appName.toLowerCase().replace("-", "");
+    const displayName = integration.label || integration.appName;
+    const color = PLATFORM_COLORS[appSlug] || "#8b95b0";
+    const logoSvg = (integration as any).logo || PLATFORM_LOGOS[appSlug];
+    const isConnected = integration.status === "connected";
+    const isConnecting = connecting === integration.appName;
+
+    // const syncedMins = integration.id ? (integration.id.charCodeAt(0) % 55) + 1 : 5;
+    const cornerColors = getCornerColors(appSlug, color);
+    const [tl, tr, br, bl] = cornerColors;
+    const cornerGlowBg = `
+      radial-gradient(circle at 0% 0%, ${tl} 0%, transparent 50%),
+      radial-gradient(circle at 100% 0%, ${tr} 0%, transparent 50%),
+      radial-gradient(circle at 100% 100%, ${br} 0%, transparent 50%),
+      radial-gradient(circle at 0% 100%, ${bl} 0%, transparent 50%)
+    `;
+
+    return (
+      <motion.div
+        key={integration.id}
+        layout
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        transition={{ duration: 0.2, ease: "easeOut" }}
+        className="group relative rounded-2xl p-[1.5px] hover:-translate-y-1 transition-all duration-500 ease-out min-h-[220px]"
+      >
+        <div
+          className={`absolute inset-[-1px] rounded-2xl transition-opacity duration-500 pointer-events-none z-0 ${isConnected ? "opacity-30" : "opacity-0 group-hover:opacity-100"}`}
+          style={{ background: cornerGlowBg }}
+        />
+        <div
+          className="absolute inset-[-4px] rounded-2xl opacity-0 group-hover:opacity-30 transition-opacity duration-500 blur-xl pointer-events-none z-0"
+          style={{ background: cornerGlowBg }}
+        />
+        <div className="relative flex flex-col p-5 h-full overflow-hidden z-10 rounded-[calc(1rem-1.5px)] bg-gradient-to-br from-[#1c1c1c] to-[#0a0a0a] min-h-[220px]">
+          <div className="absolute inset-0 bg-gradient-to-b from-white/[0.03] to-transparent pointer-events-none" />
+          <div className="flex justify-end w-full relative z-10 mb-2">
+            {isConnected ? (
+              integration.canDisconnect ? (
+                <div className="flex flex-col items-end gap-1">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDisconnect(integration.id, integration.appName);
+                    }}
+                    disabled={disconnecting === integration.appName}
+                    className="group/btn relative px-3 py-1 bg-emerald-500/10 hover:bg-red-500/10 text-emerald-400 hover:text-red-400 text-xs font-semibold tracking-wide rounded-full border border-emerald-500/20 hover:border-red-500/20 flex items-center gap-1.5 transition-all duration-300 shadow-[0_0_10px_rgba(52,211,153,0.05)] backdrop-blur-sm disabled:opacity-50"
+                  >
+                    {disconnecting === integration.appName ? (
+                      <Loader2 size={12} className="animate-spin text-red-500" />
+                    ) : (
+                      <>
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 group-hover/btn:bg-red-400 shadow-[0_0_5px_rgba(52,211,153,0.8)] group-hover/btn:shadow-[0_0_5px_rgba(239,68,68,0.8)]" />
+                        <span className="group-hover/btn:hidden">Connected</span>
+                        <span className="hidden group-hover/btn:inline">Disconnect</span>
+                      </>
+                    )}
+                  </button>
+                  <span className="text-[10px] text-[#888]">
+                    {/* Last synced {syncedMins}m ago */}
+                  </span>
+                </div>
+              ) : (
+                <div className="flex flex-col items-end gap-1">
+                  <div className="px-3 py-1 bg-emerald-500/10 text-emerald-400 text-xs font-semibold tracking-wide rounded-full border border-emerald-500/20 flex items-center gap-1.5 shadow-[0_0_10px_rgba(52,211,153,0.05)] backdrop-blur-sm">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_5px_rgba(52,211,153,0.8)]" />
+                    Connected
+                  </div>
+                  <span className="text-[10px] text-[#888]">
+                    {/* Last synced {syncedMins}m ago */}
+                  </span>
+                </div>
+              )
+            ) : (
+              <button
+                onClick={() => handleConnect(integration.appName, isConnected)}
+                disabled={isConnecting}
+                className="px-4 py-1.5 bg-[#e8e8e8] hover:bg-white text-black text-xs font-medium rounded-full transition-all duration-300 disabled:opacity-50 hover:shadow-[0_0_15px_rgba(255,255,255,0.2)] hover:scale-[1.02] active:scale-95"
+              >
+                {isConnecting ? (
+                  <Loader2 size={12} className="animate-spin text-black" />
+                ) : (
+                  "Connect"
+                )}
+              </button>
+            )}
+          </div>
+
+          <div className="flex flex-col items-center justify-center flex-1 relative z-10 w-full pointer-events-none mt-2">
+            {logoSvg ? (
+              <motion.img
+                src={logoSvg}
+                alt={displayName}
+                className="w-14 h-14 object-contain mb-4 drop-shadow-md filter transition-all duration-500"
+                whileHover={{ scale: 1.05 }}
+                onError={(e: any) => {
+                  const parent = e.currentTarget.parentElement;
+                  e.currentTarget.style.display = "none";
+                  if (parent) {
+                    const fb = document.createElement("div");
+                    fb.className =
+                      "w-14 h-14 rounded-2xl flex items-center justify-center text-white font-bold text-2xl mb-4 shadow-lg shrink-0";
+                    fb.style.backgroundColor = color;
+                    fb.textContent = displayName.charAt(0);
+                    parent.prepend(fb);
+                  }
+                }}
+              />
+            ) : (
+              <motion.div
+                className="w-14 h-14 rounded-2xl flex items-center justify-center text-white font-bold text-2xl mb-4 shadow-lg shrink-0 transition-all duration-500"
+                style={{ backgroundColor: color }}
+                whileHover={{ scale: 1.05 }}
+              >
+                {displayName.charAt(0)}
+              </motion.div>
+            )}
+            <h3 className="text-[15px] font-medium text-white/90 truncate max-w-full px-2 text-center tracking-wide">
+              {displayName}
+            </h3>
+            {isConnected && (
+              <p className="text-xs text-[var(--text-muted)] mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                {/* Click to configure */}
+              </p>
+            )}
+          </div>
+        </div>
+      </motion.div>
+    );
+  };
 
   return (
     <div className="bg-[#050505] min-h-screen">
@@ -256,11 +451,10 @@ export default function IntegrationsPage() {
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
-                  className={`relative px-4 py-1.5 text-sm font-medium rounded-lg transition-colors focus-visible:outline-none ${
-                    activeTab === tab
-                      ? "text-white"
-                      : "text-[#a0a0a0] hover:text-white"
-                  }`}
+                  className={`relative px-4 py-1.5 text-sm font-medium rounded-lg transition-colors focus-visible:outline-none ${activeTab === tab
+                    ? "text-white"
+                    : "text-[#a0a0a0] hover:text-white"
+                    }`}
                 >
                   {activeTab === tab && (
                     <motion.div
@@ -286,185 +480,124 @@ export default function IntegrationsPage() {
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <Search
                   size={16}
-                  className="transition-colors text-[#888] group-focus-within:text-[#ccc]"
+                  className="transition-colors text-[var(--text-muted)] group-focus-within:text-[var(--text-secondary)]"
                 />
               </div>
               <input
                 type="text"
-                placeholder="Search across 500+ toolkits..."
+                placeholder="Search across toolkits..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 text-sm rounded-xl outline-none transition-all duration-200 bg-[#161616] border border-[#2a2a2a] text-white placeholder:text-[#666] focus:border-[#444] focus:bg-[#1a1a1a]"
+                className="w-full pl-10 pr-4 py-2 text-sm rounded-xl outline-none transition-all duration-200 bg-[var(--bg-surface)] border border-[var(--border)] text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:border-[var(--text-secondary)] focus:ring-1 focus:ring-[var(--text-secondary)]"
               />
             </div>
           </div>
+
+          {/* Categories Filter (Only show if 'all' tab is selected) */}
+          <AnimatePresence>
+            {activeTab === "all" && (
+              <motion.div
+                initial={{ opacity: 0, height: 0, y: -10 }}
+                animate={{ opacity: 1, height: "auto", y: 0 }}
+                exit={{ opacity: 0, height: 0, y: -10 }}
+                className="flex flex-wrap gap-2 mt-4"
+              >
+                {CATEGORIES.map((category) => (
+                  <button
+                    key={category.id}
+                    onClick={() => setActiveCategory(category.id)}
+                    className={`px-4 py-1.5 text-xs font-medium rounded-full transition-all duration-300 border ${activeCategory === category.id
+                      ? "bg-[#e8e8e8] text-black border-[#e8e8e8] shadow-sm"
+                      : "bg-[#161616] text-[#888] border-[#2a2a2a] hover:border-[#444] hover:text-white"
+                      }`}
+                  >
+                    {category.label}
+                  </button>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         {loading ? (
-          <div className="flex items-center justify-center py-20">
-            <Loader2 className="animate-spin w-8 h-8 text-[var(--accent)]" />
+          /* Staggered Skeleton Loaders */
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 xl:gap-5">
+            {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+              <div
+                key={i}
+                className="rounded-2xl p-5 bg-[var(--bg-surface)] border border-[var(--border)] min-h-[180px] flex flex-col items-center justify-center animate-pulse"
+                style={{ animationDelay: `${i * 100}ms` }}
+              >
+                <div className="w-12 h-12 rounded-2xl bg-[var(--border)] mb-4" />
+                <div className="w-24 h-4 rounded bg-[var(--border)] mb-6" />
+                <div className="w-20 h-8 rounded-full bg-[var(--border)]/50 mt-auto ml-auto" />
+              </div>
+            ))}
           </div>
         ) : (
           /* Toolkit Grid */
-          <motion.div
-            layout
-            className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 xl:gap-5"
-          >
-            <AnimatePresence mode="popLayout">
-              {filteredIntegrations.map((integration) => {
-                const appSlug = integration.appName
-                  .toLowerCase()
-                  .replace("-", "");
-                const displayName = integration.label || integration.appName;
-                const color = PLATFORM_COLORS[appSlug] || "#8b95b0";
-                const logoSvg =
-                  (integration as any).logo || PLATFORM_LOGOS[appSlug];
-                const isConnected = integration.status === "connected";
-                const isConnecting = connecting === integration.appName;
-
-                // Get brand corner colors or derive from single brand color
-                const cornerColors = getCornerColors(appSlug, color);
-                const [tl, tr, br, bl] = cornerColors;
-
-                // Build corner glow background: radial gradients at each corner using brand colors
-                const cornerGlowBg = `
-                  radial-gradient(circle at 0% 0%, ${tl} 0%, transparent 50%),
-                  radial-gradient(circle at 100% 0%, ${tr} 0%, transparent 50%),
-                  radial-gradient(circle at 100% 100%, ${br} 0%, transparent 50%),
-                  radial-gradient(circle at 0% 100%, ${bl} 0%, transparent 50%)
-                `;
-
-                return (
+          activeTab === "connected" ? (
+            <div className="space-y-12">
+              <div>
+                <h2 className="text-[15px] font-medium uppercase tracking-widest text-[var(--text-muted)] mb-5">
+                  Your Connections
+                </h2>
+                <motion.div layout className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 xl:gap-5">
+                  <AnimatePresence mode="popLayout">
+                    {filteredIntegrations.filter((i) => i.canDisconnect).map(renderIntegrationCard)}
+                  </AnimatePresence>
+                </motion.div>
+                {filteredIntegrations.filter((i) => i.canDisconnect).length === 0 && (
                   <motion.div
-                    key={integration.id}
-                    layout
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    transition={{ duration: 0.2, ease: "easeOut" }}
-                    className="group relative rounded-2xl p-[1.5px] hover:-translate-y-1 transition-all duration-500 ease-out min-h-[220px]"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="py-10 text-center text-sm text-[#888]"
                   >
-                    {/* Brand-colored corner border – visible on hover */}
-                    <div
-                      className="absolute inset-[-1px] rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none z-0"
-                      style={{ background: cornerGlowBg }}
-                    />
-
-                    {/* Diffused outer glow on hover – brand colors bleeding outward */}
-                    <div
-                      className="absolute inset-[-4px] rounded-2xl opacity-0 group-hover:opacity-30 transition-opacity duration-500 blur-xl pointer-events-none z-0"
-                      style={{ background: cornerGlowBg }}
-                    />
-
-                    {/* Card content */}
-                    <div className="relative flex flex-col p-5 rounded-[calc(1rem-1.5px)] bg-gradient-to-br from-[#1c1c1c] to-[#0a0a0a] min-h-[220px] overflow-hidden z-10">
-                      {/* Subtle inner card bloom */}
-                      <div className="absolute inset-0 bg-gradient-to-b from-white/[0.03] to-transparent pointer-events-none" />
-
-                      {/* Persistent subtle green glow for Active state */}
-                      {isConnected && (
-                        <div className="absolute -top-10 -right-10 w-40 h-40 bg-emerald-500/10 blur-3xl pointer-events-none rounded-full" />
-                      )}
-
-                      {/* Top Row: Button & Status */}
-                      <div className="flex justify-end w-full relative z-10">
-                        {isConnected ? (
-                          <div className="px-3 py-1 bg-emerald-500/10 text-emerald-400 text-xs font-semibold tracking-wide rounded-full border border-emerald-500/20 flex items-center gap-1.5 shadow-[0_0_10px_rgba(52,211,153,0.05)] backdrop-blur-sm">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_5px_rgba(52,211,153,0.8)]" />
-                            Active
-                          </div>
-                        ) : (
-                          <button
-                            onClick={() =>
-                              handleConnect(integration.appName, isConnected)
-                            }
-                            disabled={isConnecting}
-                            className="px-4 py-1.5 bg-[#e8e8e8] hover:bg-white text-black text-xs font-medium rounded-full transition-all duration-300 disabled:opacity-50 hover:shadow-[0_0_15px_rgba(255,255,255,0.2)] hover:scale-[1.02] active:scale-95"
-                          >
-                            {isConnecting ? (
-                              <Loader2 size={12} className="animate-spin" />
-                            ) : (
-                              "Connect"
-                            )}
-                          </button>
-                        )}
-                      </div>
-
-                      {/* Center Content: Logo & Name */}
-                      <div className="flex flex-col items-center justify-center flex-1 mt-[-10px] relative z-10 w-full pointer-events-none">
-                        {logoSvg ? (
-                          <motion.img
-                            src={logoSvg}
-                            alt={displayName}
-                            className="w-14 h-14 object-contain mb-5 drop-shadow-md filter transition-all duration-500"
-                            whileHover={{ scale: 1.05 }}
-                            transition={{
-                              type: "spring",
-                              stiffness: 400,
-                              damping: 30,
-                            }}
-                            onError={(e: any) => {
-                              const parent = e.currentTarget.parentElement;
-                              e.currentTarget.style.display = "none";
-                              if (parent) {
-                                const fb = document.createElement("div");
-                                fb.className =
-                                  "w-14 h-14 rounded-2xl flex items-center justify-center text-white font-bold text-2xl mb-5 shadow-lg shrink-0";
-                                fb.style.backgroundColor = color;
-                                fb.textContent = displayName.charAt(0);
-                                parent.prepend(fb);
-                              }
-                            }}
-                          />
-                        ) : (
-                          <motion.div
-                            className="w-14 h-14 rounded-2xl flex items-center justify-center text-white font-bold text-2xl mb-5 shadow-lg shrink-0 transition-all duration-500"
-                            style={{ backgroundColor: color }}
-                            whileHover={{ scale: 1.05 }}
-                            transition={{
-                              type: "spring",
-                              stiffness: 400,
-                              damping: 30,
-                            }}
-                          >
-                            {displayName.charAt(0)}
-                          </motion.div>
-                        )}
-                        <h3 className="text-[15px] font-medium text-white/90 truncate max-w-full px-2 text-center tracking-wide">
-                          {displayName}
-                        </h3>
-                      </div>
-
-                      {/* Manage Button Overlay (Connected State Hover) */}
-                      {/* {isConnected && (
-                        <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all duration-500 z-20">
-                          <motion.button
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                            onClick={() => handleConnect(integration.appName, isConnected)}
-                            className="px-6 py-2 bg-[#1a1a1a] hover:bg-[#252525] border border-white/10 text-white text-sm font-medium rounded-full transition-all duration-300 shadow-[0_4px_20px_rgba(0,0,0,0.5)] backdrop-blur-md"
-                          >
-                            Manage App
-                          </motion.button>
-                        </div>
-                      )} */}
-                    </div>
+                    No manual connections found.
                   </motion.div>
-                );
-              })}
-            </AnimatePresence>
+                )}
+              </div>
 
-            {filteredIntegrations.length === 0 && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="col-span-full py-20 text-center text-sm text-[#888]"
-              >
-                No toolkits found{" "}
-                {searchQuery ? `matching "${searchQuery}"` : ""}.
-              </motion.div>
-            )}
-          </motion.div>
+              <div>
+                <h2 className="text-[15px] font-medium uppercase tracking-widest text-[var(--text-muted)] mb-5">
+                  Built-in Features
+                </h2>
+                <motion.div layout className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 xl:gap-5">
+                  <AnimatePresence mode="popLayout">
+                    {filteredIntegrations.filter((i) => !i.canDisconnect).map(renderIntegrationCard)}
+                  </AnimatePresence>
+                </motion.div>
+                {filteredIntegrations.filter((i) => !i.canDisconnect).length === 0 && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="py-10 text-center text-sm text-[#888]"
+                  >
+                    No built-in features found.
+                  </motion.div>
+                )}
+              </div>
+            </div>
+          ) : (
+            <motion.div
+              layout
+              className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 xl:gap-5"
+            >
+              <AnimatePresence mode="popLayout">
+                {filteredIntegrations.map(renderIntegrationCard)}
+              </AnimatePresence>
+
+              {filteredIntegrations.length === 0 && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="col-span-full py-20 text-center text-sm text-[#888]"
+                >
+                  No toolkits found {searchQuery ? `matching "${searchQuery}"` : ""}.
+                </motion.div>
+              )}
+            </motion.div>
+          )
         )}
       </div>
     </div>
