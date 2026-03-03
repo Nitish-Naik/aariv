@@ -342,8 +342,8 @@ function CalmState({
           Rest easy, {firstName}
         </h1>
         <p className="text-sm text-[var(--text-secondary)] max-w-sm leading-relaxed mb-8">
-          Nothing needs your attention right now. Your day is unfolding exactly as
-          it should.
+          Nothing needs your attention right now. Your day is unfolding exactly
+          as it should.
         </p>
 
         {/* Action Buttons */}
@@ -486,7 +486,7 @@ function ActiveState({
   /** Route proposal action to the assistant with pre-filled context */
   const handleProposalAction = (proposal: Proposal, action: string) => {
     const prompt = encodeURIComponent(
-      `${action}: ${proposal.title} — ${proposal.description}`
+      `${action}: ${proposal.title} — ${proposal.description}`,
     );
     router.push(`/dashboard/assistant?prompt=${prompt}`);
   };
