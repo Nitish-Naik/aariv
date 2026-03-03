@@ -14,12 +14,6 @@ export function PulsingAvatar({
       className="relative flex items-center justify-center"
       style={{ width: size, height: size }}
     >
-      {isThinking && (
-        <div
-          className="absolute inset-0 rounded-full bg-[var(--accent)] opacity-30 pulse-ring"
-          style={{ width: size, height: size }}
-        />
-      )}
       <div
         className="rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-white font-semibold"
         style={{

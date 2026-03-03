@@ -4,6 +4,7 @@ import { PulsingAvatar } from "@/components";
 import { useAuth } from "@/context/AuthContext";
 import { api } from "@/lib/api";
 import type { ChatMessage } from "@/lib/types";
+import { motion } from "framer-motion";
 import {
   Check,
   ChevronDown,
@@ -18,9 +19,12 @@ import {
   Shield,
   Trash2,
   Zap,
+  Terminal,
+  ChevronRight
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
+// import { DetailedLogEntry } from "@/components";
 
 export default function AssistantPage() {
   const { user } = useAuth();
@@ -406,7 +410,7 @@ export default function AssistantPage() {
                     },
                   ]);
                 }
-              } catch {}
+              } catch { }
             }
           }
         }
@@ -525,7 +529,7 @@ export default function AssistantPage() {
                   return msg;
                 }),
               );
-            } catch {}
+            } catch { }
           }
         }
       }
@@ -534,11 +538,11 @@ export default function AssistantPage() {
         prev.map((msg) =>
           msg.id === aiMessageId
             ? {
-                ...msg,
-                content:
-                  "Sorry, I encountered an error: " +
-                  (e.message || "Unknown error"),
-              }
+              ...msg,
+              content:
+                "Sorry, I encountered an error: " +
+                (e.message || "Unknown error"),
+            }
             : msg,
         ),
       );
@@ -560,11 +564,10 @@ export default function AssistantPage() {
 
       {/* ── LEFT SIDEBAR (Chat History) ── */}
       <aside
-        className={`fixed lg:static top-0 left-0 h-full z-40 flex flex-col bg-[var(--bg-elevated)] border-r border-[var(--border)] transition-all duration-300 ease-in-out ${
-          isSidebarOpen
-            ? "w-72 translate-x-0"
-            : "w-0 -translate-x-full lg:translate-x-0 lg:w-0 overflow-hidden"
-        }`}
+        className={`fixed lg:static top-0 left-0 h-full z-40 flex flex-col bg-[var(--bg-elevated)] border-r border-[var(--border)] transition-all duration-300 ease-in-out ${isSidebarOpen
+          ? "w-72 translate-x-0"
+          : "w-0 -translate-x-full lg:translate-x-0 lg:w-0 overflow-hidden"
+          }`}
       >
         {/* Sidebar Header */}
         <div className="h-16 flex items-center justify-between px-4 border-b border-[var(--border)] shrink-0">
@@ -600,11 +603,10 @@ export default function AssistantPage() {
             conversations.map((conv) => (
               <div
                 key={conv.id}
-                className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-left transition-colors group/conv cursor-pointer ${
-                  activeConversationId === conv.id
-                    ? "bg-[rgba(255,255,255,0.08)] text-white"
-                    : "text-[var(--text-secondary)] hover:bg-[rgba(255,255,255,0.04)]"
-                }`}
+                className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-left transition-colors group/conv cursor-pointer ${activeConversationId === conv.id
+                  ? "bg-[rgba(255,255,255,0.08)] text-white"
+                  : "text-[var(--text-secondary)] hover:bg-[rgba(255,255,255,0.04)]"
+                  }`}
               >
                 <button
                   onClick={() => {
@@ -683,11 +685,10 @@ export default function AssistantPage() {
                         key={opt.label}
                         onClick={() => handleRetentionChange(opt.value)}
                         disabled={retentionSaving}
-                        className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-all ${
-                          retentionDays === opt.value
-                            ? "bg-[var(--accent)] text-black"
-                            : "bg-[rgba(255,255,255,0.05)] text-[var(--text-secondary)] hover:bg-[rgba(255,255,255,0.1)] hover:text-[var(--text-primary)]"
-                        } disabled:opacity-50`}
+                        className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-all ${retentionDays === opt.value
+                          ? "bg-[var(--accent)] text-black"
+                          : "bg-[rgba(255,255,255,0.05)] text-[var(--text-secondary)] hover:bg-[rgba(255,255,255,0.1)] hover:text-[var(--text-primary)]"
+                          } disabled:opacity-50`}
                       >
                         {opt.label}
                       </button>
@@ -793,7 +794,7 @@ export default function AssistantPage() {
                   WebkitTextFillColor: "transparent",
                 }}
               >
-                Chat with over 1000+ Apps
+                Chat with over 500+ Apps
               </h1>
               <p className="text-sm text-[var(--text-muted)] -mt-2">
                 Connect your favorite tools and let Alias automate your work.
@@ -859,12 +860,11 @@ export default function AssistantPage() {
                 const isUser = msg.role === "user";
                 const isThinking = !msg.content && (msg.logs?.length || 0) > 0;
 
-                // Only render the AI bubble if it has text ORauth actions OR if it's currently thinking and logs are hidden
-                // Wait, if we want a clean chat stream we only show AI when content or auth arrives.
+                // Only render the AI bubble if it has text ORauth actions OR if it's currently thinking
                 const shouldRenderAiBubble =
                   msg.content ||
                   (msg.auth_actions && msg.auth_actions.length > 0) ||
-                  (isThinking && !isLogsOpen);
+                  isThinking;
 
                 if (!isUser && !shouldRenderAiBubble && !msg.is_proactive)
                   return null;
@@ -883,16 +883,14 @@ export default function AssistantPage() {
 
                     {/* Bubble Container */}
                     <div
-                      className={`flex flex-col group ${
-                        isUser ? "items-end" : "items-start w-full"
-                      }`}
+                      className={`flex flex-col group ${isUser ? "items-end" : "items-start w-full"
+                        }`}
                     >
                       <div
-                        className={`max-w-[85%] lg:max-w-[90%] rounded-2xl px-5 py-4 bg-[var(--bg-elevated)] border border-[rgba(255,255,255,0.02)] shadow-sm ${
-                          msg.is_proactive
-                            ? "border-l-2 border-l-cyan-400 pl-4 rounded-l-none"
-                            : ""
-                        }`}
+                        className={`max-w-[85%] lg:max-w-[90%] rounded-2xl px-5 py-4 bg-[var(--bg-elevated)] border border-[rgba(255,255,255,0.02)] shadow-sm ${msg.is_proactive
+                          ? "border-l-2 border-l-cyan-400 pl-4 rounded-l-none"
+                          : ""
+                          }`}
                       >
                         {/* Proactive badge */}
                         {msg.is_proactive && (
@@ -906,39 +904,59 @@ export default function AssistantPage() {
 
                         {/* Content */}
                         {isUser ? (
-                          <>
+                          <div className="relative group/userMsg">
                             <p className="text-[15px] leading-relaxed text-[var(--text-primary)]">
                               {msg.content}
                             </p>
-                            <span className="block mt-3 text-[11px] font-medium text-[var(--text-muted)]">
-                              Now
-                            </span>
-                          </>
+                            <div className="flex justify-end mt-1 -mb-1">
+                              <button
+                                onClick={() => handleCopyMessage(msg.id, msg.content)}
+                                className="p-1 rounded-md text-[var(--text-muted)] opacity-0 group-hover/userMsg:opacity-100 hover:text-[var(--text-primary)] hover:bg-[rgba(255,255,255,0.06)] transition-all"
+                                title="Copy message"
+                              >
+                                {copiedMessageId === msg.id ? (
+                                  <Check size={14} className="text-green-400" />
+                                ) : (
+                                  <Copy size={14} />
+                                )}
+                              </button>
+                            </div>
+                          </div>
                         ) : msg.content ? (
                           <>
                             <div className="markdown-content text-[15px] leading-relaxed text-[var(--text-primary)]">
                               <ReactMarkdown>{msg.content}</ReactMarkdown>
                             </div>
-                            <span className="block mt-3 text-[11px] font-medium text-[var(--text-muted)]">
+                            {/* <span className="block mt-3 text-[11px] font-medium text-[var(--text-muted)]">
                               Just now
-                            </span>
+                            </span> */}
                           </>
                         ) : (
-                          isThinking &&
-                          !isLogsOpen && (
-                            <div className="flex items-center gap-1.5 py-1 px-1">
-                              <span
-                                className="inline-block w-2 h-2 rounded-full bg-[var(--text-muted)] animate-bounce"
-                                style={{ animationDelay: "0ms" }}
-                              />
-                              <span
-                                className="inline-block w-2 h-2 rounded-full bg-[var(--text-muted)] animate-bounce"
-                                style={{ animationDelay: "150ms" }}
-                              />
-                              <span
-                                className="inline-block w-2 h-2 rounded-full bg-[var(--text-muted)] animate-bounce"
-                                style={{ animationDelay: "300ms" }}
-                              />
+                          isThinking && (
+                            <div className="flex items-center gap-2 py-1.5 px-2 opacity-70">
+                              {msg.logs && msg.logs.length > 0 ? (
+                                <span className="text-[13px] font-medium font-mono animate-pulse bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+                                  {msg.logs[msg.logs.length - 1].label.replace(/composio_?/i, "").replace(/composio\s*/i, "")}...
+                                </span>
+                              ) : (
+                                <>
+                                  <motion.span
+                                    className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--text-muted)]"
+                                    animate={{ opacity: [0.4, 1, 0.4], scale: [0.8, 1, 0.8] }}
+                                    transition={{ repeat: Infinity, duration: 1.4, ease: "easeInOut", delay: 0 }}
+                                  />
+                                  <motion.span
+                                    className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--text-muted)]"
+                                    animate={{ opacity: [0.4, 1, 0.4], scale: [0.8, 1, 0.8] }}
+                                    transition={{ repeat: Infinity, duration: 1.4, ease: "easeInOut", delay: 0.2 }}
+                                  />
+                                  <motion.span
+                                    className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--text-muted)]"
+                                    animate={{ opacity: [0.4, 1, 0.4], scale: [0.8, 1, 0.8] }}
+                                    transition={{ repeat: Infinity, duration: 1.4, ease: "easeInOut", delay: 0.4 }}
+                                  />
+                                </>
+                              )}
                             </div>
                           )
                         )}
@@ -985,7 +1003,7 @@ export default function AssistantPage() {
                                             if (res?.suggestions)
                                               setSuggestions(res.suggestions);
                                           })
-                                          .catch(() => {});
+                                          .catch(() => { });
                                       }
                                     }
                                   }, 1000);

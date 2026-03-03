@@ -3,8 +3,20 @@
 import { useAuth } from "@/context/AuthContext";
 import { api } from "@/lib/api";
 import { AnimatePresence, motion } from "framer-motion";
-import { AlertCircle, Check, Loader2, Search } from "lucide-react";
+import {
+  AlertCircle,
+  Check,
+  Grid3X3,
+  LayoutList,
+  Loader2,
+  Search,
+} from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+
+interface CategoryInfo {
+  id: string;
+  name: string;
+}
 
 interface Integration {
   id: string;
@@ -14,6 +26,7 @@ interface Integration {
   connectedAt?: string;
   email?: string;
   canDisconnect?: boolean;
+  categories?: CategoryInfo[];
 }
 
 const PLATFORM_COLORS: Record<string, string> = {
@@ -32,7 +45,8 @@ const PLATFORM_COLORS: Record<string, string> = {
 };
 
 // Manual overrides for multi-color brand logos: [topLeft, topRight, bottomRight, bottomLeft]
-const PLATFORM_CORNER_COLORS: Record<string, [string, string, string, string]> = {
+const PLATFORM_CORNER_COLORS: Record<string, [string, string, string, string]> =
+{
   gmail: ["#EA4335", "#FBBC05", "#34A853", "#4285F4"],
   googlecalendar: ["#4285F4", "#34A853", "#EA4335", "#FBBC05"],
   googlesheets: ["#34A853", "#FBBC05", "#4285F4", "#1E8E3E"],
@@ -97,7 +111,7 @@ function deriveCornerColors(hex: string): [string, string, string, string] {
   return [
     hslToHex(h - 0.06, s * 1.1, l * 1.15), // top-left
     hslToHex(h + 0.06, s * 0.9, l * 0.85), // top-right
-    hslToHex(h + 0.12, s * 1.0, l * 1.1),  // bottom-right
+    hslToHex(h + 0.12, s * 1.0, l * 1.1), // bottom-right
     hslToHex(h - 0.12, s * 1.05, l * 0.9), // bottom-left
   ];
 }
@@ -110,27 +124,19 @@ function getCornerColors(
   return PLATFORM_CORNER_COLORS[appSlug] || deriveCornerColors(brandColor);
 }
 
-// Map apps to broad categories for filtering
-const APP_CATEGORIES: Record<string, string> = {
+// Map apps to broad categories for filtering (fallback only for apps without API categories)
+const APP_CATEGORIES_FALLBACK: Record<string, string> = {
   gmail: "communication",
   googlecalendar: "productivity",
   googlesheets: "productivity",
   slack: "communication",
   notion: "productivity",
-  linear: "dev-tools",
+  linear: "developer-tools",
   discord: "communication",
-  github: "dev-tools",
-  twitter: "social",
-  hackernews: "social",
+  github: "developer-tools",
+  twitter: "social-media",
+  hackernews: "social-media",
 };
-
-const CATEGORIES = [
-  { id: "all", label: "All" },
-  { id: "productivity", label: "Productivity" },
-  { id: "communication", label: "Communication" },
-  { id: "dev-tools", label: "Dev Tools" },
-  { id: "social", label: "Social" },
-];
 
 // TrustClaw Toolkits style SVG base64 or inline paths
 const PLATFORM_LOGOS: Record<string, string> = {
@@ -160,6 +166,10 @@ export default function IntegrationsPage() {
   const [disconnecting, setDisconnecting] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [errorToast, setErrorToast] = useState<string | null>(null);
+  const [availableCategories, setAvailableCategories] = useState<
+    CategoryInfo[]
+  >([]);
+  const [groupByCategory, setGroupByCategory] = useState(false);
 
   // UI State
   const [activeTab, setActiveTab] = useState<"all" | "connected">("all");
@@ -169,6 +179,7 @@ export default function IntegrationsPage() {
   useEffect(() => {
     if (!user?.id) return;
     loadIntegrations();
+    loadCategories();
 
     // Check if we returned from a successful connection
     const params = new URLSearchParams(window.location.search);
@@ -188,11 +199,39 @@ export default function IntegrationsPage() {
     try {
       setLoading(true);
       const data = await api.get(`/integrations?userId=${user!.id}`);
-      setIntegrations(data.integrations || []);
+      const loadedIntegrations: Integration[] = data.integrations || [];
+      setIntegrations(loadedIntegrations);
+
+      // Derive categories from loaded integrations as fallback
+      if (availableCategories.length === 0) {
+        const catMap = new Map<string, string>();
+        for (const integration of loadedIntegrations) {
+          for (const cat of integration.categories || []) {
+            if (cat.id && cat.name) catMap.set(cat.id, cat.name);
+          }
+        }
+        if (catMap.size > 0) {
+          setAvailableCategories(
+            Array.from(catMap, ([id, name]) => ({ id, name })),
+          );
+        }
+      }
     } catch (e: any) {
       console.error("Failed to load integrations:", e.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadCategories = async () => {
+    try {
+      const data = await api.get("/integrations/categories");
+      if (data.categories?.length > 0) {
+        setAvailableCategories(data.categories);
+      }
+    } catch (e: any) {
+      // Categories will be derived from integrations data as fallback
+      console.warn("Categories endpoint unavailable, using inline data");
     }
   };
 
@@ -269,6 +308,15 @@ export default function IntegrationsPage() {
     }
   };
 
+  // Build the dynamic categories list for filter pills
+  const CATEGORIES = useMemo(() => {
+    const cats: { id: string; label: string }[] = [{ id: "all", label: "All" }];
+    for (const cat of availableCategories) {
+      cats.push({ id: cat.id, label: cat.name });
+    }
+    return cats;
+  }, [availableCategories]);
+
   // Filter integrations based on search, tab, and category
   const filteredIntegrations = useMemo(() => {
     return integrations.filter((integration) => {
@@ -281,12 +329,68 @@ export default function IntegrationsPage() {
       const isConnected = integration.status === "connected";
       const matchesTab = activeTab === "all" || isConnected;
 
-      const appCategory = APP_CATEGORIES[appSlug] || "other";
-      const matchesCategory = activeCategory === "all" || appCategory === activeCategory;
+      // Match by API categories or hardcoded fallback
+      let matchesCategory = activeCategory === "all";
+      if (!matchesCategory) {
+        const apiCats = (integration.categories || []).map((c) => c.id);
+        if (apiCats.length > 0) {
+          matchesCategory = apiCats.includes(activeCategory);
+        } else {
+          // Fallback to hardcoded mapping
+          const fallback = APP_CATEGORIES_FALLBACK[appSlug];
+          matchesCategory = fallback === activeCategory;
+        }
+      }
 
-      return matchesSearch && matchesTab && matchesCategory;
+      // Filter out unwanted built-in features
+      const isBuiltin = !integration.canDisconnect;
+      const isBlacklistedBuiltin = isBuiltin ? ["composio", "browsertool", "browser", "composio_search", "", "code-interpeter", "codeinterpreter", "text_to_pdf", "text-to-pdf", "TEXT_TO_PDF", "browser_tool", "test_app"].includes(appSlug) : false;
+
+      return matchesSearch && matchesTab && matchesCategory && !isBlacklistedBuiltin;
     });
   }, [integrations, searchQuery, activeTab, activeCategory]);
+
+  // Group integrations by category for grouped view
+  const groupedIntegrations = useMemo(() => {
+    if (!groupByCategory) return null;
+
+    const groups = new Map<string, { label: string; items: Integration[] }>();
+
+    for (const integration of filteredIntegrations) {
+      const cats = integration.categories || [];
+      const appSlug = integration.appName.toLowerCase().replace("-", "");
+
+      if (cats.length > 0) {
+        // Add to first category (primary)
+        const primary = cats[0];
+        if (!groups.has(primary.id)) {
+          groups.set(primary.id, { label: primary.name, items: [] });
+        }
+        groups.get(primary.id)!.items.push(integration);
+      } else {
+        // Fallback
+        const fallbackId = APP_CATEGORIES_FALLBACK[appSlug] || "other";
+        const fallbackLabel =
+          fallbackId === "other"
+            ? "Other"
+            : fallbackId
+              .split("-")
+              .map((w) => w[0].toUpperCase() + w.slice(1))
+              .join(" ");
+        if (!groups.has(fallbackId)) {
+          groups.set(fallbackId, { label: fallbackLabel, items: [] });
+        }
+        groups.get(fallbackId)!.items.push(integration);
+      }
+    }
+
+    // Sort groups alphabetically, but put "Other" at the end
+    return Array.from(groups.entries()).sort(([a], [b]) => {
+      if (a === "other") return 1;
+      if (b === "other") return -1;
+      return a.localeCompare(b);
+    });
+  }, [filteredIntegrations, groupByCategory]);
 
   const renderIntegrationCard = (integration: Integration) => {
     const appSlug = integration.appName.toLowerCase().replace("-", "");
@@ -339,12 +443,19 @@ export default function IntegrationsPage() {
                     className="group/btn relative px-3 py-1 bg-emerald-500/10 hover:bg-red-500/10 text-emerald-400 hover:text-red-400 text-xs font-semibold tracking-wide rounded-full border border-emerald-500/20 hover:border-red-500/20 flex items-center gap-1.5 transition-all duration-300 shadow-[0_0_10px_rgba(52,211,153,0.05)] backdrop-blur-sm disabled:opacity-50"
                   >
                     {disconnecting === integration.appName ? (
-                      <Loader2 size={12} className="animate-spin text-red-500" />
+                      <Loader2
+                        size={12}
+                        className="animate-spin text-red-500"
+                      />
                     ) : (
                       <>
                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 group-hover/btn:bg-red-400 shadow-[0_0_5px_rgba(52,211,153,0.8)] group-hover/btn:shadow-[0_0_5px_rgba(239,68,68,0.8)]" />
-                        <span className="group-hover/btn:hidden">Connected</span>
-                        <span className="hidden group-hover/btn:inline">Disconnect</span>
+                        <span className="group-hover/btn:hidden">
+                          Connected
+                        </span>
+                        <span className="hidden group-hover/btn:inline">
+                          Disconnect
+                        </span>
                       </>
                     )}
                   </button>
@@ -500,20 +611,69 @@ export default function IntegrationsPage() {
                 initial={{ opacity: 0, height: 0, y: -10 }}
                 animate={{ opacity: 1, height: "auto", y: 0 }}
                 exit={{ opacity: 0, height: 0, y: -10 }}
-                className="flex flex-wrap gap-2 mt-4"
+                className="flex flex-wrap items-center gap-2 mt-4"
               >
-                {CATEGORIES.map((category) => (
+                <div className="flex items-center flex-1 min-w-0 pr-4">
+                  {/* Sticky "All" Pill */}
                   <button
-                    key={category.id}
-                    onClick={() => setActiveCategory(category.id)}
-                    className={`px-4 py-1.5 text-xs font-medium rounded-full transition-all duration-300 border ${activeCategory === category.id
+                    onClick={() => setActiveCategory("all")}
+                    className={`shrink-0 z-10 px-4 py-1.5 text-xs font-medium rounded-full transition-all duration-300 border ${activeCategory === "all"
                       ? "bg-[#e8e8e8] text-black border-[#e8e8e8] shadow-sm"
                       : "bg-[#161616] text-[#888] border-[#2a2a2a] hover:border-[#444] hover:text-white"
                       }`}
                   >
-                    {category.label}
+                    All
                   </button>
-                ))}
+
+                  {CATEGORIES.length > 1 && (
+                    <>
+                      {/* Vertical Divider */}
+                      <div className="w-[1px] h-5 bg-white/10 shrink-0 mx-3" />
+
+                      {/* Horizontally scrolling list for the rest */}
+                      <div className="flex items-center gap-2 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] w-full scroll-smooth pt-1 pb-1">
+                        {CATEGORIES.filter((c) => c.id !== "all").map(
+                          (category) => (
+                            <button
+                              key={category.id}
+                              onClick={() => setActiveCategory(category.id)}
+                              className={`shrink-0 px-4 py-1.5 text-xs font-medium rounded-full transition-all duration-300 border capitalize ${activeCategory === category.id
+                                ? "bg-[#e8e8e8] text-black border-[#e8e8e8] shadow-sm"
+                                : "bg-[#161616] text-[#888] border-[#2a2a2a] hover:border-[#444] hover:text-white"
+                                }`}
+                            >
+                              {category.label}
+                            </button>
+                          ),
+                        )}
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                {/* Group-by toggle */}
+                <div className="flex items-center gap-1 ml-auto">
+                  <button
+                    onClick={() => setGroupByCategory(false)}
+                    className={`p-1.5 rounded-lg transition-all duration-200 ${!groupByCategory
+                      ? "bg-[#3a3a3a] text-white"
+                      : "text-[#666] hover:text-white hover:bg-[#2a2a2a]"
+                      }`}
+                    title="Grid view"
+                  >
+                    <Grid3X3 size={16} />
+                  </button>
+                  <button
+                    onClick={() => setGroupByCategory(true)}
+                    className={`p-1.5 rounded-lg transition-all duration-200 ${groupByCategory
+                      ? "bg-[#3a3a3a] text-white"
+                      : "text-[#666] hover:text-white hover:bg-[#2a2a2a]"
+                      }`}
+                    title="Group by category"
+                  >
+                    <LayoutList size={16} />
+                  </button>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
@@ -534,49 +694,99 @@ export default function IntegrationsPage() {
               </div>
             ))}
           </div>
-        ) : (
-          /* Toolkit Grid */
+        ) : /* Toolkit Grid */
           activeTab === "connected" ? (
             <div className="space-y-12">
               <div>
                 <h2 className="text-[15px] font-medium uppercase tracking-widest text-[var(--text-muted)] mb-5">
                   Your Connections
                 </h2>
-                <motion.div layout className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 xl:gap-5">
+                <motion.div
+                  layout
+                  className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 xl:gap-5"
+                >
                   <AnimatePresence mode="popLayout">
-                    {filteredIntegrations.filter((i) => i.canDisconnect).map(renderIntegrationCard)}
+                    {filteredIntegrations
+                      .filter((i) => i.canDisconnect)
+                      .map(renderIntegrationCard)}
                   </AnimatePresence>
                 </motion.div>
-                {filteredIntegrations.filter((i) => i.canDisconnect).length === 0 && (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="py-10 text-center text-sm text-[#888]"
-                  >
-                    No manual connections found.
-                  </motion.div>
-                )}
+                {filteredIntegrations.filter((i) => i.canDisconnect).length ===
+                  0 && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="py-10 text-center text-sm text-[#888]"
+                    >
+                      No manual connections found.
+                    </motion.div>
+                  )}
               </div>
 
               <div>
                 <h2 className="text-[15px] font-medium uppercase tracking-widest text-[var(--text-muted)] mb-5">
                   Built-in Features
                 </h2>
-                <motion.div layout className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 xl:gap-5">
+                <motion.div
+                  layout
+                  className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 xl:gap-5"
+                >
                   <AnimatePresence mode="popLayout">
-                    {filteredIntegrations.filter((i) => !i.canDisconnect).map(renderIntegrationCard)}
+                    {filteredIntegrations
+                      .filter((i) => !i.canDisconnect)
+                      .map(renderIntegrationCard)}
                   </AnimatePresence>
                 </motion.div>
-                {filteredIntegrations.filter((i) => !i.canDisconnect).length === 0 && (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="py-10 text-center text-sm text-[#888]"
-                  >
-                    No built-in features found.
-                  </motion.div>
-                )}
+                {filteredIntegrations.filter((i) => !i.canDisconnect).length ===
+                  0 && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="py-10 text-center text-sm text-[#888]"
+                    >
+                      No built-in features found.
+                    </motion.div>
+                  )}
               </div>
+            </div>
+          ) : groupByCategory && groupedIntegrations ? (
+            /* Grouped-by-category view */
+            <div className="space-y-10">
+              {groupedIntegrations.map(([categoryId, group]) => (
+                <motion.div
+                  key={categoryId}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <div className="flex items-center gap-3 mb-5">
+                    <h2 className="text-[15px] font-medium uppercase tracking-widest text-[var(--text-muted)]">
+                      {group.label}
+                    </h2>
+                    <span className="text-xs text-[#555] bg-[#1a1a1a] px-2 py-0.5 rounded-full">
+                      {group.items.length}
+                    </span>
+                  </div>
+                  <motion.div
+                    layout
+                    className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 xl:gap-5"
+                  >
+                    <AnimatePresence mode="popLayout">
+                      {group.items.map(renderIntegrationCard)}
+                    </AnimatePresence>
+                  </motion.div>
+                </motion.div>
+              ))}
+              {groupedIntegrations.length === 0 && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="py-20 text-center text-sm text-[#888]"
+                >
+                  No toolkits found{" "}
+                  {searchQuery ? `matching "${searchQuery}"` : ""}.
+                </motion.div>
+              )}
             </div>
           ) : (
             <motion.div
@@ -593,12 +803,12 @@ export default function IntegrationsPage() {
                   animate={{ opacity: 1 }}
                   className="col-span-full py-20 text-center text-sm text-[#888]"
                 >
-                  No toolkits found {searchQuery ? `matching "${searchQuery}"` : ""}.
+                  No toolkits found{" "}
+                  {searchQuery ? `matching "${searchQuery}"` : ""}.
                 </motion.div>
               )}
             </motion.div>
-          )
-        )}
+          )}
       </div>
     </div>
   );

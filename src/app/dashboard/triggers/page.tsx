@@ -9,6 +9,7 @@ import {
   Check,
   ChevronDown,
   ChevronRight,
+  Clock,
   Globe,
   Info,
   Loader2,
@@ -72,6 +73,25 @@ interface Integration {
   displayName?: string;
   logo?: string;
   status: string;
+}
+
+interface TriggerStats {
+  total: number;
+  active: number;
+  paused: number;
+  totalEvents: number;
+  totalErrors: number;
+}
+
+interface TriggerEvent {
+  id: string;
+  trigger_id: string;
+  event_type: string;
+  trigger_slug: string;
+  status: string;
+  error: string | null;
+  processing_time_ms: number | null;
+  created_at: string;
 }
 
 /* ─── Constants ──────────────────────────────────────────────────── */
@@ -326,6 +346,15 @@ export default function TriggersPage() {
     AvailableTrigger[]
   >([]);
 
+  // Stats & events
+  const [stats, setStats] = useState<TriggerStats | null>(null);
+  const [expandedTriggerId, setExpandedTriggerId] = useState<string | null>(null);
+  const [triggerEvents, setTriggerEvents] = useState<TriggerEvent[]>([]);
+  const [loadingEvents, setLoadingEvents] = useState(false);
+  const [viewTab, setViewTab] = useState<"triggers" | "activity">("triggers");
+  const [activityEvents, setActivityEvents] = useState<TriggerEvent[]>([]);
+  const [loadingActivity, setLoadingActivity] = useState(false);
+
   // UI state
   const [loading, setLoading] = useState(true);
   const [showCreatePanel, setShowCreatePanel] = useState(false);
@@ -362,12 +391,14 @@ export default function TriggersPage() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [triggersRes, triggerAppsRes] = await Promise.all([
+      const [triggersRes, triggerAppsRes, statsRes] = await Promise.all([
         api.get(`/triggers?userId=${user!.id}`),
         api.get(`/triggers/trigger-apps?userId=${user!.id}`),
+        api.get(`/triggers/stats?userId=${user!.id}`).catch(() => null),
       ]);
       setUserTriggers(triggersRes.triggers || []);
       setIntegrations(triggerAppsRes.apps || []);
+      if (statsRes) setStats(statsRes);
     } catch (e: any) {
       console.error("Failed to load triggers:", e.message);
     } finally {
@@ -499,6 +530,45 @@ export default function TriggersPage() {
     setTimeout(() => setToast(null), 4000);
   };
 
+  /* ─── Load Events for a Trigger ─────────────────────────── */
+
+  const loadTriggerEvents = async (triggerId: string) => {
+    if (expandedTriggerId === triggerId) {
+      setExpandedTriggerId(null);
+      setTriggerEvents([]);
+      return;
+    }
+    try {
+      setExpandedTriggerId(triggerId);
+      setLoadingEvents(true);
+      const data = await api.get(`/triggers/events?userId=${user!.id}&triggerId=${triggerId}&limit=10`);
+      setTriggerEvents(data.events || []);
+    } catch {
+      setTriggerEvents([]);
+    } finally {
+      setLoadingEvents(false);
+    }
+  };
+
+  /* ─── Load Global Activity ─────────────────────────────── */
+
+  const loadActivity = async () => {
+    if (!user?.id) return;
+    try {
+      setLoadingActivity(true);
+      const data = await api.get(`/triggers/events?userId=${user.id}&limit=30`);
+      setActivityEvents(data.events || []);
+    } catch {
+      setActivityEvents([]);
+    } finally {
+      setLoadingActivity(false);
+    }
+  };
+
+  useEffect(() => {
+    if (viewTab === "activity") loadActivity();
+  }, [viewTab]);
+
   /* ─── Format Helpers ───────────────────────────────────────── */
 
   const formatDate = (dateStr: string) => {
@@ -542,7 +612,7 @@ export default function TriggersPage() {
       )}
 
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-serif font-semibold text-[var(--text-primary)]">
             Triggers
@@ -562,6 +632,42 @@ export default function TriggersPage() {
           </button>
         )}
       </div>
+
+      {/* Stats Cards */}
+      {stats && stats.total > 0 && !loading && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+          {[
+            { label: "Active", value: stats.active, color: "text-emerald-500" },
+            { label: "Paused", value: stats.paused, color: "text-zinc-400" },
+            { label: "Events", value: stats.totalEvents, color: "text-[var(--accent)]" },
+            { label: "Errors", value: stats.totalErrors, color: stats.totalErrors > 0 ? "text-red-400" : "text-zinc-500" },
+          ].map((s) => (
+            <div key={s.label} className="bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl px-4 py-3">
+              <p className="text-[11px] font-medium text-[var(--text-muted)] uppercase tracking-wider mb-1">{s.label}</p>
+              <p className={`text-xl font-semibold ${s.color}`}>{s.value}</p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* View Tabs */}
+      {!loading && userTriggers.length > 0 && (
+        <div className="flex items-center gap-1 mb-6 bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl p-1 w-fit">
+          {(["triggers", "activity"] as const).map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setViewTab(tab)}
+              className={`px-4 py-1.5 text-sm font-medium rounded-lg transition-all capitalize ${
+                viewTab === tab
+                  ? "bg-[rgba(255,255,255,0.08)] text-[var(--text-primary)] shadow-sm"
+                  : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+              }`}
+            >
+              {tab === "triggers" ? "Triggers" : "Activity Log"}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Loading — skeleton cards */}
       {loading ? (
@@ -792,8 +898,55 @@ export default function TriggersPage() {
             </div>
           )}
 
+          {/* ─── Activity Tab ───────────────────────────────── */}
+          {viewTab === "activity" && userTriggers.length > 0 && (
+            <div className="space-y-3">
+              <p className="text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider">Recent Events</p>
+              {loadingActivity ? (
+                <div className="flex items-center justify-center py-16">
+                  <Loader2 className="animate-spin text-[var(--text-muted)]" size={20} />
+                </div>
+              ) : activityEvents.length === 0 ? (
+                <div className="text-center py-12 border border-dashed border-[var(--border)] rounded-xl">
+                  <Clock size={24} className="mx-auto text-[var(--text-muted)] mb-2" />
+                  <p className="text-sm text-[var(--text-muted)]">No trigger events recorded yet.</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {activityEvents.map((ev) => (
+                    <div key={ev.id} className="bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl px-4 py-3 flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                          ev.status === 'processed' ? 'bg-emerald-500' :
+                          ev.status === 'error' ? 'bg-red-500' :
+                          ev.status === 'skipped' ? 'bg-amber-500' : 'bg-zinc-500'
+                        }`} />
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-[var(--text-primary)] truncate">
+                            {formatSlug(ev.trigger_slug || ev.event_type)}
+                          </p>
+                          {ev.error && (
+                            <p className="text-[11px] text-red-400 truncate">{ev.error}</p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3 flex-shrink-0">
+                        {ev.processing_time_ms != null && (
+                          <span className="text-[11px] text-[var(--text-muted)] tabular-nums">{ev.processing_time_ms}ms</span>
+                        )}
+                        <span className="text-[11px] text-[var(--text-muted)] tabular-nums whitespace-nowrap">
+                          {new Date(ev.created_at).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* ─── Active Triggers Header ──────────────────────── */}
-          {userTriggers.length > 0 ? (
+          {viewTab === "triggers" && userTriggers.length > 0 ? (
             <div className="space-y-4">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <p className="text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider">
@@ -860,7 +1013,7 @@ export default function TriggersPage() {
                             <ArrowRight size={14} className="text-[var(--text-muted)]" />
                             <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-[var(--accent)]/10 border border-[var(--accent)]/20">
                               <Zap size={14} className="text-[var(--accent)]" />
-                              <span className="text-xs font-medium text-[var(--accent)]">YourProxy</span>
+                              <span className="text-xs font-medium text-[var(--accent)]">Aariv</span>
                             </div>
                           </div>
                         </div>
@@ -886,7 +1039,7 @@ export default function TriggersPage() {
                               {isDeleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
                             </button>
                           </div>
-                          <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-2">
                             <div className="flex items-center gap-1.5 text-[11px] text-[var(--text-muted)] bg-[var(--bg-elevated)] px-2 py-1 rounded-md">
                               <Activity size={12} />
                               <span>{trigger.event_count || 0}</span>
@@ -897,15 +1050,69 @@ export default function TriggersPage() {
                                 <span>{trigger.error_count}</span>
                               </div>
                             )}
+                            <button
+                              onClick={() => {
+                                if (expandedTriggerId === trigger.id) {
+                                  setExpandedTriggerId(null);
+                                } else {
+                                  setExpandedTriggerId(trigger.id);
+                                  loadTriggerEvents(trigger.id);
+                                }
+                              }}
+                              className={`flex items-center gap-1 text-[11px] px-2 py-1 rounded-md transition-colors ${
+                                expandedTriggerId === trigger.id
+                                  ? 'bg-[var(--accent)]/10 text-[var(--accent)]'
+                                  : 'bg-[var(--bg-elevated)] text-[var(--text-muted)] hover:text-[var(--text-secondary)]'
+                              }`}
+                              title="View events"
+                            >
+                              <Clock size={12} />
+                              <span>Events</span>
+                            </button>
                           </div>
                         </div>
                       </div>
+
+                      {/* Expandable Event Log */}
+                      {expandedTriggerId === trigger.id && (
+                        <div className="mt-3 pt-3 border-t border-[var(--border)]">
+                          <div className="flex items-center justify-between mb-2">
+                            <p className="text-[11px] font-medium text-[var(--text-muted)] uppercase tracking-wider">Recent Events</p>
+                          </div>
+                          {loadingEvents ? (
+                            <div className="flex items-center justify-center py-4">
+                              <Loader2 className="animate-spin text-[var(--text-muted)]" size={14} />
+                            </div>
+                          ) : triggerEvents.length === 0 ? (
+                            <p className="text-[11px] text-[var(--text-muted)] py-2">No events recorded for this trigger.</p>
+                          ) : (
+                            <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                              {triggerEvents.map((ev) => (
+                                <div key={ev.id} className="flex items-center justify-between text-[11px] px-2.5 py-1.5 rounded-md bg-[var(--bg-elevated)]">
+                                  <div className="flex items-center gap-2 min-w-0">
+                                    <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
+                                      ev.status === 'processed' ? 'bg-emerald-500' :
+                                      ev.status === 'error' ? 'bg-red-500' :
+                                      ev.status === 'skipped' ? 'bg-amber-500' : 'bg-zinc-500'
+                                    }`} />
+                                    <span className="font-medium text-[var(--text-secondary)] truncate">{ev.status}</span>
+                                    {ev.error && <span className="text-red-400 truncate"> — {ev.error}</span>}
+                                  </div>
+                                  <span className="text-[var(--text-muted)] tabular-nums ml-2 flex-shrink-0">
+                                    {new Date(ev.created_at).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   );
                 })
               )}
             </div>
-          ) : (
+          ) : viewTab === "triggers" ? (
             /* ─── Empty State ──────────────────────────────── */
             !showCreatePanel && (
               <div className="text-center py-20 px-4 border border-dashed border-[var(--border)] rounded-2xl bg-[var(--bg-surface)]/50 relative overflow-hidden">
@@ -963,7 +1170,7 @@ export default function TriggersPage() {
                 </div>
               </div>
             )
-          )}
+          ) : null}
         </>
       )}
     </div>
