@@ -97,7 +97,7 @@ export default function AssistantPage() {
     const fetchRetention = async () => {
       try {
         const envUrl =
-          process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+          process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
         const baseUrl = envUrl.endsWith("/api") ? envUrl.slice(0, -4) : envUrl;
         const res = await fetch(`${baseUrl}/api/history/retention/${user.id}`);
         if (res.ok) {
@@ -125,7 +125,7 @@ export default function AssistantPage() {
     const fetchHistory = async () => {
       try {
         const envUrl =
-          process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+          process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
         const baseUrl = envUrl.endsWith("/api") ? envUrl.slice(0, -4) : envUrl;
         const res = await fetch(
           `${baseUrl}/api/history/conversations/${user.id}`,
@@ -149,7 +149,7 @@ export default function AssistantPage() {
     const fetchMessages = async () => {
       try {
         const envUrl =
-          process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+          process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
         const baseUrl = envUrl.endsWith("/api") ? envUrl.slice(0, -4) : envUrl;
         const res = await fetch(
           `${baseUrl}/api/history/messages/${activeConversationId}`,
@@ -183,7 +183,7 @@ export default function AssistantPage() {
   const handleDeleteConversation = async (conversationId: string) => {
     try {
       const envUrl =
-        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
       const baseUrl = envUrl.endsWith("/api") ? envUrl.slice(0, -4) : envUrl;
       const res = await fetch(
         `${baseUrl}/api/history/conversations/${conversationId}`,
@@ -206,7 +206,7 @@ export default function AssistantPage() {
     if (!user?.id) return;
     try {
       const envUrl =
-        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
       const baseUrl = envUrl.endsWith("/api") ? envUrl.slice(0, -4) : envUrl;
       const url = days
         ? `${baseUrl}/api/history/conversations/user/${user.id}?older_than_days=${days}`
@@ -243,7 +243,7 @@ export default function AssistantPage() {
     setRetentionSaving(true);
     try {
       const envUrl =
-        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
       const baseUrl = envUrl.endsWith("/api") ? envUrl.slice(0, -4) : envUrl;
       const res = await fetch(`${baseUrl}/api/history/retention/${user.id}`, {
         method: "PUT",

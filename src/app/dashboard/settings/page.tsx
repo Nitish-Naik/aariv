@@ -70,7 +70,7 @@ export default function SettingsPage() {
     const fetchRetention = async () => {
       try {
         const envUrl =
-          process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+          process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
         const baseUrl = envUrl.endsWith("/api") ? envUrl.slice(0, -4) : envUrl;
         const res = await fetch(`${baseUrl}/api/history/retention/${user.id}`);
         if (res.ok) {
@@ -89,7 +89,7 @@ export default function SettingsPage() {
     setRetentionSaving(true);
     try {
       const envUrl =
-        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
       const baseUrl = envUrl.endsWith("/api") ? envUrl.slice(0, -4) : envUrl;
       const res = await fetch(`${baseUrl}/api/history/retention/${user.id}`, {
         method: "PUT",

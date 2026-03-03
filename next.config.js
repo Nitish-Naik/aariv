@@ -9,7 +9,7 @@ const withPWA = require("next-pwa")({
 const nextConfig = withPWA({
   env: {
     NEXT_PUBLIC_API_URL:
-      process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api",
+      process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api",
     NEXT_PUBLIC_SUPABASE_URL:
       process.env.NEXT_PUBLIC_SUPABASE_URL ||
       "https://yquolfsomedcwniwcyhb.supabase.co",

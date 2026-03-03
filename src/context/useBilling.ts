@@ -23,7 +23,7 @@ export function useBilling() {
 
         try {
             setIsLoading(true);
-            const envUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+            const envUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
             // Strip trailing /api if present to avoid /api/api
             const baseUrl = envUrl.endsWith('/api') ? envUrl.slice(0, -4) : envUrl;
 

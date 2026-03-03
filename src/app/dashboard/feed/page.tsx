@@ -136,6 +136,7 @@ export default function FeedPage() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [appFilter, setAppFilter] = useState<AppFilter>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [serverStats, setServerStats] = useState<{
@@ -167,8 +168,10 @@ export default function FeedPage() {
         }
         setHasMore(data.hasMore || false);
         if (data.stats) setServerStats(data.stats);
-      } catch (err) {
+        setError(null);
+      } catch (err: any) {
         console.error("Failed to load feed:", err);
+        if (!silent) setError(err.message || "Failed to load feed");
       } finally {
         setLoading(false);
         setRefreshing(false);
@@ -408,6 +411,27 @@ export default function FeedPage() {
               className="w-full pl-9 pr-4 py-1.5 rounded-full text-xs bg-[var(--bg-surface)] border border-[rgba(255,255,255,0.04)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)] transition-all"
             />
           </div>
+        </div>
+      )}
+
+      {/* ── Error Banner ──────────────────────────────── */}
+      {error && !loading && (
+        <div className="mb-6 flex items-center gap-3 bg-red-500/10 border border-red-500/20 rounded-2xl px-5 py-4">
+          <AlertCircle size={18} className="text-red-400 shrink-0" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-red-400">
+              Failed to load feed
+            </p>
+            <p className="text-xs text-red-400/70 mt-0.5 truncate">
+              {error}
+            </p>
+          </div>
+          <button
+            onClick={() => loadEvents()}
+            className="text-xs font-medium text-red-400 hover:text-red-300 px-3 py-1.5 rounded-full border border-red-400/30 hover:border-red-400/50 transition-all shrink-0"
+          >
+            Retry
+          </button>
         </div>
       )}
 

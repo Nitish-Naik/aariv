@@ -46,7 +46,7 @@ export default function UsagePage() {
             const fetchExtras = async () => {
                 try {
                     const envUrl =
-                        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+                        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
                     const baseUrl = envUrl.endsWith("/api")
                         ? envUrl.slice(0, -4)
                         : envUrl;
