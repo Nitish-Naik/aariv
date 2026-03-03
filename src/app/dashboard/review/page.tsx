@@ -4,20 +4,22 @@ import { useAuth } from "@/context/AuthContext";
 import { api } from "@/lib/api";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  AlertTriangle,
-  Calendar,
-  Check,
-  CheckSquare,
-  Clock,
-  Cloud,
-  GitPullRequest,
-  Inbox,
-  Loader2,
-  Mail,
-  MessageSquare,
-  X,
-  XCircle,
+    Activity,
+    AlertTriangle,
+    Calendar,
+    Check,
+    CheckSquare,
+    Clock,
+    Cloud,
+    GitPullRequest,
+    Inbox,
+    Loader2,
+    Mail,
+    MessageSquare,
+    X,
+    XCircle,
 } from "lucide-react";
+import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 
 // ─── Types ──────────────────────────────────────────────────────────────
@@ -326,14 +328,26 @@ export default function ReviewPage() {
               <button
                 key={filter}
                 onClick={() => setViewFilter(filter)}
-                className={`px-4 py-1.5 text-sm font-medium rounded-lg transition-all capitalize ${viewFilter === filter
-                  ? "bg-[rgba(255,255,255,0.08)] text-[var(--text-primary)] shadow-sm"
-                  : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
-                  }`}
+                className={`px-4 py-1.5 text-sm font-medium rounded-lg transition-all capitalize ${
+                  viewFilter === filter
+                    ? "bg-[rgba(255,255,255,0.08)] text-[var(--text-primary)] shadow-sm"
+                    : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                }`}
               >
                 {filter}
               </button>
             ))}
+          </div>
+
+          {/* Contextual link to Feed */}
+          <div className="mt-4">
+            <Link
+              href="/dashboard/feed"
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+            >
+              <Activity size={12} />
+              View all events in feed &rarr;
+            </Link>
           </div>
         </header>
 
@@ -448,10 +462,11 @@ export default function ReviewPage() {
                       <motion.div
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: "auto" }}
-                        className={`mb-4 p-3 rounded-xl text-sm ${result.error
-                          ? "bg-[#2C1A1A] border border-[#4B2020] text-[#D84A4A]"
-                          : "bg-[#1A2C1A] border border-[#2A4B2A] text-[#6BD46B]"
-                          }`}
+                        className={`mb-4 p-3 rounded-xl text-sm ${
+                          result.error
+                            ? "bg-[#2C1A1A] border border-[#4B2020] text-[#D84A4A]"
+                            : "bg-[#1A2C1A] border border-[#2A4B2A] text-[#6BD46B]"
+                        }`}
                       >
                         {result.message}
                       </motion.div>
@@ -521,24 +536,25 @@ export default function ReviewPage() {
                     {/* Resolved status badge */}
                     {(item.status === "approved" ||
                       item.status === "dismissed") && (
-                        <div className="flex items-center gap-2 mt-1">
-                          <span
-                            className={`text-xs font-medium px-2.5 py-1 rounded-full ${item.status === "approved"
+                      <div className="flex items-center gap-2 mt-1">
+                        <span
+                          className={`text-xs font-medium px-2.5 py-1 rounded-full ${
+                            item.status === "approved"
                               ? "bg-[#1A2C1A] text-[#6BD46B]"
                               : "bg-[rgba(255,255,255,0.03)] text-[var(--text-muted)]"
-                              }`}
-                          >
-                            {item.status === "approved"
-                              ? "Approved"
-                              : "Dismissed"}
+                          }`}
+                        >
+                          {item.status === "approved"
+                            ? "Approved"
+                            : "Dismissed"}
+                        </span>
+                        {item.resolved_at && (
+                          <span className="text-[11px] text-[var(--text-muted)] opacity-50">
+                            {timeAgo(item.resolved_at)}
                           </span>
-                          {item.resolved_at && (
-                            <span className="text-[11px] text-[var(--text-muted)] opacity-50">
-                              {timeAgo(item.resolved_at)}
-                            </span>
-                          )}
-                        </div>
-                      )}
+                        )}
+                      </div>
+                    )}
                   </motion.div>
                 );
               })}

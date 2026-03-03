@@ -11,7 +11,8 @@ import {
   Loader2,
   Search,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { type ReactNode, useEffect, useMemo, useState } from "react";
 
 interface CategoryInfo {
   id: string;
@@ -164,12 +165,13 @@ export default function IntegrationsPage() {
   const [loading, setLoading] = useState(true);
   const [connecting, setConnecting] = useState<string | null>(null);
   const [disconnecting, setDisconnecting] = useState<string | null>(null);
-  const [toast, setToast] = useState<string | null>(null);
+  const [toast, setToast] = useState<ReactNode | null>(null);
   const [errorToast, setErrorToast] = useState<string | null>(null);
   const [availableCategories, setAvailableCategories] = useState<
     CategoryInfo[]
   >([]);
   const [groupByCategory, setGroupByCategory] = useState(false);
+  const [confirmDisconnect, setConfirmDisconnect] = useState<{ id: string, name: string } | null>(null);
 
   // UI State
   const [activeTab, setActiveTab] = useState<"all" | "connected">("all");
@@ -188,10 +190,25 @@ export default function IntegrationsPage() {
       params.get("status") === "ACTIVE"
     ) {
       const app = params.get("app") || "App";
-      setToast(`${app.replace("-", " ")} connected successfully!`);
+      const displayName = app.replace("-", " ");
+      // Fire auto-setup for default triggers (server-side also runs this via callback)
+      api
+        .post("/triggers/auto-setup", { userId: user!.id, appName: app })
+        .catch(() => { });
+      setToast(
+        <span>
+          {displayName} connected!{" "}
+          <Link
+            href="/dashboard/triggers"
+            className="underline underline-offset-2 hover:text-white"
+          >
+            Customize monitoring &rarr;
+          </Link>
+        </span>,
+      );
       // Clean URL
       window.history.replaceState({}, "", "/dashboard/integrations");
-      setTimeout(() => setToast(null), 4000);
+      setTimeout(() => setToast(null), 5000);
     }
   }, [user?.id]);
 
@@ -344,9 +361,26 @@ export default function IntegrationsPage() {
 
       // Filter out unwanted built-in features
       const isBuiltin = !integration.canDisconnect;
-      const isBlacklistedBuiltin = isBuiltin ? ["composio", "browsertool", "browser", "composio_search", "", "code-interpeter", "codeinterpreter", "text_to_pdf", "text-to-pdf", "TEXT_TO_PDF", "browser_tool", "test_app"].includes(appSlug) : false;
+      const isBlacklistedBuiltin = isBuiltin
+        ? [
+          "composio",
+          "browsertool",
+          "browser",
+          "composio_search",
+          "",
+          "code-interpeter",
+          "codeinterpreter",
+          "text_to_pdf",
+          "text-to-pdf",
+          "TEXT_TO_PDF",
+          "browser_tool",
+          "test_app",
+        ].includes(appSlug)
+        : false;
 
-      return matchesSearch && matchesTab && matchesCategory && !isBlacklistedBuiltin;
+      return (
+        matchesSearch && matchesTab && matchesCategory && !isBlacklistedBuiltin
+      );
     });
   }, [integrations, searchQuery, activeTab, activeCategory]);
 
@@ -437,7 +471,7 @@ export default function IntegrationsPage() {
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleDisconnect(integration.id, integration.appName);
+                      setConfirmDisconnect({ id: integration.id, name: integration.appName });
                     }}
                     disabled={disconnecting === integration.appName}
                     className="group/btn relative px-3 py-1 bg-emerald-500/10 hover:bg-red-500/10 text-emerald-400 hover:text-red-400 text-xs font-semibold tracking-wide rounded-full border border-emerald-500/20 hover:border-red-500/20 flex items-center gap-1.5 transition-all duration-300 shadow-[0_0_10px_rgba(52,211,153,0.05)] backdrop-blur-sm disabled:opacity-50"
@@ -563,8 +597,8 @@ export default function IntegrationsPage() {
                   key={tab}
                   onClick={() => setActiveTab(tab)}
                   className={`relative px-4 py-1.5 text-sm font-medium rounded-lg transition-colors focus-visible:outline-none ${activeTab === tab
-                    ? "text-white"
-                    : "text-[#a0a0a0] hover:text-white"
+                      ? "text-white"
+                      : "text-[#a0a0a0] hover:text-white"
                     }`}
                 >
                   {activeTab === tab && (
@@ -618,8 +652,8 @@ export default function IntegrationsPage() {
                   <button
                     onClick={() => setActiveCategory("all")}
                     className={`shrink-0 z-10 px-4 py-1.5 text-xs font-medium rounded-full transition-all duration-300 border ${activeCategory === "all"
-                      ? "bg-[#e8e8e8] text-black border-[#e8e8e8] shadow-sm"
-                      : "bg-[#161616] text-[#888] border-[#2a2a2a] hover:border-[#444] hover:text-white"
+                        ? "bg-[#e8e8e8] text-black border-[#e8e8e8] shadow-sm"
+                        : "bg-[#161616] text-[#888] border-[#2a2a2a] hover:border-[#444] hover:text-white"
                       }`}
                   >
                     All
@@ -638,8 +672,8 @@ export default function IntegrationsPage() {
                               key={category.id}
                               onClick={() => setActiveCategory(category.id)}
                               className={`shrink-0 px-4 py-1.5 text-xs font-medium rounded-full transition-all duration-300 border capitalize ${activeCategory === category.id
-                                ? "bg-[#e8e8e8] text-black border-[#e8e8e8] shadow-sm"
-                                : "bg-[#161616] text-[#888] border-[#2a2a2a] hover:border-[#444] hover:text-white"
+                                  ? "bg-[#e8e8e8] text-black border-[#e8e8e8] shadow-sm"
+                                  : "bg-[#161616] text-[#888] border-[#2a2a2a] hover:border-[#444] hover:text-white"
                                 }`}
                             >
                               {category.label}
@@ -656,8 +690,8 @@ export default function IntegrationsPage() {
                   <button
                     onClick={() => setGroupByCategory(false)}
                     className={`p-1.5 rounded-lg transition-all duration-200 ${!groupByCategory
-                      ? "bg-[#3a3a3a] text-white"
-                      : "text-[#666] hover:text-white hover:bg-[#2a2a2a]"
+                        ? "bg-[#3a3a3a] text-white"
+                        : "text-[#666] hover:text-white hover:bg-[#2a2a2a]"
                       }`}
                     title="Grid view"
                   >
@@ -666,8 +700,8 @@ export default function IntegrationsPage() {
                   <button
                     onClick={() => setGroupByCategory(true)}
                     className={`p-1.5 rounded-lg transition-all duration-200 ${groupByCategory
-                      ? "bg-[#3a3a3a] text-white"
-                      : "text-[#666] hover:text-white hover:bg-[#2a2a2a]"
+                        ? "bg-[#3a3a3a] text-white"
+                        : "text-[#666] hover:text-white hover:bg-[#2a2a2a]"
                       }`}
                     title="Group by category"
                   >
@@ -810,6 +844,54 @@ export default function IntegrationsPage() {
             </motion.div>
           )}
       </div>
+
+      {/* Disconnect Confirmation Modal */}
+      <AnimatePresence>
+        {confirmDisconnect && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+              onClick={() => setConfirmDisconnect(null)}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              className="relative w-full max-w-sm bg-[var(--bg-surface)] border border-[var(--border)] rounded-2xl shadow-xl overflow-hidden p-6"
+            >
+              <div className="flex items-center gap-3 text-red-400 mb-4">
+                <AlertCircle size={24} />
+                <h3 className="text-lg font-semibold text-[var(--text-primary)]">
+                  Disconnect {confirmDisconnect.name.replace("-", " ").replace(/\b\w/g, c => c.toUpperCase())}?
+                </h3>
+              </div>
+              <p className="text-sm text-[var(--text-muted)] leading-relaxed mb-6">
+                Are you sure you want to disconnect this toolkit? Any active triggers or automations relying on this connection will stop working immediately.
+              </p>
+              <div className="flex items-center justify-end gap-3 mt-2">
+                <button
+                  onClick={() => setConfirmDisconnect(null)}
+                  className="px-4 py-2 text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] rounded-xl transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    handleDisconnect(confirmDisconnect.id, confirmDisconnect.name);
+                    setConfirmDisconnect(null);
+                  }}
+                  className="px-4 py-2 text-sm font-medium bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 rounded-xl transition-colors flex items-center gap-2"
+                >
+                  Disconnect
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

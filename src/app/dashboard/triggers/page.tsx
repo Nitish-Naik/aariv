@@ -61,6 +61,7 @@ interface UserTrigger {
   trigger_name?: string;
   trigger_config: Record<string, unknown>;
   is_enabled: boolean;
+  is_auto?: boolean;
   event_count: number;
   last_event_at?: string;
   error_count: number;
@@ -139,10 +140,11 @@ function TriggerTypeBadge({ type }: { type?: string }) {
   const isWebhook = type === "webhook";
   return (
     <span
-      className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium uppercase tracking-wide ${isWebhook
-        ? "bg-emerald-500/10 text-emerald-500"
-        : "bg-blue-500/10 text-blue-500"
-        }`}
+      className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium uppercase tracking-wide ${
+        isWebhook
+          ? "bg-emerald-500/10 text-emerald-500"
+          : "bg-blue-500/10 text-blue-500"
+      }`}
     >
       {isWebhook ? <Globe size={9} /> : <RefreshCw size={9} />}
       {isWebhook ? "Webhook" : "Poll"}
@@ -348,7 +350,9 @@ export default function TriggersPage() {
 
   // Stats & events
   const [stats, setStats] = useState<TriggerStats | null>(null);
-  const [expandedTriggerId, setExpandedTriggerId] = useState<string | null>(null);
+  const [expandedTriggerId, setExpandedTriggerId] = useState<string | null>(
+    null,
+  );
   const [triggerEvents, setTriggerEvents] = useState<TriggerEvent[]>([]);
   const [loadingEvents, setLoadingEvents] = useState(false);
   const [viewTab, setViewTab] = useState<"triggers" | "activity">("triggers");
@@ -365,7 +369,9 @@ export default function TriggersPage() {
     const q = searchQuery.toLowerCase();
     return userTriggers.filter((t) => {
       const name = (t.trigger_name || formatSlug(t.trigger_slug)).toLowerCase();
-      const app = (TOOLKIT_DISPLAY[t.toolkit?.toLowerCase() || ""] || t.toolkit).toLowerCase();
+      const app = (
+        TOOLKIT_DISPLAY[t.toolkit?.toLowerCase() || ""] || t.toolkit
+      ).toLowerCase();
       return name.includes(q) || app.includes(q);
     });
   }, [userTriggers, searchQuery]);
@@ -541,7 +547,9 @@ export default function TriggersPage() {
     try {
       setExpandedTriggerId(triggerId);
       setLoadingEvents(true);
-      const data = await api.get(`/triggers/events?userId=${user!.id}&triggerId=${triggerId}&limit=10`);
+      const data = await api.get(
+        `/triggers/events?userId=${user!.id}&triggerId=${triggerId}&limit=10`,
+      );
       setTriggerEvents(data.events || []);
     } catch {
       setTriggerEvents([]);
@@ -591,10 +599,11 @@ export default function TriggersPage() {
       {/* Toast */}
       {toast && (
         <div
-          className={`fixed top-4 right-4 z-50 flex items-center gap-2 px-5 py-3 rounded-xl shadow-lg text-sm font-medium animate-in slide-in-from-top fade-in duration-300 ${toast.type === "success"
-            ? "bg-emerald-500/90 text-white"
-            : "bg-red-500/90 text-white"
-            }`}
+          className={`fixed top-4 right-4 z-50 flex items-center gap-2 px-5 py-3 rounded-xl shadow-lg text-sm font-medium animate-in slide-in-from-top fade-in duration-300 ${
+            toast.type === "success"
+              ? "bg-emerald-500/90 text-white"
+              : "bg-red-500/90 text-white"
+          }`}
         >
           {toast.type === "success" ? <Check size={16} /> : <Zap size={16} />}
           {toast.message}
@@ -639,11 +648,24 @@ export default function TriggersPage() {
           {[
             { label: "Active", value: stats.active, color: "text-emerald-500" },
             { label: "Paused", value: stats.paused, color: "text-zinc-400" },
-            { label: "Events", value: stats.totalEvents, color: "text-[var(--accent)]" },
-            { label: "Errors", value: stats.totalErrors, color: stats.totalErrors > 0 ? "text-red-400" : "text-zinc-500" },
+            {
+              label: "Events",
+              value: stats.totalEvents,
+              color: "text-[var(--accent)]",
+            },
+            {
+              label: "Errors",
+              value: stats.totalErrors,
+              color: stats.totalErrors > 0 ? "text-red-400" : "text-zinc-500",
+            },
           ].map((s) => (
-            <div key={s.label} className="bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl px-4 py-3">
-              <p className="text-[11px] font-medium text-[var(--text-muted)] uppercase tracking-wider mb-1">{s.label}</p>
+            <div
+              key={s.label}
+              className="bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl px-4 py-3"
+            >
+              <p className="text-[11px] font-medium text-[var(--text-muted)] uppercase tracking-wider mb-1">
+                {s.label}
+              </p>
               <p className={`text-xl font-semibold ${s.color}`}>{s.value}</p>
             </div>
           ))}
@@ -698,7 +720,6 @@ export default function TriggersPage() {
             description="Choose an app to set up a trigger"
           >
             <div className="space-y-3 pb-8">
-
               {/* Connected apps list */}
               <div className="space-y-2">
                 {integrations.map((integration) => {
@@ -901,41 +922,69 @@ export default function TriggersPage() {
           {/* ─── Activity Tab ───────────────────────────────── */}
           {viewTab === "activity" && userTriggers.length > 0 && (
             <div className="space-y-3">
-              <p className="text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider">Recent Events</p>
+              <p className="text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider">
+                Recent Events
+              </p>
               {loadingActivity ? (
                 <div className="flex items-center justify-center py-16">
-                  <Loader2 className="animate-spin text-[var(--text-muted)]" size={20} />
+                  <Loader2
+                    className="animate-spin text-[var(--text-muted)]"
+                    size={20}
+                  />
                 </div>
               ) : activityEvents.length === 0 ? (
                 <div className="text-center py-12 border border-dashed border-[var(--border)] rounded-xl">
-                  <Clock size={24} className="mx-auto text-[var(--text-muted)] mb-2" />
-                  <p className="text-sm text-[var(--text-muted)]">No trigger events recorded yet.</p>
+                  <Clock
+                    size={24}
+                    className="mx-auto text-[var(--text-muted)] mb-2"
+                  />
+                  <p className="text-sm text-[var(--text-muted)]">
+                    No trigger events recorded yet.
+                  </p>
                 </div>
               ) : (
                 <div className="space-y-2">
                   {activityEvents.map((ev) => (
-                    <div key={ev.id} className="bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl px-4 py-3 flex items-center justify-between gap-3">
+                    <div
+                      key={ev.id}
+                      className="bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl px-4 py-3 flex items-center justify-between gap-3"
+                    >
                       <div className="flex items-center gap-3 min-w-0">
-                        <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
-                          ev.status === 'processed' ? 'bg-emerald-500' :
-                          ev.status === 'error' ? 'bg-red-500' :
-                          ev.status === 'skipped' ? 'bg-amber-500' : 'bg-zinc-500'
-                        }`} />
+                        <div
+                          className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                            ev.status === "processed"
+                              ? "bg-emerald-500"
+                              : ev.status === "error"
+                                ? "bg-red-500"
+                                : ev.status === "skipped"
+                                  ? "bg-amber-500"
+                                  : "bg-zinc-500"
+                          }`}
+                        />
                         <div className="min-w-0">
                           <p className="text-sm font-medium text-[var(--text-primary)] truncate">
                             {formatSlug(ev.trigger_slug || ev.event_type)}
                           </p>
                           {ev.error && (
-                            <p className="text-[11px] text-red-400 truncate">{ev.error}</p>
+                            <p className="text-[11px] text-red-400 truncate">
+                              {ev.error}
+                            </p>
                           )}
                         </div>
                       </div>
                       <div className="flex items-center gap-3 flex-shrink-0">
                         {ev.processing_time_ms != null && (
-                          <span className="text-[11px] text-[var(--text-muted)] tabular-nums">{ev.processing_time_ms}ms</span>
+                          <span className="text-[11px] text-[var(--text-muted)] tabular-nums">
+                            {ev.processing_time_ms}ms
+                          </span>
                         )}
                         <span className="text-[11px] text-[var(--text-muted)] tabular-nums whitespace-nowrap">
-                          {new Date(ev.created_at).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                          {new Date(ev.created_at).toLocaleString(undefined, {
+                            month: "short",
+                            day: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
                         </span>
                       </div>
                     </div>
@@ -968,13 +1017,16 @@ export default function TriggersPage() {
 
               {filteredTriggers.length === 0 ? (
                 <div className="text-center py-12">
-                  <p className="text-sm text-[var(--text-muted)]">No active triggers match your search.</p>
+                  <p className="text-sm text-[var(--text-muted)]">
+                    No active triggers match your search.
+                  </p>
                 </div>
               ) : (
                 filteredTriggers.map((trigger) => {
                   const toolkitKey = trigger.toolkit?.toLowerCase() || "";
                   const color = TOOLKIT_COLORS[toolkitKey] || "#8b95b0";
-                  const toolkitName = TOOLKIT_DISPLAY[toolkitKey] || trigger.toolkit;
+                  const toolkitName =
+                    TOOLKIT_DISPLAY[toolkitKey] || trigger.toolkit;
                   const isToggling = togglingId === trigger.id;
                   const isDeleting = deletingId === trigger.id;
 
@@ -988,32 +1040,58 @@ export default function TriggersPage() {
                         <div className="flex-1 min-w-0 flex flex-col gap-3">
                           <div className="flex items-center gap-2">
                             <h3 className="text-sm font-semibold text-[var(--text-primary)]">
-                              {trigger.trigger_name || formatSlug(trigger.trigger_slug)}
+                              {trigger.trigger_name ||
+                                formatSlug(trigger.trigger_slug)}
                             </h3>
-                            <div className={`px-2 py-0.5 rounded text-[10px] font-medium tracking-wider uppercase ${trigger.is_enabled ? 'bg-emerald-500/10 text-emerald-500' : 'bg-zinc-500/10 text-zinc-500'}`}>
+                            <div
+                              className={`px-2 py-0.5 rounded text-[10px] font-medium tracking-wider uppercase ${trigger.is_enabled ? "bg-emerald-500/10 text-emerald-500" : "bg-zinc-500/10 text-zinc-500"}`}
+                            >
                               {trigger.is_enabled ? "Active" : "Paused"}
                             </div>
+                            {trigger.is_auto && (
+                              <div className="px-2 py-0.5 rounded text-[10px] font-medium tracking-wider uppercase bg-blue-500/10 text-blue-400">
+                                Auto
+                              </div>
+                            )}
                           </div>
 
                           {/* Visual Flow Map */}
                           <div className="flex items-center gap-3">
                             <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border)]">
                               {(() => {
-                                const logo = integrations.find((i) => i.appName.toLowerCase() === toolkitKey)?.logo || PLATFORM_LOGOS[toolkitKey];
+                                const logo =
+                                  integrations.find(
+                                    (i) =>
+                                      i.appName.toLowerCase() === toolkitKey,
+                                  )?.logo || PLATFORM_LOGOS[toolkitKey];
                                 return logo ? (
-                                  <img src={logo} alt={toolkitName} className="w-4 h-4 rounded object-contain" />
+                                  <img
+                                    src={logo}
+                                    alt={toolkitName}
+                                    className="w-4 h-4 rounded object-contain"
+                                  />
                                 ) : (
-                                  <div className="w-4 h-4 rounded flex items-center justify-center text-white font-bold text-[8px]" style={{ backgroundColor: color }}>
+                                  <div
+                                    className="w-4 h-4 rounded flex items-center justify-center text-white font-bold text-[8px]"
+                                    style={{ backgroundColor: color }}
+                                  >
                                     {toolkitName.charAt(0)}
                                   </div>
                                 );
                               })()}
-                              <span className="text-xs font-medium text-[var(--text-secondary)]">{toolkitName}</span>
+                              <span className="text-xs font-medium text-[var(--text-secondary)]">
+                                {toolkitName}
+                              </span>
                             </div>
-                            <ArrowRight size={14} className="text-[var(--text-muted)]" />
+                            <ArrowRight
+                              size={14}
+                              className="text-[var(--text-muted)]"
+                            />
                             <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-[var(--accent)]/10 border border-[var(--accent)]/20">
                               <Zap size={14} className="text-[var(--accent)]" />
-                              <span className="text-xs font-medium text-[var(--accent)]">Aariv</span>
+                              <span className="text-xs font-medium text-[var(--accent)]">
+                                Aariv
+                              </span>
                             </div>
                           </div>
                         </div>
@@ -1024,10 +1102,16 @@ export default function TriggersPage() {
                             <button
                               onClick={() => handleToggle(trigger)}
                               disabled={isToggling}
-                              className={`p-1.5 rounded-md transition-colors ${trigger.is_enabled ? 'hover:bg-amber-500/10 text-[var(--text-muted)] hover:text-amber-500' : 'hover:bg-emerald-500/10 text-[var(--text-muted)] hover:text-emerald-500'}`}
+                              className={`p-1.5 rounded-md transition-colors ${trigger.is_enabled ? "hover:bg-amber-500/10 text-[var(--text-muted)] hover:text-amber-500" : "hover:bg-emerald-500/10 text-[var(--text-muted)] hover:text-emerald-500"}`}
                               title={trigger.is_enabled ? "Pause" : "Resume"}
                             >
-                              {isToggling ? <Loader2 size={14} className="animate-spin" /> : trigger.is_enabled ? <Pause size={14} /> : <Play size={14} />}
+                              {isToggling ? (
+                                <Loader2 size={14} className="animate-spin" />
+                              ) : trigger.is_enabled ? (
+                                <Pause size={14} />
+                              ) : (
+                                <Play size={14} />
+                              )}
                             </button>
                             <div className="w-px h-4 bg-[var(--border)]" />
                             <button
@@ -1036,7 +1120,11 @@ export default function TriggersPage() {
                               className="p-1.5 rounded-md hover:bg-red-500/10 transition-colors text-[var(--text-muted)] hover:text-red-500"
                               title="Delete"
                             >
-                              {isDeleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+                              {isDeleting ? (
+                                <Loader2 size={14} className="animate-spin" />
+                              ) : (
+                                <Trash2 size={14} />
+                              )}
                             </button>
                           </div>
                           <div className="flex items-center gap-2">
@@ -1061,8 +1149,8 @@ export default function TriggersPage() {
                               }}
                               className={`flex items-center gap-1 text-[11px] px-2 py-1 rounded-md transition-colors ${
                                 expandedTriggerId === trigger.id
-                                  ? 'bg-[var(--accent)]/10 text-[var(--accent)]'
-                                  : 'bg-[var(--bg-elevated)] text-[var(--text-muted)] hover:text-[var(--text-secondary)]'
+                                  ? "bg-[var(--accent)]/10 text-[var(--accent)]"
+                                  : "bg-[var(--bg-elevated)] text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
                               }`}
                               title="View events"
                             >
@@ -1077,29 +1165,60 @@ export default function TriggersPage() {
                       {expandedTriggerId === trigger.id && (
                         <div className="mt-3 pt-3 border-t border-[var(--border)]">
                           <div className="flex items-center justify-between mb-2">
-                            <p className="text-[11px] font-medium text-[var(--text-muted)] uppercase tracking-wider">Recent Events</p>
+                            <p className="text-[11px] font-medium text-[var(--text-muted)] uppercase tracking-wider">
+                              Recent Events
+                            </p>
                           </div>
                           {loadingEvents ? (
                             <div className="flex items-center justify-center py-4">
-                              <Loader2 className="animate-spin text-[var(--text-muted)]" size={14} />
+                              <Loader2
+                                className="animate-spin text-[var(--text-muted)]"
+                                size={14}
+                              />
                             </div>
                           ) : triggerEvents.length === 0 ? (
-                            <p className="text-[11px] text-[var(--text-muted)] py-2">No events recorded for this trigger.</p>
+                            <p className="text-[11px] text-[var(--text-muted)] py-2">
+                              No events recorded for this trigger.
+                            </p>
                           ) : (
                             <div className="space-y-1.5 max-h-48 overflow-y-auto">
                               {triggerEvents.map((ev) => (
-                                <div key={ev.id} className="flex items-center justify-between text-[11px] px-2.5 py-1.5 rounded-md bg-[var(--bg-elevated)]">
+                                <div
+                                  key={ev.id}
+                                  className="flex items-center justify-between text-[11px] px-2.5 py-1.5 rounded-md bg-[var(--bg-elevated)]"
+                                >
                                   <div className="flex items-center gap-2 min-w-0">
-                                    <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
-                                      ev.status === 'processed' ? 'bg-emerald-500' :
-                                      ev.status === 'error' ? 'bg-red-500' :
-                                      ev.status === 'skipped' ? 'bg-amber-500' : 'bg-zinc-500'
-                                    }`} />
-                                    <span className="font-medium text-[var(--text-secondary)] truncate">{ev.status}</span>
-                                    {ev.error && <span className="text-red-400 truncate"> — {ev.error}</span>}
+                                    <div
+                                      className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
+                                        ev.status === "processed"
+                                          ? "bg-emerald-500"
+                                          : ev.status === "error"
+                                            ? "bg-red-500"
+                                            : ev.status === "skipped"
+                                              ? "bg-amber-500"
+                                              : "bg-zinc-500"
+                                      }`}
+                                    />
+                                    <span className="font-medium text-[var(--text-secondary)] truncate">
+                                      {ev.status}
+                                    </span>
+                                    {ev.error && (
+                                      <span className="text-red-400 truncate">
+                                        {" "}
+                                        — {ev.error}
+                                      </span>
+                                    )}
                                   </div>
                                   <span className="text-[var(--text-muted)] tabular-nums ml-2 flex-shrink-0">
-                                    {new Date(ev.created_at).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                    {new Date(ev.created_at).toLocaleString(
+                                      undefined,
+                                      {
+                                        month: "short",
+                                        day: "numeric",
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                      },
+                                    )}
                                   </span>
                                 </div>
                               ))}
@@ -1116,14 +1235,37 @@ export default function TriggersPage() {
             /* ─── Empty State ──────────────────────────────── */
             !showCreatePanel && (
               <div className="text-center py-20 px-4 border border-dashed border-[var(--border)] rounded-2xl bg-[var(--bg-surface)]/50 relative overflow-hidden">
-                <div aria-hidden="true" className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md opacity-20 pointer-events-none">
-                  <svg viewBox="0 0 400 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M50 50h100c20 0 20-30 40-30s20 30 40 30h120" stroke="url(#dash-gradient)" strokeWidth="2" strokeDasharray="4 4" />
+                <div
+                  aria-hidden="true"
+                  className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md opacity-20 pointer-events-none"
+                >
+                  <svg
+                    viewBox="0 0 400 100"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M50 50h100c20 0 20-30 40-30s20 30 40 30h120"
+                      stroke="url(#dash-gradient)"
+                      strokeWidth="2"
+                      strokeDasharray="4 4"
+                    />
                     <defs>
-                      <linearGradient id="dash-gradient" x1="0" y1="0" x2="400" y2="0" gradientUnits="userSpaceOnUse">
+                      <linearGradient
+                        id="dash-gradient"
+                        x1="0"
+                        y1="0"
+                        x2="400"
+                        y2="0"
+                        gradientUnits="userSpaceOnUse"
+                      >
                         <stop stopColor="var(--accent)" stopOpacity="0" />
                         <stop offset="0.5" stopColor="var(--accent)" />
-                        <stop offset="1" stopColor="var(--accent)" stopOpacity="0" />
+                        <stop
+                          offset="1"
+                          stopColor="var(--accent)"
+                          stopOpacity="0"
+                        />
                       </linearGradient>
                     </defs>
                   </svg>
@@ -1132,13 +1274,21 @@ export default function TriggersPage() {
                 <div className="relative z-10 flex flex-col items-center gap-6">
                   <div className="flex items-center justify-center gap-4">
                     <div className="w-12 h-12 rounded-2xl bg-[#24292e] border border-white/10 flex items-center justify-center shadow-lg transform -rotate-6">
-                      <img src="/images/github-142-svgrepo-com.svg" alt="GitHub" className="w-6 h-6 object-contain" />
+                      <img
+                        src="/images/github-142-svgrepo-com.svg"
+                        alt="GitHub"
+                        className="w-6 h-6 object-contain"
+                      />
                     </div>
                     <div className="w-14 h-14 rounded-2xl bg-[var(--accent)]/10 border border-[var(--accent)]/20 flex items-center justify-center shadow-[0_0_30px_var(--accent-soft)]">
                       <Zap size={24} className="text-[var(--accent)]" />
                     </div>
                     <div className="w-12 h-12 rounded-2xl bg-[#ECB22E] border border-white/10 flex items-center justify-center shadow-lg transform rotate-6">
-                      <img src="/images/slack-svgrepo-com.svg" alt="Slack" className="w-6 h-6 object-contain grayscale-[0.2]" />
+                      <img
+                        src="/images/slack-svgrepo-com.svg"
+                        alt="Slack"
+                        className="w-6 h-6 object-contain grayscale-[0.2]"
+                      />
                     </div>
                   </div>
 
@@ -1147,14 +1297,16 @@ export default function TriggersPage() {
                       Build your first automation
                     </h3>
                     <p className="text-sm text-[var(--text-muted)] leading-relaxed">
-                      Triggers quietly watch for events across your connected apps and execute workflows automatically. Set one up to get started.
+                      Triggers quietly watch for events across your connected
+                      apps and execute workflows automatically. Set one up to
+                      get started.
                     </p>
                   </div>
 
                   {integrations.length > 0 ? (
                     <button
                       onClick={() => setShowCreatePanel(true)}
-                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[var(--text-primary)] text-[var(--bg-base)] text-sm font-semibold hover:opacity-90 transition-all hover:scale-105 active:scale-95 shadow-lg"
+                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[var(--accent)] text-white text-sm font-semibold hover:opacity-90 transition-all hover:scale-105 active:scale-95 shadow-lg"
                     >
                       <Plus size={16} />
                       Create Trigger
@@ -1162,7 +1314,10 @@ export default function TriggersPage() {
                   ) : (
                     <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border)] text-sm text-[var(--text-muted)]">
                       <span>Connect an app in</span>
-                      <a href="/dashboard/integrations" className="text-[var(--text-primary)] font-medium hover:underline">
+                      <a
+                        href="/dashboard/integrations"
+                        className="text-[var(--text-primary)] font-medium hover:underline"
+                      >
                         Integrations
                       </a>
                     </div>

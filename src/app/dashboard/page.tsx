@@ -3,11 +3,16 @@
 import { useAuth } from "@/context/AuthContext";
 import { api } from "@/lib/api";
 import {
+  Activity,
+  ArrowRight,
   Calendar,
   CheckCircle2,
+  CheckSquare,
   Clock,
   Cloud,
   Eye,
+  GitPullRequest,
+  Inbox,
   Loader2,
   Mail,
   MessageSquare,
@@ -15,6 +20,7 @@ import {
   Target,
   Zap,
 } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
@@ -34,6 +40,22 @@ interface CalendarEvent {
   startTime: string;
   endTime: string;
   color?: string;
+}
+
+interface FeedEvent {
+  id: string;
+  triggerSlug: string;
+  app: string;
+  status: string;
+  preview: string;
+  createdAt: string;
+}
+
+interface ReviewCounts {
+  total: number;
+  high: number;
+  medium: number;
+  low: number;
 }
 
 interface Briefing {
@@ -71,6 +93,44 @@ const APP_COLOR: Record<string, string> = {
   linear: "#5E6AD2",
   discord: "#5865F2",
 };
+
+const FEED_APP_ICONS: Record<string, React.ReactNode> = {
+  gmail: <Mail size={13} />,
+  googlecalendar: <Calendar size={13} />,
+  slack: <MessageSquare size={13} />,
+  github: <GitPullRequest size={13} />,
+  notion: <Zap size={13} />,
+  linear: <CheckSquare size={13} />,
+  discord: <MessageSquare size={13} />,
+};
+
+const FEED_APP_LABELS: Record<string, string> = {
+  gmail: "Gmail",
+  googlecalendar: "Calendar",
+  slack: "Slack",
+  github: "GitHub",
+  notion: "Notion",
+  linear: "Linear",
+  discord: "Discord",
+};
+
+function feedTimeAgo(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  return `${days}d ago`;
+}
+
+function formatFeedSlug(slug: string): string {
+  return slug
+    .replace(/^[A-Z]+_/, "")
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
 
 const getGreeting = () => {
   const hour = new Date().getHours();
@@ -147,9 +207,11 @@ function StatCard({
 function ProposalCard({
   proposal,
   logoUrl,
+  onAction,
 }: {
   proposal: Proposal;
   logoUrl?: string;
+  onAction?: (proposal: Proposal, action: string) => void;
 }) {
   const icon = APP_ICON[proposal.app] || <Zap size={15} />;
   const color = APP_COLOR[proposal.app] || "var(--accent)";
@@ -200,6 +262,7 @@ function ProposalCard({
           {proposal.actions.map((action, i) => (
             <button
               key={i}
+              onClick={() => onAction?.(proposal, action)}
               className={`text-xs font-medium px-3 py-1.5 rounded-lg transition-colors ${
                 i === 0
                   ? "bg-[var(--accent)] text-white hover:opacity-90"
@@ -254,52 +317,148 @@ function TimelineEvent({
 
 /* ─── Calm State ─────────────────────────────────────────── */
 
-function CalmState({ firstName }: { firstName: string }) {
+function CalmState({
+  firstName,
+  recentEvents = [],
+  reviewCounts = { total: 0, high: 0, medium: 0, low: 0 },
+}: {
+  firstName: string;
+  recentEvents?: FeedEvent[];
+  reviewCounts?: ReviewCounts;
+}) {
   const router = useRouter();
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[70vh] px-4 text-center">
-      {/* Cloud Icon */}
-      <div className="mb-6 text-[var(--text-muted)]">
-        <Cloud size={48} strokeWidth={1.2} />
+    <div className="max-w-3xl mx-auto px-4 sm:px-6 py-10">
+      {/* Hero */}
+      <div className="flex flex-col items-center text-center mb-10">
+        {/* Cloud Icon */}
+        <div className="mb-6 text-[var(--text-muted)]">
+          <Cloud size={48} strokeWidth={1.2} />
+        </div>
+
+        {/* Heading */}
+        <h1 className="text-2xl sm:text-3xl font-serif text-[var(--text-primary)] mb-3">
+          Rest easy, {firstName}
+        </h1>
+        <p className="text-sm text-[var(--text-secondary)] max-w-sm leading-relaxed mb-8">
+          Nothing needs your attention right now. Your day is unfolding exactly as
+          it should.
+        </p>
+
+        {/* Action Buttons */}
+        <div className="flex flex-col sm:flex-row gap-3 w-full max-w-md">
+          <button
+            onClick={() => router.push("/dashboard/assistant")}
+            className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[var(--bg-surface)] border border-[var(--border)] text-sm font-medium text-[var(--text-primary)] hover:border-[var(--accent)] transition-colors"
+          >
+            <Sparkles size={15} className="text-[var(--accent)]" />
+            Ask Aariv something
+          </button>
+          <button
+            onClick={() => router.push("/dashboard/triggers")}
+            className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[var(--bg-surface)] border border-[var(--border)] text-sm font-medium text-[var(--text-primary)] hover:border-[var(--accent)] transition-colors"
+          >
+            <Eye size={15} className="text-[var(--accent)]" />
+            Check my horizon
+          </button>
+          <button
+            onClick={() => router.push("/dashboard/review")}
+            className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[var(--bg-surface)] border border-[var(--border)] text-sm font-medium text-[var(--text-primary)] hover:border-[var(--accent)] transition-colors"
+          >
+            <CheckCircle2 size={15} className="text-[var(--accent)]" />
+            Review items
+          </button>
+        </div>
       </div>
 
-      {/* Heading */}
-      <h1 className="text-2xl sm:text-3xl font-serif text-[var(--text-primary)] mb-3">
-        Rest easy, {firstName}
-      </h1>
-      <p className="text-sm text-[var(--text-secondary)] max-w-sm leading-relaxed mb-10">
-        Nothing needs your attention right now. Your day is unfolding exactly as
-        it should.
-      </p>
-
-      {/* Action Buttons */}
-      <div className="flex flex-col sm:flex-row gap-3 w-full max-w-md">
-        <button
-          onClick={() => router.push("/dashboard/assistant")}
-          className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[var(--bg-surface)] border border-[var(--border)] text-sm font-medium text-[var(--text-primary)] hover:border-[var(--accent)] transition-colors"
+      {/* Quick Links */}
+      <div className="flex items-center gap-3 mb-6">
+        {reviewCounts.total > 0 && (
+          <Link
+            href="/dashboard/review"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border)] hover:border-[var(--accent)] transition-colors group"
+          >
+            <CheckCircle2 size={15} className="text-[var(--accent)]" />
+            <span className="text-sm font-medium text-[var(--text-primary)]">
+              {reviewCounts.total} item{reviewCounts.total !== 1 ? "s" : ""} to
+              review
+            </span>
+            {reviewCounts.high > 0 && (
+              <span className="text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-500">
+                {reviewCounts.high} urgent
+              </span>
+            )}
+            <ArrowRight
+              size={13}
+              className="text-[var(--text-muted)] group-hover:text-[var(--accent)] transition-colors"
+            />
+          </Link>
+        )}
+        <Link
+          href="/dashboard/feed"
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border)] hover:border-[var(--border-strong)] transition-colors group"
         >
-          <Sparkles size={15} className="text-[var(--accent)]" />
-          Ask Alias something
-        </button>
-        <button
-          onClick={() => router.push("/dashboard/triggers")}
-          className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[var(--bg-surface)] border border-[var(--border)] text-sm font-medium text-[var(--text-primary)] hover:border-[var(--accent)] transition-colors"
-        >
-          <Eye size={15} className="text-[var(--accent)]" />
-          Check my horizon
-        </button>
-        <button
-          onClick={() => router.push("/dashboard/review")}
-          className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[var(--bg-surface)] border border-[var(--border)] text-sm font-medium text-[var(--text-primary)] hover:border-[var(--accent)] transition-colors"
-        >
-          <CheckCircle2 size={15} className="text-[var(--accent)]" />
-          Review items
-        </button>
+          <Activity size={15} className="text-[var(--text-muted)]" />
+          <span className="text-sm text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition-colors">
+            View feed
+          </span>
+        </Link>
       </div>
+
+      {/* Recent Activity (if any) */}
+      {recentEvents.length > 0 && (
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-xs font-medium uppercase tracking-widest text-[var(--text-muted)]">
+              Recent activity
+            </h2>
+            <Link
+              href="/dashboard/feed"
+              className="text-xs font-medium text-[var(--accent)] hover:underline underline-offset-2 flex items-center gap-1"
+            >
+              View all
+              <ArrowRight size={11} />
+            </Link>
+          </div>
+          <div className="space-y-2">
+            {recentEvents.slice(0, 5).map((evt) => {
+              const icon = FEED_APP_ICONS[evt.app] || <Inbox size={13} />;
+              const color = APP_COLOR[evt.app] || "var(--text-muted)";
+              const label = FEED_APP_LABELS[evt.app] || evt.app;
+              return (
+                <div
+                  key={evt.id}
+                  className="flex items-center gap-3 bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl px-4 py-2.5 hover:border-[var(--border-strong)] transition-colors"
+                >
+                  <div
+                    className="w-7 h-7 rounded-lg flex items-center justify-center text-white shrink-0"
+                    style={{ backgroundColor: color }}
+                  >
+                    {icon}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <span className="text-sm text-[var(--text-primary)] font-medium truncate block">
+                      {formatFeedSlug(evt.triggerSlug)}
+                    </span>
+                    {evt.preview && (
+                      <span className="text-xs text-[var(--text-muted)] truncate block">
+                        {evt.preview}
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-[11px] text-[var(--text-muted)] tabular-nums whitespace-nowrap shrink-0">
+                    {feedTimeAgo(evt.createdAt)}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Date/time footer */}
-      <p className="mt-12 text-xs text-[var(--text-muted)]">
+      <p className="mt-10 text-xs text-[var(--text-muted)] text-center">
         {formatFullDateTime()}
       </p>
     </div>
@@ -312,12 +471,25 @@ function ActiveState({
   firstName,
   briefing,
   logoMap,
+  recentEvents,
+  reviewCounts,
 }: {
   firstName: string;
   briefing: Briefing;
   logoMap: Record<string, string>;
+  recentEvents: FeedEvent[];
+  reviewCounts: ReviewCounts;
 }) {
+  const router = useRouter();
   const { counts, proposals, events, insight } = briefing;
+
+  /** Route proposal action to the assistant with pre-filled context */
+  const handleProposalAction = (proposal: Proposal, action: string) => {
+    const prompt = encodeURIComponent(
+      `${action}: ${proposal.title} — ${proposal.description}`
+    );
+    router.push(`/dashboard/assistant?prompt=${prompt}`);
+  };
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
@@ -372,6 +544,7 @@ function ActiveState({
                   key={i}
                   proposal={p}
                   logoUrl={logoMap[p.app?.toLowerCase()]}
+                  onAction={handleProposalAction}
                 />
               ))}
             </div>
@@ -409,6 +582,91 @@ function ActiveState({
         </div>
       </div>
 
+      {/* ── Quick Links Bar ──────────────────────────── */}
+      <div className="mt-8 flex items-center gap-3">
+        {reviewCounts.total > 0 && (
+          <Link
+            href="/dashboard/review"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border)] hover:border-[var(--accent)] transition-colors group"
+          >
+            <CheckCircle2 size={15} className="text-[var(--accent)]" />
+            <span className="text-sm font-medium text-[var(--text-primary)]">
+              {reviewCounts.total} item{reviewCounts.total !== 1 ? "s" : ""} to
+              review
+            </span>
+            {reviewCounts.high > 0 && (
+              <span className="text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-500">
+                {reviewCounts.high} urgent
+              </span>
+            )}
+            <ArrowRight
+              size={13}
+              className="text-[var(--text-muted)] group-hover:text-[var(--accent)] transition-colors"
+            />
+          </Link>
+        )}
+        <Link
+          href="/dashboard/feed"
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border)] hover:border-[var(--border-strong)] transition-colors group"
+        >
+          <Activity size={15} className="text-[var(--text-muted)]" />
+          <span className="text-sm text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition-colors">
+            View feed
+          </span>
+        </Link>
+      </div>
+
+      {/* ── Recent Activity ──────────────────────────── */}
+      {recentEvents.length > 0 && (
+        <div className="mt-8">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-xs font-medium uppercase tracking-widest text-[var(--text-muted)]">
+              Recent activity
+            </h2>
+            <Link
+              href="/dashboard/feed"
+              className="text-xs font-medium text-[var(--accent)] hover:underline underline-offset-2 flex items-center gap-1"
+            >
+              View all
+              <ArrowRight size={11} />
+            </Link>
+          </div>
+          <div className="space-y-2">
+            {recentEvents.slice(0, 5).map((evt) => {
+              const icon = FEED_APP_ICONS[evt.app] || <Inbox size={13} />;
+              const color = APP_COLOR[evt.app] || "var(--text-muted)";
+              const label = FEED_APP_LABELS[evt.app] || evt.app;
+              return (
+                <div
+                  key={evt.id}
+                  className="flex items-center gap-3 bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl px-4 py-2.5 hover:border-[var(--border-strong)] transition-colors"
+                >
+                  <div
+                    className="w-7 h-7 rounded-lg flex items-center justify-center text-white shrink-0"
+                    style={{ backgroundColor: color }}
+                  >
+                    {icon}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <span className="text-sm text-[var(--text-primary)] font-medium truncate block">
+                      {formatFeedSlug(evt.triggerSlug)}
+                    </span>
+                    {evt.preview && (
+                      <span className="text-xs text-[var(--text-muted)] truncate block">
+                        {evt.preview}
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-[11px] text-[var(--text-muted)] tabular-nums whitespace-nowrap shrink-0">
+                    {feedTimeAgo(evt.createdAt)}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Bottom Insight Bar */}
       {insight && (
         <div className="mt-8 flex items-center gap-3 bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl px-4 py-3">
@@ -428,6 +686,13 @@ export default function DashboardHome() {
   const { user } = useAuth();
   const [briefing, setBriefing] = useState<Briefing | null>(null);
   const [logoMap, setLogoMap] = useState<Record<string, string>>({});
+  const [recentEvents, setRecentEvents] = useState<FeedEvent[]>([]);
+  const [reviewCounts, setReviewCounts] = useState<ReviewCounts>({
+    total: 0,
+    high: 0,
+    medium: 0,
+    low: 0,
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
@@ -436,9 +701,13 @@ export default function DashboardHome() {
     setLoading(true);
     setError(false);
     try {
-      const [data, intData] = await Promise.all([
+      const [data, intData, feedData, reviewData] = await Promise.all([
         api.get(`/dashboard/briefing?userId=${user.id}`),
         api.get(`/integrations?userId=${user.id}`).catch(() => null),
+        api
+          .get(`/dashboard/recent-events?userId=${user.id}&limit=5`)
+          .catch(() => null),
+        api.get(`/review?userId=${user.id}&status=pending`).catch(() => null),
       ]);
       setBriefing(data);
 
@@ -451,6 +720,16 @@ export default function DashboardHome() {
           }
         }
         setLogoMap(map);
+      }
+
+      // Recent feed events
+      if (feedData?.events) {
+        setRecentEvents(feedData.events);
+      }
+
+      // Review counts
+      if (reviewData?.counts) {
+        setReviewCounts(reviewData.counts);
       }
     } catch (err) {
       console.error("Failed to fetch briefing:", err);
@@ -478,15 +757,33 @@ export default function DashboardHome() {
 
   // Error fallback → show calm state
   if (error || !briefing) {
-    return <CalmState firstName={firstName} />;
+    return (
+      <CalmState
+        firstName={firstName}
+        recentEvents={recentEvents}
+        reviewCounts={reviewCounts}
+      />
+    );
   }
 
   // Calm vs Active
   if (briefing.is_calm) {
-    return <CalmState firstName={firstName} />;
+    return (
+      <CalmState
+        firstName={firstName}
+        recentEvents={recentEvents}
+        reviewCounts={reviewCounts}
+      />
+    );
   }
 
   return (
-    <ActiveState firstName={firstName} briefing={briefing} logoMap={logoMap} />
+    <ActiveState
+      firstName={firstName}
+      briefing={briefing}
+      logoMap={logoMap}
+      recentEvents={recentEvents}
+      reviewCounts={reviewCounts}
+    />
   );
 }
