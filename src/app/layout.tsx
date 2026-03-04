@@ -1,4 +1,3 @@
-
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import type { Metadata, Viewport } from "next";
@@ -6,13 +5,21 @@ import "./globals.css";
 import { Providers } from "./providers";
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://yourproxy.me'),
+  metadataBase: new URL("https://yourproxy.me"),
   title: {
     default: "YourProxy | A quieter way to get work done",
     template: "%s | YourProxy",
   },
-  description: "YourProxy is an intelligent AI agent that quietly handles your tasks across all your apps without ever demanding your attention or compromising your security.",
-  keywords: ["AI agent", "automation", "workflow orchestration", "secure AI", "sandboxed execution", "oauth integration"],
+  description:
+    "YourProxy is an intelligent AI agent that quietly handles your tasks across all your apps without ever demanding your attention or compromising your security.",
+  keywords: [
+    "AI agent",
+    "automation",
+    "workflow orchestration",
+    "secure AI",
+    "sandboxed execution",
+    "oauth integration",
+  ],
   authors: [{ name: "YourProxy Team" }],
   creator: "YourProxy",
   publisher: "YourProxy",
@@ -21,7 +28,8 @@ export const metadata: Metadata = {
     locale: "en_US",
     url: "https://yourproxy.me",
     title: "YourProxy | A quieter way to get work done",
-    description: "YourProxy is an intelligent AI agent that quietly handles your tasks across all your apps.",
+    description:
+      "YourProxy is an intelligent AI agent that quietly handles your tasks across all your apps.",
     siteName: "YourProxy",
     images: [
       {
@@ -35,7 +43,8 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "YourProxy | A quieter way to get work done",
-    description: "An intelligent AI agent that silently handles your tasks across 1000+ apps.",
+    description:
+      "An intelligent AI agent that silently handles your tasks across 1000+ apps.",
     images: ["/og-image.jpg"],
   },
   manifest: "/manifest.json",
@@ -54,9 +63,9 @@ export const metadata: Metadata = {
     googleBot: {
       index: true,
       follow: true,
-      'max-video-preview': -1,
-      'max-image-preview': 'large',
-      'max-snippet': -1,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
     },
   },
 };
@@ -64,16 +73,17 @@ export const metadata: Metadata = {
 const jsonLd = {
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
-  "name": "YourProxy",
-  "operatingSystem": "Web",
-  "applicationCategory": "BusinessApplication",
-  "offers": {
+  name: "YourProxy",
+  operatingSystem: "Web",
+  applicationCategory: "BusinessApplication",
+  offers: {
     "@type": "Offer",
-    "price": "0",
-    "priceCurrency": "USD"
+    price: "0",
+    priceCurrency: "USD",
   },
-  "description": "YourProxy is a 24/7 AI assistant with 1000+ tools via OAuth and sandboxed execution. Built to securely orchestrate your workflows.",
-  "url": "https://yourproxy.me"
+  description:
+    "YourProxy is a 24/7 AI assistant with 1000+ tools via OAuth and sandboxed execution. Built to securely orchestrate your workflows.",
+  url: "https://yourproxy.me",
 };
 
 export const viewport: Viewport = {
@@ -105,6 +115,17 @@ export default function RootLayout({
 
         <Analytics />
         <SpeedInsights />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if ('serviceWorker' in navigator) {
+                window.addEventListener('load', function() {
+                  navigator.serviceWorker.register('/sw.js').catch(function() {});
+                });
+              }
+            `,
+          }}
+        />
       </body>
     </html>
   );

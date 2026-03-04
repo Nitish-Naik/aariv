@@ -1,4 +1,4 @@
-const CACHE_NAME = "aariv-v1";
+const CACHE_NAME = "aariv-v2";
 const STATIC_ASSETS = ["/", "/dashboard", "/login", "/manifest.json"];
 
 // Install — pre-cache shell
@@ -9,7 +9,7 @@ self.addEventListener("install", (event) => {
   self.skipWaiting();
 });
 
-// Activate — clean old caches
+// Activate — clean ALL old caches (including workbox leftovers)
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches
@@ -33,6 +33,9 @@ self.addEventListener("fetch", (event) => {
 
   // Skip cross-origin requests (API calls to python-agent, etc.)
   if (url.origin !== self.location.origin) return;
+
+  // Skip auth callback — never cache or intercept the OAuth redirect
+  if (url.pathname.startsWith("/auth/")) return;
 
   // For navigation requests, use network-first
   if (request.mode === "navigate") {

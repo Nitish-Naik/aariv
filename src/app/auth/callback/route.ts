@@ -19,15 +19,19 @@ export async function GET(request: NextRequest) {
           },
           setAll(cookiesToSet) {
             cookiesToSet.forEach(({ name, value, options }) => {
-              cookieStore.set(name, value, options);
+              try {
+                cookieStore.set(name, value, options);
+              } catch {
+                // This can fail in edge cases; middleware handles it
+              }
             });
           },
         },
       },
     );
 
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
-    if (!error) {
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+    if (!error && data.session) {
       const forwardedHost = request.headers.get("x-forwarded-host");
       const isLocalEnv = process.env.NODE_ENV === "development";
 
@@ -39,8 +43,14 @@ export async function GET(request: NextRequest) {
         return NextResponse.redirect(`${origin}${next}`);
       }
     }
+
+    // Exchange failed — pass error details for debugging
+    const errorMsg = error?.message || "unknown_error";
+    return NextResponse.redirect(
+      `${origin}/login?error=${encodeURIComponent(errorMsg)}`,
+    );
   }
 
-  // Auth failed — redirect to login
-  return NextResponse.redirect(`${origin}/login?error=auth_callback_error`);
+  // No code parameter — redirect to login
+  return NextResponse.redirect(`${origin}/login?error=no_code_in_callback`);
 }
