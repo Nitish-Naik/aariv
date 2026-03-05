@@ -3,22 +3,23 @@
 import { useAuth } from "@/context/AuthContext";
 import { api } from "@/lib/api";
 import {
-  Activity,
-  ArrowRight,
-  Calendar,
-  CheckCircle2,
-  CheckSquare,
-  Clock,
-  Cloud,
-  Eye,
-  GitPullRequest,
-  Inbox,
-  Loader2,
-  Mail,
-  MessageSquare,
-  Sparkles,
-  Target,
-  Zap,
+    Activity,
+    ArrowRight,
+    Calendar,
+    CheckCircle2,
+    CheckSquare,
+    Clock,
+    Cloud,
+    Eye,
+    GitPullRequest,
+    Inbox,
+    Loader2,
+    Mail,
+    MessageSquare,
+    Plug,
+    Sparkles,
+    Target,
+    Zap
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -310,6 +311,160 @@ function TimelineEvent({
         <p className="text-sm text-[var(--text-primary)] font-medium mt-0.5 leading-snug">
           {event.title}
         </p>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Onboarding State (first-time users, no apps connected) ─ */
+
+const RECOMMENDED_APPS = [
+  {
+    slug: "gmail",
+    name: "Gmail",
+    description: "Read, draft, and manage your emails automatically.",
+    color: "#EA4335",
+    icon: <Mail size={20} />,
+    free: true,
+  },
+  {
+    slug: "googlecalendar",
+    name: "Google Calendar",
+    description:
+      "Track meetings, schedule events, and stay on top of your day.",
+    color: "#4285F4",
+    icon: <Calendar size={20} />,
+    free: true,
+  },
+  {
+    slug: "slack",
+    name: "Slack",
+    description:
+      "Monitor channels, respond to messages, and manage notifications.",
+    color: "#E01E5A",
+    icon: <MessageSquare size={20} />,
+    free: false,
+  },
+];
+
+function OnboardingState({ firstName }: { firstName: string }) {
+  const router = useRouter();
+
+  return (
+    <div className="max-w-2xl mx-auto px-4 sm:px-6 py-10">
+      {/* Welcome Hero */}
+      <div className="flex flex-col items-center text-center mb-10">
+        <div className="w-14 h-14 rounded-2xl bg-[var(--accent)]/10 flex items-center justify-center mb-5">
+          <Sparkles size={28} className="text-[var(--accent)]" />
+        </div>
+        <h1 className="text-2xl sm:text-3xl font-serif text-[var(--text-primary)] mb-3">
+          Welcome, {firstName}!
+        </h1>
+        <p className="text-sm text-[var(--text-secondary)] max-w-md leading-relaxed">
+          Connect your first app so Aariv can start managing your day — reading
+          emails, checking your calendar, and surfacing what needs your
+          attention.
+        </p>
+      </div>
+
+      {/* Recommended Apps */}
+      <div className="mb-8">
+        <h2 className="text-xs font-medium uppercase tracking-widest text-[var(--text-muted)] mb-4">
+          Get started with
+        </h2>
+        <div className="space-y-3">
+          {RECOMMENDED_APPS.map((app) => (
+            <button
+              key={app.slug}
+              onClick={() =>
+                router.push(`/dashboard/integrations?connect=${app.slug}`)
+              }
+              className="w-full flex items-center gap-4 bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl px-4 py-4 hover:border-[var(--accent)] transition-colors text-left group"
+            >
+              <div
+                className="w-10 h-10 rounded-xl flex items-center justify-center text-white shrink-0"
+                style={{ backgroundColor: app.color }}
+              >
+                {app.icon}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-semibold text-[var(--text-primary)]">
+                    {app.name}
+                  </span>
+                  {app.free && (
+                    <span className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500">
+                      Free
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-[var(--text-secondary)] mt-0.5 leading-relaxed">
+                  {app.description}
+                </p>
+              </div>
+              <ArrowRight
+                size={16}
+                className="text-[var(--text-muted)] group-hover:text-[var(--accent)] transition-colors shrink-0"
+              />
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Browse All + Skip */}
+      <div className="flex flex-col sm:flex-row items-center gap-3">
+        <button
+          onClick={() => router.push("/dashboard/integrations")}
+          className="w-full sm:flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[var(--accent)] text-white text-sm font-medium hover:opacity-90 transition-opacity"
+        >
+          <Plug size={15} />
+          Browse all apps
+        </button>
+        <button
+          onClick={() => router.push("/dashboard/assistant")}
+          className="w-full sm:flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[var(--bg-surface)] border border-[var(--border)] text-sm font-medium text-[var(--text-primary)] hover:border-[var(--accent)] transition-colors"
+        >
+          <Sparkles size={15} className="text-[var(--accent)]" />
+          Skip — chat with Aariv
+        </button>
+      </div>
+
+      {/* How it works */}
+      <div className="mt-10 bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl p-5">
+        <h3 className="text-xs font-medium uppercase tracking-widest text-[var(--text-muted)] mb-4">
+          How it works
+        </h3>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {[
+            {
+              step: "1",
+              title: "Connect apps",
+              desc: "Link Gmail, Calendar, Slack, or any other tool you use.",
+            },
+            {
+              step: "2",
+              title: "Aariv watches",
+              desc: "It monitors your apps and organizes what matters.",
+            },
+            {
+              step: "3",
+              title: "You decide",
+              desc: "Review proposals and let Aariv act — or handle it yourself.",
+            },
+          ].map((item) => (
+            <div key={item.step} className="text-center sm:text-left">
+              <div className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-[var(--accent)]/10 text-[var(--accent)] text-xs font-bold mb-2">
+                {item.step}
+              </div>
+              <h4 className="text-sm font-semibold text-[var(--text-primary)] mb-1">
+                {item.title}
+              </h4>
+              <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
+                {item.desc}
+              </p>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -695,32 +850,50 @@ export default function DashboardHome() {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [hasConnections, setHasConnections] = useState<boolean | null>(null);
 
   const fetchBriefing = useCallback(async () => {
     if (!user?.id) return;
     setLoading(true);
     setError(false);
     try {
-      const [data, intData, feedData, reviewData] = await Promise.all([
-        api.get(`/dashboard/briefing?userId=${user.id}`),
-        api.get(`/integrations?userId=${user.id}`).catch(() => null),
-        api
-          .get(`/dashboard/recent-events?userId=${user.id}&limit=5`)
-          .catch(() => null),
-        api.get(`/review?userId=${user.id}&status=pending`).catch(() => null),
-      ]);
-      setBriefing(data);
+      // 1. Fetch integrations first to check if user has any connected apps
+      const intData = await api
+        .get(`/integrations?userId=${user.id}`)
+        .catch(() => null);
 
-      // Build app → logo map from integrations
+      // Build logo map
+      const connectedApps: string[] = [];
       if (intData?.integrations) {
         const map: Record<string, string> = {};
         for (const int of intData.integrations) {
           if (int.logo && int.appName) {
             map[int.appName.toLowerCase()] = int.logo;
           }
+          if (int.status === "connected" && int.canDisconnect !== false) {
+            connectedApps.push(int.appName);
+          }
         }
         setLogoMap(map);
       }
+
+      // 2. If no real connected apps → onboarding state, skip expensive briefing call
+      if (connectedApps.length === 0) {
+        setHasConnections(false);
+        setLoading(false);
+        return;
+      }
+      setHasConnections(true);
+
+      // 3. Fetch briefing + feed + review in parallel
+      const [data, feedData, reviewData] = await Promise.all([
+        api.get(`/dashboard/briefing?userId=${user.id}`),
+        api
+          .get(`/dashboard/recent-events?userId=${user.id}&limit=5`)
+          .catch(() => null),
+        api.get(`/review?userId=${user.id}&status=pending`).catch(() => null),
+      ]);
+      setBriefing(data);
 
       // Recent feed events
       if (feedData?.events) {
@@ -753,6 +926,11 @@ export default function DashboardHome() {
         <p className="text-sm text-[var(--text-muted)]">Preparing your day…</p>
       </div>
     );
+  }
+
+  // Onboarding — no connected apps
+  if (hasConnections === false) {
+    return <OnboardingState firstName={firstName} />;
   }
 
   // Error fallback → show calm state

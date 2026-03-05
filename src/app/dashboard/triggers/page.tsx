@@ -22,7 +22,7 @@ import {
   X,
   Zap,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 /* ─── Types ──────────────────────────────────────────────────────── */
 
@@ -54,17 +54,14 @@ interface AvailableTrigger {
 
 interface UserTrigger {
   id: string;
-  user_id: string;
-  connected_account_id: string;
-  toolkit: string;
   trigger_slug: string;
   trigger_name?: string;
-  trigger_config: Record<string, unknown>;
+  toolkit?: string;
   is_enabled: boolean;
   is_auto?: boolean;
   event_count: number;
-  last_event_at?: string;
   error_count: number;
+  last_event_at?: string;
   created_at: string;
 }
 
@@ -73,7 +70,7 @@ interface Integration {
   appName: string;
   displayName?: string;
   logo?: string;
-  status: string;
+  status?: string;
 }
 
 interface TriggerStats {
@@ -88,51 +85,41 @@ interface TriggerEvent {
   id: string;
   trigger_id: string;
   event_type: string;
-  trigger_slug: string;
+  trigger_slug?: string;
   status: string;
-  error: string | null;
-  processing_time_ms: number | null;
+  error?: string;
+  processing_time_ms?: number;
   created_at: string;
 }
 
-/* ─── Constants ──────────────────────────────────────────────────── */
+/* ─── App-grouped structure ──────────────────────────────────────── */
 
-const PLATFORM_LOGOS: Record<string, string> = {
-  gmail:
-    "data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect fill='%23f2f2f2' x='2' y='4' width='20' height='16' rx='2'/%3E%3Cpath fill='%23ea4335' d='M2 6l10 7 10-7'/%3E%3Cpath fill='%23ea4335' d='M2 4l10 8 10-8' stroke='%23ea4335' stroke-width='1.5' fill='none'/%3E%3C/svg%3E",
-  googlecalendar:
-    "data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect fill='%234285f4' x='2' y='2' width='20' height='20' rx='3'/%3E%3Crect fill='%23fff' x='5' y='7' width='14' height='13' rx='1'/%3E%3Crect fill='%23ea4335' x='5' y='7' width='14' height='3'/%3E%3Crect fill='%234285f4' x='8' y='12' width='3' height='2' rx='.5'/%3E%3Crect fill='%234285f4' x='13' y='12' width='3' height='2' rx='.5'/%3E%3Crect fill='%234285f4' x='8' y='16' width='3' height='2' rx='.5'/%3E%3Crect fill='%234285f4' x='13' y='16' width='3' height='2' rx='.5'/%3E%3C/svg%3E",
-  slack:
-    "data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle fill='%23e01e5a' cx='6' cy='15' r='2'/%3E%3Crect fill='%23e01e5a' x='8' y='13' width='4' height='4' rx='2'/%3E%3Ccircle fill='%2336c5f0' cx='9' cy='6' r='2'/%3E%3Crect fill='%2336c5f0' x='7' y='8' width='4' height='4' rx='2'/%3E%3Ccircle fill='%232eb67d' cx='18' cy='9' r='2'/%3E%3Crect fill='%232eb67d' x='12' y='7' width='4' height='4' rx='2'/%3E%3Ccircle fill='%23ecb22e' cx='15' cy='18' r='2'/%3E%3Crect fill='%23ecb22e' x='13' y='12' width='4' height='4' rx='2'/%3E%3C/svg%3E",
-  github:
-    "data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23fff' d='M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.009-.866-.013-1.7-2.782.604-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.464-1.11-1.464-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0112 6.836a9.59 9.59 0 012.504.337c1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.163 22 16.418 22 12c0-5.523-4.477-10-10-10z'/%3E%3C/svg%3E",
-  notion:
-    "data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23fff' fill-rule='evenodd' d='M4 3.5C4 2.672 4.56 2 5.25 2h9.792L20.25 7v13.5c0 .828-.56 1.5-1.25 1.5H5.25C4.56 22 4 21.328 4 20.5zM6 5.5v15h12v-11h-4.5a.5.5 0 01-.5-.5V5.5zm9 .707V9h2.793zM7.5 12a.5.5 0 01.5-.5h8a.5.5 0 010 1H8a.5.5 0 01-.5-.5zm0 3a.5.5 0 01.5-.5h8a.5.5 0 010 1H8a.5.5 0 01-.5-.5zm0 3a.5.5 0 01.5-.5h5a.5.5 0 010 1H8a.5.5 0 01-.5-.5z'/%3E%3C/svg%3E",
-  twitter:
-    "data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23fff' d='M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z'/%3E%3C/svg%3E",
-};
+interface AppGroup {
+  appKey: string;
+  displayName: string;
+  logo?: string;
+  connectionId: string;
+  triggers: UserTrigger[];
+  totalEvents: number;
+  totalErrors: number;
+}
 
-const TOOLKIT_COLORS: Record<string, string> = {
-  github: "#24292e",
-  gmail: "#EA4335",
-  googlecalendar: "#8b95b0",
-  slack: "#ECB22E",
-  notion: "#000000",
-  linear: "#5E6AD2",
-  discord: "#5865F2",
-  twitter: "#1DA1F2",
-};
-
-const TOOLKIT_DISPLAY: Record<string, string> = {
-  github: "GitHub",
-  gmail: "Gmail",
-  googlecalendar: "Google Calendar",
-  slack: "Slack",
-  notion: "Notion",
-  linear: "Linear",
-  discord: "Discord",
-  twitter: "Twitter",
-};
+// --- Helpers ---
+function formatSlug(slug: string): string {
+  return slug.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
+function timeAgo(dateStr: string): string {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  if (days < 30) return `${days}d ago`;
+  return `${Math.floor(days / 30)}mo ago`;
+}
+type FilterMode = "all" | "active" | "paused" | "auto";
 
 /* ─── Trigger Type Badge ─────────────────────────────────────────── */
 
@@ -152,6 +139,57 @@ function TriggerTypeBadge({ type }: { type?: string }) {
   );
 }
 
+/* ─── App Logo Component ─────────────────────────────────────────── */
+
+function AppLogo({
+  logo,
+  appKey,
+  displayName,
+  size = "md",
+}: {
+  logo?: string;
+  appKey: string;
+  displayName: string;
+  size?: "sm" | "md" | "lg";
+}) {
+  const dims =
+    size === "sm" ? "w-5 h-5" : size === "lg" ? "w-10 h-10" : "w-8 h-8";
+  const textSz =
+    size === "sm" ? "text-[8px]" : size === "lg" ? "text-sm" : "text-xs";
+  const rounded = size === "sm" ? "rounded" : "rounded-lg";
+  const color = typeof logo === "string" && logo ? undefined : "#8b95b0";
+
+  if (logo) {
+    return (
+      <img
+        src={logo}
+        alt={displayName}
+        className={`${dims} ${rounded} object-contain bg-[var(--bg-elevated)]`}
+        onError={(e) => {
+          e.currentTarget.style.display = "none";
+          const parent = e.currentTarget.parentElement;
+          if (parent) {
+            const fb = document.createElement("div");
+            fb.className = `${dims} ${rounded} flex items-center justify-center text-white font-bold ${textSz}`;
+            fb.style.backgroundColor = color || "#8b95b0";
+            fb.textContent = displayName.charAt(0).toUpperCase();
+            parent.prepend(fb);
+          }
+        }}
+      />
+    );
+  }
+
+  return (
+    <div
+      className={`${dims} ${rounded} flex items-center justify-center text-white font-bold ${textSz}`}
+      style={{ backgroundColor: color || "#8b95b0" }}
+    >
+      {displayName.charAt(0).toUpperCase()}
+    </div>
+  );
+}
+
 /* ─── Config Form Modal ──────────────────────────────────────────── */
 
 function ConfigFormModal({
@@ -161,31 +199,37 @@ function ConfigFormModal({
   isSubmitting,
 }: {
   trigger: AvailableTrigger;
-  onSubmit: (config: Record<string, string>) => void;
+  onSubmit: (config: Record<string, string>) => void | Promise<void>;
   onClose: () => void;
-  isSubmitting: boolean;
+  isSubmitting?: boolean;
 }) {
-  const props = trigger.config?.properties || {};
-  const required = trigger.config?.required || [];
-  const fields = Object.entries(props);
-  const hasFields = fields.length > 0;
-
+  const schema = trigger.config || { properties: {}, required: [] };
+  const fields = Object.entries(schema.properties || {});
+  const required = schema.required || [];
   const [values, setValues] = useState<Record<string, string>>(() => {
-    const defaults: Record<string, string> = {};
-    for (const [key, prop] of fields) {
-      if (prop.default !== undefined && prop.default !== null) {
-        defaults[key] = String(prop.default);
-      } else if (prop.type === "number" || prop.type === "integer") {
-        // Sensible default for numeric fields like polling interval
-        defaults[key] = "1";
-      }
+    const init: Record<string, string> = {};
+    for (const [k, v] of fields) {
+      if (v.default && typeof v.default === "string")
+        init[k] = v.default as string;
+      else init[k] = "";
     }
-    return defaults;
+    return init;
   });
+  const [error, setError] = useState<string | null>(null);
+
+  const handleChange = (key: string, val: string) => {
+    setValues((s) => ({ ...s, [key]: val }));
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Only send non-empty values
+    setError(null);
+    for (const r of required) {
+      if (!values[r] || !values[r].trim()) {
+        setError(`Please fill ${r}`);
+        return;
+      }
+    }
     const config: Record<string, string> = {};
     for (const [key, val] of Object.entries(values)) {
       if (val.trim()) config[key] = val.trim();
@@ -239,13 +283,14 @@ function ConfigFormModal({
             </div>
           )}
 
-          {hasFields ? (
+          {fields.length > 0 ? (
             <div className="space-y-3">
               <p className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">
                 Configuration
               </p>
               {fields.map(([key, prop]) => {
                 const isRequired = required.includes(key);
+                const val = values[key] || "";
                 return (
                   <div key={key} className="space-y-1">
                     <label className="flex items-center gap-1 text-xs font-semibold text-[var(--text-primary)]">
@@ -259,96 +304,66 @@ function ConfigFormModal({
                     )}
                     {prop.enum ? (
                       <select
-                        value={values[key] || ""}
-                        onChange={(e) =>
-                          setValues((v) => ({ ...v, [key]: e.target.value }))
-                        }
-                        required={isRequired}
-                        className="w-full px-3 py-2 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
+                        value={val}
+                        onChange={(e) => handleChange(key, e.target.value)}
+                        className="w-full rounded-md border px-3 py-2 bg-[var(--bg-elevated)] text-sm"
                       >
-                        <option value="">Select...</option>
-                        {prop.enum.map((opt) => (
-                          <option key={opt} value={opt}>
-                            {opt}
+                        <option value="">Select</option>
+                        {prop.enum!.map((o) => (
+                          <option key={o} value={o}>
+                            {o}
                           </option>
                         ))}
                       </select>
                     ) : (
                       <input
-                        type={
-                          prop.type === "number" || prop.type === "integer"
-                            ? "number"
-                            : "text"
-                        }
-                        min={
-                          prop.type === "number" || prop.type === "integer"
-                            ? 1
-                            : undefined
-                        }
-                        placeholder={
-                          prop.default !== undefined && prop.default !== ""
-                            ? `Default: ${prop.default}`
-                            : `Enter ${(prop.title || key).toLowerCase()}…`
-                        }
-                        value={values[key] || ""}
-                        onChange={(e) =>
-                          setValues((v) => ({ ...v, [key]: e.target.value }))
-                        }
-                        required={isRequired}
-                        className="w-full px-3 py-2 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
+                        value={val}
+                        onChange={(e) => handleChange(key, e.target.value)}
+                        placeholder={(prop as any).placeholder || ""}
+                        className="w-full rounded-md border px-3 py-2 bg-[var(--bg-elevated)] text-sm"
                       />
                     )}
                   </div>
                 );
               })}
             </div>
-          ) : (
-            <p className="text-xs text-[var(--text-muted)] italic">
-              This trigger requires no additional configuration.
-            </p>
-          )}
-        </form>
+          ) : null}
 
-        {/* Footer */}
-        <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-[var(--border)]">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-4 py-2 rounded-lg text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleSubmit}
-            disabled={isSubmitting}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[var(--accent)] text-white text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
-          >
-            {isSubmitting ? (
-              <Loader2 size={14} className="animate-spin" />
-            ) : (
-              <Zap size={14} />
-            )}
-            Create Trigger
-          </button>
-        </div>
+          {error && <div className="text-sm text-red-400">{error}</div>}
+
+          {/* Footer */}
+          <div className="flex items-center justify-end gap-3">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-3 py-2 rounded-lg text-sm bg-[var(--bg-elevated)]"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="px-4 py-2 rounded-lg bg-[var(--accent)] text-white text-sm"
+            >
+              {isSubmitting ? "Creating..." : "Create"}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );
 }
 
-/* ─── Page Component ─────────────────────────────────────────────── */
+/* ─── Page Component (Redesigned) ─────────────────────────────── */
 
 export default function TriggersPage() {
   const { user } = useAuth();
-
-  // Data
+  // State
   const [userTriggers, setUserTriggers] = useState<UserTrigger[]>([]);
   const [integrations, setIntegrations] = useState<Integration[]>([]);
   const [availableTriggers, setAvailableTriggers] = useState<
     AvailableTrigger[]
   >([]);
-
-  // Stats & events
   const [stats, setStats] = useState<TriggerStats | null>(null);
   const [expandedTriggerId, setExpandedTriggerId] = useState<string | null>(
     null,
@@ -363,18 +378,6 @@ export default function TriggersPage() {
   const [loading, setLoading] = useState(true);
   const [showCreatePanel, setShowCreatePanel] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-
-  const filteredTriggers = useMemo(() => {
-    if (!searchQuery) return userTriggers;
-    const q = searchQuery.toLowerCase();
-    return userTriggers.filter((t) => {
-      const name = (t.trigger_name || formatSlug(t.trigger_slug)).toLowerCase();
-      const app = (
-        TOOLKIT_DISPLAY[t.toolkit?.toLowerCase() || ""] || t.toolkit
-      ).toLowerCase();
-      return name.includes(q) || app.includes(q);
-    });
-  }, [userTriggers, searchQuery]);
   const [selectedToolkit, setSelectedToolkit] = useState<string | null>(null);
   const [loadingTriggers, setLoadingTriggers] = useState(false);
   const [configuringTrigger, setConfiguringTrigger] =
@@ -387,8 +390,7 @@ export default function TriggersPage() {
     type: "success" | "error";
   } | null>(null);
 
-  /* ─── Load Data ──────────────────────────────────────────────── */
-
+  // Load initial data
   useEffect(() => {
     if (!user?.id) return;
     loadData();
@@ -397,22 +399,20 @@ export default function TriggersPage() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [triggersRes, triggerAppsRes, statsRes] = await Promise.all([
+      const [trigsRes, appsRes, statsRes] = await Promise.all([
         api.get(`/triggers?userId=${user!.id}`),
         api.get(`/triggers/trigger-apps?userId=${user!.id}`),
         api.get(`/triggers/stats?userId=${user!.id}`).catch(() => null),
       ]);
-      setUserTriggers(triggersRes.triggers || []);
-      setIntegrations(triggerAppsRes.apps || []);
+      setUserTriggers(trigsRes.triggers || []);
+      setIntegrations(appsRes.apps || []);
       if (statsRes) setStats(statsRes);
-    } catch (e: any) {
-      console.error("Failed to load triggers:", e.message);
+    } catch (e) {
+      console.error("Failed to load triggers", e);
     } finally {
       setLoading(false);
     }
   };
-
-  /* ─── Load Available Triggers for a Toolkit ────────────────── */
 
   const loadAvailableTriggers = async (appName: string) => {
     if (selectedToolkit === appName) {
@@ -420,74 +420,65 @@ export default function TriggersPage() {
       setAvailableTriggers([]);
       return;
     }
-
     try {
       setSelectedToolkit(appName);
       setLoadingTriggers(true);
-      const data = await api.get(`/triggers/available?appName=${appName}`);
+      const data = await api.get(
+        `/triggers/available?appName=${encodeURIComponent(appName)}&userId=${user!.id}`,
+      );
       setAvailableTriggers(data.triggers || []);
-    } catch (e: any) {
-      console.error("Failed to load triggers:", e.message);
+    } catch (e) {
+      console.error(e);
       showToast("Failed to load triggers for this app", "error");
     } finally {
       setLoadingTriggers(false);
     }
   };
 
-  /* ─── Create Trigger (with config) ─────────────────────────── */
-
   const openConfigModal = (trigger: AvailableTrigger) => {
     const hasConfig =
       trigger.config?.properties &&
       Object.keys(trigger.config.properties).length > 0;
-
-    if (hasConfig) {
-      setConfiguringTrigger(trigger);
-    } else {
-      // No config needed — create immediately
-      handleCreate(trigger, {});
-    }
+    if (hasConfig) setConfiguringTrigger(trigger);
+    else handleCreate(trigger, {});
   };
 
-  const handleCreate = useCallback(
-    async (trigger: AvailableTrigger, config: Record<string, string>) => {
-      if (!user?.id || !selectedToolkit) return;
-
-      const connection = integrations.find(
-        (i) => i.appName.toLowerCase() === selectedToolkit.toLowerCase(),
+  const handleCreate = async (
+    trigger: AvailableTrigger,
+    config: Record<string, string>,
+  ) => {
+    if (!user?.id) return;
+    const connection = integrations.find(
+      (i) =>
+        i.appName.toLowerCase() ===
+        (trigger.toolkit || trigger.toolkitName || "").toLowerCase(),
+    );
+    if (!connection)
+      return showToast(
+        "Please connect this app first in Integrations",
+        "error",
       );
-
-      if (!connection) {
-        showToast("Please connect this app first in Integrations", "error");
-        return;
-      }
-
-      try {
-        setCreating(trigger.slug);
-        await api.post("/triggers/create", {
-          userId: user.id,
-          connectedAccountId: connection.id,
-          triggerName: trigger.slug,
-          toolkit: selectedToolkit,
-          config,
-        });
-
-        showToast(`${trigger.displayName} trigger created`, "success");
-        setShowCreatePanel(false);
-        setSelectedToolkit(null);
-        setAvailableTriggers([]);
-        setConfiguringTrigger(null);
-        loadData();
-      } catch (e: any) {
-        showToast(e.message || "Failed to create trigger", "error");
-      } finally {
-        setCreating(null);
-      }
-    },
-    [user?.id, selectedToolkit, integrations],
-  );
-
-  /* ─── Toggle Trigger ───────────────────────────────────────── */
+    try {
+      setCreating(trigger.slug);
+      await api.post("/triggers/create", {
+        userId: user.id,
+        connectedAccountId: connection.id,
+        triggerName: trigger.slug,
+        toolkit: connection.appName,
+        config,
+      });
+      showToast(`${trigger.displayName} trigger created`, "success");
+      setConfiguringTrigger(null);
+      setSelectedToolkit(null);
+      setAvailableTriggers([]);
+      setShowCreatePanel(false);
+      loadData();
+    } catch (e: any) {
+      showToast(e?.message || "Failed to create trigger", "error");
+    } finally {
+      setCreating(null);
+    }
+  };
 
   const handleToggle = async (trigger: UserTrigger) => {
     try {
@@ -496,25 +487,21 @@ export default function TriggersPage() {
         ? "/triggers/disable"
         : "/triggers/enable";
       await api.post(endpoint, { triggerId: trigger.id });
-
       setUserTriggers((prev) =>
         prev.map((t) =>
           t.id === trigger.id ? { ...t, is_enabled: !t.is_enabled } : t,
         ),
       );
-
       showToast(
         `Trigger ${trigger.is_enabled ? "paused" : "resumed"}`,
         "success",
       );
     } catch (e: any) {
-      showToast(e.message || "Failed to update trigger", "error");
+      showToast(e?.message || "Failed to update trigger", "error");
     } finally {
       setTogglingId(null);
     }
   };
-
-  /* ─── Delete Trigger ───────────────────────────────────────── */
 
   const handleDelete = async (triggerId: string) => {
     try {
@@ -523,20 +510,16 @@ export default function TriggersPage() {
       setUserTriggers((prev) => prev.filter((t) => t.id !== triggerId));
       showToast("Trigger removed", "success");
     } catch (e: any) {
-      showToast(e.message || "Failed to delete trigger", "error");
+      showToast(e?.message || "Failed to delete trigger", "error");
     } finally {
       setDeletingId(null);
     }
   };
 
-  /* ─── Toast Helper ─────────────────────────────────────────── */
-
   const showToast = (message: string, type: "success" | "error") => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 4000);
   };
-
-  /* ─── Load Events for a Trigger ─────────────────────────── */
 
   const loadTriggerEvents = async (triggerId: string) => {
     if (expandedTriggerId === triggerId) {
@@ -551,14 +534,12 @@ export default function TriggersPage() {
         `/triggers/events?userId=${user!.id}&triggerId=${triggerId}&limit=10`,
       );
       setTriggerEvents(data.events || []);
-    } catch {
+    } catch (e) {
       setTriggerEvents([]);
     } finally {
       setLoadingEvents(false);
     }
   };
-
-  /* ─── Load Global Activity ─────────────────────────────── */
 
   const loadActivity = async () => {
     if (!user?.id) return;
@@ -566,7 +547,7 @@ export default function TriggersPage() {
       setLoadingActivity(true);
       const data = await api.get(`/triggers/events?userId=${user.id}&limit=30`);
       setActivityEvents(data.events || []);
-    } catch {
+    } catch (e) {
       setActivityEvents([]);
     } finally {
       setLoadingActivity(false);
@@ -577,23 +558,15 @@ export default function TriggersPage() {
     if (viewTab === "activity") loadActivity();
   }, [viewTab]);
 
-  /* ─── Format Helpers ───────────────────────────────────────── */
-
-  const formatDate = (dateStr: string) => {
-    const d = new Date(dateStr);
-    return d.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
+  const filteredTriggers = useMemo(() => {
+    if (!searchQuery) return userTriggers;
+    const q = searchQuery.toLowerCase();
+    return userTriggers.filter((t) => {
+      const name = (t.trigger_name || formatSlug(t.trigger_slug)).toLowerCase();
+      const app = (t.toolkit || "").toLowerCase();
+      return name.includes(q) || app.includes(q);
     });
-  };
-
-  const formatSlug = (slug: string) =>
-    slug.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
-
-  /* ─── Render ───────────────────────────────────────────────── */
-
+  }, [userTriggers, searchQuery]);
   return (
     <div className="max-w-2xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
       {/* Toast */}
@@ -723,12 +696,9 @@ export default function TriggersPage() {
               {/* Connected apps list */}
               <div className="space-y-2">
                 {integrations.map((integration) => {
-                  const appKey = integration.appName.toLowerCase();
-                  const color = TOOLKIT_COLORS[appKey] || "#8b95b0";
+                  const color = "#8b95b0";
                   const displayName =
-                    integration.displayName ||
-                    TOOLKIT_DISPLAY[appKey] ||
-                    integration.appName;
+                    integration.displayName || integration.appName;
                   const isExpanded = selectedToolkit === integration.appName;
 
                   return (
@@ -740,37 +710,33 @@ export default function TriggersPage() {
                         }
                         className="w-full flex items-center gap-3 bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl px-4 py-3 hover:border-[var(--accent)]/30 transition-colors"
                       >
-                        {(() => {
-                          const logoSrc =
-                            integration.logo || PLATFORM_LOGOS[appKey];
-                          return logoSrc ? (
-                            <img
-                              src={logoSrc}
-                              alt={displayName}
-                              className="w-8 h-8 rounded-lg object-contain"
-                              onError={(e) => {
-                                // Hide broken image, show letter fallback
-                                const parent = e.currentTarget.parentElement;
-                                e.currentTarget.style.display = "none";
-                                if (parent) {
-                                  const fb = document.createElement("div");
-                                  fb.className =
-                                    "w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-xs";
-                                  fb.style.backgroundColor = color;
-                                  fb.textContent = displayName.charAt(0);
-                                  parent.prepend(fb);
-                                }
-                              }}
-                            />
-                          ) : (
-                            <div
-                              className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-xs"
-                              style={{ backgroundColor: color }}
-                            >
-                              {displayName.charAt(0)}
-                            </div>
-                          );
-                        })()}
+                        {integration.logo ? (
+                          <img
+                            src={integration.logo}
+                            alt={displayName}
+                            className="w-8 h-8 rounded-lg object-contain"
+                            onError={(e) => {
+                              // Hide broken image, show letter fallback
+                              const parent = e.currentTarget.parentElement;
+                              e.currentTarget.style.display = "none";
+                              if (parent) {
+                                const fb = document.createElement("div");
+                                fb.className =
+                                  "w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-xs";
+                                fb.style.backgroundColor = color;
+                                fb.textContent = displayName.charAt(0);
+                                parent.prepend(fb);
+                              }
+                            }}
+                          />
+                        ) : (
+                          <div
+                            className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-xs"
+                            style={{ backgroundColor: color }}
+                          >
+                            {displayName.charAt(0)}
+                          </div>
+                        )}
                         <span className="flex-1 text-left text-sm font-medium text-[var(--text-primary)]">
                           {displayName}
                         </span>
@@ -883,8 +849,8 @@ export default function TriggersPage() {
                     <div className="flex items-center gap-2 mb-3">
                       <div className="flex -space-x-2">
                         {tmpl.apps.map((app, j) => {
-                          const logo = PLATFORM_LOGOS[app];
-                          const color = TOOLKIT_COLORS[app] || "#8b95b0";
+                          const logo = undefined;
+                          const color = "#8b95b0";
                           return logo ? (
                             <img
                               key={j}
@@ -1024,9 +990,8 @@ export default function TriggersPage() {
               ) : (
                 filteredTriggers.map((trigger) => {
                   const toolkitKey = trigger.toolkit?.toLowerCase() || "";
-                  const color = TOOLKIT_COLORS[toolkitKey] || "#8b95b0";
-                  const toolkitName =
-                    TOOLKIT_DISPLAY[toolkitKey] || trigger.toolkit;
+                  const color = "#8b95b0";
+                  const toolkitName = trigger.toolkit;
                   const isToggling = togglingId === trigger.id;
                   const isDeleting = deletingId === trigger.id;
 
@@ -1063,7 +1028,7 @@ export default function TriggersPage() {
                                   integrations.find(
                                     (i) =>
                                       i.appName.toLowerCase() === toolkitKey,
-                                  )?.logo || PLATFORM_LOGOS[toolkitKey];
+                                  )?.logo || undefined;
                                 return logo ? (
                                   <img
                                     src={logo}
@@ -1075,7 +1040,7 @@ export default function TriggersPage() {
                                     className="w-4 h-4 rounded flex items-center justify-center text-white font-bold text-[8px]"
                                     style={{ backgroundColor: color }}
                                   >
-                                    {toolkitName.charAt(0)}
+                                    {(toolkitName || "").charAt(0)}
                                   </div>
                                 );
                               })()}
