@@ -1,4 +1,4 @@
-const CACHE_NAME = "aariv-v2";
+const CACHE_NAME = "calmpilot-v1";
 const STATIC_ASSETS = ["/", "/dashboard", "/login", "/manifest.json"];
 
 // Install — pre-cache shell

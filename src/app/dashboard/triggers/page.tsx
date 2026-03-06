@@ -1055,7 +1055,7 @@ export default function TriggersPage() {
                             <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-[var(--accent)]/10 border border-[var(--accent)]/20">
                               <Zap size={14} className="text-[var(--accent)]" />
                               <span className="text-xs font-medium text-[var(--accent)]">
-                                Aariv
+                                CalmPilot
                               </span>
                             </div>
                           </div>

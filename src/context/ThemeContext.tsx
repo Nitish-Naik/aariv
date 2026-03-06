@@ -24,8 +24,14 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setTheme] = useState<ThemeType>("dark");
 
   useEffect(() => {
-    // Load from localStorage
-    const stored = localStorage.getItem("aariv-theme") as ThemeType | null;
+    // Migrate old key if it exists
+    const legacy = localStorage.getItem("aariv-theme") as ThemeType | null;
+    if (legacy) {
+      localStorage.setItem("calmpilot-theme", legacy);
+      localStorage.removeItem("aariv-theme");
+    }
+
+    const stored = localStorage.getItem("calmpilot-theme") as ThemeType | null;
     if (stored) {
       setTheme(stored);
     } else if (window.matchMedia("(prefers-color-scheme: light)").matches) {
@@ -34,9 +40,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    // Apply dark class to html element
     document.documentElement.classList.toggle("dark", theme === "dark");
-    localStorage.setItem("aariv-theme", theme);
+    localStorage.setItem("calmpilot-theme", theme);
   }, [theme]);
 
   const toggleTheme = () => {

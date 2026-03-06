@@ -28,9 +28,9 @@ export default function LoginPage() {
         {/* Logo */}
         <div className="space-y-2">
           <h1 className="text-4xl font-serif font-semibold tracking-wide text-[var(--text-primary)]">
-            aariv
+            CalmPilot
           </h1>
-          <p className="text-sm text-[var(--text-muted)]">quiet intelligence</p>
+          <p className="text-sm text-[var(--text-muted)]">a quieter way to get work done</p>
         </div>
 
         {/* Hero */}

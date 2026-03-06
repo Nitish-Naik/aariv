@@ -8,7 +8,7 @@ export default function Navbar() {
                 <div className="flex items-center gap-3">
                     <Link href="/" className="text-xl font-semibold text-white tracking-tight flex items-center gap-2.5 group hover:text-zinc-200 transition-colors">
                         <Logo className="w-7 h-7 transition-transform group-hover:scale-110" />
-                        YourProxy
+                        CalmPilot
                     </Link>
                 </div>
                 <div className="flex items-center gap-6">

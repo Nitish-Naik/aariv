@@ -418,7 +418,7 @@ function OnboardingState({ firstName }: { firstName: string }) {
           Welcome, {firstName}!
         </h1>
         <p className="text-sm text-[var(--text-secondary)] max-w-md leading-relaxed">
-          Connect your first app so Aariv can start managing your day — reading
+          Connect your first app so CalmPilot can start managing your day — reading
           emails, checking your calendar, and surfacing what needs your
           attention.
         </p>
@@ -482,7 +482,7 @@ function OnboardingState({ firstName }: { firstName: string }) {
           className="w-full sm:flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[var(--bg-surface)] border border-[var(--border)] text-sm font-medium text-[var(--text-primary)] hover:border-[var(--accent)] transition-colors"
         >
           <Sparkles size={15} className="text-[var(--accent)]" />
-          Skip — chat with Aariv
+          Skip — chat with CalmPilot
         </button>
       </div>
 
@@ -500,13 +500,13 @@ function OnboardingState({ firstName }: { firstName: string }) {
             },
             {
               step: "2",
-              title: "Aariv watches",
+              title: "CalmPilot watches",
               desc: "It monitors your apps and organizes what matters.",
             },
             {
               step: "3",
               title: "You decide",
-              desc: "Review proposals and let Aariv act — or handle it yourself.",
+              desc: "Review proposals and let CalmPilot act — or handle it yourself.",
             },
           ].map((item) => (
             <div key={item.step} className="text-center sm:text-left">
@@ -565,7 +565,7 @@ function CalmState({
             className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[var(--bg-surface)] border border-[var(--border)] text-sm font-medium text-[var(--text-primary)] hover:border-[var(--accent)] transition-colors"
           >
             <Sparkles size={15} className="text-[var(--accent)]" />
-            Ask Aariv something
+            Ask CalmPilot something
           </button>
           <button
             onClick={() => router.push("/dashboard/triggers")}

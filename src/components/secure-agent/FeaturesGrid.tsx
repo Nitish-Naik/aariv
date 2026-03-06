@@ -61,8 +61,8 @@ function SpotlightCard({
 export default function FeaturesGrid() {
     const features = [
         {
-            title: "Hundreds of integrations",
-            description: "Quietly connects with Gmail, GitHub, Notion, Figma, Jira, Linear and many more. All routed through a single, seamless, secure connection.",
+            title: "Every app you already use.",
+            description: "Gmail, Slack, GitHub, Notion, Linear, Figma, Jira and 1000+ more — all connected through a single secure OAuth flow. No setup sprawl.",
             className: "md:col-span-2",
             icon: (
                 <svg className="w-6 h-6 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -71,8 +71,8 @@ export default function FeaturesGrid() {
             )
         },
         {
-            title: "OAuth-only design",
-            description: "Never type a password. We use seamless OAuth so you can instantly grant and revoke access anytime, anywhere.",
+            title: "No passwords. Ever.",
+            description: "Pure OAuth — grant access in one click, revoke it just as fast. Your credentials never touch our servers.",
             className: "md:col-span-1",
             icon: (
                 <svg className="w-6 h-6 text-stone-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -81,18 +81,18 @@ export default function FeaturesGrid() {
             )
         },
         {
-            title: "Sandboxed execution",
-            description: "Code runs thoughtfully in isolated cloud environments. Your local machine is unbothered.",
+            title: "Your 3am teammate.",
+            description: "Tasks run on a schedule. Wake up to a triaged inbox, summarized Slack threads, and reviewed PRs — handled while you slept.",
             className: "md:col-span-1",
             icon: (
-                <svg className="w-6 h-6 text-stone-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                <svg className="w-6 h-6 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
             )
         },
         {
-            title: "Human-in-the-loop",
-            description: "You are always the final checkpoint. YourProxy intelligently pauses and asks for your direct approval before executing any destructive actions like dropping tables or sending mass emails.",
+            title: "Always your call.",
+            description: "CalmPilot pauses before anything irreversible — mass emails, dropped tables, bulk deletes. You approve, it acts. You're always the final checkpoint.",
             className: "md:col-span-2",
             icon: (
                 <svg className="w-6 h-6 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -101,18 +101,18 @@ export default function FeaturesGrid() {
             )
         },
         {
-            title: "Works while you rest",
-            description: "Set tasks to run periodically. Wake up to prepared summaries, triaged inboxes, and handled pull requests. It never sleeps so you can.",
+            title: "Runs in the cloud.",
+            description: "Execution happens in isolated, sandboxed environments. Your machine stays unbothered. No installs, no local processes, no resource drain.",
             className: "md:col-span-2",
             icon: (
-                <svg className="w-6 h-6 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                <svg className="w-6 h-6 text-stone-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                 </svg>
             )
         },
         {
-            title: "Zero friction setup",
-            description: "No dealing with API keys, config files, or cloning repos. It's fully ready when you are.",
+            title: "Ready in 60 seconds.",
+            description: "No API keys. No config files. No cloning repos. Sign in, connect your apps, describe your workflow — done.",
             className: "md:col-span-1",
             icon: (
                 <svg className="w-6 h-6 text-stone-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -157,7 +157,7 @@ export default function FeaturesGrid() {
                         transition={{ delay: 0.1 }}
                         className="text-zinc-400 text-lg font-light leading-relaxed"
                     >
-                        YourProxy combines bleeding-edge execution with absolute user control.
+                        CalmPilot combines bleeding-edge AI execution with absolute user control.
                     </motion.p>
                 </div>
 

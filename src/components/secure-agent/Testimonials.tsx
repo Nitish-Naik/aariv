@@ -4,12 +4,12 @@ import { motion } from "framer-motion";
 
 const testimonials = [
     {
-        quote: "YourProxy feels less like a software tool and more like an extremely competent chief of staff. It's wildly fast.",
+        quote: "CalmPilot feels less like a software tool and more like an extremely competent chief of staff. It's wildly fast.",
         author: "Elena R.",
         role: "VP of Operations",
     },
     {
-        quote: "I connected 12 of my daily apps in minutes. Now I just ask YourProxy to summarize my day, and it perfectly pulls from everywhere.",
+        quote: "I connected 12 of my daily apps in minutes. Now I just ask CalmPilot to summarize my day, and it perfectly pulls from everywhere.",
         author: "Marcus T.",
         role: "Senior Engineer",
     },
@@ -41,7 +41,7 @@ export default function Testimonials() {
                         transition={{ delay: 0.1 }}
                         className="text-[var(--text-secondary)] text-lg"
                     >
-                        Join the professionals who use YourProxy to reclaim hours of focused work every single week.
+                        Join the professionals who use CalmPilot to reclaim hours of focused work every single week.
                     </motion.p>
                 </div>
 

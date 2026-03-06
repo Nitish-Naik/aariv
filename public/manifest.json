@@ -1,7 +1,7 @@
 {
-  "name": "Aariv — Calm Intelligence",
-  "short_name": "Aariv",
-  "description": "A calm intelligence for your life",
+  "name": "CalmPilot — A quieter way to get work done",
+  "short_name": "CalmPilot",
+  "description": "CalmPilot is an AI-powered digital proxy that connects to 1000+ apps via OAuth and quietly handles your work 24/7. Automate workflows, get daily briefings, and let AI manage tasks while you focus on what matters.",
   "start_url": "/dashboard",
   "display": "standalone",
   "background_color": "#0c0c0e",
@@ -25,7 +25,8 @@
   "screenshots": [],
   "categories": [
     "productivity",
-    "utilities"
+    "utilities",
+    "business"
   ],
   "prefer_related_applications": false
 }

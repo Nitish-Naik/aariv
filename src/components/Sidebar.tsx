@@ -73,10 +73,10 @@ export function Sidebar() {
         {/* Logo */}
         <div className="px-6 py-5 border-b border-[var(--border)]">
           <h1 className="text-lg font-serif font-semibold tracking-wide text-[var(--text-primary)]">
-            aariv
+            CalmPilot
           </h1>
           <p className="text-xs text-[var(--text-muted)] mt-0.5">
-            quiet intelligence
+            a quieter way to get work done
           </p>
         </div>
 
@@ -169,7 +169,7 @@ export function Sidebar() {
       {/* ─── MOBILE TOP BAR (visible on mobile only) ─── */}
       <header className="md:hidden fixed top-0 left-0 right-0 z-40 flex items-center justify-between px-4 py-3 bg-[var(--bg-surface)] border-b border-[var(--border)] safe-top">
         <h1 className="text-base font-serif font-semibold tracking-wide text-[var(--text-primary)]">
-          aariv
+          CalmPilot
         </h1>
         <button
           onClick={() => setMobileMenuOpen(true)}

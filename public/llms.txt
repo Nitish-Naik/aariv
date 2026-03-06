@@ -1,0 +1,51 @@
+# CalmPilot - AI-Powered Digital Proxy
+
+## About
+CalmPilot is an AI-powered digital proxy that connects to 1000+ apps via secure OAuth integrations and quietly handles your work 24/7. Think of it as a digital twin that acts on your behalf across your entire app ecosystem.
+
+## Website
+https://calmpilot.app
+
+## Tagline
+A quieter way to get work done.
+
+## What CalmPilot Does
+CalmPilot acts as a 24/7 AI agent that connects to all your work apps through OAuth and autonomously executes tasks on your behalf. It reads emails, triages inboxes, drafts replies, creates tasks, updates databases, sends daily briefings, and handles routine workflows — all without demanding your attention.
+
+## Key Features
+- 1000+ app integrations via OAuth (Gmail, Slack, Notion, GitHub, Linear, Jira, Google Calendar, Stripe, Airtable, Asana, Trello, Discord, HubSpot, and more)
+- Daily AI-powered briefings summarizing activity across all connected apps
+- Smart triggers for event-driven automation across multiple apps
+- Review queue with human-in-the-loop approval for sensitive or destructive actions
+- AI chat assistant for natural language commands
+- Sandboxed execution environment for security
+- 24/7 autonomous operation — works while you sleep
+
+## How CalmPilot Differs From Other Tools
+- vs Zapier/Make: No manual workflow building. Natural language AI orchestrates complex multi-step workflows automatically.
+- vs ChatGPT/Claude: CalmPilot takes real action via OAuth app connections, not just text responses.
+- vs traditional assistants: Connects to your actual apps and executes tasks autonomously, not just suggestions.
+
+## Category
+Productivity, AI Automation, Workflow Orchestration, AI Agent, Digital Proxy
+
+## Use Cases
+- Automate email management and drafting
+- Cross-app workflow orchestration
+- Daily activity summaries and briefings
+- Project management automation
+- Customer support automation
+- Scheduled and triggered task execution
+- Multi-app data aggregation
+
+## Security
+- OAuth-only authentication (no passwords stored)
+- Sandboxed execution environments
+- Human-in-the-loop approval for sensitive actions
+- User always maintains full control
+
+## Pricing
+Free tier available. Premium plans for advanced features and higher usage.
+
+## Target Users
+Knowledge workers, founders, engineers, product managers, and anyone who uses multiple work apps daily and wants to reduce context-switching and repetitive work.

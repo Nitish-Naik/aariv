@@ -1,14 +1,22 @@
+import FAQ from "@/components/secure-agent/FAQ";
 import FeaturesGrid from "@/components/secure-agent/FeaturesGrid";
 import FinalCTA from "@/components/secure-agent/FinalCTA";
 import Footer from "@/components/secure-agent/Footer";
 import Hero from "@/components/secure-agent/Hero";
+import HowItWorks from "@/components/secure-agent/HowItWorks";
 import Navbar from "@/components/secure-agent/Navbar";
+import Testimonials from "@/components/secure-agent/Testimonials";
 import UseCaseList from "@/components/secure-agent/UseCaseList";
+import WhatIsCalmPilot from "@/components/secure-agent/WhatIsCalmPilot";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "YourProxy | A quieter way to get work done",
-  description: "An intelligent presence that quietly handles your tasks across all your apps without ever demanding your attention or compromising your security.",
+  title: "CalmPilot | AI-Powered Digital Proxy - A Quieter Way to Get Work Done",
+  description:
+    "CalmPilot is an AI-powered digital proxy that connects to 1000+ apps via OAuth and quietly handles your tasks 24/7. Automate workflows, get daily briefings, and let AI manage your work while you focus on what matters.",
+  alternates: {
+    canonical: "https://calmpilot.app",
+  },
 };
 
 export default function Home() {
@@ -18,8 +26,12 @@ export default function Home() {
 
       <main>
         <Hero />
+        <HowItWorks />
         <FeaturesGrid />
         <UseCaseList />
+        <Testimonials />
+        <WhatIsCalmPilot />
+        <FAQ />
         <FinalCTA />
       </main>
 

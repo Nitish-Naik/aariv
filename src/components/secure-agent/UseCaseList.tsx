@@ -64,7 +64,7 @@ export default function UseCaseList() {
                             </div>
                             <div className="flex items-center gap-2 px-3 py-1 rounded-md bg-white/5 border border-white/5 mx-auto -ml-8">
                                 <Logo className="w-4 h-4 opacity-50" />
-                                <span className="text-xs text-zinc-400 font-mono">yourproxy_cli</span>
+                                <span className="text-xs text-zinc-400 font-mono">calmpilot_cli</span>
                             </div>
                         </div>
 
