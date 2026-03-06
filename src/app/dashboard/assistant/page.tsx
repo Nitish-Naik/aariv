@@ -375,7 +375,7 @@ export default function AssistantPage() {
             if (part.startsWith("data: ")) {
               try {
                 const event = JSON.parse(part.substring(6));
-                // Handle all trigger notification types
+                // Handle all trigger notification types from the backend
                 const triggerTypes = new Set([
                   "proactive_summary",
                   "email_summary",
@@ -385,6 +385,16 @@ export default function AssistantPage() {
                   "notion_update",
                   "linear_update",
                   "discord_summary",
+                  "drive_update",
+                  "docs_update",
+                  "payment_alert",
+                  "jira_update",
+                  "trello_update",
+                  "task_update",
+                  "crm_update",
+                  "media_update",
+                  "meeting_summary",
+                  "message_update",
                 ]);
                 if (triggerTypes.has(event.type)) {
                   const labelMap: Record<string, string> = {
@@ -395,6 +405,16 @@ export default function AssistantPage() {
                     notion_update: "📝 Notion",
                     linear_update: "📋 Linear",
                     discord_summary: "🎮 Discord",
+                    drive_update: "📁 Drive",
+                    docs_update: "📄 Docs",
+                    payment_alert: "💳 Payment",
+                    jira_update: "📋 Jira",
+                    trello_update: "📋 Trello",
+                    task_update: "✅ Tasks",
+                    crm_update: "📊 CRM",
+                    media_update: "🎵 Media",
+                    meeting_summary: "🎙️ Meeting",
+                    message_update: "💬 Message",
                     proactive_summary: "🔔 Update",
                   };
                   const label = labelMap[event.type as string] || "🔔 Update";

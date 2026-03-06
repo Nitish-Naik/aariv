@@ -102,6 +102,19 @@ const APP_COLORS: Record<string, string> = {
   notion: "#FFFFFF",
   linear: "#5E6AD2",
   discord: "#5865F2",
+  outlook: "#0078D4",
+  googledrive: "#0F9D58",
+  googledocs: "#4285F4",
+  stripe: "#635BFF",
+  jira: "#0052CC",
+  trello: "#0079BF",
+  todoist: "#E44332",
+  pipedrive: "#1BAA6B",
+  salesforce: "#00A1E0",
+  spotify: "#1DB954",
+  youtube: "#FF0000",
+  fireflies: "#6C2BD9",
+  slackbot: "#4A154B",
 };
 
 // ─── Helpers ────────────────────────────────────────────────────────────
