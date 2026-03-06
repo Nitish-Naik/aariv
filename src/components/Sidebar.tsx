@@ -25,10 +25,10 @@ import { useEffect, useState } from "react";
 const navItems = [
   { href: "/dashboard", label: "Home", icon: Home },
   { href: "/dashboard/assistant", label: "Assistant", icon: MessageSquare },
-  { href: "/dashboard/review", label: "Review", icon: ListChecks },
+  { href: "/dashboard/review", label: "Inbox", icon: ListChecks },
   { href: "/dashboard/feed", label: "Feed", icon: Activity },
   { href: "/dashboard/integrations", label: "Integrations", icon: Link2 },
-  { href: "/dashboard/triggers", label: "Triggers", icon: Zap },
+  { href: "/dashboard/triggers", label: "Automations", icon: Zap },
   { href: "/dashboard/settings", label: "Settings", icon: Settings },
 ];
 
@@ -36,8 +36,8 @@ const navItems = [
 const bottomBarItems = [
   navItems[0], // Home
   navItems[1], // Assistant
-  navItems[2], // Review
-  navItems[4], // Integrations
+  navItems[2], // Inbox
+  navItems[3], // Feed
   navItems[6], // Settings
 ];
 
@@ -107,7 +107,7 @@ export function Sidebar() {
 
         {/* Bottom section */}
         <div className="px-3 py-4 border-t border-[var(--border)] space-y-2">
-          {/* <button
+          <button
             onClick={toggleTheme}
             className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--accent-soft)] w-full transition-colors"
           >
@@ -117,7 +117,7 @@ export function Sidebar() {
               <Moon size={18} strokeWidth={1.5} />
             )}
             {isDark ? "Light Mode" : "Dark Mode"}
-          </button> */}
+          </button>
 
           {user && (
             <div className="flex items-center gap-3 px-3 py-2 rounded-lg">
@@ -143,26 +143,26 @@ export function Sidebar() {
             </div>
           )}
 
-          {/* {user && balanceData && (
+          {user && balanceData && (
             <Link
               href="/dashboard/usage"
-              className="flex items-center justify-between px-3 py-2 rounded-lg text-sm bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/20 transition-colors mx-3 mb-2"
+              className="flex items-center justify-between px-3 py-2 rounded-lg text-sm bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] border border-[var(--border)] transition-colors"
             >
               <div className="flex items-center gap-2">
-                <div className="w-1.5 h-1.5 rounded-full bg-purple-500"></div>
-                <span className="font-medium text-purple-400">Credits</span>
+                <div className="w-1.5 h-1.5 rounded-full bg-[var(--accent)]"></div>
+                <span className="font-medium text-[var(--accent)]">Credits</span>
               </div>
-              <span className="font-bold text-purple-400">${balanceData.balance.toFixed(2)}</span>
+              <span className="font-bold text-[var(--accent)]">${balanceData.balance.toFixed(2)}</span>
             </Link>
-          )} */}
+          )}
 
-          {/* <button
+          <button
             onClick={() => setShowSignOutDialog(true)}
-            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-error hover:bg-red-500/10 w-full transition-colors"
+            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-red-500 hover:bg-red-500/10 w-full transition-colors"
           >
             <LogOut size={18} strokeWidth={1.5} />
             Sign Out
-          </button> */}
+          </button>
         </div>
       </aside>
 

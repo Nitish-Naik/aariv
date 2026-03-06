@@ -253,11 +253,7 @@ export default function IntegrationsPage() {
   };
 
   const handleConnect = async (appName: string, isConnected: boolean) => {
-    if (isConnected) {
-      // Manage action
-      console.log(`Manage ${appName}`);
-      return;
-    }
+    if (isConnected) return;
 
     try {
       setConnecting(appName);
@@ -567,7 +563,7 @@ export default function IntegrationsPage() {
   };
 
   return (
-    <div className="bg-[#050505] min-h-screen">
+    <div className="bg-[var(--bg-deep)] min-h-screen">
       <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-8 sm:py-12 text-white/90">
         {/* Success toast */}
         {toast && (

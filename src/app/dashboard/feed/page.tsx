@@ -5,24 +5,24 @@ import { useAuth } from "@/context/AuthContext";
 import { api } from "@/lib/api";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-    Activity,
-    AlertCircle,
-    Calendar,
-    CheckSquare,
-    Clock,
-    CreditCard,
-    ExternalLink,
-    FileText,
-    FolderOpen,
-    GitPullRequest,
-    Inbox,
-    Mail,
-    Mic,
-    MessageSquare,
-    Music,
-    RefreshCw,
-    Search,
-    Zap,
+  Activity,
+  AlertCircle,
+  Calendar,
+  CheckSquare,
+  Clock,
+  CreditCard,
+  ExternalLink,
+  FileText,
+  FolderOpen,
+  GitPullRequest,
+  Inbox,
+  Mail,
+  MessageSquare,
+  Mic,
+  Music,
+  RefreshCw,
+  Search,
+  Zap,
 } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -412,11 +412,10 @@ export default function FeedPage() {
           <div className="flex items-center gap-2 flex-wrap">
             <button
               onClick={() => setAppFilter("all")}
-              className={`px-4 py-1.5 text-[11px] font-medium rounded-full transition-all ${
-                appFilter === "all"
-                  ? "bg-[var(--text-primary)] text-[var(--bg-base)] shadow-md"
+              className={`px-4 py-1.5 text-[11px] font-medium rounded-full transition-all ${appFilter === "all"
+                  ? "bg-[var(--text-primary)] text-[var(--bg-deep)] shadow-md"
                   : "bg-[var(--bg-surface)] text-[var(--text-secondary)] border border-[rgba(255,255,255,0.04)] hover:text-[var(--text-primary)] hover:border-[rgba(255,255,255,0.1)]"
-              }`}
+                }`}
             >
               All
             </button>
@@ -424,11 +423,10 @@ export default function FeedPage() {
               <button
                 key={app}
                 onClick={() => setAppFilter(app)}
-                className={`group flex items-center gap-1.5 px-4 py-1.5 text-[11px] font-medium rounded-full transition-all ${
-                  appFilter === app
+                className={`group flex items-center gap-1.5 px-4 py-1.5 text-[11px] font-medium rounded-full transition-all ${appFilter === app
                     ? "bg-[rgba(255,255,255,0.08)] text-[var(--text-primary)] border border-[rgba(255,255,255,0.1)] shadow-sm"
                     : "bg-[var(--bg-surface)] text-[var(--text-secondary)] border border-[rgba(255,255,255,0.04)] hover:text-[var(--text-primary)] hover:border-[rgba(255,255,255,0.1)]"
-                }`}
+                  }`}
               >
                 <div
                   className={`w-1.5 h-1.5 rounded-full transition-all ${appFilter === app ? "scale-110 shadow-[0_0_8px_currentColor]" : "group-hover:scale-110"}`}

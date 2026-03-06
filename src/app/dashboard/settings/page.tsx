@@ -3,13 +3,13 @@
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { useAuth } from "@/context/AuthContext";
 import { useBilling } from "@/context/useBilling";
+import { api } from "@/lib/api";
 import {
   ArrowRight,
   Brain,
   Check,
   ChevronDown,
   Clock,
-  Edit2,
   LogOut,
   Settings as SettingsIcon,
   Shield,
@@ -52,10 +52,11 @@ export default function SettingsPage() {
   const [isRetentionOpen, setIsRetentionOpen] = useState(false);
   const [retentionDays, setRetentionDays] = useState<number | null>(null);
   const [retentionSaving, setRetentionSaving] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const [toast, setToast] = useState<{ message: string, type: "success" | "error" } | null>(null);
 
   useEffect(() => {
-    const saved = localStorage.getItem("Alias_model");
+    const saved = localStorage.getItem("aariv_model");
     if (saved) setSelectedModel(saved);
   }, []);
 
@@ -108,9 +109,9 @@ export default function SettingsPage() {
   };
 
   const handleModelSave = () => {
-    localStorage.setItem("Alias_model", selectedModel);
+    localStorage.setItem("aariv_model", selectedModel);
     window.dispatchEvent(
-      new CustomEvent("Alias-model-change", { detail: selectedModel })
+      new CustomEvent("aariv-model-change", { detail: selectedModel })
     );
     showToast("Model preference saved successfully");
   };
@@ -143,7 +144,7 @@ export default function SettingsPage() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 py-10">
             <div className="lg:col-span-1 pr-8">
               <h3 className="text-base font-medium text-[var(--text-primary)]">Profile</h3>
-              <p className="text-sm text-[var(--text-muted)] mt-1.5 font-medium leading-relaxed">Customize your public presence and how Alias identifies you.</p>
+              <p className="text-sm text-[var(--text-muted)] mt-1.5 font-medium leading-relaxed">Customize your public presence and how Aariv identifies you.</p>
             </div>
             <div className="lg:col-span-2">
               <section className="bg-[var(--bg-elevated)] border border-[rgba(255,255,255,0.02)] rounded-3xl p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-6 shadow-sm">
@@ -164,14 +165,10 @@ export default function SettingsPage() {
                       {user?.name || "User"}
                     </p>
                     <p className="text-sm text-[var(--text-muted)] truncate font-medium">
-                      {user?.email || "user@Alias.app"}
+                      {user?.email || ""}
                     </p>
                   </div>
                 </div>
-                <button className="px-4 py-2 rounded-lg bg-[var(--bg-deep)] text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[rgba(255,255,255,0.05)] transition-colors opacity-100 sm:opacity-0 group-hover:opacity-100 flex items-center justify-center gap-2">
-                  <Edit2 size={14} />
-                  Edit Profile
-                </button>
               </section>
             </div>
           </div>
@@ -520,8 +517,16 @@ export default function SettingsPage() {
     confirmLabel="Delete Everything"
     cancelLabel="Keep Account"
     variant="danger"
-    onConfirm={() => {
-      setShowDeleteDialog(false);
+    onConfirm={async () => {
+      setDeleteLoading(true);
+      try {
+        await api.delete("/auth/account");
+        await signOut();
+      } catch (e: any) {
+        setDeleteLoading(false);
+        setShowDeleteDialog(false);
+        showToast(e.message || "Failed to delete account. Please try again.", "error");
+      }
     }}
     onCancel={() => setShowDeleteDialog(false)}
   />

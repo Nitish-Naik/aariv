@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { AlertCircle, CheckCircle2, ChevronRight, User2 } from "lucide-react";
+import { AlertCircle, CheckCircle2, ChevronRight } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -132,17 +132,6 @@ export default function Hero() {
                                 </span>
                             </Link>
                             <p className="text-sm text-zinc-600">No credit card &middot; Live in 60 seconds</p>
-                        </motion.div>
-
-                        {/* Trust badge */}
-                        <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ duration: 0.6, delay: 0.55 }}
-                            className="flex items-center gap-2 text-zinc-600 text-sm"
-                        >
-                            <User2 className="w-4 h-4" />
-                            <span>Trusted by 2,000+ professionals</span>
                         </motion.div>
 
                         {/* App logos */}

@@ -5,7 +5,6 @@ import Footer from "@/components/secure-agent/Footer";
 import Hero from "@/components/secure-agent/Hero";
 import HowItWorks from "@/components/secure-agent/HowItWorks";
 import Navbar from "@/components/secure-agent/Navbar";
-import Testimonials from "@/components/secure-agent/Testimonials";
 import UseCaseList from "@/components/secure-agent/UseCaseList";
 import WhatIsCalmPilot from "@/components/secure-agent/WhatIsCalmPilot";
 import { Metadata } from "next";
@@ -29,7 +28,6 @@ export default function Home() {
         <HowItWorks />
         <FeaturesGrid />
         <UseCaseList />
-        <Testimonials />
         <WhatIsCalmPilot />
         <FAQ />
         <FinalCTA />

@@ -70,7 +70,20 @@ export default function LoginPage() {
 
         {/* Footer */}
         <p className="text-xs text-[var(--text-muted)]">
-          By continuing, you agree to our Terms of Service
+          By continuing, you agree to our{" "}
+          <a
+            href="/terms"
+            className="underline underline-offset-2 hover:text-[var(--text-secondary)] transition-colors"
+          >
+            Terms of Service
+          </a>{" "}
+          and{" "}
+          <a
+            href="/privacy"
+            className="underline underline-offset-2 hover:text-[var(--text-secondary)] transition-colors"
+          >
+            Privacy Policy
+          </a>
         </p>
       </div>
     </div>

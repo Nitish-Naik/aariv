@@ -482,7 +482,7 @@ function OnboardingState({ firstName }: { firstName: string }) {
           className="w-full sm:flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[var(--bg-surface)] border border-[var(--border)] text-sm font-medium text-[var(--text-primary)] hover:border-[var(--accent)] transition-colors"
         >
           <Sparkles size={15} className="text-[var(--accent)]" />
-          Skip — chat with CalmPilot
+          Skip — chat with Aariv
         </button>
       </div>
 
@@ -531,31 +531,36 @@ function OnboardingState({ firstName }: { firstName: string }) {
 
 function CalmState({
   firstName,
+  briefing,
   recentEvents = [],
   reviewCounts = { total: 0, high: 0, medium: 0, low: 0 },
+  onRefresh,
+  refreshing,
 }: {
   firstName: string;
+  briefing?: Briefing | null;
   recentEvents?: FeedEvent[];
   reviewCounts?: ReviewCounts;
+  onRefresh?: () => void;
+  refreshing?: boolean;
 }) {
   const router = useRouter();
+  const subtitle = briefing?.subtitle || "Nothing needs your attention right now. Your day is unfolding exactly as it should.";
+  const calendarEvents = briefing?.events ?? [];
+  const insight = briefing?.insight;
 
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 py-10">
       {/* Hero */}
       <div className="flex flex-col items-center text-center mb-10">
-        {/* Cloud Icon */}
         <div className="mb-6 text-[var(--text-muted)]">
           <Cloud size={48} strokeWidth={1.2} />
         </div>
-
-        {/* Heading */}
         <h1 className="text-2xl sm:text-3xl font-serif text-[var(--text-primary)] mb-3">
-          Rest easy, {firstName}
+          {getGreeting()}, {firstName}
         </h1>
         <p className="text-sm text-[var(--text-secondary)] max-w-sm leading-relaxed mb-8">
-          Nothing needs your attention right now. Your day is unfolding exactly
-          as it should.
+          {subtitle}
         </p>
 
         {/* Action Buttons */}
@@ -565,7 +570,7 @@ function CalmState({
             className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[var(--bg-surface)] border border-[var(--border)] text-sm font-medium text-[var(--text-primary)] hover:border-[var(--accent)] transition-colors"
           >
             <Sparkles size={15} className="text-[var(--accent)]" />
-            Ask CalmPilot something
+            Ask Aariv something
           </button>
           <button
             onClick={() => router.push("/dashboard/triggers")}
@@ -584,8 +589,26 @@ function CalmState({
         </div>
       </div>
 
+      {/* Calendar events — calm day can still have meetings */}
+      {calendarEvents.length > 0 && (
+        <div className="mb-6">
+          <h2 className="text-xs font-medium uppercase tracking-widest text-[var(--text-muted)] mb-3">
+            What&apos;s ahead today
+          </h2>
+          <div className="bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl p-4">
+            {calendarEvents.map((event, i) => (
+              <TimelineEvent
+                key={event.id || i}
+                event={event}
+                isLast={i === calendarEvents.length - 1}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Quick Links */}
-      <div className="flex items-center gap-3 mb-6">
+      <div className="flex items-center gap-3 mb-6 flex-wrap">
         {reviewCounts.total > 0 && (
           <Link
             href="/dashboard/review"
@@ -593,18 +616,14 @@ function CalmState({
           >
             <CheckCircle2 size={15} className="text-[var(--accent)]" />
             <span className="text-sm font-medium text-[var(--text-primary)]">
-              {reviewCounts.total} item{reviewCounts.total !== 1 ? "s" : ""} to
-              review
+              {reviewCounts.total} item{reviewCounts.total !== 1 ? "s" : ""} to review
             </span>
             {reviewCounts.high > 0 && (
               <span className="text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-500">
                 {reviewCounts.high} urgent
               </span>
             )}
-            <ArrowRight
-              size={13}
-              className="text-[var(--text-muted)] group-hover:text-[var(--accent)] transition-colors"
-            />
+            <ArrowRight size={13} className="text-[var(--text-muted)] group-hover:text-[var(--accent)] transition-colors" />
           </Link>
         )}
         <Link
@@ -616,9 +635,20 @@ function CalmState({
             View feed
           </span>
         </Link>
+        {onRefresh && (
+          <button
+            onClick={onRefresh}
+            disabled={refreshing}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[var(--bg-surface)] border border-[var(--border)] hover:border-[var(--border-strong)] transition-colors text-[var(--text-muted)] hover:text-[var(--text-secondary)] disabled:opacity-40 ml-auto"
+            title="Refresh briefing"
+          >
+            <Loader2 size={13} className={refreshing ? "animate-spin" : ""} />
+            <span className="text-xs">Refresh</span>
+          </button>
+        )}
       </div>
 
-      {/* Recent Activity (if any) */}
+      {/* Recent Activity */}
       {recentEvents.length > 0 && (
         <div>
           <div className="flex items-center justify-between mb-3">
@@ -637,7 +667,6 @@ function CalmState({
             {recentEvents.slice(0, 5).map((evt) => {
               const icon = FEED_APP_ICONS[evt.app] || <Inbox size={13} />;
               const color = APP_COLOR[evt.app] || "var(--text-muted)";
-              const label = FEED_APP_LABELS[evt.app] || evt.app;
               return (
                 <div
                   key={evt.id}
@@ -669,6 +698,14 @@ function CalmState({
         </div>
       )}
 
+      {/* Aariv insight */}
+      {insight && (
+        <div className="mt-8 flex items-center gap-3 bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl px-4 py-3">
+          <Sparkles size={16} className="text-[var(--accent)] shrink-0" />
+          <p className="text-sm text-[var(--text-secondary)] leading-relaxed">{insight}</p>
+        </div>
+      )}
+
       {/* Date/time footer */}
       <p className="mt-10 text-xs text-[var(--text-muted)] text-center">
         {formatFullDateTime()}
@@ -685,12 +722,16 @@ function ActiveState({
   logoMap,
   recentEvents,
   reviewCounts,
+  onRefresh,
+  refreshing,
 }: {
   firstName: string;
   briefing: Briefing;
   logoMap: Record<string, string>;
   recentEvents: FeedEvent[];
   reviewCounts: ReviewCounts;
+  onRefresh?: () => void;
+  refreshing?: boolean;
 }) {
   const router = useRouter();
   const { counts, proposals, events, insight } = briefing;
@@ -710,9 +751,22 @@ function ActiveState({
         <h1 className="text-2xl sm:text-3xl font-serif text-[var(--text-primary)]">
           {getGreeting()}, {firstName}
         </h1>
-        <span className="text-sm text-[var(--text-muted)] mt-1 hidden sm:block">
-          {formatDate()}
-        </span>
+        <div className="flex items-center gap-3 mt-1">
+          <span className="text-sm text-[var(--text-muted)] hidden sm:block">
+            {formatDate()}
+          </span>
+          {onRefresh && (
+            <button
+              onClick={onRefresh}
+              disabled={refreshing}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--bg-surface)] border border-[var(--border)] hover:border-[var(--border-strong)] transition-colors text-[var(--text-muted)] hover:text-[var(--text-secondary)] disabled:opacity-40 text-xs"
+              title="Refresh briefing"
+            >
+              <Loader2 size={12} className={refreshing ? "animate-spin" : ""} />
+              Refresh
+            </button>
+          )}
+        </div>
       </div>
       <p className="text-sm text-[var(--text-secondary)] mb-8">
         {briefing.subtitle}
@@ -747,7 +801,7 @@ function ActiveState({
         {/* Left: Proposals */}
         <div className="lg:col-span-3 space-y-4">
           <h2 className="text-xs font-medium uppercase tracking-widest text-[var(--text-muted)] mb-1">
-            Alias&apos;s proposals
+            Aariv&apos;s proposals
           </h2>
           {proposals.length > 0 ? (
             <div className="space-y-3">
@@ -847,7 +901,6 @@ function ActiveState({
             {recentEvents.slice(0, 5).map((evt) => {
               const icon = FEED_APP_ICONS[evt.app] || <Inbox size={13} />;
               const color = APP_COLOR[evt.app] || "var(--text-muted)";
-              const label = FEED_APP_LABELS[evt.app] || evt.app;
               return (
                 <div
                   key={evt.id}
@@ -906,66 +959,53 @@ export default function DashboardHome() {
     low: 0,
   });
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [hasConnections, setHasConnections] = useState<boolean | null>(null);
 
-  const fetchBriefing = useCallback(async () => {
+  const fetchBriefing = useCallback(async (silent = false) => {
     if (!user?.id) return;
-    setLoading(true);
-    setError(false);
+    if (silent) setRefreshing(true);
+    else setLoading(true);
+    setError(null);
     try {
-      // 1. Fetch integrations first to check if user has any connected apps
+      // 1. Check connected apps
       const intData = await api
         .get(`/integrations?userId=${user.id}`)
         .catch(() => null);
 
-      // Build logo map
       const connectedApps: string[] = [];
       if (intData?.integrations) {
         const map: Record<string, string> = {};
         for (const int of intData.integrations) {
-          if (int.logo && int.appName) {
-            map[int.appName.toLowerCase()] = int.logo;
-          }
-          if (int.status === "connected" && int.canDisconnect !== false) {
+          if (int.logo && int.appName) map[int.appName.toLowerCase()] = int.logo;
+          if (int.status === "connected" && int.canDisconnect !== false)
             connectedApps.push(int.appName);
-          }
         }
         setLogoMap(map);
       }
 
-      // 2. If no real connected apps → onboarding state, skip expensive briefing call
       if (connectedApps.length === 0) {
         setHasConnections(false);
-        setLoading(false);
         return;
       }
       setHasConnections(true);
 
-      // 3. Fetch briefing + feed + review in parallel
+      // 2. Fetch briefing + feed + review in parallel
       const [data, feedData, reviewData] = await Promise.all([
         api.get(`/dashboard/briefing?userId=${user.id}`),
-        api
-          .get(`/dashboard/recent-events?userId=${user.id}&limit=5`)
-          .catch(() => null),
+        api.get(`/dashboard/recent-events?userId=${user.id}&limit=5`).catch(() => null),
         api.get(`/review?userId=${user.id}&status=pending`).catch(() => null),
       ]);
       setBriefing(data);
-
-      // Recent feed events
-      if (feedData?.events) {
-        setRecentEvents(feedData.events);
-      }
-
-      // Review counts
-      if (reviewData?.counts) {
-        setReviewCounts(reviewData.counts);
-      }
-    } catch (err) {
+      if (feedData?.events) setRecentEvents(feedData.events);
+      if (reviewData?.counts) setReviewCounts(reviewData.counts);
+    } catch (err: any) {
       console.error("Failed to fetch briefing:", err);
-      setError(true);
+      setError(err.message || "Couldn't load your briefing.");
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   }, [user?.id]);
 
@@ -975,7 +1015,6 @@ export default function DashboardHome() {
 
   const firstName = user?.name?.split(" ")[0] || "there";
 
-  // Loading
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[70vh] gap-3">
@@ -985,29 +1024,35 @@ export default function DashboardHome() {
     );
   }
 
-  // Onboarding — no connected apps
   if (hasConnections === false) {
     return <OnboardingState firstName={firstName} />;
   }
 
-  // Error fallback → show calm state
-  if (error || !briefing) {
+  // Explicit error state — don't silently hide it
+  if (error && !briefing) {
     return (
-      <CalmState
-        firstName={firstName}
-        recentEvents={recentEvents}
-        reviewCounts={reviewCounts}
-      />
+      <div className="max-w-xl mx-auto px-4 py-20 flex flex-col items-center text-center gap-4">
+        <p className="text-sm text-[var(--text-secondary)]">{error}</p>
+        <button
+          onClick={() => fetchBriefing()}
+          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[var(--accent)] text-white text-sm font-medium hover:opacity-90 transition-opacity"
+        >
+          <Loader2 size={14} />
+          Try again
+        </button>
+      </div>
     );
   }
 
-  // Calm vs Active
-  if (briefing.is_calm) {
+  if (!briefing || briefing.is_calm) {
     return (
       <CalmState
         firstName={firstName}
+        briefing={briefing}
         recentEvents={recentEvents}
         reviewCounts={reviewCounts}
+        onRefresh={() => fetchBriefing(true)}
+        refreshing={refreshing}
       />
     );
   }
@@ -1019,6 +1064,8 @@ export default function DashboardHome() {
       logoMap={logoMap}
       recentEvents={recentEvents}
       reviewCounts={reviewCounts}
+      onRefresh={() => fetchBriefing(true)}
+      refreshing={refreshing}
     />
   );
 }

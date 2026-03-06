@@ -4,9 +4,11 @@
 
 :root {
   --bg-deep: #f7f6f4;
+  --bg-base: #f7f6f4;
   --bg-surface: #ffffff;
   --bg-elevated: #ffffff;
   --border: rgba(0, 0, 0, 0.06);
+  --border-strong: rgba(0, 0, 0, 0.14);
   --text-primary: #1a1918;
   --text-secondary: #6a6662;
   --text-muted: #9a9794;
@@ -16,9 +18,11 @@
 
 .dark {
   --bg-deep: #0c0c0e;
+  --bg-base: #0c0c0e;
   --bg-surface: #141416;
   --bg-elevated: #1a1a1d;
   --border: rgba(255, 255, 255, 0.06);
+  --border-strong: rgba(255, 255, 255, 0.12);
   --text-primary: #e4e2df;
   --text-secondary: #908c88;
   --text-muted: #5a5754;

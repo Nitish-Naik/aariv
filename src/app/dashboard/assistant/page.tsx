@@ -22,12 +22,15 @@ import {
   Terminal,
   ChevronRight
 } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useRef, useState, Suspense } from "react";
 import ReactMarkdown from "react-markdown";
 // import { DetailedLogEntry } from "@/components";
 
-export default function AssistantPage() {
+function AssistantPageInner() {
   const { user } = useAuth();
+  const searchParams = useSearchParams();
+  const promptAutoSentRef = useRef(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [conversations, setConversations] = useState<any[]>([]);
   const [activeConversationId, setActiveConversationId] = useState<
@@ -65,15 +68,28 @@ export default function AssistantPage() {
 
   // Load model preference from Settings
   useEffect(() => {
-    const saved = localStorage.getItem("Alias_model");
+    const saved = localStorage.getItem("aariv_model");
     if (saved) setSelectedModel(saved);
     const handler = (e: Event) => {
       const model = (e as CustomEvent).detail;
       if (model) setSelectedModel(model);
     };
-    window.addEventListener("Alias-model-change", handler);
-    return () => window.removeEventListener("Alias-model-change", handler);
+    window.addEventListener("aariv-model-change", handler);
+    return () => window.removeEventListener("aariv-model-change", handler);
   }, []);
+
+  // Auto-send ?prompt= param from proposal action buttons on the home page
+  useEffect(() => {
+    if (!user?.id || promptAutoSentRef.current) return;
+    const raw = searchParams.get("prompt");
+    if (!raw) return;
+    promptAutoSentRef.current = true;
+    const decoded = decodeURIComponent(raw);
+    // Small delay so localStorage model preference loads first
+    const timer = setTimeout(() => handleSend(decoded), 150);
+    return () => clearTimeout(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, searchParams]);
 
   // Fetch dynamic suggestion chips based on connected apps
   useEffect(() => {
@@ -528,6 +544,26 @@ export default function AssistantPage() {
                     // otherwise keep the streaming logs we accumulated
                     const finalLogs =
                       event.data.logs?.length > 0 ? event.data.logs : msg.logs;
+
+                    // Wire the conversation ID returned by the backend so
+                    // subsequent messages in this chat have history context.
+                    if (event.data.conversationId && !activeConversationId) {
+                      const newId = event.data.conversationId;
+                      setActiveConversationId(newId);
+                      // Prepend to sidebar without a re-fetch
+                      setConversations((prev) => {
+                        if (prev.some((c) => c.id === newId)) return prev;
+                        const title =
+                          messageText.length > 40
+                            ? messageText.slice(0, 40) + "..."
+                            : messageText;
+                        return [
+                          { id: newId, title, updated_at: new Date().toISOString() },
+                          ...prev,
+                        ];
+                      });
+                    }
+
                     return {
                       ...msg,
                       content: event.data.response,
@@ -541,7 +577,7 @@ export default function AssistantPage() {
                     return {
                       ...msg,
                       content:
-                        "You've run out of credits. Please add credits in **Usage & Billing** to continue using Alias.\n\n[Go to Usage & Billing →](/dashboard/usage)",
+                        "You've run out of credits. Please add credits in **Usage & Billing** to continue using CalmPilot.\n\n[Go to Usage & Billing →](/dashboard/usage)",
                     };
                   } else if (event.type === "error") {
                     return { ...msg, content: `Error: ${event.data}` };
@@ -814,10 +850,10 @@ export default function AssistantPage() {
                   WebkitTextFillColor: "transparent",
                 }}
               >
-                Chat with over 500+ Apps
+                Chat with 500+ Apps
               </h1>
               <p className="text-sm text-[var(--text-muted)] -mt-2">
-                Connect your favorite tools and let Alias automate your work.
+                Connect your favorite tools and let Aariv automate your work.
               </p>
 
               {/* Centered input */}
@@ -1059,7 +1095,7 @@ export default function AssistantPage() {
               <div className="inline-flex items-center bg-[var(--bg-elevated)] border border-[rgba(255,255,255,0.08)] rounded-full p-0.5">
                 <button
                   type="button"
-                  onClick={() => { setSelectedModel("gpt-4o-mini"); localStorage.setItem("Alias_model", "gpt-4o-mini"); }}
+                  onClick={() => { setSelectedModel("gpt-4o-mini"); localStorage.setItem("aariv_model", "gpt-4o-mini"); }}
                   className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-all duration-200 ${selectedModel.includes("mini")
                     ? "bg-[rgba(255,255,255,0.1)] text-amber-400 shadow-sm"
                     : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
@@ -1070,7 +1106,7 @@ export default function AssistantPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => { setSelectedModel("gpt-4o"); localStorage.setItem("Alias_model", "gpt-4o"); }}
+                  onClick={() => { setSelectedModel("gpt-4o"); localStorage.setItem("aariv_model", "gpt-4o"); }}
                   className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-all duration-200 ${!selectedModel.includes("mini")
                     ? "bg-[rgba(255,255,255,0.1)] text-purple-400 shadow-sm"
                     : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
@@ -1101,7 +1137,7 @@ export default function AssistantPage() {
                       handleSend();
                     }
                   }}
-                  placeholder="Ask Alias to do something..."
+                  placeholder="Ask Aariv to do something..."
                   disabled={isLoading}
                   rows={1}
                   className="w-full max-h-32 min-h-[56px] py-4 pl-5 pr-14 bg-transparent text-[15px] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] resize-none outline-none disabled:opacity-50"
@@ -1208,5 +1244,13 @@ export default function AssistantPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function AssistantPage() {
+  return (
+    <Suspense>
+      <AssistantPageInner />
+    </Suspense>
   );
 }
