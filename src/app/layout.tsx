@@ -54,7 +54,7 @@ export const metadata: Metadata = {
     siteName: "CalmPilot",
     images: [
       {
-        url: "/og-image.png",
+        url: "/opengraph-image",
         width: 1200,
         height: 630,
         alt: "CalmPilot - A quieter way to get work done",
@@ -66,7 +66,7 @@ export const metadata: Metadata = {
     title: "CalmPilot | A quieter way to get work done",
     description:
       "An AI-powered digital proxy that connects to 1000+ apps and quietly handles your work 24/7. Daily briefings, smart triggers, automated workflows.",
-    images: ["/og-image.png"],
+    images: ["/opengraph-image"],
     creator: "@calmpilot",
   },
   manifest: "/manifest.json",
