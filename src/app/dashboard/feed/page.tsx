@@ -137,6 +137,7 @@ function formatSlug(slug: string): string {
   return slug
     .replace(/^[A-Z]+_/, "")
     .replace(/_/g, " ")
+    .toLowerCase()
     .replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
