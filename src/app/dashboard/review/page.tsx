@@ -4,20 +4,20 @@ import { useAuth } from "@/context/AuthContext";
 import { api } from "@/lib/api";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-    Activity,
-    AlertTriangle,
-    Calendar,
-    Check,
-    CheckSquare,
-    Clock,
-    Cloud,
-    GitPullRequest,
-    Inbox,
-    Loader2,
-    Mail,
-    MessageSquare,
-    X,
-    XCircle,
+  Activity,
+  AlertTriangle,
+  Calendar,
+  Check,
+  CheckSquare,
+  Clock,
+  Cloud,
+  GitPullRequest,
+  Inbox,
+  Loader2,
+  Mail,
+  MessageSquare,
+  X,
+  XCircle,
 } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
@@ -259,28 +259,84 @@ export default function ReviewPage() {
 
   if (loading) {
     return (
-      <div className="flex-1 min-h-screen bg-[var(--bg-base)] flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2
-            size={28}
-            className="animate-spin text-[var(--text-muted)]"
-          />
-          <p className="text-sm text-[var(--text-muted)]">
-            Loading review items...
-          </p>
+      <div className="bg-[var(--bg-deep)] min-h-screen">
+        <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-8 sm:py-12 flex flex-col items-start min-h-full">
+          {/* Static header always visible */}
+          <header className="mb-8 w-full">
+            <h1 className="text-3xl font-bold text-[var(--text-primary)] tracking-tight mb-2">
+              Inbox
+            </h1>
+            <p className="text-[15px] font-medium text-[var(--text-muted)]">
+              Loading review items…
+            </p>
+
+            {/* Filter tabs */}
+            <div className="inline-flex p-1 space-x-1 rounded-xl bg-[#2a2a2a]/60 backdrop-blur-sm border border-white/5 shadow-sm mt-5">
+              {(["pending", "resolved", "all"] as ViewFilter[]).map((filter) => (
+                <button
+                  key={filter}
+                  onClick={() => setViewFilter(filter)}
+                  className={`relative px-4 py-1.5 text-sm font-medium rounded-lg transition-colors focus-visible:outline-none capitalize ${viewFilter === filter
+                    ? "text-white"
+                    : "text-[#a0a0a0] hover:text-white"
+                    }`}
+                >
+                  {viewFilter === filter && (
+                    <motion.div
+                      layoutId="reviewTabIndicator"
+                      className="absolute inset-0 rounded-lg shadow-sm bg-[#3a3a3a]"
+                      style={{ zIndex: -1 }}
+                      transition={{ type: "spring", bounce: 0.2, duration: 0.5 }}
+                    />
+                  )}
+                  {filter}
+                </button>
+              ))}
+            </div>
+
+            <div className="mt-4">
+              <Link
+                href="/dashboard/feed"
+                className="inline-flex items-center gap-1.5 text-xs font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+              >
+                <Activity size={12} />
+                View all events in feed &rarr;
+              </Link>
+            </div>
+          </header>
+
+          {/* Skeleton cards for dynamic content */}
+          <div className="space-y-4 w-full">
+            {[1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className="bg-[var(--bg-elevated)] border border-[rgba(255,255,255,0.02)] rounded-2xl p-6"
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-2 h-2 rounded-full bg-[rgba(255,255,255,0.06)] animate-pulse" />
+                    <div className="h-3 w-16 rounded bg-[rgba(255,255,255,0.04)] animate-pulse" />
+                  </div>
+                  <div className="h-5 w-20 rounded-full bg-[rgba(255,255,255,0.04)] animate-pulse" />
+                </div>
+                <div className="h-4 w-3/5 rounded bg-[rgba(255,255,255,0.04)] animate-pulse mb-2" />
+                <div className="h-3 w-4/5 rounded bg-[rgba(255,255,255,0.03)] animate-pulse" />
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex-1 min-h-screen bg-[var(--bg-base)]">
-      <div className="max-w-3xl mx-auto px-6 py-12 md:py-20 flex flex-col items-start min-h-full">
+    <div className="bg-[var(--bg-deep)] min-h-screen">
+      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-8 sm:py-12 flex flex-col items-start min-h-full">
         {/* Header */}
         <header className="mb-8 w-full">
           <div className="flex items-center justify-between mb-2">
             <h1 className="text-3xl font-bold text-[var(--text-primary)] tracking-tight">
-              Review
+              Inbox
             </h1>
             {counts.total > 0 && viewFilter === "pending" && (
               <button
@@ -336,17 +392,24 @@ export default function ReviewPage() {
           )}
 
           {/* Filter tabs */}
-          <div className="flex items-center gap-1 mt-5 bg-[var(--bg-elevated)] rounded-xl p-1 w-fit">
+          <div className="inline-flex p-1 space-x-1 rounded-xl bg-[var(--tab-bg)] backdrop-blur-sm border border-[var(--border)] shadow-sm mt-5">
             {(["pending", "resolved", "all"] as ViewFilter[]).map((filter) => (
               <button
                 key={filter}
                 onClick={() => setViewFilter(filter)}
-                className={`px-4 py-1.5 text-sm font-medium rounded-lg transition-all capitalize ${
-                  viewFilter === filter
-                    ? "bg-[rgba(255,255,255,0.08)] text-[var(--text-primary)] shadow-sm"
-                    : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
-                }`}
+                className={`relative px-4 py-1.5 text-sm font-medium rounded-lg transition-colors focus-visible:outline-none capitalize ${viewFilter === filter
+                  ? "text-[var(--text-primary)]"
+                  : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                  }`}
               >
+                {viewFilter === filter && (
+                  <motion.div
+                    layoutId="reviewTabIndicator"
+                    className="absolute inset-0 rounded-lg shadow-sm bg-[var(--tab-active)]"
+                    style={{ zIndex: -1 }}
+                    transition={{ type: "spring", bounce: 0.2, duration: 0.5 }}
+                  />
+                )}
                 {filter}
               </button>
             ))}
@@ -366,9 +429,9 @@ export default function ReviewPage() {
 
         {/* Error */}
         {error && (
-          <div className="w-full mb-6 p-4 bg-[#2C1A1A] border border-[#4B2020] rounded-xl flex items-center gap-3">
-            <AlertTriangle size={16} className="text-[#D84A4A] shrink-0" />
-            <p className="text-sm text-[#D84A4A]">{error}</p>
+          <div className="w-full mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center gap-3">
+            <AlertTriangle size={16} className="text-red-500 shrink-0" />
+            <p className="text-sm text-red-500">{error}</p>
           </div>
         )}
 
@@ -379,7 +442,7 @@ export default function ReviewPage() {
             animate={{ opacity: 1, y: 0 }}
             className="flex flex-col items-center justify-center w-full mt-24 text-center"
           >
-            <Cloud size={48} className="text-[#a1a1aa] mb-6 stroke-[1.5]" />
+            <Cloud size={48} className="text-[var(--text-muted)] mb-6 stroke-[1.5]" />
             <h2 className="text-lg font-semibold text-[var(--text-primary)] mb-2 tracking-tight">
               {viewFilter === "pending"
                 ? "Nothing needs your judgment"
@@ -475,11 +538,10 @@ export default function ReviewPage() {
                       <motion.div
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: "auto" }}
-                        className={`mb-4 p-3 rounded-xl text-sm ${
-                          result.error
-                            ? "bg-[#2C1A1A] border border-[#4B2020] text-[#D84A4A]"
-                            : "bg-[#1A2C1A] border border-[#2A4B2A] text-[#6BD46B]"
-                        }`}
+                        className={`mb-4 p-3 rounded-xl text-sm ${result.error
+                          ? "bg-[#2C1A1A] border border-[#4B2020] text-[#D84A4A]"
+                          : "bg-[#1A2C1A] border border-[#2A4B2A] text-[#6BD46B]"
+                          }`}
                       >
                         {result.message}
                       </motion.div>
@@ -549,25 +611,24 @@ export default function ReviewPage() {
                     {/* Resolved status badge */}
                     {(item.status === "approved" ||
                       item.status === "dismissed") && (
-                      <div className="flex items-center gap-2 mt-1">
-                        <span
-                          className={`text-xs font-medium px-2.5 py-1 rounded-full ${
-                            item.status === "approved"
+                        <div className="flex items-center gap-2 mt-1">
+                          <span
+                            className={`text-xs font-medium px-2.5 py-1 rounded-full ${item.status === "approved"
                               ? "bg-[#1A2C1A] text-[#6BD46B]"
                               : "bg-[rgba(255,255,255,0.03)] text-[var(--text-muted)]"
-                          }`}
-                        >
-                          {item.status === "approved"
-                            ? "Approved"
-                            : "Dismissed"}
-                        </span>
-                        {item.resolved_at && (
-                          <span className="text-[11px] text-[var(--text-muted)] opacity-50">
-                            {timeAgo(item.resolved_at)}
+                              }`}
+                          >
+                            {item.status === "approved"
+                              ? "Approved"
+                              : "Dismissed"}
                           </span>
-                        )}
-                      </div>
-                    )}
+                          {item.resolved_at && (
+                            <span className="text-[11px] text-[var(--text-muted)] opacity-50">
+                              {timeAgo(item.resolved_at)}
+                            </span>
+                          )}
+                        </div>
+                      )}
                   </motion.div>
                 );
               })}

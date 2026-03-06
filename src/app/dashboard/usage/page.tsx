@@ -2,6 +2,7 @@
 
 import { useAuth } from "@/context/AuthContext";
 import { useBilling } from "@/context/useBilling";
+import { api } from "@/lib/api";
 import {
     Activity,
     ArrowDownRight,
@@ -40,24 +41,19 @@ export default function UsagePage() {
     const [showAddCredits, setShowAddCredits] = useState(false);
     const [selectedAmount, setSelectedAmount] = useState<number | null>(10);
     const [customAmount, setCustomAmount] = useState("");
+    const [isCreatingCheckout, setIsCreatingCheckout] = useState(false);
+    const [checkoutError, setCheckoutError] = useState<string | null>(null);
 
     useEffect(() => {
         if (user) {
             const fetchExtras = async () => {
                 try {
-                    const envUrl =
-                        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
-                    const baseUrl = envUrl.endsWith("/api")
-                        ? envUrl.slice(0, -4)
-                        : envUrl;
-
-                    const [usageRes, historyRes] = await Promise.all([
-                        fetch(`${baseUrl}/api/billing/usage/${user.id}?days=30`),
-                        fetch(`${baseUrl}/api/billing/history/${user.id}?limit=20`),
+                    const [usageData, historyData] = await Promise.all([
+                        api.get(`/billing/usage/${user.id}?days=30`),
+                        api.get(`/billing/history/${user.id}?limit=20`),
                     ]);
-
-                    if (usageRes.ok) setUsageData(await usageRes.json());
-                    if (historyRes.ok) setHistory(await historyRes.json());
+                    if (usageData) setUsageData(usageData);
+                    if (historyData) setHistory(historyData);
                 } catch (e) {
                     console.error("Failed to load usage data", e);
                 } finally {
@@ -364,30 +360,46 @@ export default function UsagePage() {
                         {/* Pay */}
                         {(() => {
                             const amount = customAmount ? parseFloat(customAmount) : selectedAmount;
-                            const isValid = amount && amount >= 5 && amount <= 500;
+                            const isValid = amount !== null && amount !== undefined && amount >= 5 && amount <= 500;
                             return (
-                                <button
-                                    onClick={() => {
-                                        if (!isValid) return;
-                                        // TODO: Redirect to Stripe Checkout
-                                        console.log(`Redirect to Stripe for $${amount}`);
-                                        setShowAddCredits(false);
-                                    }}
-                                    disabled={!isValid}
-                                    className={`w-full py-3 rounded-xl font-medium text-sm flex items-center justify-center gap-2 transition-opacity ${isValid
-                                        ? "bg-[var(--accent-soft)] text-[var(--accent)] hover:opacity-80 cursor-pointer"
-                                        : "bg-[var(--bg-deep)] text-[var(--text-muted)] cursor-not-allowed opacity-50"
-                                        }`}
-                                >
-                                    <CreditCard size={15} />
-                                    Pay with Stripe
-                                    <ExternalLink size={13} />
-                                </button>
+                                <>
+                                    <button
+                                        onClick={async () => {
+                                            if (!isValid || isCreatingCheckout) return;
+                                            setCheckoutError(null);
+                                            setIsCreatingCheckout(true);
+                                            try {
+                                                const data = await api.post("/billing/create-checkout", { amount });
+                                                if (data?.checkout_url) {
+                                                    window.location.href = data.checkout_url;
+                                                } else {
+                                                    setCheckoutError("No checkout URL returned. Please try again.");
+                                                }
+                                            } catch (e: any) {
+                                                setCheckoutError(e?.message || "Failed to start checkout. Please try again.");
+                                            } finally {
+                                                setIsCreatingCheckout(false);
+                                            }
+                                        }}
+                                        disabled={!isValid || isCreatingCheckout}
+                                        className={`w-full py-3 rounded-xl font-medium text-sm flex items-center justify-center gap-2 transition-opacity ${isValid && !isCreatingCheckout
+                                            ? "bg-[var(--accent-soft)] text-[var(--accent)] hover:opacity-80 cursor-pointer"
+                                            : "bg-[var(--bg-deep)] text-[var(--text-muted)] cursor-not-allowed opacity-50"
+                                            }`}
+                                    >
+                                        <CreditCard size={15} />
+                                        {isCreatingCheckout ? "Redirecting..." : "Pay with Dodo"}
+                                        {!isCreatingCheckout && <ExternalLink size={13} />}
+                                    </button>
+                                    {checkoutError && (
+                                        <p className="text-[11px] text-red-400 text-center mt-1.5">{checkoutError}</p>
+                                    )}
+                                </>
                             );
                         })()}
 
                         <p className="text-[10px] text-[var(--text-muted)] text-center mt-3">
-                            You will be redirected to Stripe to complete your payment.
+                            You will be redirected to Dodo Payments to complete your purchase.
                         </p>
                     </div>
                 </div>

@@ -458,8 +458,8 @@ export default function IntegrationsPage() {
           className="absolute inset-[-4px] rounded-2xl opacity-0 group-hover:opacity-30 transition-opacity duration-500 blur-xl pointer-events-none z-0"
           style={{ background: cornerGlowBg }}
         />
-        <div className="relative flex flex-col p-5 h-full overflow-hidden z-10 rounded-[calc(1rem-1.5px)] bg-gradient-to-br from-[#1c1c1c] to-[#0a0a0a] min-h-[220px]">
-          <div className="absolute inset-0 bg-gradient-to-b from-white/[0.03] to-transparent pointer-events-none" />
+        <div className="relative flex flex-col p-5 h-full overflow-hidden z-10 rounded-[calc(1rem-1.5px)] bg-[var(--bg-elevated)] border border-[rgba(0,0,0,0.05)] dark:border-white/5 min-h-[220px]">
+          <div className="absolute inset-0 bg-gradient-to-b from-[var(--overlay)] to-transparent pointer-events-none" />
           <div className="flex justify-end w-full relative z-10 mb-2">
             {isConnected ? (
               integration.canDisconnect ? (
@@ -489,7 +489,7 @@ export default function IntegrationsPage() {
                       </>
                     )}
                   </button>
-                  <span className="text-[10px] text-[#888]">
+                  <span className="text-[10px] text-[var(--text-muted)]">
                     {/* Last synced {syncedMins}m ago */}
                   </span>
                 </div>
@@ -499,7 +499,7 @@ export default function IntegrationsPage() {
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_5px_rgba(52,211,153,0.8)]" />
                     Connected
                   </div>
-                  <span className="text-[10px] text-[#888]">
+                  <span className="text-[10px] text-[var(--text-muted)]">
                     {/* Last synced {syncedMins}m ago */}
                   </span>
                 </div>
@@ -508,10 +508,10 @@ export default function IntegrationsPage() {
               <button
                 onClick={() => handleConnect(integration.appName, isConnected)}
                 disabled={isConnecting}
-                className="px-4 py-1.5 bg-[#e8e8e8] hover:bg-white text-black text-xs font-medium rounded-full transition-all duration-300 disabled:opacity-50 hover:shadow-[0_0_15px_rgba(255,255,255,0.2)] hover:scale-[1.02] active:scale-95"
+                className="px-4 py-1.5 bg-[var(--text-primary)] hover:opacity-90 text-[var(--bg-deep)] text-xs font-medium rounded-full transition-all duration-300 disabled:opacity-50 hover:shadow-[0_0_15px_rgba(255,255,255,0.2)] hover:scale-[1.02] active:scale-95"
               >
                 {isConnecting ? (
-                  <Loader2 size={12} className="animate-spin text-black" />
+                  <Loader2 size={12} className="animate-spin text-[var(--bg-deep)]" />
                 ) : (
                   "Connect"
                 )}
@@ -548,7 +548,7 @@ export default function IntegrationsPage() {
                 {displayName.charAt(0)}
               </motion.div>
             )}
-            <h3 className="text-[15px] font-medium text-white/90 truncate max-w-full px-2 text-center tracking-wide">
+            <h3 className="text-[15px] font-medium text-[var(--text-primary)] truncate max-w-full px-2 text-center tracking-wide">
               {displayName}
             </h3>
             {isConnected && (
@@ -564,7 +564,7 @@ export default function IntegrationsPage() {
 
   return (
     <div className="bg-[var(--bg-deep)] min-h-screen">
-      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-8 sm:py-12 text-white/90">
+      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-8 sm:py-12 text-[var(--text-primary)]">
         {/* Success toast */}
         {toast && (
           <div className="fixed top-4 right-4 z-50 flex items-center gap-2 bg-emerald-500/90 text-white px-5 py-3 rounded-xl shadow-lg text-sm font-medium animate-in slide-in-from-top fade-in duration-300">
@@ -587,20 +587,20 @@ export default function IntegrationsPage() {
 
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             {/* Segmented Control */}
-            <div className="inline-flex p-1 space-x-1 rounded-xl bg-[#2a2a2a]/60 backdrop-blur-sm border border-white/5 shadow-sm">
+            <div className="inline-flex p-1 space-x-1 rounded-xl bg-[var(--tab-bg)] backdrop-blur-sm border border-[var(--border)] shadow-sm">
               {(["all", "connected"] as const).map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
                   className={`relative px-4 py-1.5 text-sm font-medium rounded-lg transition-colors focus-visible:outline-none ${activeTab === tab
-                      ? "text-white"
-                      : "text-[#a0a0a0] hover:text-white"
+                    ? "text-[var(--text-primary)]"
+                    : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
                     }`}
                 >
                   {activeTab === tab && (
                     <motion.div
                       layoutId="activeTabBadge"
-                      className="absolute inset-0 rounded-lg shadow-sm bg-[#3a3a3a]"
+                      className="absolute inset-0 rounded-lg shadow-sm bg-[var(--tab-active)]"
                       style={{ zIndex: -1 }}
                       transition={{
                         type: "spring",
@@ -648,8 +648,8 @@ export default function IntegrationsPage() {
                   <button
                     onClick={() => setActiveCategory("all")}
                     className={`shrink-0 z-10 px-4 py-1.5 text-xs font-medium rounded-full transition-all duration-300 border ${activeCategory === "all"
-                        ? "bg-[#e8e8e8] text-black border-[#e8e8e8] shadow-sm"
-                        : "bg-[#161616] text-[#888] border-[#2a2a2a] hover:border-[#444] hover:text-white"
+                      ? "bg-[var(--pill-active-bg)] text-[var(--pill-active-text)] border-[var(--pill-active-bg)] shadow-sm"
+                      : "bg-[var(--pill-bg)] text-[var(--text-muted)] border-[var(--border)] hover:border-[var(--border-strong)] hover:text-[var(--text-primary)]"
                       }`}
                   >
                     All
@@ -658,7 +658,7 @@ export default function IntegrationsPage() {
                   {CATEGORIES.length > 1 && (
                     <>
                       {/* Vertical Divider */}
-                      <div className="w-[1px] h-5 bg-white/10 shrink-0 mx-3" />
+                      <div className="w-[1px] h-5 bg-[var(--border)] shrink-0 mx-3" />
 
                       {/* Horizontally scrolling list for the rest */}
                       <div className="flex items-center gap-2 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] w-full scroll-smooth pt-1 pb-1">
@@ -668,8 +668,8 @@ export default function IntegrationsPage() {
                               key={category.id}
                               onClick={() => setActiveCategory(category.id)}
                               className={`shrink-0 px-4 py-1.5 text-xs font-medium rounded-full transition-all duration-300 border capitalize ${activeCategory === category.id
-                                  ? "bg-[#e8e8e8] text-black border-[#e8e8e8] shadow-sm"
-                                  : "bg-[#161616] text-[#888] border-[#2a2a2a] hover:border-[#444] hover:text-white"
+                                ? "bg-[var(--pill-active-bg)] text-[var(--pill-active-text)] border-[var(--pill-active-bg)] shadow-sm"
+                                : "bg-[var(--pill-bg)] text-[var(--text-muted)] border-[var(--border)] hover:border-[var(--border-strong)] hover:text-[var(--text-primary)]"
                                 }`}
                             >
                               {category.label}
@@ -686,8 +686,8 @@ export default function IntegrationsPage() {
                   <button
                     onClick={() => setGroupByCategory(false)}
                     className={`p-1.5 rounded-lg transition-all duration-200 ${!groupByCategory
-                        ? "bg-[#3a3a3a] text-white"
-                        : "text-[#666] hover:text-white hover:bg-[#2a2a2a]"
+                      ? "bg-[var(--tab-active)] text-[var(--text-primary)]"
+                      : "text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--tab-bg)]"
                       }`}
                     title="Grid view"
                   >
@@ -696,8 +696,8 @@ export default function IntegrationsPage() {
                   <button
                     onClick={() => setGroupByCategory(true)}
                     className={`p-1.5 rounded-lg transition-all duration-200 ${groupByCategory
-                        ? "bg-[#3a3a3a] text-white"
-                        : "text-[#666] hover:text-white hover:bg-[#2a2a2a]"
+                      ? "bg-[var(--tab-active)] text-[var(--text-primary)]"
+                      : "text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--tab-bg)]"
                       }`}
                     title="Group by category"
                   >

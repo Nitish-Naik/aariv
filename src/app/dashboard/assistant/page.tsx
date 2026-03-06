@@ -8,6 +8,7 @@ import { motion } from "framer-motion";
 import {
   Check,
   ChevronDown,
+  ChevronRight,
   Clock,
   Copy,
   FileUp,
@@ -17,15 +18,13 @@ import {
   Plus,
   Send,
   Shield,
-  Trash2,
-  Zap,
   Terminal,
-  ChevronRight
+  Trash2
 } from "lucide-react";
 import { useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useRef, useState, Suspense } from "react";
-import ReactMarkdown from "react-markdown";
-// import { DetailedLogEntry } from "@/components";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
+
+import { DetailedLogEntry } from "@/components";
 
 function AssistantPageInner() {
   const { user } = useAuth();
@@ -88,7 +87,7 @@ function AssistantPageInner() {
     // Small delay so localStorage model preference loads first
     const timer = setTimeout(() => handleSend(decoded), 150);
     return () => clearTimeout(timer);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, searchParams]);
 
   // Fetch dynamic suggestion chips based on connected apps
@@ -362,106 +361,6 @@ function AssistantPageInner() {
     }
   }, []);
 
-  // Notification SSE stream
-  useEffect(() => {
-    if (!user?.id) return;
-    const controller = new AbortController();
-
-    const startNotificationStream = async () => {
-      try {
-        const response = await fetch(
-          `${api.getBaseUrl()}/notifications/${user.id}`,
-          { signal: controller.signal },
-        );
-        if (!response.body) return;
-
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-        let accumulated = "";
-
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-
-          accumulated += decoder.decode(value, { stream: true });
-          const parts = accumulated.split("\n\n");
-          accumulated = parts.pop() || "";
-
-          for (const part of parts) {
-            if (part.startsWith("data: ")) {
-              try {
-                const event = JSON.parse(part.substring(6));
-                // Handle all trigger notification types from the backend
-                const triggerTypes = new Set([
-                  "proactive_summary",
-                  "email_summary",
-                  "github_update",
-                  "slack_summary",
-                  "calendar_alert",
-                  "notion_update",
-                  "linear_update",
-                  "discord_summary",
-                  "drive_update",
-                  "docs_update",
-                  "payment_alert",
-                  "jira_update",
-                  "trello_update",
-                  "task_update",
-                  "crm_update",
-                  "media_update",
-                  "meeting_summary",
-                  "message_update",
-                ]);
-                if (triggerTypes.has(event.type)) {
-                  const labelMap: Record<string, string> = {
-                    email_summary: "📧 Email",
-                    github_update: "🐙 GitHub",
-                    slack_summary: "💬 Slack",
-                    calendar_alert: "📅 Calendar",
-                    notion_update: "📝 Notion",
-                    linear_update: "📋 Linear",
-                    discord_summary: "🎮 Discord",
-                    drive_update: "📁 Drive",
-                    docs_update: "📄 Docs",
-                    payment_alert: "💳 Payment",
-                    jira_update: "📋 Jira",
-                    trello_update: "📋 Trello",
-                    task_update: "✅ Tasks",
-                    crm_update: "📊 CRM",
-                    media_update: "🎵 Media",
-                    meeting_summary: "🎙️ Meeting",
-                    message_update: "💬 Message",
-                    proactive_summary: "🔔 Update",
-                  };
-                  const label = labelMap[event.type as string] || "🔔 Update";
-
-                  setMessages((prev) => [
-                    ...prev,
-                    {
-                      id: event.data.id || Date.now().toString(),
-                      role: "assistant",
-                      content: `**${label}**\n\n${event.data.content}`,
-                      timestamp: new Date(event.data.timestamp),
-                      is_proactive: true,
-                    },
-                  ]);
-                }
-              } catch { }
-            }
-          }
-        }
-      } catch (e: any) {
-        if (e.name !== "AbortError") {
-          console.error("Notification stream error:", e);
-          setTimeout(startNotificationStream, 5000);
-        }
-      }
-    };
-
-    startNotificationStream();
-    return () => controller.abort();
-  }, [user?.id]);
-
   const handleSend = async (text?: string) => {
     const messageText = text || inputText.trim();
     if (!messageText || !user?.id) return;
@@ -558,7 +457,11 @@ function AssistantPageInner() {
                             ? messageText.slice(0, 40) + "..."
                             : messageText;
                         return [
-                          { id: newId, title, updated_at: new Date().toISOString() },
+                          {
+                            id: newId,
+                            title,
+                            updated_at: new Date().toISOString(),
+                          },
                           ...prev,
                         ];
                       });
@@ -577,7 +480,7 @@ function AssistantPageInner() {
                     return {
                       ...msg,
                       content:
-                        "You've run out of credits. Please add credits in **Usage & Billing** to continue using CalmPilot.\n\n[Go to Usage & Billing →](/dashboard/usage)",
+                        "You've run out of credits. Please add credits in **Usage & Billing** to continue using Aariv.\n\n[Go to Usage & Billing →](/dashboard/usage)",
                     };
                   } else if (event.type === "error") {
                     return { ...msg, content: `Error: ${event.data}` };
@@ -585,7 +488,7 @@ function AssistantPageInner() {
                   return msg;
                 }),
               );
-            } catch { }
+            } catch {}
           }
         }
       }
@@ -594,11 +497,11 @@ function AssistantPageInner() {
         prev.map((msg) =>
           msg.id === aiMessageId
             ? {
-              ...msg,
-              content:
-                "Sorry, I encountered an error: " +
-                (e.message || "Unknown error"),
-            }
+                ...msg,
+                content:
+                  "Sorry, I encountered an error: " +
+                  (e.message || "Unknown error"),
+              }
             : msg,
         ),
       );
@@ -620,10 +523,11 @@ function AssistantPageInner() {
 
       {/* ── LEFT SIDEBAR (Chat History) ── */}
       <aside
-        className={`fixed lg:static top-0 left-0 h-full z-40 flex flex-col bg-[var(--bg-elevated)] border-r border-[var(--border)] transition-all duration-300 ease-in-out ${isSidebarOpen
-          ? "w-72 translate-x-0"
-          : "w-0 -translate-x-full lg:translate-x-0 lg:w-0 overflow-hidden"
-          }`}
+        className={`fixed lg:static top-0 left-0 h-full z-40 flex flex-col bg-[var(--bg-elevated)] border-r border-[var(--border)] transition-all duration-300 ease-in-out ${
+          isSidebarOpen
+            ? "w-72 translate-x-0"
+            : "w-0 -translate-x-full lg:translate-x-0 lg:w-0 overflow-hidden"
+        }`}
       >
         {/* Sidebar Header */}
         <div className="h-16 flex items-center justify-between px-4 border-b border-[var(--border)] shrink-0">
@@ -659,10 +563,11 @@ function AssistantPageInner() {
             conversations.map((conv) => (
               <div
                 key={conv.id}
-                className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-left transition-colors group/conv cursor-pointer ${activeConversationId === conv.id
-                  ? "bg-[rgba(255,255,255,0.08)] text-white"
-                  : "text-[var(--text-secondary)] hover:bg-[rgba(255,255,255,0.04)]"
-                  }`}
+                className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-left transition-colors group/conv cursor-pointer ${
+                  activeConversationId === conv.id
+                    ? "bg-[rgba(255,255,255,0.08)] text-white"
+                    : "text-[var(--text-secondary)] hover:bg-[rgba(255,255,255,0.04)]"
+                }`}
               >
                 <button
                   onClick={() => {
@@ -741,10 +646,11 @@ function AssistantPageInner() {
                         key={opt.label}
                         onClick={() => handleRetentionChange(opt.value)}
                         disabled={retentionSaving}
-                        className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-all ${retentionDays === opt.value
-                          ? "bg-[var(--accent)] text-black"
-                          : "bg-[rgba(255,255,255,0.05)] text-[var(--text-secondary)] hover:bg-[rgba(255,255,255,0.1)] hover:text-[var(--text-primary)]"
-                          } disabled:opacity-50`}
+                        className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-all ${
+                          retentionDays === opt.value
+                            ? "bg-[var(--accent)] text-black"
+                            : "bg-[rgba(255,255,255,0.05)] text-[var(--text-secondary)] hover:bg-[rgba(255,255,255,0.1)] hover:text-[var(--text-primary)]"
+                        } disabled:opacity-50`}
                       >
                         {opt.label}
                       </button>
@@ -922,8 +828,7 @@ function AssistantPageInner() {
                   (msg.auth_actions && msg.auth_actions.length > 0) ||
                   isThinking;
 
-                if (!isUser && !shouldRenderAiBubble && !msg.is_proactive)
-                  return null;
+                if (!isUser && !shouldRenderAiBubble) return null;
 
                 return (
                   <div
@@ -939,25 +844,11 @@ function AssistantPageInner() {
 
                     {/* Bubble Container */}
                     <div
-                      className={`flex flex-col group ${isUser ? "items-end" : "items-start w-full"
-                        }`}
+                      className={`flex flex-col group ${
+                        isUser ? "items-end" : "items-start w-full"
+                      }`}
                     >
-                      <div
-                        className={`max-w-[85%] lg:max-w-[90%] rounded-2xl px-5 py-4 bg-[var(--bg-elevated)] border border-[rgba(255,255,255,0.02)] shadow-sm ${msg.is_proactive
-                          ? "border-l-2 border-l-cyan-400 pl-4 rounded-l-none"
-                          : ""
-                          }`}
-                      >
-                        {/* Proactive badge */}
-                        {msg.is_proactive && (
-                          <div className="flex items-center gap-1.5 mb-2">
-                            <Zap size={14} className="text-cyan-400" />
-                            <span className="text-xs uppercase tracking-wider font-semibold text-cyan-400">
-                              Proactive Summary
-                            </span>
-                          </div>
-                        )}
-
+                      <div className="max-w-[85%] lg:max-w-[90%] rounded-2xl px-5 py-4 bg-[var(--bg-elevated)] border border-[rgba(255,255,255,0.02)] shadow-sm">
                         {/* Content */}
                         {isUser ? (
                           <div className="relative group/userMsg">
@@ -966,7 +857,9 @@ function AssistantPageInner() {
                             </p>
                             <div className="flex justify-end mt-1 -mb-1">
                               <button
-                                onClick={() => handleCopyMessage(msg.id, msg.content)}
+                                onClick={() =>
+                                  handleCopyMessage(msg.id, msg.content)
+                                }
                                 className="p-1 rounded-md text-[var(--text-muted)] opacity-0 group-hover/userMsg:opacity-100 hover:text-[var(--text-primary)] hover:bg-[rgba(255,255,255,0.06)] transition-all"
                                 title="Copy message"
                               >
@@ -981,7 +874,9 @@ function AssistantPageInner() {
                         ) : msg.content ? (
                           <>
                             <div className="markdown-content text-[15px] leading-relaxed text-[var(--text-primary)]">
-                              <ReactMarkdown>{msg.content}</ReactMarkdown>
+                              <span style={{ whiteSpace: "pre-wrap" }}>
+                                {msg.content}
+                              </span>
                             </div>
                             {/* <span className="block mt-3 text-[11px] font-medium text-[var(--text-muted)]">
                               Just now
@@ -992,24 +887,51 @@ function AssistantPageInner() {
                             <div className="flex items-center gap-2 py-1.5 px-2 opacity-70">
                               {msg.logs && msg.logs.length > 0 ? (
                                 <span className="text-[13px] font-medium font-mono animate-pulse bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-                                  {msg.logs[msg.logs.length - 1].label.replace(/composio_?/i, "").replace(/composio\s*/i, "")}...
+                                  {msg.logs[msg.logs.length - 1].label
+                                    .replace(/composio_?/i, "")
+                                    .replace(/composio\s*/i, "")}
+                                  ...
                                 </span>
                               ) : (
                                 <>
                                   <motion.span
                                     className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--text-muted)]"
-                                    animate={{ opacity: [0.4, 1, 0.4], scale: [0.8, 1, 0.8] }}
-                                    transition={{ repeat: Infinity, duration: 1.4, ease: "easeInOut", delay: 0 }}
+                                    animate={{
+                                      opacity: [0.4, 1, 0.4],
+                                      scale: [0.8, 1, 0.8],
+                                    }}
+                                    transition={{
+                                      repeat: Infinity,
+                                      duration: 1.4,
+                                      ease: "easeInOut",
+                                      delay: 0,
+                                    }}
                                   />
                                   <motion.span
                                     className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--text-muted)]"
-                                    animate={{ opacity: [0.4, 1, 0.4], scale: [0.8, 1, 0.8] }}
-                                    transition={{ repeat: Infinity, duration: 1.4, ease: "easeInOut", delay: 0.2 }}
+                                    animate={{
+                                      opacity: [0.4, 1, 0.4],
+                                      scale: [0.8, 1, 0.8],
+                                    }}
+                                    transition={{
+                                      repeat: Infinity,
+                                      duration: 1.4,
+                                      ease: "easeInOut",
+                                      delay: 0.2,
+                                    }}
                                   />
                                   <motion.span
                                     className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--text-muted)]"
-                                    animate={{ opacity: [0.4, 1, 0.4], scale: [0.8, 1, 0.8] }}
-                                    transition={{ repeat: Infinity, duration: 1.4, ease: "easeInOut", delay: 0.4 }}
+                                    animate={{
+                                      opacity: [0.4, 1, 0.4],
+                                      scale: [0.8, 1, 0.8],
+                                    }}
+                                    transition={{
+                                      repeat: Infinity,
+                                      duration: 1.4,
+                                      ease: "easeInOut",
+                                      delay: 0.4,
+                                    }}
                                   />
                                 </>
                               )}
@@ -1059,7 +981,7 @@ function AssistantPageInner() {
                                             if (res?.suggestions)
                                               setSuggestions(res.suggestions);
                                           })
-                                          .catch(() => { });
+                                          .catch(() => {});
                                       }
                                     }
                                   }, 1000);
@@ -1162,7 +1084,7 @@ function AssistantPageInner() {
       </div>
 
       {/* ─── RIGHT PANEL (TOOL EXECUTION LOGS) ─── */}
-      {/* <div
+      <div
         className={`fixed lg:static top-0 right-0 h-full bg-[#111111] z-40 transition-all duration-300 ease-in-out transform flex flex-col border-l border-[rgba(255,255,255,0.05)] ${
           isLogsOpen
             ? "translate-x-0 w-[320px] lg:w-[40%]"
@@ -1195,7 +1117,7 @@ function AssistantPageInner() {
           )}
           <div ref={logsEndRef} />
         </div>
-      </div> */}
+      </div>
 
       {/* Delete Confirmation Dialog */}
       {deleteConfirm && (

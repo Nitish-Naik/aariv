@@ -140,7 +140,7 @@ export default function Hero() {
                             animate={{ opacity: 1 }}
                             transition={{ duration: 0.6, delay: 0.65 }}
                         >
-                            <p className="text-[11px] text-zinc-700 mb-3 uppercase tracking-widest">Works with your stack</p>
+                            <p className="text-[11px] text-zinc-400 mb-3 uppercase tracking-widest">Works with your stack</p>
                             <div className="flex items-center gap-2 flex-wrap">
                                 {appLogos.map((app, i) => (
                                     <motion.div
@@ -148,13 +148,13 @@ export default function Hero() {
                                         initial={{ opacity: 0, scale: 0.85 }}
                                         animate={{ opacity: 1, scale: 1 }}
                                         transition={{ delay: 0.65 + i * 0.05, duration: 0.3 }}
-                                        className="w-9 h-9 rounded-xl bg-white/[0.04] border border-white/[0.07] flex items-center justify-center hover:bg-white/[0.08] hover:border-white/15 transition-all duration-200"
+                                        className="w-9 h-9 rounded-xl bg-white/[0.08] border border-white/[0.12] flex items-center justify-center hover:bg-white/[0.14] hover:border-white/20 transition-all duration-200"
                                         title={app.name}
                                     >
-                                        <Image src={app.icon} alt={app.name} width={18} height={18} className="opacity-60" />
+                                        <Image src={app.icon} alt={app.name} width={18} height={18} className="opacity-90" />
                                     </motion.div>
                                 ))}
-                                <span className="text-xs text-zinc-700 ml-1">+1000 more</span>
+                                <span className="text-xs text-zinc-400 ml-1">+1000 more</span>
                             </div>
                         </motion.div>
                     </div>

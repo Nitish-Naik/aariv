@@ -296,6 +296,19 @@ export function Sidebar() {
                 )}
                 {isDark ? "Light Mode" : "Dark Mode"}
               </button>
+              {user && balanceData && (
+                <Link
+                  href="/dashboard/usage"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center justify-between px-3 py-2 rounded-lg text-sm bg-[var(--accent-soft)] border border-[var(--border)] transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-[var(--accent)]"></div>
+                    <span className="font-medium text-[var(--accent)]">Credits</span>
+                  </div>
+                  <span className="font-bold text-[var(--accent)]">${balanceData.balance.toFixed(2)}</span>
+                </Link>
+              )}
               <button
                 onClick={() => {
                   setMobileMenuOpen(false);

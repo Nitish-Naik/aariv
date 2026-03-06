@@ -3,28 +3,26 @@
 import { useAuth } from "@/context/AuthContext";
 import { api } from "@/lib/api";
 import {
-    Activity,
-    ArrowRight,
-    Calendar,
-    CheckCircle2,
-    CheckSquare,
-    Clock,
-    Cloud,
-    CreditCard,
-    Eye,
-    FileText,
-    FolderOpen,
-    GitPullRequest,
-    Inbox,
-    Loader2,
-    Mail,
-    MessageSquare,
-    Mic,
-    Music,
-    Plug,
-    Sparkles,
-    Target,
-    Zap
+  Activity,
+  ArrowRight,
+  Calendar,
+  CheckCircle2,
+  CheckSquare,
+  Clock,
+  Cloud,
+  CreditCard,
+  Eye,
+  FileText,
+  FolderOpen,
+  Loader2,
+  Mail,
+  MessageSquare,
+  Mic,
+  Music,
+  Plug,
+  Sparkles,
+  Target,
+  Zap,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -46,15 +44,6 @@ interface CalendarEvent {
   startTime: string;
   endTime: string;
   color?: string;
-}
-
-interface FeedEvent {
-  id: string;
-  triggerSlug: string;
-  app: string;
-  status: string;
-  preview: string;
-  createdAt: string;
 }
 
 interface ReviewCounts {
@@ -125,70 +114,6 @@ const APP_COLOR: Record<string, string> = {
   fireflies: "#6C2BD9",
   slackbot: "#4A154B",
 };
-
-const FEED_APP_ICONS: Record<string, React.ReactNode> = {
-  gmail: <Mail size={13} />,
-  googlecalendar: <Calendar size={13} />,
-  slack: <MessageSquare size={13} />,
-  github: <GitPullRequest size={13} />,
-  notion: <Zap size={13} />,
-  linear: <CheckSquare size={13} />,
-  discord: <MessageSquare size={13} />,
-  outlook: <Mail size={13} />,
-  googledrive: <FolderOpen size={13} />,
-  googledocs: <FileText size={13} />,
-  stripe: <CreditCard size={13} />,
-  jira: <CheckSquare size={13} />,
-  trello: <CheckSquare size={13} />,
-  todoist: <CheckSquare size={13} />,
-  pipedrive: <Activity size={13} />,
-  salesforce: <Activity size={13} />,
-  spotify: <Music size={13} />,
-  youtube: <Music size={13} />,
-  fireflies: <Mic size={13} />,
-  slackbot: <MessageSquare size={13} />,
-};
-
-const FEED_APP_LABELS: Record<string, string> = {
-  gmail: "Gmail",
-  googlecalendar: "Calendar",
-  slack: "Slack",
-  github: "GitHub",
-  notion: "Notion",
-  linear: "Linear",
-  discord: "Discord",
-  outlook: "Outlook",
-  googledrive: "Google Drive",
-  googledocs: "Google Docs",
-  stripe: "Stripe",
-  jira: "Jira",
-  trello: "Trello",
-  todoist: "Todoist",
-  pipedrive: "Pipedrive",
-  salesforce: "Salesforce",
-  spotify: "Spotify",
-  youtube: "YouTube",
-  fireflies: "Fireflies",
-  slackbot: "Slackbot",
-};
-
-function feedTimeAgo(iso: string): string {
-  const diff = Date.now() - new Date(iso).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return "just now";
-  if (mins < 60) return `${mins}m ago`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
-  const days = Math.floor(hrs / 24);
-  return `${days}d ago`;
-}
-
-function formatFeedSlug(slug: string): string {
-  return slug
-    .replace(/^[A-Z]+_/, "")
-    .replace(/_/g, " ")
-    .replace(/\b\w/g, (c) => c.toUpperCase());
-}
 
 const getGreeting = () => {
   const hour = new Date().getHours();
@@ -408,24 +333,24 @@ function OnboardingState({ firstName }: { firstName: string }) {
   const router = useRouter();
 
   return (
-    <div className="max-w-2xl mx-auto px-4 sm:px-6 py-10">
-      {/* Welcome Hero */}
-      <div className="flex flex-col items-center text-center mb-10">
-        <div className="w-14 h-14 rounded-2xl bg-[var(--accent)]/10 flex items-center justify-center mb-5">
-          <Sparkles size={28} className="text-[var(--accent)]" />
+    <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-12 md:py-20 flex flex-col items-center">
+      {/* Header */}
+      <div className="text-center mb-12 max-w-2xl">
+        <div className="w-16 h-16 bg-gradient-to-br from-[var(--bg-elevated)] to-[var(--bg-deep)] border border-[var(--border)] rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl">
+          <Sparkles className="text-[var(--text-primary)]" size={28} />
         </div>
-        <h1 className="text-2xl sm:text-3xl font-serif text-[var(--text-primary)] mb-3">
+        <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-[var(--text-primary)] mb-4 leading-tight">
           Welcome, {firstName}!
         </h1>
         <p className="text-sm text-[var(--text-secondary)] max-w-md leading-relaxed">
-          Connect your first app so CalmPilot can start managing your day — reading
-          emails, checking your calendar, and surfacing what needs your
+          Connect your first app so CalmPilot can start managing your day —
+          reading emails, checking your calendar, and surfacing what needs your
           attention.
         </p>
       </div>
 
       {/* Recommended Apps */}
-      <div className="mb-8">
+      <div className="mb-8 max-w-xl w-full">
         <h2 className="text-xs font-medium uppercase tracking-widest text-[var(--text-muted)] mb-4">
           Get started with
         </h2>
@@ -469,7 +394,7 @@ function OnboardingState({ firstName }: { firstName: string }) {
       </div>
 
       {/* Browse All + Skip */}
-      <div className="flex flex-col sm:flex-row items-center gap-3">
+      <div className="flex flex-col sm:flex-row items-center gap-3 max-w-xl w-full">
         <button
           onClick={() => router.push("/dashboard/integrations")}
           className="w-full sm:flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[var(--accent)] text-white text-sm font-medium hover:opacity-90 transition-opacity"
@@ -487,7 +412,7 @@ function OnboardingState({ firstName }: { firstName: string }) {
       </div>
 
       {/* How it works */}
-      <div className="mt-10 bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl p-5">
+      <div className="mt-10 bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl p-5 max-w-xl w-full">
         <h3 className="text-xs font-medium uppercase tracking-widest text-[var(--text-muted)] mb-4">
           How it works
         </h3>
@@ -532,31 +457,31 @@ function OnboardingState({ firstName }: { firstName: string }) {
 function CalmState({
   firstName,
   briefing,
-  recentEvents = [],
   reviewCounts = { total: 0, high: 0, medium: 0, low: 0 },
   onRefresh,
   refreshing,
 }: {
   firstName: string;
   briefing?: Briefing | null;
-  recentEvents?: FeedEvent[];
   reviewCounts?: ReviewCounts;
   onRefresh?: () => void;
   refreshing?: boolean;
 }) {
   const router = useRouter();
-  const subtitle = briefing?.subtitle || "Nothing needs your attention right now. Your day is unfolding exactly as it should.";
+  const subtitle =
+    briefing?.subtitle ||
+    "Nothing needs your attention right now. Your day is unfolding exactly as it should.";
   const calendarEvents = briefing?.events ?? [];
   const insight = briefing?.insight;
 
   return (
-    <div className="max-w-3xl mx-auto px-4 sm:px-6 py-10">
+    <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-10">
       {/* Hero */}
       <div className="flex flex-col items-center text-center mb-10">
         <div className="mb-6 text-[var(--text-muted)]">
           <Cloud size={48} strokeWidth={1.2} />
         </div>
-        <h1 className="text-2xl sm:text-3xl font-serif text-[var(--text-primary)] mb-3">
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[var(--text-primary)] mb-3">
           {getGreeting()}, {firstName}
         </h1>
         <p className="text-sm text-[var(--text-secondary)] max-w-sm leading-relaxed mb-8">
@@ -577,7 +502,7 @@ function CalmState({
             className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[var(--bg-surface)] border border-[var(--border)] text-sm font-medium text-[var(--text-primary)] hover:border-[var(--accent)] transition-colors"
           >
             <Eye size={15} className="text-[var(--accent)]" />
-            Check my horizon
+            Manage triggers
           </button>
           <button
             onClick={() => router.push("/dashboard/review")}
@@ -591,7 +516,7 @@ function CalmState({
 
       {/* Calendar events — calm day can still have meetings */}
       {calendarEvents.length > 0 && (
-        <div className="mb-6">
+        <div className="mb-6 max-w-xl w-full">
           <h2 className="text-xs font-medium uppercase tracking-widest text-[var(--text-muted)] mb-3">
             What&apos;s ahead today
           </h2>
@@ -608,7 +533,7 @@ function CalmState({
       )}
 
       {/* Quick Links */}
-      <div className="flex items-center gap-3 mb-6 flex-wrap">
+      <div className="flex items-center gap-3 mb-6 flex-wrap max-w-xl w-full">
         {reviewCounts.total > 0 && (
           <Link
             href="/dashboard/review"
@@ -616,14 +541,18 @@ function CalmState({
           >
             <CheckCircle2 size={15} className="text-[var(--accent)]" />
             <span className="text-sm font-medium text-[var(--text-primary)]">
-              {reviewCounts.total} item{reviewCounts.total !== 1 ? "s" : ""} to review
+              {reviewCounts.total} item{reviewCounts.total !== 1 ? "s" : ""} to
+              review
             </span>
             {reviewCounts.high > 0 && (
               <span className="text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-500">
                 {reviewCounts.high} urgent
               </span>
             )}
-            <ArrowRight size={13} className="text-[var(--text-muted)] group-hover:text-[var(--accent)] transition-colors" />
+            <ArrowRight
+              size={13}
+              className="text-[var(--text-muted)] group-hover:text-[var(--accent)] transition-colors"
+            />
           </Link>
         )}
         <Link
@@ -648,61 +577,13 @@ function CalmState({
         )}
       </div>
 
-      {/* Recent Activity */}
-      {recentEvents.length > 0 && (
-        <div>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-xs font-medium uppercase tracking-widest text-[var(--text-muted)]">
-              Recent activity
-            </h2>
-            <Link
-              href="/dashboard/feed"
-              className="text-xs font-medium text-[var(--accent)] hover:underline underline-offset-2 flex items-center gap-1"
-            >
-              View all
-              <ArrowRight size={11} />
-            </Link>
-          </div>
-          <div className="space-y-2">
-            {recentEvents.slice(0, 5).map((evt) => {
-              const icon = FEED_APP_ICONS[evt.app] || <Inbox size={13} />;
-              const color = APP_COLOR[evt.app] || "var(--text-muted)";
-              return (
-                <div
-                  key={evt.id}
-                  className="flex items-center gap-3 bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl px-4 py-2.5 hover:border-[var(--border-strong)] transition-colors"
-                >
-                  <div
-                    className="w-7 h-7 rounded-lg flex items-center justify-center text-white shrink-0"
-                    style={{ backgroundColor: color }}
-                  >
-                    {icon}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <span className="text-sm text-[var(--text-primary)] font-medium truncate block">
-                      {formatFeedSlug(evt.triggerSlug)}
-                    </span>
-                    {evt.preview && (
-                      <span className="text-xs text-[var(--text-muted)] truncate block">
-                        {evt.preview}
-                      </span>
-                    )}
-                  </div>
-                  <span className="text-[11px] text-[var(--text-muted)] tabular-nums whitespace-nowrap shrink-0">
-                    {feedTimeAgo(evt.createdAt)}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
       {/* Aariv insight */}
       {insight && (
-        <div className="mt-8 flex items-center gap-3 bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl px-4 py-3">
+        <div className="mt-8 flex items-center gap-3 bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl px-4 py-3 max-w-xl w-full">
           <Sparkles size={16} className="text-[var(--accent)] shrink-0" />
-          <p className="text-sm text-[var(--text-secondary)] leading-relaxed">{insight}</p>
+          <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
+            {insight}
+          </p>
         </div>
       )}
 
@@ -720,7 +601,6 @@ function ActiveState({
   firstName,
   briefing,
   logoMap,
-  recentEvents,
   reviewCounts,
   onRefresh,
   refreshing,
@@ -728,7 +608,6 @@ function ActiveState({
   firstName: string;
   briefing: Briefing;
   logoMap: Record<string, string>;
-  recentEvents: FeedEvent[];
   reviewCounts: ReviewCounts;
   onRefresh?: () => void;
   refreshing?: boolean;
@@ -745,10 +624,10 @@ function ActiveState({
   };
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
+    <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-6 sm:py-10">
       {/* Header */}
       <div className="flex items-start justify-between mb-2">
-        <h1 className="text-2xl sm:text-3xl font-serif text-[var(--text-primary)]">
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[var(--text-primary)]">
           {getGreeting()}, {firstName}
         </h1>
         <div className="flex items-center gap-3 mt-1">
@@ -882,56 +761,6 @@ function ActiveState({
         </Link>
       </div>
 
-      {/* ── Recent Activity ──────────────────────────── */}
-      {recentEvents.length > 0 && (
-        <div className="mt-8">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-xs font-medium uppercase tracking-widest text-[var(--text-muted)]">
-              Recent activity
-            </h2>
-            <Link
-              href="/dashboard/feed"
-              className="text-xs font-medium text-[var(--accent)] hover:underline underline-offset-2 flex items-center gap-1"
-            >
-              View all
-              <ArrowRight size={11} />
-            </Link>
-          </div>
-          <div className="space-y-2">
-            {recentEvents.slice(0, 5).map((evt) => {
-              const icon = FEED_APP_ICONS[evt.app] || <Inbox size={13} />;
-              const color = APP_COLOR[evt.app] || "var(--text-muted)";
-              return (
-                <div
-                  key={evt.id}
-                  className="flex items-center gap-3 bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl px-4 py-2.5 hover:border-[var(--border-strong)] transition-colors"
-                >
-                  <div
-                    className="w-7 h-7 rounded-lg flex items-center justify-center text-white shrink-0"
-                    style={{ backgroundColor: color }}
-                  >
-                    {icon}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <span className="text-sm text-[var(--text-primary)] font-medium truncate block">
-                      {formatFeedSlug(evt.triggerSlug)}
-                    </span>
-                    {evt.preview && (
-                      <span className="text-xs text-[var(--text-muted)] truncate block">
-                        {evt.preview}
-                      </span>
-                    )}
-                  </div>
-                  <span className="text-[11px] text-[var(--text-muted)] tabular-nums whitespace-nowrap shrink-0">
-                    {feedTimeAgo(evt.createdAt)}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
       {/* Bottom Insight Bar */}
       {insight && (
         <div className="mt-8 flex items-center gap-3 bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl px-4 py-3">
@@ -951,7 +780,6 @@ export default function DashboardHome() {
   const { user } = useAuth();
   const [briefing, setBriefing] = useState<Briefing | null>(null);
   const [logoMap, setLogoMap] = useState<Record<string, string>>({});
-  const [recentEvents, setRecentEvents] = useState<FeedEvent[]>([]);
   const [reviewCounts, setReviewCounts] = useState<ReviewCounts>({
     total: 0,
     high: 0,
@@ -963,51 +791,53 @@ export default function DashboardHome() {
   const [error, setError] = useState<string | null>(null);
   const [hasConnections, setHasConnections] = useState<boolean | null>(null);
 
-  const fetchBriefing = useCallback(async (silent = false) => {
-    if (!user?.id) return;
-    if (silent) setRefreshing(true);
-    else setLoading(true);
-    setError(null);
-    try {
-      // 1. Check connected apps
-      const intData = await api
-        .get(`/integrations?userId=${user.id}`)
-        .catch(() => null);
+  const fetchBriefing = useCallback(
+    async (silent = false) => {
+      if (!user?.id) return;
+      if (silent) setRefreshing(true);
+      else setLoading(true);
+      setError(null);
+      try {
+        // 1. Check connected apps
+        const intData = await api
+          .get(`/integrations?userId=${user.id}`)
+          .catch(() => null);
 
-      const connectedApps: string[] = [];
-      if (intData?.integrations) {
-        const map: Record<string, string> = {};
-        for (const int of intData.integrations) {
-          if (int.logo && int.appName) map[int.appName.toLowerCase()] = int.logo;
-          if (int.status === "connected" && int.canDisconnect !== false)
-            connectedApps.push(int.appName);
+        const connectedApps: string[] = [];
+        if (intData?.integrations) {
+          const map: Record<string, string> = {};
+          for (const int of intData.integrations) {
+            if (int.logo && int.appName)
+              map[int.appName.toLowerCase()] = int.logo;
+            if (int.status === "connected" && int.canDisconnect !== false)
+              connectedApps.push(int.appName);
+          }
+          setLogoMap(map);
         }
-        setLogoMap(map);
-      }
 
-      if (connectedApps.length === 0) {
-        setHasConnections(false);
-        return;
-      }
-      setHasConnections(true);
+        if (connectedApps.length === 0) {
+          setHasConnections(false);
+          return;
+        }
+        setHasConnections(true);
 
-      // 2. Fetch briefing + feed + review in parallel
-      const [data, feedData, reviewData] = await Promise.all([
-        api.get(`/dashboard/briefing?userId=${user.id}`),
-        api.get(`/dashboard/recent-events?userId=${user.id}&limit=5`).catch(() => null),
-        api.get(`/review?userId=${user.id}&status=pending`).catch(() => null),
-      ]);
-      setBriefing(data);
-      if (feedData?.events) setRecentEvents(feedData.events);
-      if (reviewData?.counts) setReviewCounts(reviewData.counts);
-    } catch (err: any) {
-      console.error("Failed to fetch briefing:", err);
-      setError(err.message || "Couldn't load your briefing.");
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, [user?.id]);
+        // 2. Fetch briefing + review in parallel
+        const [data, reviewData] = await Promise.all([
+          api.get(`/dashboard/briefing?userId=${user.id}`),
+          api.get(`/review?userId=${user.id}&status=pending`).catch(() => null),
+        ]);
+        setBriefing(data);
+        if (reviewData?.counts) setReviewCounts(reviewData.counts);
+      } catch (err: any) {
+        console.error("Failed to fetch briefing:", err);
+        setError(err.message || "Couldn't load your briefing.");
+      } finally {
+        setLoading(false);
+        setRefreshing(false);
+      }
+    },
+    [user?.id],
+  );
 
   useEffect(() => {
     fetchBriefing();
@@ -1017,9 +847,42 @@ export default function DashboardHome() {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[70vh] gap-3">
-        <Loader2 size={24} className="animate-spin text-[var(--text-muted)]" />
-        <p className="text-sm text-[var(--text-muted)]">Preparing your day…</p>
+      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-10">
+        <div className="flex flex-col items-center text-center mb-10">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[var(--text-primary)] mb-3">
+            {getGreeting()}, {firstName}
+          </h1>
+          <p className="text-sm text-[var(--text-secondary)]">
+            Preparing your day…
+          </p>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
+          {[1, 2, 3, 4].map((i) => (
+            <div
+              key={i}
+              className="bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl px-4 py-5"
+            >
+              <div className="h-3 w-16 rounded bg-[var(--overlay)] animate-pulse mb-3" />
+              <div className="h-6 w-10 rounded bg-[var(--overlay)] animate-pulse" />
+            </div>
+          ))}
+        </div>
+        <div className="space-y-3">
+          {[1, 2, 3].map((i) => (
+            <div
+              key={i}
+              className="bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl p-5"
+            >
+              <div className="flex items-start gap-3">
+                <div className="w-7 h-7 rounded-lg bg-[var(--overlay)] animate-pulse shrink-0" />
+                <div className="flex-1 space-y-2 pt-0.5">
+                  <div className="h-4 w-2/5 rounded bg-[var(--overlay)] animate-pulse" />
+                  <div className="h-3 w-3/5 rounded bg-[var(--overlay)] animate-pulse" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
@@ -1031,7 +894,7 @@ export default function DashboardHome() {
   // Explicit error state — don't silently hide it
   if (error && !briefing) {
     return (
-      <div className="max-w-xl mx-auto px-4 py-20 flex flex-col items-center text-center gap-4">
+      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-10 flex flex-col items-center justify-center min-h-[80vh]">
         <p className="text-sm text-[var(--text-secondary)]">{error}</p>
         <button
           onClick={() => fetchBriefing()}
@@ -1049,7 +912,6 @@ export default function DashboardHome() {
       <CalmState
         firstName={firstName}
         briefing={briefing}
-        recentEvents={recentEvents}
         reviewCounts={reviewCounts}
         onRefresh={() => fetchBriefing(true)}
         refreshing={refreshing}
@@ -1062,7 +924,6 @@ export default function DashboardHome() {
       firstName={firstName}
       briefing={briefing}
       logoMap={logoMap}
-      recentEvents={recentEvents}
       reviewCounts={reviewCounts}
       onRefresh={() => fetchBriefing(true)}
       refreshing={refreshing}

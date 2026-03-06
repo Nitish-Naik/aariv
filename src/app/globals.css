@@ -14,6 +14,14 @@
   --text-muted: #9a9794;
   --accent: #6b7490;
   --accent-soft: rgba(107, 116, 144, 0.1);
+  --tab-bg: rgba(0, 0, 0, 0.04);
+  --tab-active: rgba(0, 0, 0, 0.08);
+  --pill-bg: rgba(0, 0, 0, 0.03);
+  --pill-active-bg: var(--text-primary);
+  --pill-active-text: var(--bg-deep);
+  --overlay: rgba(0, 0, 0, 0.04);
+  --overlay-hover: rgba(0, 0, 0, 0.08);
+  --card-glow: rgba(0, 0, 0, 0.02);
 }
 
 .dark {
@@ -28,6 +36,14 @@
   --text-muted: #5a5754;
   --accent: #8b95b0;
   --accent-soft: rgba(139, 149, 176, 0.12);
+  --tab-bg: rgba(255, 255, 255, 0.06);
+  --tab-active: rgba(255, 255, 255, 0.1);
+  --pill-bg: rgba(255, 255, 255, 0.04);
+  --pill-active-bg: var(--text-primary);
+  --pill-active-text: var(--bg-deep);
+  --overlay: rgba(255, 255, 255, 0.04);
+  --overlay-hover: rgba(255, 255, 255, 0.08);
+  --card-glow: rgba(255, 255, 255, 0.02);
 }
 
 body {
