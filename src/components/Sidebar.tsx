@@ -2,7 +2,6 @@
 
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { useAuth } from "@/context/AuthContext";
-import { useTheme } from "@/context/ThemeContext";
 import { useBilling } from "@/context/useBilling";
 import {
     Activity,
@@ -12,9 +11,7 @@ import {
     LogOut,
     Menu,
     MessageSquare,
-    Moon,
     Settings,
-    Sun,
     X,
     Zap,
 } from "lucide-react";
@@ -43,7 +40,6 @@ const bottomBarItems = [
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { isDark, toggleTheme } = useTheme();
   const { user, signOut } = useAuth();
   const { balanceData } = useBilling();
   const [showSignOutDialog, setShowSignOutDialog] = useState(false);
@@ -71,17 +67,22 @@ export function Sidebar() {
       {/* ─── DESKTOP SIDEBAR (hidden on mobile) ─── */}
       <aside className="hidden md:flex flex-col w-[240px] h-screen border-r border-[var(--border)] bg-[var(--bg-surface)] fixed left-0 top-0 z-30">
         {/* Logo */}
-        <div className="px-6 py-5 border-b border-[var(--border)]">
-          <h1 className="text-lg font-serif font-semibold tracking-wide text-[var(--text-primary)]">
-            CalmPilot
-          </h1>
-          <p className="text-xs text-[var(--text-muted)] mt-0.5">
-            a quieter way to get work done
-          </p>
+        <div className="px-4 py-3 border-b border-[var(--border)] shrink-0">
+          <div className="flex items-center gap-2">
+            <img src="/icons/icon-192.svg" alt="CalmPilot" className="w-5 h-5 rounded-md shrink-0" />
+            <div>
+              <h1 className="text-sm font-serif font-semibold tracking-wide text-[var(--text-primary)] leading-tight">
+                CalmPilot
+              </h1>
+              <p className="text-[10px] text-[var(--text-muted)] leading-tight">
+                a quieter way to get work done
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+        <nav className="flex-1 px-3 py-3 space-y-0.5">
           {navItems.map((item) => {
             const isActive =
               pathname === item.href ||
@@ -107,18 +108,6 @@ export function Sidebar() {
 
         {/* Bottom section */}
         <div className="px-3 py-4 border-t border-[var(--border)] space-y-2">
-          <button
-            onClick={toggleTheme}
-            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--accent-soft)] w-full transition-colors"
-          >
-            {isDark ? (
-              <Sun size={18} strokeWidth={1.5} />
-            ) : (
-              <Moon size={18} strokeWidth={1.5} />
-            )}
-            {isDark ? "Light Mode" : "Dark Mode"}
-          </button>
-
           {user && (
             <div className="flex items-center gap-3 px-3 py-2 rounded-lg">
               {user.avatar ? (
@@ -137,7 +126,7 @@ export function Sidebar() {
                   {user.name}
                 </p>
                 <p className="text-xs text-[var(--text-muted)] truncate">
-                  {user.email}
+                  {/* {user.email} */}
                 </p>
               </div>
             </div>
@@ -145,7 +134,7 @@ export function Sidebar() {
 
           {user && balanceData && (
             <Link
-              href="/dashboard/usage"
+              href=""
               className="flex items-center justify-between px-3 py-2 rounded-lg text-sm bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] border border-[var(--border)] transition-colors"
             >
               <div className="flex items-center gap-2">
@@ -168,9 +157,12 @@ export function Sidebar() {
 
       {/* ─── MOBILE TOP BAR (visible on mobile only) ─── */}
       <header className="md:hidden fixed top-0 left-0 right-0 z-40 flex items-center justify-between px-4 py-3 bg-[var(--bg-surface)] border-b border-[var(--border)] safe-top">
-        <h1 className="text-base font-serif font-semibold tracking-wide text-[var(--text-primary)]">
-          CalmPilot
-        </h1>
+        <div className="flex items-center gap-2">
+          <img src="/icons/icon-192.svg" alt="CalmPilot" className="w-6 h-6 rounded-md shrink-0" />
+          <h1 className="text-base font-serif font-semibold tracking-wide text-[var(--text-primary)]">
+            CalmPilot
+          </h1>
+        </div>
         <button
           onClick={() => setMobileMenuOpen(true)}
           className="p-2 rounded-lg hover:bg-[var(--accent-soft)] transition-colors"
@@ -285,17 +277,6 @@ export function Sidebar() {
 
             {/* Bottom actions */}
             <div className="px-3 py-4 border-t border-[var(--border)] space-y-1">
-              <button
-                onClick={toggleTheme}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--accent-soft)] w-full transition-colors"
-              >
-                {isDark ? (
-                  <Sun size={18} strokeWidth={1.5} />
-                ) : (
-                  <Moon size={18} strokeWidth={1.5} />
-                )}
-                {isDark ? "Light Mode" : "Dark Mode"}
-              </button>
               {user && balanceData && (
                 <Link
                   href="/dashboard/usage"

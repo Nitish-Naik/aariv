@@ -2,6 +2,7 @@
 
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { useAuth } from "@/context/AuthContext";
+import { useTheme } from "@/context/ThemeContext";
 import { api } from "@/lib/api";
 import { supabase } from "@/lib/supabase";
 import { useBilling } from "@/context/useBilling";
@@ -30,28 +31,28 @@ import React, { useEffect, useRef, useState } from "react";
 
 const MODEL_OPTIONS = [
   {
-    id: "gpt-4o",
-    name: "GPT-4o",
-    detail: "Most capable — best for complex reasoning tasks",
+    id: "gpt-5.4",
+    name: "GPT-5.4",
+    detail: "Most capable — best for professional & complex work",
     icon: Brain,
   },
   {
-    id: "gpt-4o-mini",
-    name: "GPT-4o Mini",
-    detail: "Fast & efficient — great for everyday tasks",
-    icon: Zap,
+    id: "gpt-5",
+    name: "GPT-5",
+    detail: "Intelligent reasoning — great for coding & agentic tasks",
+    icon: Sparkles,
   },
   {
-    id: "o3-mini",
-    name: "o3-mini",
-    detail: "Advanced reasoning — great for math & coding",
+    id: "gpt-4.1",
+    name: "GPT-4.1",
+    detail: "Smartest non-reasoning model — fast & accurate",
     icon: Cpu,
   },
   {
-    id: "o1",
-    name: "o1",
-    detail: "Deep thinking — tackles the hardest problems",
-    icon: Sparkles,
+    id: "gpt-4.1-mini",
+    name: "GPT-4.1 Mini",
+    detail: "Fast & cost-efficient — ideal for everyday tasks",
+    icon: Zap,
   },
 ] as const;
 
@@ -114,13 +115,14 @@ interface UsageSummary {
 export default function SettingsPage() {
   const { user, signOut } = useAuth();
   const { balanceData } = useBilling();
+  const { isDark, toggleTheme } = useTheme();
 
   const [displayName, setDisplayName] = useState("");
   const [editingName, setEditingName] = useState(false);
   const [savingProf, setSavingProf] = useState(false);
 
-  const [model, setModel] = useState("gpt-4o-mini");
-  const [pendingModel, setPendingModel] = useState("gpt-4o-mini");
+  const [model, setModel] = useState("gpt-4.1-mini");
+  const [pendingModel, setPendingModel] = useState("gpt-4.1-mini");
   const [savingModel, setSavingModel] = useState(false);
 
   const [retention, setRetention] = useState<number | null>(null);
@@ -153,7 +155,7 @@ export default function SettingsPage() {
   const [savingRefill, setSavingRefill] = useState(false);
 
   useEffect(() => {
-    const saved = localStorage.getItem("aariv_model") || "gpt-4o-mini";
+    const saved = localStorage.getItem("aariv_model") || "gpt-4.1-mini";
     setModel(saved);
     setPendingModel(saved);
   }, []);
@@ -695,6 +697,28 @@ export default function SettingsPage() {
                 {savingRefill ? "Saving…" : "Save (disabled)"}
               </button>
             )}
+          </div>
+        </SectionCard>
+
+        {/* ── Appearance ── */}
+        <SectionCard label="APPEARANCE" icon={Moon} title="Theme"
+          subtitle="Choose between light and dark mode.">
+          <div className="flex items-center justify-between px-5 py-4">
+            <div>
+              <p className="text-sm text-[var(--text-primary)]">{isDark ? "Dark Mode" : "Light Mode"}</p>
+              <p className="text-xs text-[var(--text-muted)] mt-0.5">{isDark ? "Easy on the eyes at night" : "Bright and clear"}</p>
+            </div>
+            <button
+              onClick={toggleTheme}
+              className={`relative w-12 h-7 rounded-full transition-colors shrink-0 ${isDark ? "bg-amber-500" : "bg-[var(--overlay)] border border-[var(--border)]"}`}
+              aria-pressed={isDark}
+            >
+              <span className={`absolute top-1 w-5 h-5 rounded-full bg-white shadow transition-all flex items-center justify-center ${isDark ? "left-6" : "left-1"}`}>
+                {isDark
+                  ? <Moon size={10} className="text-amber-500" />
+                  : <Sun size={10} className="text-amber-400" />}
+              </span>
+            </button>
           </div>
         </SectionCard>
 
