@@ -893,16 +893,38 @@ export default function DashboardHome() {
 
   // Explicit error state — don't silently hide it
   if (error && !briefing) {
+    const isCredits = error === "INSUFFICIENT_CREDITS";
     return (
       <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-10 flex flex-col items-center justify-center min-h-[80vh]">
-        <p className="text-sm text-[var(--text-secondary)]">{error}</p>
-        <button
-          onClick={() => fetchBriefing()}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[var(--accent)] text-white text-sm font-medium hover:opacity-90 transition-opacity"
-        >
-          <Loader2 size={14} />
-          Try again
-        </button>
+        {isCredits ? (
+          <div className="flex flex-col items-center gap-4 p-8 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border)] max-w-md w-full">
+            <div className="w-12 h-12 rounded-full bg-amber-500/10 flex items-center justify-center">
+              <CreditCard size={22} className="text-amber-400" />
+            </div>
+            <div className="text-center">
+              <h3 className="text-base font-semibold text-[var(--text-primary)] mb-1">Out of credits</h3>
+              <p className="text-sm text-[var(--text-muted)]">Add credits to continue using Aariv.</p>
+            </div>
+            <a
+              href="/dashboard/settings"
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[var(--accent)] text-white text-sm font-medium hover:opacity-90 transition-opacity"
+            >
+              <CreditCard size={14} />
+              Add Credits
+            </a>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center gap-3">
+            <p className="text-sm text-[var(--text-secondary)]">{error}</p>
+            <button
+              onClick={() => fetchBriefing()}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[var(--accent)] text-white text-sm font-medium hover:opacity-90 transition-opacity"
+            >
+              <Loader2 size={14} />
+              Try again
+            </button>
+          </div>
+        )}
       </div>
     );
   }

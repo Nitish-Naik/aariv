@@ -1,8 +1,9 @@
 "use client";
 
-import { PulsingAvatar } from "@/components";
+import { DataCard, PulsingAvatar } from "@/components";
 import { useAuth } from "@/context/AuthContext";
 import { api } from "@/lib/api";
+import { getAppLogo } from "@/lib/platform-logos";
 import type { ChatMessage } from "@/lib/types";
 import { motion } from "framer-motion";
 import {
@@ -23,8 +24,10 @@ import {
 } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
-// import { DetailedLogEntry } from "@/components";
+import { DetailedLogEntry } from "@/components";
 
 function AssistantPageInner() {
   const { user } = useAuth();
@@ -386,6 +389,10 @@ function AssistantPageInner() {
                       newAuthActions.push(event.data);
                     }
                     return { ...msg, auth_actions: newAuthActions };
+                  } else if (event.type === "data_card") {
+                    const newDataCards = [...(msg.data_cards || [])];
+                    newDataCards.push(event.data);
+                    return { ...msg, data_cards: newDataCards };
                   } else if (event.type === "result") {
                     // Only replace logs if result has actual log entries,
                     // otherwise keep the streaming logs we accumulated
@@ -428,7 +435,7 @@ function AssistantPageInner() {
                     return {
                       ...msg,
                       content:
-                        "You've run out of credits. Please add credits in **Usage & Billing** to continue using Aariv.\n\n[Go to Usage & Billing →](/dashboard/usage)",
+                        "You've run out of credits. Please add credits in **Settings** to continue using Aariv.\n\n[Go to Settings →](/dashboard/settings)",
                     };
                   } else if (event.type === "error") {
                     return { ...msg, content: `Error: ${event.data}` };
@@ -436,7 +443,7 @@ function AssistantPageInner() {
                   return msg;
                 }),
               );
-            } catch {}
+            } catch { }
           }
         }
       }
@@ -445,11 +452,11 @@ function AssistantPageInner() {
         prev.map((msg) =>
           msg.id === aiMessageId
             ? {
-                ...msg,
-                content:
-                  "Sorry, I encountered an error: " +
-                  (e.message || "Unknown error"),
-              }
+              ...msg,
+              content:
+                "Sorry, I encountered an error: " +
+                (e.message || "Unknown error"),
+            }
             : msg,
         ),
       );
@@ -471,11 +478,10 @@ function AssistantPageInner() {
 
       {/* ── LEFT SIDEBAR (Chat History) ── */}
       <aside
-        className={`fixed lg:static top-0 left-0 h-full z-40 flex flex-col bg-[var(--bg-elevated)] border-r border-[var(--border)] transition-all duration-300 ease-in-out ${
-          isSidebarOpen
-            ? "w-72 translate-x-0"
-            : "w-0 -translate-x-full lg:translate-x-0 lg:w-0 overflow-hidden"
-        }`}
+        className={`fixed lg:static top-0 left-0 h-full z-40 flex flex-col bg-[var(--bg-elevated)] border-r border-[var(--border)] transition-all duration-300 ease-in-out ${isSidebarOpen
+          ? "w-72 translate-x-0"
+          : "w-0 -translate-x-full lg:translate-x-0 lg:w-0 overflow-hidden"
+          }`}
       >
         {/* Sidebar Header */}
         <div className="h-16 flex items-center justify-between px-4 border-b border-[var(--border)] shrink-0">
@@ -511,11 +517,10 @@ function AssistantPageInner() {
             conversations.map((conv) => (
               <div
                 key={conv.id}
-                className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-left transition-colors group/conv cursor-pointer ${
-                  activeConversationId === conv.id
-                    ? "bg-[rgba(255,255,255,0.08)] text-white"
-                    : "text-[var(--text-secondary)] hover:bg-[rgba(255,255,255,0.04)]"
-                }`}
+                className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-left transition-colors group/conv cursor-pointer ${activeConversationId === conv.id
+                  ? "bg-[rgba(255,255,255,0.08)] text-white"
+                  : "text-[var(--text-secondary)] hover:bg-[rgba(255,255,255,0.04)]"
+                  }`}
               >
                 <button
                   onClick={() => {
@@ -594,11 +599,10 @@ function AssistantPageInner() {
                         key={opt.label}
                         onClick={() => handleRetentionChange(opt.value)}
                         disabled={retentionSaving}
-                        className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-all ${
-                          retentionDays === opt.value
-                            ? "bg-[var(--accent)] text-black"
-                            : "bg-[rgba(255,255,255,0.05)] text-[var(--text-secondary)] hover:bg-[rgba(255,255,255,0.1)] hover:text-[var(--text-primary)]"
-                        } disabled:opacity-50`}
+                        className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-all ${retentionDays === opt.value
+                          ? "bg-[var(--accent)] text-black"
+                          : "bg-[rgba(255,255,255,0.05)] text-[var(--text-secondary)] hover:bg-[rgba(255,255,255,0.1)] hover:text-[var(--text-primary)]"
+                          } disabled:opacity-50`}
                       >
                         {opt.label}
                       </button>
@@ -792,9 +796,8 @@ function AssistantPageInner() {
 
                     {/* Bubble Container */}
                     <div
-                      className={`flex flex-col group ${
-                        isUser ? "items-end" : "items-start w-full"
-                      }`}
+                      className={`flex flex-col group ${isUser ? "items-end" : "items-start w-full"
+                        }`}
                     >
                       <div className="max-w-[85%] lg:max-w-[90%] rounded-2xl px-5 py-4 bg-[var(--bg-elevated)] border border-[rgba(255,255,255,0.02)] shadow-sm">
                         {/* Content */}
@@ -822,19 +825,111 @@ function AssistantPageInner() {
                         ) : msg.content ? (
                           <>
                             <div className="markdown-content text-[15px] leading-relaxed text-[var(--text-primary)]">
-                              <span style={{ whiteSpace: "pre-wrap" }}>
+                              <ReactMarkdown
+                                remarkPlugins={[remarkGfm]}
+                                components={{
+                                  a: ({ href, children }) => {
+                                    // Render Composio connection links as cards
+                                    const isConnectLink = href?.includes("connect.composio.dev/link/") || href?.includes("composio.dev/connect/");
+                                    if (isConnectLink) {
+                                      const label = typeof children === "string" ? children : String(children);
+                                      const appName = label.replace(/^connect\s*/i, "").replace(/^to\s*/i, "").trim() || "App";
+                                      const appSlug = appName.toLowerCase().replace(/\s+/g, "");
+                                      const logoUrl = getAppLogo(appSlug);
+                                      return (
+                                        <div className="flex items-center gap-3 w-full my-2 px-4 py-3 rounded-xl bg-[var(--bg-deep)] border border-[var(--border)] hover:border-[var(--accent)]/40 transition-colors">
+                                          {logoUrl ? (
+                                            <img
+                                              src={logoUrl}
+                                              alt={appName}
+                                              className="w-8 h-8 rounded-lg object-contain"
+                                            />
+                                          ) : (
+                                            <div className="w-8 h-8 rounded-lg bg-[var(--accent-soft)] flex items-center justify-center text-[var(--accent)] text-xs font-bold">
+                                              {appName.charAt(0).toUpperCase()}
+                                            </div>
+                                          )}
+                                          <span className="flex-1 text-sm font-medium text-[var(--text-primary)]">
+                                            Connect to {appName.charAt(0).toUpperCase() + appName.slice(1)}
+                                          </span>
+                                          <button
+                                            onClick={() => {
+                                              window.open(href, "composio_connect", "width=600,height=700,left=200,top=100");
+                                            }}
+                                            className="shrink-0 px-4 py-1.5 rounded-lg bg-[var(--text-primary)] text-[var(--bg-deep)] text-xs font-semibold hover:opacity-90 transition-opacity"
+                                          >
+                                            Connect
+                                          </button>
+                                        </div>
+                                      );
+                                    }
+                                    return (
+                                      <a
+                                        href={href}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-[var(--accent)] hover:underline"
+                                      >
+                                        {children}
+                                      </a>
+                                    );
+                                  },
+                                  strong: ({ children }) => (
+                                    <strong className="font-semibold">{children}</strong>
+                                  ),
+                                  ul: ({ children }) => (
+                                    <ul className="my-2 ml-6 list-disc space-y-1">{children}</ul>
+                                  ),
+                                  ol: ({ children }) => (
+                                    <ol className="my-2 ml-6 list-decimal space-y-1">{children}</ol>
+                                  ),
+                                  li: ({ children }) => (
+                                    <li className="pl-1">{children}</li>
+                                  ),
+                                  p: ({ children }) => (
+                                    <p className="mb-2.5 last:mb-0 leading-[1.75]">{children}</p>
+                                  ),
+                                  code: ({ className, children }) => {
+                                    const isBlock = className?.includes("language-");
+                                    return isBlock ? (
+                                      <pre className="my-3 p-4 rounded-lg bg-black/[0.03] dark:bg-white/[0.06] overflow-x-auto">
+                                        <code className="text-[13px] font-mono">{children}</code>
+                                      </pre>
+                                    ) : (
+                                      <code className="px-1.5 py-0.5 rounded text-[13px] font-mono bg-black/[0.06] dark:bg-white/[0.1]">{children}</code>
+                                    );
+                                  },
+                                  blockquote: ({ children }) => (
+                                    <blockquote className="border-l-[3px] border-[var(--border)] pl-4 my-3 text-[var(--text-secondary)]">{children}</blockquote>
+                                  ),
+                                  hr: () => (
+                                    <hr className="border-[var(--border)] my-4" />
+                                  ),
+                                  h1: ({ children }) => <h1 className="text-xl font-semibold mt-4 mb-2">{children}</h1>,
+                                  h2: ({ children }) => <h2 className="text-lg font-semibold mt-4 mb-2">{children}</h2>,
+                                  h3: ({ children }) => <h3 className="text-base font-semibold mt-3 mb-1.5">{children}</h3>,
+                                  table: ({ children }) => (
+                                    <div className="overflow-x-auto my-3">
+                                      <table className="w-full text-sm border-collapse">{children}</table>
+                                    </div>
+                                  ),
+                                  th: ({ children }) => (
+                                    <th className="px-3 py-2 text-left border-b-2 border-[var(--border)] font-semibold text-sm">{children}</th>
+                                  ),
+                                  td: ({ children }) => (
+                                    <td className="px-3 py-2 border-b border-[var(--border)]">{children}</td>
+                                  ),
+                                }}
+                              >
                                 {msg.content}
-                              </span>
+                              </ReactMarkdown>
                             </div>
-                            {/* <span className="block mt-3 text-[11px] font-medium text-[var(--text-muted)]">
-                              Just now
-                            </span> */}
                           </>
                         ) : (
                           isThinking && (
-                            <div className="flex items-center gap-2 py-1.5 px-2 opacity-70">
+                            <div className="flex items-center gap-2 py-1.5 px-2">
                               {msg.logs && msg.logs.length > 0 ? (
-                                <span className="text-[13px] font-medium font-mono animate-pulse bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+                                <span className="text-[13px] font-medium font-mono animate-pulse bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 dark:from-blue-400 dark:via-purple-400 dark:to-pink-400 bg-clip-text text-transparent">
                                   {msg.logs[msg.logs.length - 1].label
                                     .replace(/composio_?/i, "")
                                     .replace(/composio\s*/i, "")}
@@ -906,43 +1001,68 @@ function AssistantPageInner() {
                           </div>
                         )}
 
-                        {/* Auth actions — popup style */}
+                        {/* Auth actions — connection cards */}
                         {msg.auth_actions && msg.auth_actions.length > 0 && (
                           <div className="mt-4 space-y-2 max-w-md w-full">
-                            {msg.auth_actions.map((action, idx) => (
-                              <button
-                                key={idx}
-                                onClick={() => {
-                                  const popup = window.open(
-                                    action.url,
-                                    "composio_connect",
-                                    "width=600,height=700,left=200,top=100",
-                                  );
-                                  const pollTimer = setInterval(() => {
-                                    if (!popup || popup.closed) {
-                                      clearInterval(pollTimer);
-                                      // Refresh suggestions after successful connect
-                                      if (user?.id) {
-                                        api
-                                          .get(`/chat/suggestions/${user.id}`)
-                                          .then((res) => {
-                                            if (res?.suggestions)
-                                              setSuggestions(res.suggestions);
-                                          })
-                                          .catch(() => {});
-                                      }
-                                    }
-                                  }, 1000);
-                                }}
-                                className="flex items-center justify-between w-full px-4 py-3 rounded-lg bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] hover:border-[var(--accent)] hover:bg-[var(--accent-soft)] transition-colors group/link cursor-pointer"
-                              >
-                                <span className="text-sm text-[var(--text-primary)] font-medium">
-                                  Connect {action.appName}
-                                </span>
-                                <span className="text-xs text-[var(--accent)] font-medium group-hover/link:translate-x-1 transition-transform">
-                                  Authenticate →
-                                </span>
-                              </button>
+                            {msg.auth_actions.map((action, idx) => {
+                              const appSlug = action.appName.toLowerCase().replace(/\s+/g, "");
+                              const logoUrl = getAppLogo(appSlug);
+                              return (
+                                <div
+                                  key={idx}
+                                  className="flex items-center gap-3 w-full px-4 py-3 rounded-xl bg-[var(--bg-deep)] border border-[var(--border)] hover:border-[var(--accent)]/40 transition-colors"
+                                >
+                                  {logoUrl ? (
+                                    <img
+                                      src={logoUrl}
+                                      alt={action.appName}
+                                      className="w-8 h-8 rounded-lg object-contain"
+                                    />
+                                  ) : (
+                                    <div className="w-8 h-8 rounded-lg bg-[var(--accent-soft)] flex items-center justify-center text-[var(--accent)] text-xs font-bold">
+                                      {action.appName.charAt(0)}
+                                    </div>
+                                  )}
+                                  <span className="flex-1 text-sm font-medium text-[var(--text-primary)]">
+                                    Connect to {action.appName}
+                                  </span>
+                                  <button
+                                    onClick={() => {
+                                      const popup = window.open(
+                                        action.url,
+                                        "composio_connect",
+                                        "width=600,height=700,left=200,top=100",
+                                      );
+                                      const pollTimer = setInterval(() => {
+                                        if (!popup || popup.closed) {
+                                          clearInterval(pollTimer);
+                                          if (user?.id) {
+                                            api
+                                              .get(`/chat/suggestions/${user.id}`)
+                                              .then((res) => {
+                                                if (res?.suggestions)
+                                                  setSuggestions(res.suggestions);
+                                              })
+                                              .catch(() => { });
+                                          }
+                                        }
+                                      }, 1000);
+                                    }}
+                                    className="shrink-0 px-4 py-1.5 rounded-lg bg-[var(--text-primary)] text-[var(--bg-deep)] text-xs font-semibold hover:opacity-90 transition-opacity"
+                                  >
+                                    Connect
+                                  </button>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+
+                        {/* Data cards — structured tool results */}
+                        {msg.data_cards && msg.data_cards.length > 0 && (
+                          <div className="mt-4 space-y-3 max-w-md w-full">
+                            {msg.data_cards.map((group, idx) => (
+                              <DataCard key={idx} cardType={group.cardType} cards={group.cards} />
                             ))}
                           </div>
                         )}
@@ -1032,13 +1152,12 @@ function AssistantPageInner() {
       </div>
 
       {/* ─── RIGHT PANEL (TOOL EXECUTION LOGS) ─── */}
-      {/*  
+
       <div
-        className={`fixed lg:static top-0 right-0 h-full bg-[#111111] z-40 transition-all duration-300 ease-in-out transform flex flex-col border-l border-[rgba(255,255,255,0.05)] ${
-          isLogsOpen
+        className={`fixed lg:static top-0 right-0 h-full bg-[#111111] z-40 transition-all duration-300 ease-in-out transform flex flex-col border-l border-[rgba(255,255,255,0.05)] ${isLogsOpen
             ? "translate-x-0 w-[320px] lg:w-[40%]"
             : "translate-x-full lg:translate-x-0 lg:w-0 lg:overflow-hidden lg:border-none"
-        }`}
+          }`}
       >
         <div className="h-16 flex items-center justify-between px-6 border-b border-[rgba(255,255,255,0.05)] bg-[#1A1A1A]/80 backdrop-blur shrink-0">
           <div className="flex items-center gap-2">
@@ -1068,7 +1187,7 @@ function AssistantPageInner() {
         </div>
       </div>
 
-      */}
+
 
 
       {/* Delete Confirmation Dialog */}

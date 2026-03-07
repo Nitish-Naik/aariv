@@ -22,6 +22,10 @@ async function handleResponse(response: Response) {
     throw new Error("Session expired. Please log in again.");
   }
 
+  if (response.status === 402) {
+    throw new Error("INSUFFICIENT_CREDITS");
+  }
+
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
     if (errorData.error === "USER_NOT_FOUND") {

@@ -70,6 +70,40 @@ export interface AuthAction {
   url: string;
 }
 
+// Data card types for structured tool output rendering
+export type DataCardType = "email" | "calendar" | "message";
+
+export interface EmailCard {
+  id: string;
+  sender: string;
+  subject: string;
+  snippet: string;
+  date: string;
+  isUnread?: boolean;
+}
+
+export interface CalendarCard {
+  id: string;
+  title: string;
+  startTime: string;
+  endTime: string;
+  location?: string;
+  attendees?: string[];
+}
+
+export interface MessageCard {
+  id: string;
+  sender: string;
+  content: string;
+  channel?: string;
+  timestamp: string;
+}
+
+export interface DataCardGroup {
+  cardType: DataCardType;
+  cards: (EmailCard | CalendarCard | MessageCard)[];
+}
+
 export interface ChatMessage {
   id: string;
   role: "user" | "assistant";
@@ -87,6 +121,7 @@ export interface ChatMessage {
   }[];
   is_proactive?: boolean;
   auth_actions?: AuthAction[];
+  data_cards?: DataCardGroup[];
 }
 
 export interface Conversation {

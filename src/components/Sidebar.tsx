@@ -141,7 +141,7 @@ export function Sidebar() {
                 <div className="w-1.5 h-1.5 rounded-full bg-[var(--accent)]"></div>
                 <span className="font-medium text-[var(--accent)]">Credits</span>
               </div>
-              <span className="font-bold text-[var(--accent)]">${balanceData.balance.toFixed(2)}</span>
+              <span className="font-bold text-[var(--accent)]">${Math.max(0, balanceData.balance).toFixed(2)}</span>
             </Link>
           )}
 
@@ -287,7 +287,7 @@ export function Sidebar() {
                     <div className="w-1.5 h-1.5 rounded-full bg-[var(--accent)]"></div>
                     <span className="font-medium text-[var(--accent)]">Credits</span>
                   </div>
-                  <span className="font-bold text-[var(--accent)]">${balanceData.balance.toFixed(2)}</span>
+                  <span className="font-bold text-[var(--accent)]">${Math.max(0, balanceData.balance).toFixed(2)}</span>
                 </Link>
               )}
               <button

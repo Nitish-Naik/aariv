@@ -3,13 +3,11 @@
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
+import { useBilling } from "@/context/useBilling";
 import { api } from "@/lib/api";
 import { supabase } from "@/lib/supabase";
-import { useBilling } from "@/context/useBilling";
 import {
   Activity,
-  ArrowDownRight,
-  ArrowUpRight,
   Brain,
   Check,
   Clock,
@@ -18,16 +16,16 @@ import {
   ExternalLink,
   History,
   LogOut,
+  Moon,
   Pencil,
   RefreshCw,
   Shield,
   Sparkles,
+  Sun,
   Trash2,
   Wallet,
   X,
-  Zap,
-  Moon,
-  Sun
+  Zap
 } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
 
@@ -170,7 +168,7 @@ export default function SettingsPage() {
     if (!user?.id) return;
     api.get(`/history/retention/${user.id}`)
       .then((d) => d && setRetention(d.retention_days))
-      .catch(() => {});
+      .catch(() => { });
   }, [user?.id]);
 
   useEffect(() => {
@@ -191,7 +189,7 @@ export default function SettingsPage() {
         if (usage) setUsageData(usage);
         if (history) setHistoryData(history);
       })
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => setLoadingExtras(false));
   }, [showUsageHistory, user?.id]);
 
@@ -291,8 +289,8 @@ export default function SettingsPage() {
 
   const balance = balanceData?.balance ?? null;
   const initials = (user?.name ?? user?.email ?? "?").charAt(0).toUpperCase();
-  const balanceFmt = balance === null ? "—" : `$${balance.toFixed(2)}`;
-  const estimatedMessages = balance !== null ? Math.floor(balance / 0.01) : null;
+  const balanceFmt = balance === null ? "—" : `$${Math.max(0, balance).toFixed(2)}`;
+  const estimatedMessages = balance !== null ? Math.max(0, Math.floor(balance / 0.01)) : null;
   const activeModelName = MODEL_OPTIONS.find((m) => m.id === model)?.name || "GPT-4o Mini";
   const retentionLabel = retention === null ? "forever" : `${retention} days`;
   const modelChanged = pendingModel !== model;
@@ -303,11 +301,10 @@ export default function SettingsPage() {
     <div className="min-h-screen bg-[var(--bg-deep)]">
       {/* Toast */}
       <div className={`pointer-events-none fixed inset-x-0 top-5 z-50 flex justify-center transition-all duration-200 ${toast ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-1"}`}>
-        <div className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium shadow-lg border ${
-          toast?.ok === false
+        <div className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium shadow-lg border ${toast?.ok === false
             ? "bg-red-50 dark:bg-red-950/60 border-red-200 dark:border-red-800 text-red-600 dark:text-red-400"
             : "bg-[var(--bg-elevated)] border-[var(--border)] text-[var(--text-primary)]"
-        }`}>
+          }`}>
           {toast?.ok !== false && <Check size={13} className="text-emerald-500 shrink-0" strokeWidth={2.5} />}
           {toast?.msg}
         </div>
@@ -345,11 +342,10 @@ export default function SettingsPage() {
             <div className="grid grid-cols-2 gap-2 mb-4">
               {[10, 25, 50, 100].map((amt) => (
                 <button key={amt} onClick={() => { setSelectedAmount(amt); setCustomAmount(""); }}
-                  className={`py-2.5 rounded-xl text-sm font-medium transition-all border ${
-                    selectedAmount === amt && !customAmount
+                  className={`py-2.5 rounded-xl text-sm font-medium transition-all border ${selectedAmount === amt && !customAmount
                       ? "bg-amber-500/10 text-amber-400 border-amber-500/40"
                       : "bg-[var(--bg-deep)] text-[var(--text-secondary)] border-[var(--border)] hover:border-[var(--border-strong)]"
-                  }`}>
+                    }`}>
                   ${amt}
                 </button>
               ))}
@@ -370,11 +366,10 @@ export default function SettingsPage() {
             </div>
 
             <button onClick={handleCheckout} disabled={!checkoutValid || isCreatingCheckout}
-              className={`w-full py-3 rounded-xl font-medium text-sm flex items-center justify-center gap-2 transition-all ${
-                checkoutValid && !isCreatingCheckout
+              className={`w-full py-3 rounded-xl font-medium text-sm flex items-center justify-center gap-2 transition-all ${checkoutValid && !isCreatingCheckout
                   ? "bg-amber-500 text-black hover:bg-amber-400"
                   : "bg-[var(--overlay)] text-[var(--text-muted)] cursor-not-allowed opacity-50"
-              }`}>
+                }`}>
               <CreditCard size={15} />
               {isCreatingCheckout ? "Redirecting…" : "Pay with Dodo"}
               {!isCreatingCheckout && <ExternalLink size={13} />}
@@ -545,17 +540,15 @@ export default function SettingsPage() {
                 const isPending = pendingModel === m.id;
                 return (
                   <button key={m.id} onClick={() => setPendingModel(m.id)}
-                    className={`relative flex flex-col gap-2.5 p-4 rounded-xl border text-left transition-all ${
-                      isPending ? "border-amber-500/50 bg-amber-500/[0.06]" : "border-[var(--border)] bg-[var(--bg-deep)] hover:border-[var(--border-strong)]"
-                    }`}>
+                    className={`relative flex flex-col gap-2.5 p-4 rounded-xl border text-left transition-all ${isPending ? "border-amber-500/50 bg-amber-500/[0.06]" : "border-[var(--border)] bg-[var(--bg-deep)] hover:border-[var(--border-strong)]"
+                      }`}>
                     {isPending && (
                       <div className="absolute top-3 right-3 w-5 h-5 rounded-full bg-amber-500 flex items-center justify-center">
                         <Check size={11} className="text-black" strokeWidth={2.5} />
                       </div>
                     )}
-                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
-                      isPending ? "bg-amber-500/15 border border-amber-500/30" : "bg-[var(--bg-elevated)] border border-[var(--border)]"
-                    }`}>
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-colors ${isPending ? "bg-amber-500/15 border border-amber-500/30" : "bg-[var(--bg-elevated)] border border-[var(--border)]"
+                      }`}>
                       <m.icon size={14} className={isPending ? "text-amber-400" : "text-[var(--text-muted)]"} />
                     </div>
                     <div>
@@ -570,9 +563,8 @@ export default function SettingsPage() {
           <div className="flex items-center justify-between px-5 py-3.5 border-t border-[var(--border)] bg-[var(--bg-deep)]">
             <p className="text-xs text-[var(--text-muted)]">Changes apply to new conversations only</p>
             <button onClick={saveModel} disabled={savingModel || !modelChanged}
-              className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
-                modelChanged ? "bg-amber-500 text-black hover:bg-amber-400" : "bg-[var(--overlay)] text-[var(--text-muted)] cursor-not-allowed"
-              }`}>
+              className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${modelChanged ? "bg-amber-500 text-black hover:bg-amber-400" : "bg-[var(--overlay)] text-[var(--text-muted)] cursor-not-allowed"
+                }`}>
               {savingModel ? "Saving…" : "Save Preference"}
             </button>
           </div>
@@ -587,9 +579,8 @@ export default function SettingsPage() {
                 const sel = retention === opt.value;
                 return (
                   <button key={String(opt.value)} onClick={() => saveRetention(opt.value)} disabled={retSaving}
-                    className={`px-4 py-2 rounded-full text-sm font-medium transition-all disabled:opacity-40 ${
-                      sel ? "bg-amber-500 text-black" : "bg-[var(--bg-deep)] border border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--border-strong)] hover:text-[var(--text-primary)]"
-                    }`}>
+                    className={`px-4 py-2 rounded-full text-sm font-medium transition-all disabled:opacity-40 ${sel ? "bg-amber-500 text-black" : "bg-[var(--bg-deep)] border border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--border-strong)] hover:text-[var(--text-primary)]"
+                      }`}>
                     {opt.label}
                   </button>
                 );
@@ -611,14 +602,13 @@ export default function SettingsPage() {
             <div className="flex items-start justify-between gap-6">
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)] mb-2">Available Credits</p>
-                <p className={`text-4xl font-bold tabular-nums ${
-                  balance === null || balance >= 1 ? "text-amber-400" : balance <= 0 ? "text-red-500" : "text-amber-500"
-                }`}>{balanceFmt}</p>
-                {estimatedMessages !== null && (
+                <p className={`text-4xl font-bold tabular-nums ${balance === null || balance >= 1 ? "text-amber-400" : balance <= 0 ? "text-red-500" : "text-amber-500"
+                  }`}>{balanceFmt}</p>
+                {/* {estimatedMessages !== null && (
                   <p className="text-xs text-[var(--text-muted)] mt-1.5">
                     ≈ {estimatedMessages.toLocaleString()} {activeModelName} messages remaining
                   </p>
-                )}
+                )} */}
               </div>
               <div className="flex flex-col gap-2 shrink-0">
                 <button onClick={() => setShowAddCredits(true)}
@@ -760,22 +750,22 @@ export default function SettingsPage() {
               </div>
             </div>
 
-            <div className="rounded-2xl border border-red-900/40 bg-red-950/20 overflow-hidden">
-              <div className="flex items-center gap-3.5 px-5 py-4 border-b border-red-900/30">
-                <div className="w-9 h-9 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center shrink-0">
-                  <Trash2 size={15} className="text-red-400" />
+            <div className="rounded-2xl border border-red-200 bg-red-50 dark:border-red-900/40 dark:bg-red-950/20 overflow-hidden">
+              <div className="flex items-center gap-3.5 px-5 py-4 border-b border-red-200 dark:border-red-900/30">
+                <div className="w-9 h-9 rounded-xl bg-red-100 border border-red-200 dark:bg-red-500/10 dark:border-red-500/20 flex items-center justify-center shrink-0">
+                  <Trash2 size={15} className="text-red-600 dark:text-red-400" />
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-red-400">Danger Zone</p>
-                  <p className="text-xs text-red-400/60 mt-0.5">Irreversible actions. Proceed with absolute caution.</p>
+                  <p className="text-sm font-semibold text-red-600 dark:text-red-400">Danger Zone</p>
+                  <p className="text-xs text-red-600/70 dark:text-red-400/60 mt-0.5">Irreversible actions. Proceed with absolute caution.</p>
                 </div>
               </div>
               <div className="flex items-center justify-between gap-6 px-5 py-4">
-                <p className="text-sm text-red-400/70">
+                <p className="text-sm text-red-600/80 dark:text-red-400/70">
                   Permanently removes your account, all messages, and connected integrations. Cannot be undone.
                 </p>
                 <button onClick={() => setShowDelete(true)} disabled={deleteLoading}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-red-700/60 bg-red-950/40 text-sm font-medium text-red-400 hover:bg-red-950/60 hover:border-red-600 transition-colors shrink-0 whitespace-nowrap disabled:opacity-40">
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-red-300 bg-red-100 text-sm font-medium text-red-600 hover:bg-red-200 hover:border-red-400 dark:border-red-700/60 dark:bg-red-950/40 dark:text-red-400 dark:hover:bg-red-950/60 dark:hover:border-red-600 transition-colors shrink-0 whitespace-nowrap disabled:opacity-40">
                   <Trash2 size={13} /> {deleteLoading ? "Deleting…" : "Delete Account"}
                 </button>
               </div>

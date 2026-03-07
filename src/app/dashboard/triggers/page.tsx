@@ -333,7 +333,13 @@ function ConfigFormModal({
             </div>
           ) : null}
 
-          {error && <div className="text-sm text-red-400">{error}</div>}
+          {error && (
+            <div className={`text-sm ${error === "INSUFFICIENT_CREDITS" ? "text-amber-400" : "text-red-400"}`}>
+              {error === "INSUFFICIENT_CREDITS" ? (
+                <>You&apos;re out of credits. <a href="/dashboard/settings" className="underline hover:text-amber-300">Add Credits →</a></>
+              ) : error}
+            </div>
+          )}
 
           {/* Footer */}
           <div className="flex items-center justify-end gap-3">

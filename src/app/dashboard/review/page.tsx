@@ -75,21 +75,21 @@ const PRIORITY_STYLES: Record<
   { bg: string; border: string; text: string; label: string }
 > = {
   high: {
-    bg: "bg-[#2C2114]",
-    border: "border-[#4B371E]",
-    text: "text-[#D8934A]",
+    bg: "bg-amber-100 dark:bg-[#2C2114]",
+    border: "border-amber-200 dark:border-[#4B371E]",
+    text: "text-amber-800 dark:text-[#D8934A]",
     label: "Needs attention",
   },
   medium: {
-    bg: "bg-[#1A2332]",
-    border: "border-[#2A3A4F]",
-    text: "text-[#6B9FD4]",
+    bg: "bg-blue-100 dark:bg-[#1A2332]",
+    border: "border-blue-200 dark:border-[#2A3A4F]",
+    text: "text-blue-800 dark:text-[#6B9FD4]",
     label: "Review",
   },
   low: {
-    bg: "bg-[#1A231A]",
-    border: "border-[#2A3F2A]",
-    text: "text-[#6BD46B]",
+    bg: "bg-emerald-100 dark:bg-[#1A231A]",
+    border: "border-emerald-200 dark:border-[#2A3F2A]",
+    text: "text-emerald-800 dark:text-[#6BD46B]",
     label: "Low priority",
   },
 };
@@ -271,20 +271,20 @@ export default function ReviewPage() {
             </p>
 
             {/* Filter tabs */}
-            <div className="inline-flex p-1 space-x-1 rounded-xl bg-[#2a2a2a]/60 backdrop-blur-sm border border-white/5 shadow-sm mt-5">
+            <div className="inline-flex p-1 space-x-1 rounded-xl bg-[var(--tab-bg)] backdrop-blur-sm border border-[var(--border)] shadow-sm mt-5">
               {(["pending", "resolved", "all"] as ViewFilter[]).map((filter) => (
                 <button
                   key={filter}
                   onClick={() => setViewFilter(filter)}
                   className={`relative px-4 py-1.5 text-sm font-medium rounded-lg transition-colors focus-visible:outline-none capitalize ${viewFilter === filter
-                    ? "text-white"
-                    : "text-[#a0a0a0] hover:text-white"
+                    ? "text-[var(--text-primary)]"
+                    : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
                     }`}
                 >
                   {viewFilter === filter && (
                     <motion.div
                       layoutId="reviewTabIndicator"
-                      className="absolute inset-0 rounded-lg shadow-sm bg-[#3a3a3a]"
+                      className="absolute inset-0 rounded-lg shadow-sm bg-[var(--tab-active)]"
                       style={{ zIndex: -1 }}
                       transition={{ type: "spring", bounce: 0.2, duration: 0.5 }}
                     />
@@ -429,9 +429,16 @@ export default function ReviewPage() {
 
         {/* Error */}
         {error && (
-          <div className="w-full mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center gap-3">
-            <AlertTriangle size={16} className="text-red-500 shrink-0" />
-            <p className="text-sm text-red-500">{error}</p>
+          <div className={`w-full mb-6 p-4 ${error === "INSUFFICIENT_CREDITS" ? "bg-amber-500/10 border-amber-500/20" : "bg-red-500/10 border-red-500/20"} border rounded-xl flex items-center gap-3`}>
+            <AlertTriangle size={16} className={`${error === "INSUFFICIENT_CREDITS" ? "text-amber-400" : "text-red-500"} shrink-0`} />
+            <p className={`text-sm flex-1 ${error === "INSUFFICIENT_CREDITS" ? "text-amber-400" : "text-red-500"}`}>
+              {error === "INSUFFICIENT_CREDITS" ? "You're out of credits. Add credits to continue." : error}
+            </p>
+            {error === "INSUFFICIENT_CREDITS" && (
+              <a href="/dashboard/settings" className="text-xs font-medium text-amber-400 hover:text-amber-300 px-3 py-1.5 rounded-full border border-amber-400/30 hover:border-amber-400/50 transition-all shrink-0">
+                Add Credits →
+              </a>
+            )}
           </div>
         )}
 
@@ -539,8 +546,8 @@ export default function ReviewPage() {
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: "auto" }}
                         className={`mb-4 p-3 rounded-xl text-sm ${result.error
-                          ? "bg-[#2C1A1A] border border-[#4B2020] text-[#D84A4A]"
-                          : "bg-[#1A2C1A] border border-[#2A4B2A] text-[#6BD46B]"
+                          ? "bg-red-50 border border-red-200 text-red-700 dark:bg-[#2C1A1A] dark:border-[#4B2020] dark:text-[#D84A4A]"
+                          : "bg-emerald-50 border border-emerald-200 text-emerald-800 dark:bg-[#1A2C1A] dark:border-[#2A4B2A] dark:text-[#6BD46B]"
                           }`}
                       >
                         {result.message}
@@ -614,8 +621,8 @@ export default function ReviewPage() {
                         <div className="flex items-center gap-2 mt-1">
                           <span
                             className={`text-xs font-medium px-2.5 py-1 rounded-full ${item.status === "approved"
-                              ? "bg-[#1A2C1A] text-[#6BD46B]"
-                              : "bg-[rgba(255,255,255,0.03)] text-[var(--text-muted)]"
+                              ? "bg-emerald-100 text-emerald-700 dark:bg-[#1A2C1A] dark:text-[#6BD46B]"
+                              : "bg-[var(--overlay)] text-[var(--text-muted)]"
                               }`}
                           >
                             {item.status === "approved"

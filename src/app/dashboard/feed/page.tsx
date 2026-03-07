@@ -464,20 +464,31 @@ export default function FeedPage() {
 
         {/* ── Error Banner ──────────────────────────────── */}
         {error && !loading && (
-          <div className="mb-6 flex items-center gap-3 bg-red-500/10 border border-red-500/20 rounded-2xl px-5 py-4">
-            <AlertCircle size={18} className="text-red-400 shrink-0" />
+          <div className={`mb-6 flex items-center gap-3 ${error === "INSUFFICIENT_CREDITS" ? "bg-amber-500/10 border-amber-500/20" : "bg-red-500/10 border-red-500/20"} border rounded-2xl px-5 py-4`}>
+            <AlertCircle size={18} className={`${error === "INSUFFICIENT_CREDITS" ? "text-amber-400" : "text-red-400"} shrink-0`} />
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-red-400">
-                Failed to load feed
+              <p className={`text-sm font-medium ${error === "INSUFFICIENT_CREDITS" ? "text-amber-400" : "text-red-400"}`}>
+                {error === "INSUFFICIENT_CREDITS" ? "Out of credits" : "Failed to load feed"}
               </p>
-              <p className="text-xs text-red-400/70 mt-0.5 truncate">{error}</p>
+              <p className={`text-xs mt-0.5 truncate ${error === "INSUFFICIENT_CREDITS" ? "text-amber-400/70" : "text-red-400/70"}`}>
+                {error === "INSUFFICIENT_CREDITS" ? "Add credits to continue viewing your feed." : error}
+              </p>
             </div>
-            <button
-              onClick={() => loadEvents()}
-              className="text-xs font-medium text-red-400 hover:text-red-300 px-3 py-1.5 rounded-full border border-red-400/30 hover:border-red-400/50 transition-all shrink-0"
-            >
-              Retry
-            </button>
+            {error === "INSUFFICIENT_CREDITS" ? (
+              <a
+                href="/dashboard/settings"
+                className="text-xs font-medium text-amber-400 hover:text-amber-300 px-3 py-1.5 rounded-full border border-amber-400/30 hover:border-amber-400/50 transition-all shrink-0"
+              >
+                Add Credits →
+              </a>
+            ) : (
+              <button
+                onClick={() => loadEvents()}
+                className="text-xs font-medium text-red-400 hover:text-red-300 px-3 py-1.5 rounded-full border border-red-400/30 hover:border-red-400/50 transition-all shrink-0"
+              >
+                Retry
+              </button>
+            )}
           </div>
         )}
 

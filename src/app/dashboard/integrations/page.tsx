@@ -139,25 +139,7 @@ const APP_CATEGORIES_FALLBACK: Record<string, string> = {
   hackernews: "social-media",
 };
 
-// TrustClaw Toolkits style SVG base64 or inline paths
-const PLATFORM_LOGOS: Record<string, string> = {
-  gmail:
-    "data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect fill='%23f2f2f2' x='2' y='4' width='20' height='16' rx='2'/%3E%3Cpath fill='%23ea4335' d='M2 6l10 7 10-7'/%3E%3Cpath fill='%23ea4335' d='M2 4l10 8 10-8' stroke='%23ea4335' stroke-width='1.5' fill='none'/%3E%3C/svg%3E",
-  googlecalendar:
-    "data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect fill='%234285f4' x='2' y='2' width='20' height='20' rx='3'/%3E%3Crect fill='%23fff' x='5' y='7' width='14' height='13' rx='1'/%3E%3Crect fill='%23ea4335' x='5' y='7' width='14' height='3'/%3E%3Crect fill='%234285f4' x='8' y='12' width='3' height='2' rx='.5'/%3E%3Crect fill='%234285f4' x='13' y='12' width='3' height='2' rx='.5'/%3E%3Crect fill='%234285f4' x='8' y='16' width='3' height='2' rx='.5'/%3E%3Crect fill='%234285f4' x='13' y='16' width='3' height='2' rx='.5'/%3E%3C/svg%3E",
-  googlesheets:
-    "data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect fill='%230F9D58' x='2' y='2' width='20' height='20' rx='3'/%3E%3Cpath fill='%23fff' d='M7 6h10v2H7zm0 4h10v2H7zm0 4h10v2H7z'/%3E%3C/svg%3E",
-  slack:
-    "data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle fill='%23e01e5a' cx='6' cy='15' r='2'/%3E%3Crect fill='%23e01e5a' x='8' y='13' width='4' height='4' rx='2'/%3E%3Ccircle fill='%2336c5f0' cx='9' cy='6' r='2'/%3E%3Crect fill='%2336c5f0' x='7' y='8' width='4' height='4' rx='2'/%3E%3Ccircle fill='%232eb67d' cx='18' cy='9' r='2'/%3E%3Crect fill='%232eb67d' x='12' y='7' width='4' height='4' rx='2'/%3E%3Ccircle fill='%23ecb22e' cx='15' cy='18' r='2'/%3E%3Crect fill='%23ecb22e' x='13' y='12' width='4' height='4' rx='2'/%3E%3C/svg%3E",
-  github:
-    "data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23fff' d='M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.009-.866-.013-1.7-2.782.604-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.464-1.11-1.464-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0112 6.836a9.59 9.59 0 012.504.337c1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.163 22 16.418 22 12c0-5.523-4.477-10-10-10z'/%3E%3C/svg%3E",
-  notion:
-    "data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23fff' fill-rule='evenodd' d='M4 3.5C4 2.672 4.56 2 5.25 2h9.792L20.25 7v13.5c0 .828-.56 1.5-1.25 1.5H5.25C4.56 22 4 21.328 4 20.5zM6 5.5v15h12v-11h-4.5a.5.5 0 01-.5-.5V5.5zm9 .707V9h2.793zM7.5 12a.5.5 0 01.5-.5h8a.5.5 0 010 1H8a.5.5 0 01-.5-.5zm0 3a.5.5 0 01.5-.5h8a.5.5 0 010 1H8a.5.5 0 01-.5-.5zm0 3a.5.5 0 01.5-.5h5a.5.5 0 010 1H8a.5.5 0 01-.5-.5z'/%3E%3C/svg%3E",
-  twitter:
-    "data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23fff' d='M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z'/%3E%3C/svg%3E",
-  composio:
-    "data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle fill='%238E24AA' cx='12' cy='12' r='10'/%3E%3Cpath fill='%23fff' d='M8 8h8v8H8z' rx='2'/%3E%3C/svg%3E",
-};
+import { PLATFORM_LOGOS } from "@/lib/platform-logos";
 
 export default function IntegrationsPage() {
   const { user } = useAuth();
@@ -430,16 +412,6 @@ export default function IntegrationsPage() {
     const isConnected = integration.status === "connected";
     const isConnecting = connecting === integration.appName;
 
-    // const syncedMins = integration.id ? (integration.id.charCodeAt(0) % 55) + 1 : 5;
-    const cornerColors = getCornerColors(appSlug, color);
-    const [tl, tr, br, bl] = cornerColors;
-    const cornerGlowBg = `
-      radial-gradient(circle at 0% 0%, ${tl} 0%, transparent 50%),
-      radial-gradient(circle at 100% 0%, ${tr} 0%, transparent 50%),
-      radial-gradient(circle at 100% 100%, ${br} 0%, transparent 50%),
-      radial-gradient(circle at 0% 100%, ${bl} 0%, transparent 50%)
-    `;
-
     return (
       <motion.div
         key={integration.id}
@@ -448,70 +420,62 @@ export default function IntegrationsPage() {
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
         transition={{ duration: 0.2, ease: "easeOut" }}
-        className="group relative rounded-2xl p-[1.5px] hover:-translate-y-1 transition-all duration-500 ease-out min-h-[220px]"
+        className="group relative rounded-[1.25rem] p-[1.5px] hover:-translate-y-1 transition-all duration-500 ease-out h-[260px]"
       >
-        <div
-          className={`absolute inset-[-1px] rounded-2xl transition-opacity duration-500 pointer-events-none z-0 ${isConnected ? "opacity-30" : "opacity-0 group-hover:opacity-100"}`}
-          style={{ background: cornerGlowBg }}
-        />
-        <div
-          className="absolute inset-[-4px] rounded-2xl opacity-0 group-hover:opacity-30 transition-opacity duration-500 blur-xl pointer-events-none z-0"
-          style={{ background: cornerGlowBg }}
-        />
-        <div className="relative flex flex-col p-5 h-full overflow-hidden z-10 rounded-[calc(1rem-1.5px)] bg-[var(--bg-elevated)] border border-[rgba(0,0,0,0.05)] dark:border-white/5 min-h-[220px]">
-          <div className="absolute inset-0 bg-gradient-to-b from-[var(--overlay)] to-transparent pointer-events-none" />
-          <div className="flex justify-end w-full relative z-10 mb-2">
+        {/* Glow layer that bleeds outside the card (drop shadow effect) */}
+        <div className={`absolute inset-0 rounded-[1.25rem] z-0 blur-2xl transition-opacity duration-500 pointer-events-none flex items-center justify-center ${isConnected ? "opacity-30" : "opacity-0 group-hover:opacity-60"}`}>
+          {logoSvg ? (
+            <img src={logoSvg} alt="" className="w-[120%] h-[120%] object-cover saturate-[1.5]" />
+          ) : (
+            <div className="w-full h-full" style={{ backgroundColor: color }} />
+          )}
+        </div>
+
+        {/* Border layer (Cut off by overflow-hidden, shines through the 1.5px padding) */}
+        <div className={`absolute inset-0 rounded-[1.25rem] z-0 overflow-hidden transition-all duration-500 pointer-events-none flex items-center justify-center ${isConnected ? "opacity-80 border border-white/10" : "opacity-10 group-hover:opacity-100 bg-white/5 border border-white/5 group-hover:border-transparent"}`}>
+          {logoSvg ? (
+            <img src={logoSvg} alt="" className="w-[150%] h-[150%] object-cover blur-[16px] saturate-[1.5]" />
+          ) : (
+            <div className="w-full h-full" style={{ backgroundColor: color }} />
+          )}
+        </div>
+
+        <div className="relative flex flex-col p-5 h-full overflow-hidden z-10 rounded-[calc(1.25rem-1.5px)] bg-[#111319] dark:bg-[#111319] w-full shadow-xl">
+          <div
+            className="absolute inset-0 opacity-0 group-hover:opacity-[0.10] transition-opacity duration-500 pointer-events-none"
+            style={{ background: `radial-gradient(circle at 50% 50%, ${color} 0%, transparent 70%)` }}
+          />
+
+          <div className="flex justify-end w-full relative z-20">
             {isConnected ? (
               integration.canDisconnect ? (
-                <div className="flex flex-col items-end gap-1">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setConfirmDisconnect({ id: integration.id, name: integration.appName });
-                    }}
-                    disabled={disconnecting === integration.appName}
-                    className="group/btn relative px-3 py-1 bg-emerald-500/10 hover:bg-red-500/10 text-emerald-400 hover:text-red-400 text-xs font-semibold tracking-wide rounded-full border border-emerald-500/20 hover:border-red-500/20 flex items-center gap-1.5 transition-all duration-300 shadow-[0_0_10px_rgba(52,211,153,0.05)] backdrop-blur-sm disabled:opacity-50"
-                  >
-                    {disconnecting === integration.appName ? (
-                      <Loader2
-                        size={12}
-                        className="animate-spin text-red-500"
-                      />
-                    ) : (
-                      <>
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 group-hover/btn:bg-red-400 shadow-[0_0_5px_rgba(52,211,153,0.8)] group-hover/btn:shadow-[0_0_5px_rgba(239,68,68,0.8)]" />
-                        <span className="group-hover/btn:hidden">
-                          Connected
-                        </span>
-                        <span className="hidden group-hover/btn:inline">
-                          Disconnect
-                        </span>
-                      </>
-                    )}
-                  </button>
-                  <span className="text-[10px] text-[var(--text-muted)]">
-                    {/* Last synced {syncedMins}m ago */}
-                  </span>
-                </div>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setConfirmDisconnect({ id: integration.id, name: integration.appName });
+                  }}
+                  disabled={disconnecting === integration.appName}
+                  className="px-4 py-2 bg-emerald-500/10 hover:bg-red-500/20 text-emerald-400 hover:text-red-400 text-sm font-semibold rounded-xl transition-all duration-300 disabled:opacity-50"
+                >
+                  {disconnecting === integration.appName ? (
+                    <Loader2 size={14} className="animate-spin" />
+                  ) : (
+                    "Connected"
+                  )}
+                </button>
               ) : (
-                <div className="flex flex-col items-end gap-1">
-                  <div className="px-3 py-1 bg-emerald-500/10 text-emerald-400 text-xs font-semibold tracking-wide rounded-full border border-emerald-500/20 flex items-center gap-1.5 shadow-[0_0_10px_rgba(52,211,153,0.05)] backdrop-blur-sm">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_5px_rgba(52,211,153,0.8)]" />
-                    Connected
-                  </div>
-                  <span className="text-[10px] text-[var(--text-muted)]">
-                    {/* Last synced {syncedMins}m ago */}
-                  </span>
+                <div className="px-4 py-2 bg-emerald-500/10 text-emerald-400 text-sm font-semibold rounded-xl">
+                  Connected
                 </div>
               )
             ) : (
               <button
                 onClick={() => handleConnect(integration.appName, isConnected)}
                 disabled={isConnecting}
-                className="px-4 py-1.5 bg-[var(--text-primary)] hover:opacity-90 text-[var(--bg-deep)] text-xs font-medium rounded-full transition-all duration-300 disabled:opacity-50 hover:shadow-[0_0_15px_rgba(255,255,255,0.2)] hover:scale-[1.02] active:scale-95"
+                className="px-5 py-2 bg-[#e2e2e2] hover:bg-white text-black text-[15px] font-semibold rounded-xl transition-all duration-300 disabled:opacity-50 shadow-sm"
               >
                 {isConnecting ? (
-                  <Loader2 size={12} className="animate-spin text-[var(--bg-deep)]" />
+                  <Loader2 size={16} className="animate-spin" />
                 ) : (
                   "Connect"
                 )}
@@ -519,20 +483,20 @@ export default function IntegrationsPage() {
             )}
           </div>
 
-          <div className="flex flex-col items-center justify-center flex-1 relative z-10 w-full pointer-events-none mt-2">
+          <div className="flex flex-col items-center justify-center flex-1 relative z-10 w-full pointer-events-none pb-4">
             {logoSvg ? (
               <motion.img
                 src={logoSvg}
                 alt={displayName}
-                className="w-14 h-14 object-contain mb-4 drop-shadow-md filter transition-all duration-500"
+                className="w-[72px] h-[72px] object-contain mb-5 drop-shadow-md filter transition-all duration-500"
                 whileHover={{ scale: 1.05 }}
                 onError={(e: any) => {
                   const parent = e.currentTarget.parentElement;
                   e.currentTarget.style.display = "none";
-                  if (parent) {
+                  if (parent && !parent.querySelector('.fallback-logo')) {
                     const fb = document.createElement("div");
                     fb.className =
-                      "w-14 h-14 rounded-2xl flex items-center justify-center text-white font-bold text-2xl mb-4 shadow-lg shrink-0";
+                      "fallback-logo w-[72px] h-[72px] rounded-2xl flex items-center justify-center text-white font-bold text-3xl mb-5 shadow-lg shrink-0";
                     fb.style.backgroundColor = color;
                     fb.textContent = displayName.charAt(0);
                     parent.prepend(fb);
@@ -541,21 +505,16 @@ export default function IntegrationsPage() {
               />
             ) : (
               <motion.div
-                className="w-14 h-14 rounded-2xl flex items-center justify-center text-white font-bold text-2xl mb-4 shadow-lg shrink-0 transition-all duration-500"
+                className="w-[72px] h-[72px] rounded-2xl flex items-center justify-center text-white font-bold text-3xl mb-5 shadow-lg shrink-0 transition-all duration-500"
                 style={{ backgroundColor: color }}
                 whileHover={{ scale: 1.05 }}
               >
                 {displayName.charAt(0)}
               </motion.div>
             )}
-            <h3 className="text-[15px] font-medium text-[var(--text-primary)] truncate max-w-full px-2 text-center tracking-wide">
+            <h3 className="text-[22px] leading-tight font-bold text-white truncate max-w-full px-2 text-center tracking-tight">
               {displayName}
             </h3>
-            {isConnected && (
-              <p className="text-xs text-[var(--text-muted)] mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                {/* Click to configure */}
-              </p>
-            )}
           </div>
         </div>
       </motion.div>
@@ -793,7 +752,7 @@ export default function IntegrationsPage() {
                     <h2 className="text-[15px] font-medium uppercase tracking-widest text-[var(--text-muted)]">
                       {group.label}
                     </h2>
-                    <span className="text-xs text-[#555] bg-[#1a1a1a] px-2 py-0.5 rounded-full">
+                    <span className="text-xs text-[var(--text-secondary)] bg-black/5 dark:bg-[#1a1a1a] px-2 py-0.5 rounded-full">
                       {group.items.length}
                     </span>
                   </div>
