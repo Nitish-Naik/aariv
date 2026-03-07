@@ -24,7 +24,7 @@ import {
 import { useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 
-import { DetailedLogEntry } from "@/components";
+// import { DetailedLogEntry } from "@/components";
 
 function AssistantPageInner() {
   const { user } = useAuth();
@@ -111,12 +111,8 @@ function AssistantPageInner() {
     if (!user?.id) return;
     const fetchRetention = async () => {
       try {
-        const envUrl =
-          process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
-        const baseUrl = envUrl.endsWith("/api") ? envUrl.slice(0, -4) : envUrl;
-        const res = await fetch(`${baseUrl}/api/history/retention/${user.id}`);
-        if (res.ok) {
-          const data = await res.json();
+        const data = await api.get(`/history/retention/${user.id}`);
+        if (data?.retention_days !== undefined) {
           setRetentionDays(data.retention_days);
         }
       } catch (e) {
@@ -1036,6 +1032,7 @@ function AssistantPageInner() {
       </div>
 
       {/* ─── RIGHT PANEL (TOOL EXECUTION LOGS) ─── */}
+      {/*  
       <div
         className={`fixed lg:static top-0 right-0 h-full bg-[#111111] z-40 transition-all duration-300 ease-in-out transform flex flex-col border-l border-[rgba(255,255,255,0.05)] ${
           isLogsOpen
@@ -1070,6 +1067,9 @@ function AssistantPageInner() {
           <div ref={logsEndRef} />
         </div>
       </div>
+
+      */}
+
 
       {/* Delete Confirmation Dialog */}
       {deleteConfirm && (
