@@ -1,6 +1,8 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import { supabase } from "@/lib/supabase";
+"use client";
+
 import { api } from "@/lib/api";
+import { supabase } from "@/lib/supabase";
+import { createContext, ReactNode, useContext, useEffect, useState } from "react";
 import { useAuth } from "./AuthContext";
 
 export interface BillingBalance {
@@ -68,13 +70,13 @@ export function BillingProvider({ children }: { children: ReactNode }) {
                     setBalanceData((prev) =>
                         prev
                             ? {
-                                  ...prev,
-                                  balance: parseFloat(row.balance),
-                                  total_spent: parseFloat(row.total_spent),
-                                  auto_refill_enabled: row.auto_refill_enabled,
-                                  auto_refill_threshold: parseFloat(row.auto_refill_threshold ?? 1),
-                                  auto_refill_amount: parseFloat(row.auto_refill_amount ?? 10),
-                              }
+                                ...prev,
+                                balance: parseFloat(row.balance),
+                                total_spent: parseFloat(row.total_spent),
+                                auto_refill_enabled: row.auto_refill_enabled,
+                                auto_refill_threshold: parseFloat(row.auto_refill_threshold ?? 1),
+                                auto_refill_amount: parseFloat(row.auto_refill_amount ?? 10),
+                            }
                             : prev
                     );
                 }

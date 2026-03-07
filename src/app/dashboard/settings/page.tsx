@@ -26,6 +26,8 @@ import {
   Wallet,
   X,
   Zap,
+  Moon,
+  Sun
 } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
 

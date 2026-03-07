@@ -139,18 +139,10 @@ function AssistantPageInner() {
     if (!user?.id) return;
     const fetchHistory = async () => {
       try {
-        const envUrl =
-          process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
-        const baseUrl = envUrl.endsWith("/api") ? envUrl.slice(0, -4) : envUrl;
-        const res = await fetch(
-          `${baseUrl}/api/history/conversations/${user.id}`,
-        );
-        if (res.ok) {
-          const data = await res.json();
-          setConversations(data);
-          // Always start with a fresh new chat — previous chats available in sidebar
-          setMessages([]);
-        }
+        const data = await api.get(`/history/conversations/${user.id}`);
+        setConversations(data);
+        // Always start with a fresh new chat — previous chats available in sidebar
+        setMessages([]);
       } catch (e) {
         console.error("Failed to fetch conversations", e);
       }
@@ -163,24 +155,16 @@ function AssistantPageInner() {
     if (!activeConversationId) return;
     const fetchMessages = async () => {
       try {
-        const envUrl =
-          process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
-        const baseUrl = envUrl.endsWith("/api") ? envUrl.slice(0, -4) : envUrl;
-        const res = await fetch(
-          `${baseUrl}/api/history/messages/${activeConversationId}`,
-        );
-        if (res.ok) {
-          const data = await res.json();
-          if (data.length > 0) {
-            const mapped = data.map((msg: any) => ({
-              id: msg.id,
-              role: msg.role,
-              content: msg.content,
-              timestamp: new Date(msg.timestamp),
-              logs: msg.logs || [],
-            }));
-            setMessages(mapped);
-          }
+        const data = await api.get(`/history/messages/${activeConversationId}`);
+        if (data.length > 0) {
+          const mapped = data.map((msg: any) => ({
+            id: msg.id,
+            role: msg.role,
+            content: msg.content,
+            timestamp: new Date(msg.timestamp),
+            logs: msg.logs || [],
+          }));
+          setMessages(mapped);
         }
       } catch (e) {
         console.error("Failed to fetch messages", e);
@@ -197,18 +181,10 @@ function AssistantPageInner() {
 
   const handleDeleteConversation = async (conversationId: string) => {
     try {
-      const envUrl =
-        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
-      const baseUrl = envUrl.endsWith("/api") ? envUrl.slice(0, -4) : envUrl;
-      const res = await fetch(
-        `${baseUrl}/api/history/conversations/${conversationId}`,
-        { method: "DELETE" },
-      );
-      if (res.ok) {
-        setConversations((prev) => prev.filter((c) => c.id !== conversationId));
-        if (activeConversationId === conversationId) {
-          handleNewChat();
-        }
+      await api.delete(`/history/conversations/${conversationId}`);
+      setConversations((prev) => prev.filter((c) => c.id !== conversationId));
+      if (activeConversationId === conversationId) {
+        handleNewChat();
       }
     } catch (e) {
       console.error("Failed to delete conversation", e);
@@ -220,30 +196,20 @@ function AssistantPageInner() {
   const handleDeleteAllConversations = async (days?: number) => {
     if (!user?.id) return;
     try {
-      const envUrl =
-        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
-      const baseUrl = envUrl.endsWith("/api") ? envUrl.slice(0, -4) : envUrl;
-      const url = days
-        ? `${baseUrl}/api/history/conversations/user/${user.id}?older_than_days=${days}`
-        : `${baseUrl}/api/history/conversations/user/${user.id}`;
-      const res = await fetch(url, { method: "DELETE" });
-      if (res.ok) {
-        // Re-fetch conversations to reflect remaining ones
-        try {
-          const convRes = await fetch(
-            `${baseUrl}/api/history/conversations/${user.id}`,
-          );
-          if (convRes.ok) {
-            const data = await convRes.json();
-            setConversations(data);
-            if (!data.find((c: any) => c.id === activeConversationId)) {
-              handleNewChat();
-            }
-          }
-        } catch {
-          setConversations([]);
+      const endpoint = days
+        ? `/history/conversations/user/${user.id}?older_than_days=${days}`
+        : `/history/conversations/user/${user.id}`;
+      await api.delete(endpoint);
+      // Re-fetch conversations to reflect remaining ones
+      try {
+        const data = await api.get(`/history/conversations/${user.id}`);
+        setConversations(data);
+        if (!data.find((c: any) => c.id === activeConversationId)) {
           handleNewChat();
         }
+      } catch {
+        setConversations([]);
+        handleNewChat();
       }
     } catch (e) {
       console.error("Failed to delete conversations", e);
@@ -257,30 +223,16 @@ function AssistantPageInner() {
     if (!user?.id) return;
     setRetentionSaving(true);
     try {
-      const envUrl =
-        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
-      const baseUrl = envUrl.endsWith("/api") ? envUrl.slice(0, -4) : envUrl;
-      const res = await fetch(`${baseUrl}/api/history/retention/${user.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ days }),
-      });
-      if (res.ok) {
-        setRetentionDays(days);
-        // Re-fetch conversations since old ones may have been cleaned up
-        const convRes = await fetch(
-          `${baseUrl}/api/history/conversations/${user.id}`,
-        );
-        if (convRes.ok) {
-          const data = await convRes.json();
-          setConversations(data);
-          if (
-            activeConversationId &&
-            !data.find((c: any) => c.id === activeConversationId)
-          ) {
-            handleNewChat();
-          }
-        }
+      await api.put(`/history/retention/${user.id}`, { days });
+      setRetentionDays(days);
+      // Re-fetch conversations since old ones may have been cleaned up
+      const data = await api.get(`/history/conversations/${user.id}`);
+      setConversations(data);
+      if (
+        activeConversationId &&
+        !data.find((c: any) => c.id === activeConversationId)
+      ) {
+        handleNewChat();
       }
     } catch (e) {
       console.error("Failed to update retention", e);
