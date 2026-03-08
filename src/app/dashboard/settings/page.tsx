@@ -11,9 +11,11 @@ import {
   Brain,
   Check,
   Clock,
+  Copy,
   Cpu,
   CreditCard,
   ExternalLink,
+  Gift,
   History,
   LogOut,
   Moon,
@@ -23,6 +25,7 @@ import {
   Sparkles,
   Sun,
   Trash2,
+  Users,
   Wallet,
   X,
   Zap
@@ -148,6 +151,15 @@ export default function SettingsPage() {
   const [historyData, setHistoryData] = useState<Transaction[]>([]);
   const [loadingExtras, setLoadingExtras] = useState(false);
 
+  // Referral
+  const [referralCode, setReferralCode] = useState<string | null>(null);
+  const [referralStats, setReferralStats] = useState<{
+    total_referrals: number; signed_up: number; activated: number;
+    credited: number; earned: number; max_earnings: number; remaining: number;
+  } | null>(null);
+  const [referralLoading, setReferralLoading] = useState(false);
+  const [codeCopied, setCodeCopied] = useState(false);
+
   // Auto-refill
   const [autoRefill, setAutoRefill] = useState(false);
   const [refillThreshold, setRefillThreshold] = useState(1.0);
@@ -169,6 +181,21 @@ export default function SettingsPage() {
     api.get(`/history/retention/${user.id}`)
       .then((d) => d && setRetention(d.retention_days))
       .catch(() => { });
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    setReferralLoading(true);
+    Promise.all([
+      api.get("/referral/code"),
+      api.get("/referral/stats"),
+    ])
+      .then(([codeRes, statsRes]) => {
+        if (codeRes?.code) setReferralCode(codeRes.code);
+        if (statsRes) setReferralStats(statsRes);
+      })
+      .catch(() => { })
+      .finally(() => setReferralLoading(false));
   }, [user?.id]);
 
   useEffect(() => {
@@ -266,6 +293,15 @@ export default function SettingsPage() {
     } finally {
       setSavingRefill(false);
     }
+  }
+
+  function copyReferralLink() {
+    if (!referralCode) return;
+    const link = `${window.location.origin}/login?ref=${referralCode}`;
+    navigator.clipboard.writeText(link);
+    setCodeCopied(true);
+    flash("Referral link copied!");
+    setTimeout(() => setCodeCopied(false), 2000);
   }
 
   async function handleCheckout() {
@@ -688,6 +724,81 @@ export default function SettingsPage() {
               >
                 {savingRefill ? "Saving…" : "Save (disabled)"}
               </button>
+            )}
+          </div>
+        </SectionCard>
+
+        {/* ── Referral Program ── */}
+        <SectionCard label="REFERRAL PROGRAM" icon={Gift} title="Invite Friends, Earn Credits"
+          subtitle="Share your link — you get $2, they get $7 to start.">
+          <div className="px-5 py-5">
+            {referralLoading ? (
+              <div className="flex items-center justify-center py-6">
+                <div className="w-5 h-5 border-2 border-[var(--accent)] border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : (
+              <>
+                {/* Referral Link */}
+                <div className="mb-5">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)] mb-2">Your Referral Link</p>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 py-2.5 px-3.5 rounded-xl bg-[var(--bg-deep)] border border-[var(--border)] text-sm text-[var(--text-secondary)] font-mono truncate">
+                      {referralCode
+                        ? `${typeof window !== "undefined" ? window.location.origin : "calmpilot.app"}/login?ref=${referralCode}`
+                        : "Loading..."}
+                    </div>
+                    <button
+                      onClick={copyReferralLink}
+                      disabled={!referralCode}
+                      className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-medium transition-all shrink-0 ${codeCopied
+                          ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30"
+                          : "bg-amber-500 text-black hover:bg-amber-400"
+                        }`}
+                    >
+                      {codeCopied ? <Check size={14} /> : <Copy size={14} />}
+                      {codeCopied ? "Copied" : "Copy"}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Stats */}
+                {referralStats && (
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="rounded-xl bg-[var(--bg-deep)] border border-[var(--border)] p-3.5 text-center">
+                      <div className="flex items-center justify-center gap-1 mb-1">
+                        <Users size={12} className="text-[var(--text-muted)]" />
+                      </div>
+                      <p className="text-xl font-bold text-[var(--text-primary)] tabular-nums">{referralStats.credited}</p>
+                      <p className="text-[10px] text-[var(--text-muted)] mt-0.5">Successful</p>
+                    </div>
+                    <div className="rounded-xl bg-[var(--bg-deep)] border border-[var(--border)] p-3.5 text-center">
+                      <div className="flex items-center justify-center gap-1 mb-1">
+                        <Wallet size={12} className="text-[var(--text-muted)]" />
+                      </div>
+                      <p className="text-xl font-bold text-amber-400 tabular-nums">${referralStats.earned.toFixed(0)}</p>
+                      <p className="text-[10px] text-[var(--text-muted)] mt-0.5">Earned</p>
+                    </div>
+                    <div className="rounded-xl bg-[var(--bg-deep)] border border-[var(--border)] p-3.5 text-center">
+                      <div className="flex items-center justify-center gap-1 mb-1">
+                        <Gift size={12} className="text-[var(--text-muted)]" />
+                      </div>
+                      <p className="text-xl font-bold text-[var(--text-secondary)] tabular-nums">${referralStats.remaining.toFixed(0)}</p>
+                      <p className="text-[10px] text-[var(--text-muted)] mt-0.5">Remaining</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* How it works */}
+                <div className="mt-4 pt-4 border-t border-[var(--border)]">
+                  <p className="text-xs font-medium text-[var(--text-muted)] mb-2">How it works</p>
+                  <div className="space-y-1.5 text-xs text-[var(--text-muted)]">
+                    <p>1. Share your link with a friend</p>
+                    <p>2. They sign up and get <span className="text-amber-400 font-medium">$7</span> free credits (vs $5)</p>
+                    <p>3. When they make their first purchase, you earn <span className="text-amber-400 font-medium">$2</span></p>
+                    <p>4. Earn up to <span className="text-amber-400 font-medium">$50</span> total (25 referrals)</p>
+                  </div>
+                </div>
+              </>
             )}
           </div>
         </SectionCard>
