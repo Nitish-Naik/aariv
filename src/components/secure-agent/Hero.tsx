@@ -1,11 +1,12 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { AlertCircle, CheckCircle2, ChevronRight } from "lucide-react";
+import { AlertCircle, ArrowRight, Check, CheckCircle2, ChevronRight, Copy, Users } from "lucide-react";
 import Image from "next/image";
-import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Logo } from "./Logo";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
 
 const appLogos = [
     { icon: "/images/google-gmail-svgrepo-com.svg", name: "Gmail" },
@@ -27,12 +28,37 @@ const briefItems = [
 ];
 
 export default function Hero() {
-    // All items visible immediately — animate in on mount, loop every 12s
     const [visibleCount, setVisibleCount] = useState(briefItems.length);
     const [loopKey, setLoopKey] = useState(0);
 
+    // Waitlist state
+    const [email, setEmail] = useState("");
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [joined, setJoined] = useState(false);
+    const [position, setPosition] = useState<number | null>(null);
+    const [total, setTotal] = useState<number | null>(null);
+    const [refCode, setRefCode] = useState<string | null>(null);
+    const [refCount, setRefCount] = useState(0);
+    const [copied, setCopied] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    // Fetch waitlist count on mount
     useEffect(() => {
-        // After 12s, briefly reset and re-animate to show "live" feel
+        fetch(`${API_URL}/waitlist/count`)
+            .then(r => r.json())
+            .then(d => { if (d.count) setTotal(d.count); })
+            .catch(() => { });
+    }, []);
+
+    // Get ref code from URL
+    const [urlRef, setUrlRef] = useState<string | null>(null);
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const ref = params.get("ref");
+        if (ref) setUrlRef(ref.toUpperCase());
+    }, []);
+
+    useEffect(() => {
         const interval = setInterval(() => {
             setVisibleCount(0);
             setLoopKey(k => k + 1);
@@ -43,8 +69,47 @@ export default function Hero() {
         return () => clearInterval(interval);
     }, []);
 
+    async function handleJoin(e: React.FormEvent) {
+        e.preventDefault();
+        if (!email.trim() || isSubmitting) return;
+        setError(null);
+        setIsSubmitting(true);
+
+        try {
+            const res = await fetch(`${API_URL}/waitlist/join`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email: email.trim(), ref: urlRef }),
+            });
+            const data = await res.json();
+
+            if (!res.ok) {
+                setError(data.detail || "Something went wrong");
+                return;
+            }
+
+            setJoined(true);
+            setPosition(data.position);
+            setTotal(data.total);
+            setRefCode(data.referral_code);
+            setRefCount(data.referral_count || 0);
+        } catch {
+            setError("Could not connect. Please try again.");
+        } finally {
+            setIsSubmitting(false);
+        }
+    }
+
+    function copyRefLink() {
+        if (!refCode) return;
+        const link = `${window.location.origin}?ref=${refCode}`;
+        navigator.clipboard.writeText(link);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+    }
+
     return (
-        <section className="relative overflow-hidden pt-14 pb-16 lg:pt-16 lg:pb-20 bg-[#050505] selection:bg-indigo-500/30">
+        <section id="waitlist" className="relative overflow-hidden pt-14 pb-16 lg:pt-16 lg:pb-20 bg-[#050505] selection:bg-indigo-500/30">
 
             {/* Background — subtle grid */}
             <div
@@ -112,26 +177,95 @@ export default function Hero() {
                             Wake up to emails drafted, Slack summarized, PRs reviewed — all done while you slept.
                         </motion.p>
 
-                        {/* CTA */}
+                        {/* CTA — Waitlist Form */}
                         <motion.div
                             initial={{ opacity: 0, y: 16 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.6, delay: 0.4 }}
-                            className="flex flex-col sm:flex-row items-start sm:items-center gap-4"
                         >
-                            <Link
-                                href="/login"
-                                className="group relative inline-flex items-center justify-center px-8 py-4 rounded-2xl bg-white text-zinc-900 font-semibold text-base tracking-tight hover:bg-zinc-50 active:scale-95 transition-all duration-200 shadow-[0_0_0_1px_rgba(255,255,255,0.1),0_8px_32px_rgba(0,0,0,0.4)] overflow-hidden"
-                            >
-                                <div className="absolute inset-0 flex h-full w-full justify-center [transform:skew(-12deg)_translateX(-150%)] group-hover:duration-700 group-hover:[transform:skew(-12deg)_translateX(150%)]">
-                                    <div className="relative h-full w-10 bg-black/8" />
+                            {!joined ? (
+                                <>
+                                    <form onSubmit={handleJoin} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                                        <input
+                                            type="email"
+                                            value={email}
+                                            onChange={e => setEmail(e.target.value)}
+                                            placeholder="Enter your email"
+                                            required
+                                            className="flex-1 px-5 py-4 rounded-2xl bg-white/[0.06] border border-white/[0.12] text-white placeholder-zinc-500 text-base outline-none focus:border-indigo-500/50 focus:bg-white/[0.08] transition-all"
+                                        />
+                                        <button
+                                            type="submit"
+                                            disabled={isSubmitting}
+                                            className="group relative inline-flex items-center justify-center px-8 py-4 rounded-2xl bg-white text-zinc-900 font-semibold text-base tracking-tight hover:bg-zinc-50 active:scale-95 transition-all duration-200 shadow-[0_0_0_1px_rgba(255,255,255,0.1),0_8px_32px_rgba(0,0,0,0.4)] disabled:opacity-50 whitespace-nowrap"
+                                        >
+                                            {isSubmitting ? (
+                                                <div className="w-5 h-5 border-2 border-zinc-400 border-t-zinc-900 rounded-full animate-spin" />
+                                            ) : (
+                                                <span className="flex items-center gap-2">
+                                                    Join Waitlist
+                                                    <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                                                </span>
+                                            )}
+                                        </button>
+                                    </form>
+                                    {error && <p className="text-red-400 text-sm mt-2">{error}</p>}
+                                    <div className="flex items-center gap-3 mt-3">
+                                        {total !== null && total > 0 && (
+                                            <div className="flex items-center gap-1.5 text-sm text-zinc-500">
+                                                <Users className="w-3.5 h-3.5" />
+                                                <span><span className="text-zinc-300 font-medium">{total.toLocaleString()}</span> on the waitlist</span>
+                                            </div>
+                                        )}
+                                        <span className="text-sm text-zinc-600">Free early access</span>
+                                    </div>
+                                </>
+                            ) : (
+                                /* ── Post-signup: Position + Referral ── */
+                                <div className="rounded-2xl bg-white/[0.04] border border-white/[0.08] p-6 space-y-4">
+                                    <div className="flex items-center gap-2 text-emerald-400">
+                                        <Check className="w-5 h-5" />
+                                        <span className="font-semibold">You&apos;re on the list!</span>
+                                    </div>
+
+                                    <div className="flex items-center gap-6">
+                                        <div>
+                                            <p className="text-3xl font-bold text-white tabular-nums">#{position}</p>
+                                            <p className="text-xs text-zinc-500 mt-0.5">Your position</p>
+                                        </div>
+                                        <div className="w-px h-10 bg-white/[0.08]" />
+                                        <div>
+                                            <p className="text-3xl font-bold text-zinc-400 tabular-nums">{total?.toLocaleString()}</p>
+                                            <p className="text-xs text-zinc-500 mt-0.5">Total joined</p>
+                                        </div>
+                                    </div>
+
+                                    {/* Skip the line */}
+                                    <div className="pt-3 border-t border-white/[0.06]">
+                                        <p className="text-sm text-zinc-300 font-medium mb-2">
+                                            Skip the line — refer friends to move up
+                                        </p>
+                                        <p className="text-xs text-zinc-500 mb-3">
+                                            Each referral moves you up 10 spots. {refCount > 0 && `You've referred ${refCount} so far.`}
+                                        </p>
+                                        <div className="flex items-center gap-2">
+                                            <div className="flex-1 py-2.5 px-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-zinc-400 font-mono truncate">
+                                                {`${typeof window !== "undefined" ? window.location.origin : "calmpilot.app"}?ref=${refCode}`}
+                                            </div>
+                                            <button
+                                                onClick={copyRefLink}
+                                                className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-medium transition-all shrink-0 ${copied
+                                                    ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30"
+                                                    : "bg-indigo-500 text-white hover:bg-indigo-400"
+                                                    }`}
+                                            >
+                                                {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                                                {copied ? "Copied" : "Copy"}
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
-                                <span className="relative z-10 flex items-center gap-2">
-                                    Start free
-                                    <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
-                                </span>
-                            </Link>
-                            <p className="text-sm text-zinc-600">No credit card &middot; Live in 60 seconds</p>
+                            )}
                         </motion.div>
 
                         {/* App logos */}
