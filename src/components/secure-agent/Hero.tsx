@@ -1,7 +1,9 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { motion } from "framer-motion";
-import { AlertCircle, ArrowRight, Check, CheckCircle2, ChevronRight, Copy, Users } from "lucide-react";
+import { AlertCircle, ArrowRight, Check, CheckCircle2, Copy, Users } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { Logo } from "./Logo";
@@ -109,7 +111,7 @@ export default function Hero() {
     }
 
     return (
-        <section id="waitlist" className="relative overflow-hidden pt-14 pb-16 lg:pt-16 lg:pb-20 bg-[#050505] selection:bg-indigo-500/30">
+        <section id="waitlist" className="relative overflow-hidden pt-14 pb-16 lg:pt-16 lg:pb-20 bg-black selection:bg-neutral-800">
 
             {/* Background — subtle grid */}
             <div
@@ -122,10 +124,8 @@ export default function Hero() {
                 }}
             />
 
-            {/* Ambient top glow */}
-            <div aria-hidden="true" className="absolute top-0 left-1/3 w-[500px] h-[400px] bg-indigo-600/12 rounded-[100%] blur-[120px] pointer-events-none z-0" />
-            {/* Right glow behind card */}
-            <div aria-hidden="true" className="absolute top-1/2 right-[10%] -translate-y-1/2 w-[360px] h-[460px] bg-violet-600/15 rounded-[100%] blur-[90px] pointer-events-none z-0" />
+            {/* Ambient top glow - Removed for stark minimalist aesthetic */}
+            {/* Right glow behind card - Removed for stark minimalist aesthetic */}
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 w-full">
                 <div className="grid lg:grid-cols-[1fr_auto] gap-12 lg:gap-16 items-center">
@@ -133,14 +133,13 @@ export default function Hero() {
                     {/* ── Left Column ── */}
                     <div className="space-y-8 max-w-xl">
 
-                        {/* Eyebrow */}
                         <motion.div
                             initial={{ opacity: 0, y: 12 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.5 }}
-                            className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/25 text-indigo-300 text-sm font-medium"
+                            className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-neutral-900 border border-white/10 text-neutral-400 text-xs font-medium uppercase tracking-wider"
                         >
-                            <Logo className="w-4 h-4" />
+                            <Logo className="w-3.5 h-3.5" />
                             <span>AI-powered digital proxy</span>
                         </motion.div>
 
@@ -186,28 +185,28 @@ export default function Hero() {
                             {!joined ? (
                                 <>
                                     <form onSubmit={handleJoin} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-                                        <input
+                                        <Input
                                             type="email"
                                             value={email}
                                             onChange={e => setEmail(e.target.value)}
                                             placeholder="Enter your email"
                                             required
-                                            className="flex-1 px-5 py-4 rounded-2xl bg-white/[0.06] border border-white/[0.12] text-white placeholder-zinc-500 text-base outline-none focus:border-indigo-500/50 focus:bg-white/[0.08] transition-all"
+                                            className="h-10 sm:max-w-[280px] bg-black border-white/20 text-white placeholder:text-neutral-500 focus-visible:ring-1 focus-visible:ring-white focus-visible:border-white transition-all text-sm rounded-md"
                                         />
-                                        <button
+                                        <Button
                                             type="submit"
                                             disabled={isSubmitting}
-                                            className="group relative inline-flex items-center justify-center px-8 py-4 rounded-2xl bg-white text-zinc-900 font-semibold text-base tracking-tight hover:bg-zinc-50 active:scale-95 transition-all duration-200 shadow-[0_0_0_1px_rgba(255,255,255,0.1),0_8px_32px_rgba(0,0,0,0.4)] disabled:opacity-50 whitespace-nowrap"
+                                            className="h-10 bg-white text-black hover:bg-neutral-200 font-medium text-sm rounded-md px-6 transition-all group"
                                         >
                                             {isSubmitting ? (
-                                                <div className="w-5 h-5 border-2 border-zinc-400 border-t-zinc-900 rounded-full animate-spin" />
+                                                <div className="w-4 h-4 border-2 border-neutral-400 border-t-black rounded-full animate-spin" />
                                             ) : (
                                                 <span className="flex items-center gap-2">
                                                     Join Waitlist
                                                     <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
                                                 </span>
                                             )}
-                                        </button>
+                                        </Button>
                                     </form>
                                     {error && <p className="text-red-400 text-sm mt-2">{error}</p>}
                                     <div className="flex items-center gap-3 mt-3">
@@ -252,16 +251,17 @@ export default function Hero() {
                                             <div className="flex-1 py-2.5 px-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-zinc-400 font-mono truncate">
                                                 {`${typeof window !== "undefined" ? window.location.origin : "calmpilot.app"}?ref=${refCode}`}
                                             </div>
-                                            <button
+                                            <Button
+                                                variant="default"
                                                 onClick={copyRefLink}
-                                                className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-medium transition-all shrink-0 ${copied
-                                                    ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30"
-                                                    : "bg-indigo-500 text-white hover:bg-indigo-400"
+                                                className={`flex items-center gap-1.5 h-10 px-4 rounded-md text-sm font-medium transition-all shrink-0 ${copied
+                                                    ? "bg-neutral-800 text-emerald-400 hover:bg-neutral-800"
+                                                    : "bg-white text-black hover:bg-neutral-200"
                                                     }`}
                                             >
                                                 {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                                                 {copied ? "Copied" : "Copy"}
-                                            </button>
+                                            </Button>
                                         </div>
                                     </div>
                                 </div>
@@ -295,20 +295,14 @@ export default function Hero() {
 
                     {/* ── Right Column: Morning Brief Card ── */}
                     <div className="relative flex-shrink-0">
-                        {/* Glow ring behind card */}
-                        <div aria-hidden="true" className="absolute inset-[-20px] bg-indigo-500/10 rounded-[2.5rem] blur-[40px] pointer-events-none" />
-
                         <motion.div
                             initial={{ opacity: 0, y: 24 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.9, delay: 0.35, ease: [0.16, 1, 0.3, 1] }}
-                            className="relative w-full sm:w-[22rem] lg:w-[24rem] bg-[#0d0d0d] border border-white/[0.08] rounded-[1.75rem] shadow-[0_0_0_1px_rgba(255,255,255,0.04),0_48px_100px_-24px_rgba(0,0,0,0.95)] overflow-hidden"
+                            className="relative w-full sm:w-[22rem] lg:w-[24rem] bg-black border border-white/10 rounded-xl shadow-sm overflow-hidden"
                         >
-                            {/* Top gradient line */}
-                            <div className="absolute top-0 left-[10%] right-[10%] h-px bg-gradient-to-r from-transparent via-indigo-500/40 to-transparent" />
-
                             {/* Card Header */}
-                            <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.06]">
+                            <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
                                 <div className="flex items-center gap-2.5">
                                     <Logo className="w-5 h-5" />
                                     <span className="text-white text-sm font-semibold tracking-wide">Morning Brief</span>

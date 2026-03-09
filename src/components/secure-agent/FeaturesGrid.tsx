@@ -32,7 +32,7 @@ function SpotlightCard({
             onBlur={() => { setIsFocused(false); setOpacity(0); }}
             onMouseEnter={() => setOpacity(1)}
             onMouseLeave={() => setOpacity(0)}
-            className={`relative overflow-hidden rounded-3xl bg-[#0c0c0c] border border-white/5 p-8 transition-colors hover:bg-white/[0.02] ${className}`}
+            className={`relative overflow-hidden rounded-xl bg-black border border-white/10 p-8 transition-colors hover:bg-neutral-900 ${className}`}
         >
             {/* Hover Spotlight */}
             <div
@@ -136,9 +136,9 @@ export default function FeaturesGrid() {
     };
 
     return (
-        <section className="py-32 bg-[#050505] relative overflow-hidden">
+        <section className="py-32 bg-black relative overflow-hidden">
             {/* Background elements to blend with hero */}
-            <div aria-hidden="true" className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-[#050505] to-transparent z-10 pointer-events-none" />
+            <div aria-hidden="true" className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-black to-transparent z-10 pointer-events-none" />
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-20">
                 <div className="text-center max-w-2xl mx-auto mb-20 space-y-4">

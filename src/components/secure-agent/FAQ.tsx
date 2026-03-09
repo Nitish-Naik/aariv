@@ -1,7 +1,12 @@
 "use client";
 
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { motion } from "framer-motion";
-import { useState } from "react";
 
 const faqs = [
   {
@@ -47,10 +52,8 @@ const faqs = [
 ];
 
 export default function FAQ() {
-  const [openIndex, setOpenIndex] = useState<number | null>(null);
-
   return (
-    <section className="py-24 lg:py-32 bg-[#050505] border-t border-white/5">
+    <section className="py-24 lg:py-32 bg-black border-t border-white/10">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -66,7 +69,7 @@ export default function FAQ() {
           </p>
         </motion.div>
 
-        <div className="space-y-3">
+        <Accordion type="single" collapsible className="w-full space-y-3">
           {faqs.map((faq, idx) => (
             <motion.div
               key={idx}
@@ -74,30 +77,18 @@ export default function FAQ() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: idx * 0.04 }}
-              className="border border-white/5 rounded-2xl overflow-hidden bg-[#0c0c0c]"
             >
-              <button
-                onClick={() => setOpenIndex(openIndex === idx ? null : idx)}
-                className="w-full text-left px-6 py-5 flex items-center justify-between text-white font-medium hover:bg-white/[0.02] transition-colors"
-                aria-expanded={openIndex === idx}
-              >
-                <span className="pr-4">{faq.question}</span>
-                <span className="text-zinc-500 shrink-0 text-xl leading-none">
-                  {openIndex === idx ? "−" : "+"}
-                </span>
-              </button>
-              {openIndex === idx && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="px-6 pb-5 text-zinc-400 leading-relaxed text-[15px]"
-                >
+              <AccordionItem value={`item-${idx}`} className="border border-white/10 rounded-xl overflow-hidden bg-black px-1 data-[state=open]:bg-neutral-900 transition-colors">
+                <AccordionTrigger className="w-full text-left px-5 py-5 text-white font-medium hover:no-underline [&[data-state=open]]:text-indigo-400">
+                  {faq.question}
+                </AccordionTrigger>
+                <AccordionContent className="px-5 pb-5 text-neutral-400 leading-relaxed text-sm">
                   {faq.answer}
-                </motion.div>
-              )}
+                </AccordionContent>
+              </AccordionItem>
             </motion.div>
           ))}
-        </div>
+        </Accordion>
       </div>
     </section>
   );

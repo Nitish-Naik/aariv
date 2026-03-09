@@ -122,7 +122,7 @@ export default function WhatIsCalmPilot() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.06 }}
-                className="bg-[#0c0c0c] border border-white/5 rounded-2xl p-5"
+                className="bg-black border border-white/10 rounded-xl p-5"
               >
                 <div className="text-sm font-semibold text-white mb-2">
                   {cap.label}
@@ -141,7 +141,7 @@ export default function WhatIsCalmPilot() {
           <div className="overflow-x-auto rounded-2xl border border-white/5">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-[#0c0c0c] border-b border-white/5">
+                <tr className="bg-black border-b border-white/10">
                   <th className="text-left px-6 py-4 text-zinc-400 font-medium">
                     Feature
                   </th>

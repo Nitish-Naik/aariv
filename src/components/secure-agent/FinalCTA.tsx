@@ -70,7 +70,7 @@ export default function FinalCTA() {
     }
 
     return (
-        <section className="py-32 bg-[#050505] text-center relative overflow-hidden">
+        <section className="py-32 bg-black text-center relative overflow-hidden">
             {/* Background glow */}
             <div aria-hidden="true" className="absolute inset-0 flex items-center justify-center pointer-events-none">
                 <div className="w-[600px] h-[400px] bg-indigo-500/8 rounded-[100%] blur-[120px]" />

@@ -14,7 +14,7 @@ export default function UseCaseList() {
     ];
 
     return (
-        <section className="py-32 bg-[#050505] relative overflow-hidden">
+        <section className="py-32 bg-black relative overflow-hidden">
             {/* Ambient Background Glows */}
             <div aria-hidden="true" className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg h-[400px] bg-indigo-500/10 rounded-[100%] blur-[120px] pointer-events-none opacity-50 z-0" />
 
@@ -49,12 +49,12 @@ export default function UseCaseList() {
                     </motion.p>
                 </div>
 
-                <div className="bg-[#0c0c0c] border border-white/10 rounded-[2rem] p-2 md:p-3 shadow-2xl relative overflow-hidden">
+                <div className="bg-black border border-white/10 rounded-xl p-2 md:p-3 shadow-2xl relative overflow-hidden">
                     {/* Inner glowing ring */}
                     <div className="absolute inset-0 rounded-[2rem] ring-1 ring-inset ring-white/5 pointer-events-none" />
 
                     {/* Simulated Terminal Window */}
-                    <div className="bg-[#050505] rounded-[1.5rem] border border-white/5 overflow-hidden flex flex-col h-full relative z-10">
+                    <div className="bg-black rounded-lg border border-white/5 overflow-hidden flex flex-col h-full relative z-10">
                         {/* Terminal Header */}
                         <div className="h-12 border-b border-white/5 flex items-center px-4 bg-white/[0.02]">
                             <div className="flex gap-2 mr-4">

@@ -35,7 +35,7 @@ export default function HowItWorks() {
     ];
 
     return (
-        <section className="py-32 bg-[#050505] relative overflow-hidden">
+        <section className="py-32 bg-black relative overflow-hidden">
             <div aria-hidden="true" className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl h-[400px] bg-indigo-500/5 rounded-[100%] blur-[120px] pointer-events-none z-0" />
 
             <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
@@ -80,7 +80,7 @@ export default function HowItWorks() {
                             whileInView={{ opacity: 1, y: 0 }}
                             viewport={{ once: true }}
                             transition={{ delay: i * 0.15, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-                            className="relative bg-[#0c0c0c] border border-white/5 rounded-3xl p-8 hover:bg-white/[0.02] transition-colors"
+                            className="relative bg-black border border-white/10 rounded-xl p-8 hover:bg-neutral-900 transition-colors"
                         >
                             <div className="flex items-start justify-between mb-6">
                                 <div className={`w-12 h-12 rounded-2xl border flex items-center justify-center shadow-lg ${colorMap[step.color]}`}>
