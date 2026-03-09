@@ -542,19 +542,19 @@ export default function SettingsPage() {
           {/* ── Profile ── */}
           <SectionCard label="PROFILE" icon={Pencil} title="Account Profile" subtitle="Your display name and connected account.">
             <div className="flex items-center justify-between gap-4 px-6 py-5 border-b border-white/10">
-            <div className="flex items-center gap-4 min-w-0">
-              <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0 overflow-hidden"
-                style={{ background: "white", color: "black" }}>
-                {user?.avatar ? <img src={user.avatar} className="w-full h-full object-cover" alt="" /> : initials}
+              <div className="flex items-center gap-4 min-w-0">
+                <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0 overflow-hidden"
+                  style={{ background: "white", color: "black" }}>
+                  {user?.avatar ? <img src={user.avatar} className="w-full h-full object-cover" alt="" /> : initials}
+                </div>
+                {editingName ? (
+                  <input autoFocus value={displayName} onChange={(e) => setDisplayName(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter") saveProfile(); if (e.key === "Escape") setEditingName(false); }}
+                    className="text-sm bg-black border border-white/20 rounded-md px-3 py-2 outline-none text-white w-56 focus:border-white/40 transition-colors" />
+                ) : (
+                  <span className="text-sm font-medium text-white truncate">{user?.name || "User"}</span>
+                )}
               </div>
-              {editingName ? (
-                <input autoFocus value={displayName} onChange={(e) => setDisplayName(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === "Enter") saveProfile(); if (e.key === "Escape") setEditingName(false); }}
-                  className="text-sm bg-black border border-white/20 rounded-md px-3 py-2 outline-none text-white w-56 focus:border-white/40 transition-colors" />
-              ) : (
-                <span className="text-sm font-medium text-white truncate">{user?.name || "User"}</span>
-              )}
-            </div>
               {editingName ? (
                 <div className="flex items-center gap-2 shrink-0">
                   <button onClick={saveProfile} disabled={savingProf}
@@ -572,16 +572,16 @@ export default function SettingsPage() {
                   <Pencil strokeWidth={1.5} size={12} />
                 </button>
               )}
-          </div>
-          <div className="flex items-center justify-between gap-4 px-6 py-5">
-            <div>
-              <p className="text-xs text-neutral-500 mb-1 font-medium">Email</p>
-              <p className="text-sm text-neutral-300">{user?.email}</p>
             </div>
-            <span className="text-[11px] px-2.5 py-1 rounded-full border border-white/10 bg-neutral-900 text-neutral-400 shrink-0 font-medium">
-              Google OAuth
-            </span>
-          </div>
+            <div className="flex items-center justify-between gap-4 px-6 py-5">
+              <div>
+                <p className="text-xs text-neutral-500 mb-1 font-medium">Email</p>
+                <p className="text-sm text-neutral-300">{user?.email}</p>
+              </div>
+              <span className="text-[11px] px-2.5 py-1 rounded-full border border-white/10 bg-neutral-900 text-neutral-400 shrink-0 font-medium">
+                Google OAuth
+              </span>
+            </div>
           </SectionCard>
 
           {/* ── Timezone ── */}
@@ -600,40 +600,40 @@ export default function SettingsPage() {
           <SectionCard label="MODEL ENGINE" icon={Brain} title="Intelligence Engine"
             subtitle="The AI model powering your conversations. Applies to all new sessions.">
             <div className="p-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {MODEL_OPTIONS.map((m) => {
-                const isPending = pendingModel === m.id;
-                return (
-                  <button key={m.id} onClick={() => setPendingModel(m.id)}
-                    className={`relative flex flex-col gap-3 p-5 rounded-lg border text-left transition-all ${isPending ? "border-amber-500/50 bg-amber-500/[0.04]" : "border-white/10 bg-black hover:border-white/20"
-                      }`}>
-                    {isPending && (
-                       <div className="absolute top-4 right-4 w-[18px] h-[18px] rounded-full bg-amber-500 flex items-center justify-center shadow-md">
-                         <Check size={12} className="text-black" strokeWidth={3} />
-                       </div>
-                    )}
-                    <div className={`w-9 h-9 rounded-md flex items-center justify-center shrink-0 transition-colors ${isPending ? "bg-amber-500/10 border border-amber-500/20" : "bg-neutral-900 border border-white/10"
-                      }`}>
-                      <m.icon size={16} className={isPending ? "text-amber-400" : "text-neutral-500"} />
-                    </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {MODEL_OPTIONS.map((m) => {
+                  const isPending = pendingModel === m.id;
+                  return (
+                    <button key={m.id} onClick={() => setPendingModel(m.id)}
+                      className={`relative flex flex-col gap-3 p-5 rounded-lg border text-left transition-all ${isPending ? "border-amber-500/50 bg-amber-500/[0.04]" : "border-white/10 bg-black hover:border-white/20"
+                        }`}>
+                      {isPending && (
+                        <div className="absolute top-4 right-4 w-[18px] h-[18px] rounded-full bg-amber-500 flex items-center justify-center shadow-md">
+                          <Check size={12} className="text-black" strokeWidth={3} />
+                        </div>
+                      )}
+                      <div className={`w-9 h-9 rounded-md flex items-center justify-center shrink-0 transition-colors ${isPending ? "bg-amber-500/10 border border-amber-500/20" : "bg-neutral-900 border border-white/10"
+                        }`}>
+                        <m.icon size={16} className={isPending ? "text-amber-400" : "text-neutral-500"} />
+                      </div>
                       <div>
                         <p className="text-sm font-semibold text-white pr-6">{m.name}</p>
                         <p className={`text-xs mt-0.5 leading-relaxed ${isPending ? "text-amber-400/80" : "text-neutral-500"}`}>{m.detail}</p>
                       </div>
                     </button>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
-          </div>
-          <div className="flex items-center justify-between px-6 py-4 border-t border-white/10 bg-neutral-900/30">
-            <p className="text-sm text-neutral-500">Changes apply to new conversations only</p>
-            <button onClick={saveModel} disabled={savingModel || !modelChanged}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${modelChanged ? "bg-white text-black hover:bg-neutral-200" : "bg-neutral-800 text-neutral-500 cursor-not-allowed"
-                }`}>
-              {savingModel ? "Saving…" : "Save Preference"}
-            </button>
-          </div>
-        </SectionCard>
+            <div className="flex items-center justify-between px-6 py-4 border-t border-white/10 bg-neutral-900/30">
+              <p className="text-sm text-neutral-500">Changes apply to new conversations only</p>
+              <button onClick={saveModel} disabled={savingModel || !modelChanged}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${modelChanged ? "bg-white text-black hover:bg-neutral-200" : "bg-neutral-800 text-neutral-500 cursor-not-allowed"
+                  }`}>
+                {savingModel ? "Saving…" : "Save Preference"}
+              </button>
+            </div>
+          </SectionCard>
 
           {/* ── History & Privacy ── */}
           <SectionCard label="HISTORY & PRIVACY" icon={Shield} title="Conversation History"
@@ -656,11 +656,12 @@ export default function SettingsPage() {
                   );
                 })}
               </div>
-            <div className="px-5 py-3.5 flex items-start gap-2">
-              <Clock strokeWidth={1.5} size={12} className="text-neutral-500 shrink-0 mt-0.5" />
-              <p className="text-xs text-neutral-500">
-                Applies to chat conversations only. Trigger events and activity feed are kept for 90 days regardless.
-              </p>
+              <div className="px-5 py-3.5 flex items-start gap-2">
+                <Clock strokeWidth={1.5} size={12} className="text-neutral-500 shrink-0 mt-0.5" />
+                <p className="text-xs text-neutral-500">
+                  Applies to chat conversations only. Trigger events and activity feed are kept for 90 days regardless.
+                </p>
+              </div>
             </div>
           </SectionCard>
 

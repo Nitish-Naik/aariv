@@ -362,6 +362,14 @@ export default function IntegrationsPage() {
     });
   }, [integrations, searchQuery, activeTab, activeCategory]);
 
+  // Top 4 "Start here" apps shown above the grid
+  const START_HERE_SLUGS = ["gmail", "googlecalendar", "slack", "github"];
+  const startHereApps = useMemo(() => {
+    return START_HERE_SLUGS
+      .map((slug) => integrations.find((i) => i.appName.toLowerCase().replace(/-/g, "") === slug))
+      .filter(Boolean) as Integration[];
+  }, [integrations]);
+
   // Group integrations by category for grouped view
   const groupedIntegrations = useMemo(() => {
     if (!groupByCategory) return null;
@@ -683,8 +691,32 @@ export default function IntegrationsPage() {
               </div>
             ))}
           </div>
-        ) : /* Toolkit Grid */
-          activeTab === "connected" ? (
+        ) : (
+          <>
+            {/* Start Here — top 4 apps, only on the flat "All" view */}
+            {activeTab === "all" && !searchQuery && activeCategory === "all" && startHereApps.length > 0 && (
+              <div className="mb-10">
+                <div className="flex items-center gap-3 mb-5">
+                  <h2 className="text-[15px] font-medium uppercase tracking-widest text-neutral-500">
+                    Start here
+                  </h2>
+                  <span className="text-[11px] font-semibold text-amber-400 bg-amber-400/10 border border-amber-400/20 px-2.5 py-0.5 rounded-full">
+                    ★ Most popular
+                  </span>
+                </div>
+                <motion.div
+                  layout
+                  className="grid grid-cols-2 md:grid-cols-4 gap-4 xl:gap-5"
+                >
+                  <AnimatePresence mode="popLayout">
+                    {startHereApps.map(renderIntegrationCard)}
+                  </AnimatePresence>
+                </motion.div>
+              </div>
+            )}
+
+            {/* Toolkit Grid */}
+            {activeTab === "connected" ? (
             <div className="space-y-12">
               <div>
                 <h2 className="text-[15px] font-medium uppercase tracking-widest text-neutral-500 mb-5">
@@ -798,6 +830,8 @@ export default function IntegrationsPage() {
               )}
             </motion.div>
           )}
+          </>
+        )}
       </div>
 
       {/* Disconnect Confirmation Modal */}
