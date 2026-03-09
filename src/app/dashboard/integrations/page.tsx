@@ -523,7 +523,7 @@ export default function IntegrationsPage() {
 
   return (
     <div className="bg-black min-h-screen">
-      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-8 sm:py-12 text-white">
+      <div className="max-w-[1048px] mx-auto px-4 sm:px-6 py-8 sm:py-12 text-white">
         {/* Success toast */}
         {toast && (
           <div className="fixed top-4 right-4 z-50 flex items-center gap-2 bg-emerald-500/90 text-white px-5 py-3 rounded-xl shadow-lg text-sm font-medium animate-in slide-in-from-top fade-in duration-300">

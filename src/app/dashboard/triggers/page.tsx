@@ -3,7 +3,7 @@
 import { Sheet } from "@/components/ui/Sheet";
 import { useAuth } from "@/context/AuthContext";
 import { api } from "@/lib/api";
-import { formatTriggerSlug } from "@/lib/appMeta";
+import { formatTriggerSlug, getTriggerDescription } from "@/lib/appMeta";
 import { motion } from "framer-motion";
 import {
   Activity,
@@ -572,8 +572,8 @@ export default function TriggersPage() {
     });
   }, [userTriggers, searchQuery]);
   return (
-    <div className="bg-black min-h-screen">
-      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-8 sm:py-12">
+    <div className="flex bg-black min-h-screen">
+      <div className="max-w-[1048px] mx-auto px-4 sm:px-6 py-8 sm:py-12">
         {/* Toast */}
         {toast && (
           <div
@@ -787,15 +787,18 @@ export default function TriggersPage() {
                                   <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2">
                                       <p className="text-sm text-white truncate">
-                                        {trigger.displayName}
+                                        {formatTriggerSlug(trigger.slug) || trigger.displayName}
                                       </p>
                                       <TriggerTypeBadge type={trigger.type} />
                                     </div>
-                                    {trigger.description && (
-                                      <p className="text-xs text-neutral-400 truncate mt-0.5">
-                                        {trigger.description}
-                                      </p>
-                                    )}
+                                    {(() => {
+                                      const desc = getTriggerDescription(trigger.slug) || trigger.description;
+                                      return desc ? (
+                                        <p className="text-xs text-neutral-400 truncate mt-0.5">
+                                          {desc}
+                                        </p>
+                                      ) : null;
+                                    })()}
                                   </div>
                                   <button
                                     onClick={() => openConfigModal(trigger)}
@@ -1013,20 +1016,27 @@ export default function TriggersPage() {
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                           {/* Left: Trigger Info & Visual Flow */}
                           <div className="flex-1 min-w-0 flex flex-col gap-3">
-                            <div className="flex items-center gap-2">
-                              <h3 className="text-sm font-semibold text-white">
-                                {trigger.trigger_name ||
-                                  formatTriggerSlug(trigger.trigger_slug)}
-                              </h3>
-                              <div
-                                className={`px-2 py-0.5 rounded text-[10px] font-medium tracking-wider uppercase ${trigger.is_enabled ? "bg-emerald-500/10 text-emerald-500" : "bg-zinc-500/10 text-zinc-500"}`}
-                              >
-                                {trigger.is_enabled ? "Active" : "Paused"}
-                              </div>
-                              {trigger.is_auto && (
-                                <div className="px-2 py-0.5 rounded text-[10px] font-medium tracking-wider uppercase bg-blue-500/10 text-blue-400">
-                                  Auto
+                            <div className="flex flex-col gap-0.5">
+                              <div className="flex items-center gap-2">
+                                <h3 className="text-sm font-semibold text-white">
+                                  {trigger.trigger_name ||
+                                    formatTriggerSlug(trigger.trigger_slug)}
+                                </h3>
+                                <div
+                                  className={`px-2 py-0.5 rounded text-[10px] font-medium tracking-wider uppercase ${trigger.is_enabled ? "bg-emerald-500/10 text-emerald-500" : "bg-zinc-500/10 text-zinc-500"}`}
+                                >
+                                  {trigger.is_enabled ? "Active" : "Paused"}
                                 </div>
+                                {trigger.is_auto && (
+                                  <div className="px-2 py-0.5 rounded text-[10px] font-medium tracking-wider uppercase bg-blue-500/10 text-blue-400">
+                                    Auto
+                                  </div>
+                                )}
+                              </div>
+                              {getTriggerDescription(trigger.trigger_slug) && (
+                                <p className="text-xs text-neutral-500">
+                                  {getTriggerDescription(trigger.trigger_slug)}
+                                </p>
                               )}
                             </div>
 

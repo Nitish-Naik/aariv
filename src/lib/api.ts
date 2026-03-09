@@ -131,6 +131,35 @@ export const api = {
     }
   },
 
+  patch: async (endpoint: string, body: any, options?: RequestInit) => {
+    const headers = await getAuthHeaders();
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
+
+    const signal = options?.signal || controller.signal;
+
+    try {
+      const response = await fetch(`${API_URL}${endpoint}`, {
+        ...options,
+        method: "PATCH",
+        headers: { ...headers, ...options?.headers },
+        body: JSON.stringify(body),
+        signal,
+      });
+      clearTimeout(timeoutId);
+      return handleResponse(response);
+    } catch (error: any) {
+      clearTimeout(timeoutId);
+      if (error.name === "AbortError" && !options?.signal?.aborted) {
+        throw new Error("Request timeout. Please try again.");
+      }
+      if (error.message?.includes("Failed to fetch")) {
+        throw new Error("Could not connect to server. Is the backend running?");
+      }
+      throw error;
+    }
+  },
+
   delete: async (endpoint: string, options?: { data?: any }) => {
     const headers = await getAuthHeaders();
     const controller = new AbortController();

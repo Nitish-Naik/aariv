@@ -80,11 +80,11 @@ export default function UsagePage() {
     }
 
     return (
-        <div className="flex-1 overflow-y-auto">
-            <div className="max-w-2xl mx-auto px-6 py-12 lg:py-16">
+        <div className="flex-1 overflow-y-auto w-full">
+            <div className="max-w-[1048px] mx-auto px-4 sm:px-6 py-8 sm:py-12">
                 {/* Header */}
                 <header className="mb-10">
-                    <h1 className="text-2xl font-serif text-white mb-1">
+                    <h1 className="text-2xl font-semibold text-white mb-2">
                         Usage & Billing
                     </h1>
                     <p className="text-sm text-neutral-400">
@@ -92,195 +92,200 @@ export default function UsagePage() {
                     </p>
                 </header>
 
-                <div className="space-y-4">
-                    {/* ─── Credit Balance ─── */}
-                    <section className="bg-black rounded-xl p-6">
-                        <div className="flex items-start justify-between mb-5">
-                            <div>
-                                <p className="text-xs font-medium text-neutral-500 uppercase tracking-wider mb-1">
-                                    Credit Balance
-                                </p>
-                                <p className="text-3xl font-semibold text-white font-mono">
-                                    ${balanceValue.toFixed(2)}
-                                </p>
-                            </div>
-                            <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center">
-                                <Wallet strokeWidth={1.5} size={18} className="text-white" />
-                            </div>
-                        </div>
-
-                        {/* Progress bar */}
-                        <div className="mb-5">
-                            <div className="h-1.5 w-full bg-black rounded-full overflow-hidden">
-                                <div
-                                    className="h-full bg-white rounded-full transition-all duration-500"
-                                    style={{ width: `${progressPercent}%` }}
-                                />
-                            </div>
-                        </div>
-
-                        <div className="flex gap-2">
-                            <button
-                                onClick={() => setShowAddCredits(true)}
-                                className="px-4 py-2 bg-white/5 text-white text-xs font-medium rounded-lg hover:opacity-80 transition-opacity"
-                            >
-                                Add Credits
-                            </button>
-                            <button className="px-4 py-2 bg-black text-neutral-400 text-xs font-medium rounded-lg hover:text-white transition-colors flex items-center gap-1.5">
-                                <RefreshCw strokeWidth={1.5} size={12} />
-                                {balanceData?.auto_refill_enabled
-                                    ? "Manage Auto-Refill"
-                                    : "Auto-Refill"}
-                            </button>
-                        </div>
-                    </section>
-
-                    {/* ─── Usage Summary ─── */}
-                    <section className="bg-black rounded-xl overflow-hidden">
-                        <div className="px-6 py-4 border-b border-white/10">
-                            <div className="flex items-center gap-2">
-                                <Activity strokeWidth={1.5} size={14} className="text-neutral-500" />
-                                <p className="text-sm font-medium text-white">
-                                    Usage Summary
-                                </p>
-                            </div>
-                            <p className="text-[11px] text-neutral-500 mt-0.5">
-                                {usageData?.period || "Last 30 days"}
-                            </p>
-                        </div>
-
-                        {usageData && Object.keys(usageData.summary).length > 0 ? (
-                            <div className="divide-y divide-white/10">
-                                {Object.entries(usageData.summary).map(
-                                    ([model, data]: [string, any]) => (
-                                        <div key={model} className="px-6 py-4">
-                                            <div className="flex items-center justify-between mb-2">
-                                                <p className="text-sm font-medium text-white">
-                                                    {model}
-                                                </p>
-                                                <span className="text-sm font-mono text-white">
-                                                    ${data.cost.toFixed(2)}
-                                                </span>
-                                            </div>
-                                            <div className="flex gap-4">
-                                                <div>
-                                                    <p className="text-[10px] text-neutral-500 uppercase tracking-wider">
-                                                        Input
-                                                    </p>
-                                                    <p className="text-xs font-mono text-neutral-400">
-                                                        {data.input_tokens.toLocaleString()}
-                                                    </p>
-                                                </div>
-                                                <div>
-                                                    <p className="text-[10px] text-neutral-500 uppercase tracking-wider">
-                                                        Output
-                                                    </p>
-                                                    <p className="text-xs font-mono text-neutral-400">
-                                                        {data.output_tokens.toLocaleString()}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )
-                                )}
-                                {/* Total */}
-                                <div className="px-6 py-3 bg-black">
-                                    <div className="flex items-center justify-between">
-                                        <p className="text-xs font-medium text-neutral-500">
-                                            Total
-                                        </p>
-                                        <p className="text-sm font-mono font-semibold text-white">
-                                            ${usageData.total_cost.toFixed(2)}
-                                        </p>
-                                    </div>
+                <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] xl:grid-cols-[280px_1fr] gap-8 lg:gap-12">
+                    <div className="space-y-6 flex flex-col">
+                        {/* ─── Credit Balance ─── */}
+                        <section className="bg-black border border-white/10 shadow-sm rounded-lg p-6">
+                            <div className="flex items-start justify-between mb-5">
+                                <div>
+                                    <p className="text-xs font-medium text-neutral-500 uppercase tracking-wider mb-1">
+                                        Credit Balance
+                                    </p>
+                                    <p className="text-3xl font-semibold text-white font-mono">
+                                        ${balanceValue.toFixed(2)}
+                                    </p>
+                                </div>
+                                <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center">
+                                    <Wallet strokeWidth={1.5} size={18} className="text-white" />
                                 </div>
                             </div>
-                        ) : (
-                            <div className="px-6 py-10 text-center">
-                                <p className="text-sm text-neutral-500">
-                                    {loadingExtras
-                                        ? "Loading usage..."
-                                        : "No usage recorded yet."}
+
+                            {/* Progress bar */}
+                            <div className="mb-5">
+                                <div className="h-1.5 w-full bg-black rounded-full overflow-hidden">
+                                    <div
+                                        className="h-full bg-white rounded-full transition-all duration-500"
+                                        style={{ width: `${progressPercent}%` }}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={() => setShowAddCredits(true)}
+                                    className="px-4 py-2 bg-white/5 text-white text-xs font-medium rounded-lg hover:opacity-80 transition-opacity"
+                                >
+                                    Add Credits
+                                </button>
+                                <button className="px-4 py-2 bg-black text-neutral-400 text-xs font-medium rounded-lg hover:text-white transition-colors flex items-center gap-1.5">
+                                    <RefreshCw strokeWidth={1.5} size={12} />
+                                    {balanceData?.auto_refill_enabled
+                                        ? "Manage Auto-Refill"
+                                        : "Auto-Refill"}
+                                </button>
+                            </div>
+                        </section>
+
+                        {/* ─── Usage Summary ─── */}
+                        <section className="bg-black border border-white/10 shadow-sm rounded-lg overflow-hidden flex-1">
+                            <div className="px-6 py-5 border-b border-white/10">
+                                <div className="flex items-center gap-2">
+                                    <Activity strokeWidth={1.5} size={16} className="text-neutral-500" />
+                                    <p className="text-sm font-medium text-white">
+                                        Usage Summary
+                                    </p>
+                                </div>
+                                <p className="text-[11px] text-neutral-500 mt-0.5">
+                                    {usageData?.period || "Last 30 days"}
                                 </p>
                             </div>
-                        )}
-                    </section>
+
+                            {usageData && Object.keys(usageData.summary).length > 0 ? (
+                                <div className="divide-y divide-white/10">
+                                    {Object.entries(usageData.summary).map(
+                                        ([model, data]: [string, any]) => (
+                                            <div key={model} className="px-6 py-4">
+                                                <div className="flex items-center justify-between mb-2">
+                                                    <p className="text-sm font-medium text-white">
+                                                        {model}
+                                                    </p>
+                                                    <span className="text-sm font-mono text-white">
+                                                        ${data.cost.toFixed(2)}
+                                                    </span>
+                                                </div>
+                                                <div className="flex gap-4">
+                                                    <div>
+                                                        <p className="text-[10px] text-neutral-500 uppercase tracking-wider">
+                                                            Input
+                                                        </p>
+                                                        <p className="text-xs font-mono text-neutral-400">
+                                                            {data.input_tokens.toLocaleString()}
+                                                        </p>
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-[10px] text-neutral-500 uppercase tracking-wider">
+                                                            Output
+                                                        </p>
+                                                        <p className="text-xs font-mono text-neutral-400">
+                                                            {data.output_tokens.toLocaleString()}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )
+                                    )}
+                                    {/* Total */}
+                                    <div className="px-6 py-3 bg-black">
+                                        <div className="flex items-center justify-between">
+                                            <p className="text-xs font-medium text-neutral-500">
+                                                Total
+                                            </p>
+                                            <p className="text-sm font-mono font-semibold text-white">
+                                                ${usageData.total_cost.toFixed(2)}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="px-6 py-10 text-center">
+                                    <p className="text-sm text-neutral-500">
+                                        {loadingExtras
+                                            ? "Loading usage..."
+                                            : "No usage recorded yet."}
+                                    </p>
+                                </div>
+                            )}
+                        </section>
+
+                    </div>
 
                     {/* ─── Spending History ─── */}
-                    <section className="bg-black rounded-xl overflow-hidden">
-                        <div className="px-6 py-4 border-b border-white/10">
-                            <div className="flex items-center gap-2">
-                                <History strokeWidth={1.5} size={14} className="text-neutral-500" />
-                                <p className="text-sm font-medium text-white">
-                                    Spending History
-                                </p>
+                    <div className="lg:col-span-2">
+                        <section className="bg-black border border-white/10 shadow-sm rounded-lg overflow-hidden h-full">
+                            <div className="px-6 py-5 border-b border-white/10">
+                                <div className="flex items-center gap-2">
+                                    <History strokeWidth={1.5} size={16} className="text-neutral-500" />
+                                    <p className="text-sm font-medium text-white">
+                                        Spending History
+                                    </p>
+                                </div>
                             </div>
-                        </div>
 
-                        {history.length > 0 ? (
-                            <div className="divide-y divide-white/10">
-                                {history.map((tx) => {
-                                    const dateObj = new Date(tx.date);
-                                    const isPositive = tx.amount > 0;
+                            {history.length > 0 ? (
+                                <div className="divide-y divide-white/10">
+                                    {history.map((tx) => {
+                                        const dateObj = new Date(tx.date);
+                                        const isPositive = tx.amount > 0;
 
-                                    return (
-                                        <div
-                                            key={tx.id}
-                                            className="px-6 py-3.5 flex items-center gap-3"
-                                        >
+                                        return (
                                             <div
-                                                className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${isPositive
-                                                    ? "bg-emerald-500/10"
-                                                    : "bg-black"
-                                                    }`}
+                                                key={tx.id}
+                                                className="px-6 py-3.5 flex items-center gap-3"
                                             >
-                                                {isPositive ? (
-                                                    <ArrowUpRight strokeWidth={1.5} size={14} className="text-emerald-400" />
-                                                ) : (
-                                                    <ArrowDownRight strokeWidth={1.5}
-                                                        size={14}
-                                                        className="text-neutral-500"
-                                                    />
-                                                )}
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <p className="text-sm text-white truncate">
-                                                    {tx.description}
-                                                </p>
-                                                <p className="text-[11px] text-neutral-500">
-                                                    {dateObj.toLocaleDateString("en-US", {
-                                                        month: "short",
-                                                        day: "numeric",
-                                                        hour: "2-digit",
-                                                        minute: "2-digit",
-                                                    })}
-                                                </p>
-                                            </div>
-                                            <div className="text-right shrink-0">
-                                                <p
-                                                    className={`text-sm font-mono font-medium ${isPositive ? "text-emerald-400" : "text-neutral-500"
+                                                <div
+                                                    className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${isPositive
+                                                        ? "bg-emerald-500/10"
+                                                        : "bg-black"
                                                         }`}
                                                 >
-                                                    {isPositive ? "+" : ""}${Math.abs(tx.amount).toFixed(isPositive ? 2 : 4)}
-                                                </p>
-                                                <p className="text-[11px] font-mono text-neutral-500">
-                                                    ${tx.balance.toFixed(2)}
-                                                </p>
+                                                    {isPositive ? (
+                                                        <ArrowUpRight strokeWidth={1.5} size={14} className="text-emerald-400" />
+                                                    ) : (
+                                                        <ArrowDownRight strokeWidth={1.5}
+                                                            size={14}
+                                                            className="text-neutral-500"
+                                                        />
+                                                    )}
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="text-sm text-white truncate">
+                                                        {tx.description}
+                                                    </p>
+                                                    <p className="text-[11px] text-neutral-500">
+                                                        {dateObj.toLocaleDateString("en-US", {
+                                                            month: "short",
+                                                            day: "numeric",
+                                                            hour: "2-digit",
+                                                            minute: "2-digit",
+                                                        })}
+                                                    </p>
+                                                </div>
+                                                <div className="text-right shrink-0">
+                                                    <p
+                                                        className={`text-sm font-mono font-medium ${isPositive ? "text-emerald-400" : "text-neutral-500"
+                                                            }`}
+                                                    >
+                                                        {isPositive ? "+" : ""}${Math.abs(tx.amount).toFixed(isPositive ? 2 : 4)}
+                                                    </p>
+                                                    <p className="text-[11px] font-mono text-neutral-500">
+                                                        ${tx.balance.toFixed(2)}
+                                                    </p>
+                                                </div>
                                             </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        ) : (
-                            <div className="px-6 py-10 text-center">
-                                <p className="text-sm text-neutral-500">
-                                    {loadingExtras
-                                        ? "Loading history..."
-                                        : "No transaction history."}
-                                </p>
-                            </div>
-                        )}
-                    </section>
+                                        );
+                                    })}
+                                </div>
+                            ) : (
+                                <div className="px-6 py-10 text-center">
+                                    <p className="text-sm text-neutral-500">
+                                        {loadingExtras
+                                            ? "Loading history..."
+                                            : "No transaction history."}
+                                    </p>
+                                </div>
+                            )}
+                        </section>
+                    </div>
                 </div>
             </div>
 

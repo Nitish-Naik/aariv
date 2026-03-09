@@ -2,31 +2,27 @@
 
 import { useAuth } from "@/context/AuthContext";
 import { api } from "@/lib/api";
+import { getAppColor, getAppIcon } from "@/lib/appMeta";
 import {
   Activity,
   ArrowRight,
   Calendar,
   CheckCircle2,
-  CheckSquare,
   Clock,
   Cloud,
   CreditCard,
   Eye,
-  FileText,
-  FolderOpen,
   Loader2,
   Mail,
   MessageSquare,
-  Mic,
-  Music,
   Plug,
   Sparkles,
   Target,
-  Zap,
+  X
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 
 /* ─── Types ──────────────────────────────────────────────── */
 
@@ -68,52 +64,6 @@ interface Briefing {
 }
 
 /* ─── Helpers ────────────────────────────────────────────── */
-
-const APP_ICON: Record<string, React.ReactNode> = {
-  gmail: <Mail strokeWidth={1.5} size={15} />,
-  googlecalendar: <Calendar strokeWidth={1.5} size={15} />,
-  slack: <MessageSquare strokeWidth={1.5} size={15} />,
-  github: <Target strokeWidth={1.5} size={15} />,
-  notion: <Zap strokeWidth={1.5} size={15} />,
-  linear: <Zap strokeWidth={1.5} size={15} />,
-  discord: <MessageSquare strokeWidth={1.5} size={15} />,
-  outlook: <Mail strokeWidth={1.5} size={15} />,
-  googledrive: <FolderOpen strokeWidth={1.5} size={15} />,
-  googledocs: <FileText strokeWidth={1.5} size={15} />,
-  stripe: <CreditCard strokeWidth={1.5} size={15} />,
-  jira: <CheckSquare strokeWidth={1.5} size={15} />,
-  trello: <CheckSquare strokeWidth={1.5} size={15} />,
-  todoist: <CheckSquare strokeWidth={1.5} size={15} />,
-  pipedrive: <Activity strokeWidth={1.5} size={15} />,
-  salesforce: <Activity strokeWidth={1.5} size={15} />,
-  spotify: <Music strokeWidth={1.5} size={15} />,
-  youtube: <Music strokeWidth={1.5} size={15} />,
-  fireflies: <Mic strokeWidth={1.5} size={15} />,
-  slackbot: <MessageSquare strokeWidth={1.5} size={15} />,
-};
-
-const APP_COLOR: Record<string, string> = {
-  gmail: "#EA4335",
-  googlecalendar: "#4285F4",
-  slack: "#4A154B",
-  github: "#333",
-  notion: "#000",
-  linear: "#5E6AD2",
-  discord: "#5865F2",
-  outlook: "#0078D4",
-  googledrive: "#0F9D58",
-  googledocs: "#4285F4",
-  stripe: "#635BFF",
-  jira: "#0052CC",
-  trello: "#0079BF",
-  todoist: "#E44332",
-  pipedrive: "#1BAA6B",
-  salesforce: "#00A1E0",
-  spotify: "#1DB954",
-  youtube: "#FF0000",
-  fireflies: "#6C2BD9",
-  slackbot: "#4A154B",
-};
 
 const getGreeting = () => {
   const hour = new Date().getHours();
@@ -196,8 +146,8 @@ function ProposalCard({
   logoUrl?: string;
   onAction?: (proposal: Proposal, action: string) => void;
 }) {
-  const icon = APP_ICON[proposal.app] || <Zap strokeWidth={1.5} size={15} />;
-  const color = APP_COLOR[proposal.app] || "white";
+  const icon = getAppIcon(proposal.app);
+  const color = getAppColor(proposal.app);
   const isHigh = proposal.priority === "high";
 
   return (
@@ -246,8 +196,8 @@ function ProposalCard({
               key={i}
               onClick={() => onAction?.(proposal, action)}
               className={`text-xs font-medium px-3 py-1.5 rounded-lg transition-colors ${i === 0
-                  ? "bg-white text-white hover:opacity-90"
-                  : "bg-white/5 text-white hover:opacity-80"
+                ? "bg-white text-white hover:opacity-90"
+                : "bg-white/5 text-white hover:opacity-80"
                 }`}
             >
               {action}
@@ -330,7 +280,7 @@ function OnboardingState({ firstName }: { firstName: string }) {
   const router = useRouter();
 
   return (
-    <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-12 md:py-20 flex flex-col items-center">
+    <div className="max-w-[1048px] mx-auto px-4 sm:px-6 py-12 md:py-20 flex flex-col items-center">
       {/* Header */}
       <div className="text-center mb-12 max-w-2xl">
         <div className="w-16 h-16 bg-gradient-to-br from-neutral-900 to-[black] border border-white/10 rounded-xl flex items-center justify-center mx-auto mb-6 shadow-xl">
@@ -472,7 +422,7 @@ function CalmState({
   const insight = briefing?.insight;
 
   return (
-    <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-10">
+    <div className="max-w-[1048px] mx-auto px-4 sm:px-6 py-10">
       {/* Hero */}
       <div className="flex flex-col items-center text-center mb-10">
         <div className="mb-6 text-neutral-500">
@@ -621,7 +571,7 @@ function ActiveState({
   };
 
   return (
-    <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-6 sm:py-10">
+    <div className="max-w-[1048px] mx-auto px-4 sm:px-6 py-6 sm:py-10">
       {/* Header */}
       <div className="flex items-start justify-between mb-2">
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
@@ -773,8 +723,11 @@ function ActiveState({
 
 /* ─── Main Page ──────────────────────────────────────────── */
 
+const SLACK_NUDGE_KEY = (userId: string) => `aariv_slack_nudge_dismissed_${userId}`;
+
 export default function DashboardHome() {
   const { user } = useAuth();
+  const router = useRouter();
   const [briefing, setBriefing] = useState<Briefing | null>(null);
   const [logoMap, setLogoMap] = useState<Record<string, string>>({});
   const [reviewCounts, setReviewCounts] = useState<ReviewCounts>({
@@ -787,6 +740,9 @@ export default function DashboardHome() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasConnections, setHasConnections] = useState<boolean | null>(null);
+  const [slackConnected, setSlackConnected] = useState(true); // assume true until we know
+  const [showSlackNudge, setShowSlackNudge] = useState(false);
+  const step3Tracked = useRef(false);
 
   const fetchBriefing = useCallback(
     async (silent = false) => {
@@ -818,6 +774,12 @@ export default function DashboardHome() {
         }
         setHasConnections(true);
 
+        // Check if Slack is connected (for soft nudge)
+        const slackIsConnected = connectedApps.some(
+          (a) => a.toLowerCase().includes("slack"),
+        );
+        setSlackConnected(slackIsConnected);
+
         // 2. Fetch briefing + review in parallel
         const [data, reviewData] = await Promise.all([
           api.get(`/dashboard/briefing?userId=${user.id}`),
@@ -825,6 +787,18 @@ export default function DashboardHome() {
         ]);
         setBriefing(data);
         if (reviewData?.counts) setReviewCounts(reviewData.counts);
+
+        // Track step 3 (FVM) — once per session
+        if (!step3Tracked.current) {
+          step3Tracked.current = true;
+          api.patch("/auth/onboarding-step", { step: 3 }).catch(() => { });
+        }
+
+        // Show Slack nudge if not connected and not dismissed
+        if (!slackIsConnected && user?.id) {
+          const dismissed = localStorage.getItem(SLACK_NUDGE_KEY(user.id));
+          if (!dismissed) setShowSlackNudge(true);
+        }
       } catch (err: any) {
         console.error("Failed to fetch briefing:", err);
         setError(err.message || "Couldn't load your briefing.");
@@ -844,7 +818,7 @@ export default function DashboardHome() {
 
   if (loading) {
     return (
-      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-10">
+      <div className="max-w-[1048px] mx-auto px-4 sm:px-6 py-10">
         <div className="flex flex-col items-center text-center mb-10">
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white mb-3">
             {getGreeting()}, {firstName}
@@ -899,7 +873,7 @@ export default function DashboardHome() {
   if (error && !briefing) {
     const isCredits = error === "INSUFFICIENT_CREDITS";
     return (
-      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-10 flex flex-col items-center justify-center min-h-[80vh]">
+      <div className="max-w-[1048px] mx-auto px-4 sm:px-6 py-10 flex flex-col items-center justify-center min-h-[80vh]">
         {isCredits ? (
           <div className="flex flex-col items-center gap-4 p-8 rounded-xl bg-neutral-900 border border-white/10 max-w-md w-full">
             <div className="w-12 h-12 rounded-full bg-amber-500/10 flex items-center justify-center">
@@ -933,26 +907,78 @@ export default function DashboardHome() {
     );
   }
 
+  const slackNudge = showSlackNudge ? (
+    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-full max-w-sm px-4">
+      <div className="flex items-center justify-between gap-3 bg-neutral-900 border border-white/10 rounded-2xl px-4 py-3 shadow-xl">
+        <div className="flex items-center gap-3 min-w-0">
+          <span
+            className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+            style={{ backgroundColor: "#E01E5A" }}
+          >
+            <MessageSquare strokeWidth={1.5} size={14} className="text-white" />
+          </span>
+          <div className="min-w-0">
+            <p className="text-xs font-semibold text-white leading-snug">
+              Want a fuller brief?
+            </p>
+            <p className="text-[11px] text-neutral-500 leading-snug truncate">
+              Connect Slack to include your team messages.
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-1 shrink-0">
+          <button
+            onClick={() => {
+              router.push("/dashboard/integrations?connect=slack");
+              setShowSlackNudge(false);
+              if (user?.id) localStorage.setItem(SLACK_NUDGE_KEY(user.id), "1");
+            }}
+            className="text-[11px] font-semibold text-white bg-white/10 hover:bg-white/20 px-2.5 py-1.5 rounded-lg transition-colors whitespace-nowrap"
+          >
+            Connect
+          </button>
+          <button
+            onClick={() => {
+              setShowSlackNudge(false);
+              if (user?.id) localStorage.setItem(SLACK_NUDGE_KEY(user.id), "1");
+              api.patch("/auth/onboarding-step", { step: 4 }).catch(() => { });
+            }}
+            className="p-1.5 text-neutral-600 hover:text-neutral-400 transition-colors"
+            aria-label="Dismiss"
+          >
+            <X strokeWidth={1.5} size={13} />
+          </button>
+        </div>
+      </div>
+    </div>
+  ) : null;
+
   if (!briefing || briefing.is_calm) {
     return (
-      <CalmState
-        firstName={firstName}
-        briefing={briefing}
-        reviewCounts={reviewCounts}
-        onRefresh={() => fetchBriefing(true)}
-        refreshing={refreshing}
-      />
+      <>
+        <CalmState
+          firstName={firstName}
+          briefing={briefing}
+          reviewCounts={reviewCounts}
+          onRefresh={() => fetchBriefing(true)}
+          refreshing={refreshing}
+        />
+        {slackNudge}
+      </>
     );
   }
 
   return (
-    <ActiveState
-      firstName={firstName}
-      briefing={briefing}
-      logoMap={logoMap}
-      reviewCounts={reviewCounts}
-      onRefresh={() => fetchBriefing(true)}
-      refreshing={refreshing}
-    />
+    <>
+      <ActiveState
+        firstName={firstName}
+        briefing={briefing}
+        logoMap={logoMap}
+        reviewCounts={reviewCounts}
+        onRefresh={() => fetchBriefing(true)}
+        refreshing={refreshing}
+      />
+      {slackNudge}
+    </>
   );
 }

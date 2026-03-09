@@ -51,11 +51,12 @@ export default function WelcomePage() {
     if (!user) return;
     const key = WELCOME_KEY(user.id);
     if (localStorage.getItem(key)) {
-      // Already seen — skip to dashboard
       router.replace("/dashboard");
       return;
     }
     localStorage.setItem(key, "1");
+    // Track onboarding step 1 in DB (fire-and-forget)
+    api.patch("/auth/onboarding-step", { step: 1 }).catch(() => {});
   }, [user, router]);
 
   const handleConnect = async (appSlug: string) => {

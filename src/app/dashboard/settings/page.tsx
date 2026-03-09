@@ -8,6 +8,7 @@ import { api } from "@/lib/api";
 import { supabase } from "@/lib/supabase";
 import {
   Activity,
+  Bell,
   Brain,
   Check,
   Clock,
@@ -16,6 +17,7 @@ import {
   CreditCard,
   ExternalLink,
   Gift,
+  Globe,
   History,
   LogOut,
   Moon,
@@ -35,36 +37,47 @@ import React, { useEffect, useRef, useState } from "react";
 const MODEL_OPTIONS = [
   {
     id: "gpt-5.4",
-    name: "GPT-5.4",
-    detail: "Most capable — best for professional & complex work",
+    name: "Ultra",
+    detail: "Most capable — best for complex research & professional work",
     icon: Brain,
   },
   {
     id: "gpt-5",
-    name: "GPT-5",
-    detail: "Intelligent reasoning — great for coding & agentic tasks",
+    name: "Powerful",
+    detail: "Advanced reasoning — great for coding & analytical tasks",
     icon: Sparkles,
   },
   {
     id: "gpt-4.1",
-    name: "GPT-4.1",
-    detail: "Smartest non-reasoning model — fast & accurate",
+    name: "Standard",
+    detail: "Accurate and fast — good for most everyday tasks",
     icon: Cpu,
   },
   {
     id: "gpt-4.1-mini",
-    name: "GPT-4.1 Mini",
-    detail: "Fast & cost-efficient — ideal for everyday tasks",
+    name: "Fast",
+    detail: "Cost-efficient — ideal for quick queries and simple tasks",
     icon: Zap,
   },
 ] as const;
 
 const RETENTION_OPTIONS = [
-  { label: "7 days", value: 7 },
-  { label: "30 days", value: 30 },
-  { label: "90 days", value: 90 },
-  { label: "Keep forever", value: null },
+  { label: "7 days", value: 7, description: "Minimal storage. Aariv won't remember chats from last week." },
+  { label: "30 days", value: 30, description: "Recommended. Good balance of memory and privacy." },
+  { label: "90 days", value: 90, description: "Aariv has longer context across sessions." },
+  { label: "Keep forever", value: null, description: "Keep everything. You can manually delete at any time." },
 ] as const;
+
+function formatTimezoneLabel(tz: string): string {
+  try {
+    const offset = new Intl.DateTimeFormat("en", { timeZoneName: "short", timeZone: tz })
+      .formatToParts(new Date())
+      .find((p) => p.type === "timeZoneName")?.value || "";
+    return `${tz.replace(/_/g, " ")}${offset ? ` (${offset})` : ""}`;
+  } catch {
+    return tz;
+  }
+}
 
 function SectionCard({
   label,
@@ -80,21 +93,15 @@ function SectionCard({
   children: React.ReactNode;
 }) {
   return (
-    <div>
-      <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-neutral-500 mb-3 px-1">
-        {label}
-      </p>
-      <div className="rounded-xl border border-white/10 bg-neutral-900 overflow-hidden">
-        <div className="flex items-center gap-3.5 px-5 py-4 border-b border-white/10">
-          <div className="w-9 h-9 rounded-xl bg-neutral-900 border border-white/10 flex items-center justify-center shrink-0">
-            <Icon size={15} className="text-neutral-400" />
-          </div>
-          <div>
-            <p className="text-sm font-semibold text-white">{title}</p>
-            <p className="text-xs text-neutral-500 mt-0.5">{subtitle}</p>
-          </div>
+    <div className="grid grid-cols-1 md:grid-cols-[260px_1fr] lg:grid-cols-[280px_1fr] gap-8 lg:gap-12 py-8 md:py-10 border-b border-white/10 last:border-0 border-t first:border-t-0">
+      <div className="flex flex-col pr-4">
+        <h2 className="text-sm font-medium text-white">{title}</h2>
+        <p className="text-sm text-neutral-400 mt-1.5 leading-relaxed">{subtitle}</p>
+      </div>
+      <div className="min-w-0">
+        <div className="rounded-lg border border-white/10 bg-black overflow-hidden shadow-sm">
+          {children}
         </div>
-        {children}
       </div>
     </div>
   );
@@ -160,6 +167,9 @@ export default function SettingsPage() {
   const [referralLoading, setReferralLoading] = useState(false);
   const [codeCopied, setCodeCopied] = useState(false);
 
+  // Timezone (display only — auto-detected on login)
+  const [timezone, setTimezone] = useState<string>("");
+
   // Auto-refill
   const [autoRefill, setAutoRefill] = useState(false);
   const [refillThreshold, setRefillThreshold] = useState(1.0);
@@ -182,6 +192,11 @@ export default function SettingsPage() {
       .then((d) => d && setRetention(d.retention_days))
       .catch(() => { });
   }, [user?.id]);
+
+  useEffect(() => {
+    const detected = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    setTimezone(detected);
+  }, []);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -515,376 +530,414 @@ export default function SettingsPage() {
         </div>
       )}
 
-      <div className="max-w-2xl mx-auto px-6 md:px-8 py-10 md:py-14 space-y-6">
+      <div className="max-w-[1048px] mx-auto px-4 sm:px-6 py-8 sm:py-12">
         {/* Header */}
-        <div>
-          <h1 className="text-xl font-semibold text-white">Settings</h1>
-          <p className="text-sm text-neutral-500 mt-0.5">Manage your account, preferences, and data.</p>
+        <div className="mb-10">
+          <h1 className="text-2xl font-semibold text-white mb-2">Settings</h1>
+          <p className="text-sm text-neutral-400">Manage your account, preferences, and data.</p>
         </div>
 
-        {/* ── Profile ── */}
-        <SectionCard label="PROFILE" icon={Pencil} title="Account Profile" subtitle="Your display name and connected account.">
-          <div className="flex items-center justify-between gap-4 px-5 py-4 border-b border-white/10">
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 overflow-hidden"
+        <div className="flex flex-col">
+
+          {/* ── Profile ── */}
+          <SectionCard label="PROFILE" icon={Pencil} title="Account Profile" subtitle="Your display name and connected account.">
+            <div className="flex items-center justify-between gap-4 px-6 py-5 border-b border-white/10">
+            <div className="flex items-center gap-4 min-w-0">
+              <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0 overflow-hidden"
                 style={{ background: "white", color: "black" }}>
                 {user?.avatar ? <img src={user.avatar} className="w-full h-full object-cover" alt="" /> : initials}
               </div>
               {editingName ? (
                 <input autoFocus value={displayName} onChange={(e) => setDisplayName(e.target.value)}
                   onKeyDown={(e) => { if (e.key === "Enter") saveProfile(); if (e.key === "Escape") setEditingName(false); }}
-                  className="text-sm bg-black border border-white/20 rounded-lg px-3 py-1.5 outline-none text-white w-48" />
+                  className="text-sm bg-black border border-white/20 rounded-md px-3 py-2 outline-none text-white w-56 focus:border-white/40 transition-colors" />
               ) : (
-                <span className="text-sm text-white truncate">{user?.name || "User"}</span>
+                <span className="text-sm font-medium text-white truncate">{user?.name || "User"}</span>
               )}
             </div>
-            {editingName ? (
-              <div className="flex items-center gap-2 shrink-0">
-                <button onClick={saveProfile} disabled={savingProf}
-                  className="px-3 py-1.5 rounded-lg bg-white text-[black] text-xs font-semibold disabled:opacity-50">
-                  {savingProf ? "…" : "Save"}
+              {editingName ? (
+                <div className="flex items-center gap-2 shrink-0">
+                  <button onClick={saveProfile} disabled={savingProf}
+                    className="px-3 py-1.5 rounded-lg bg-white text-[black] text-xs font-semibold disabled:opacity-50">
+                    {savingProf ? "…" : "Save"}
+                  </button>
+                  <button onClick={() => { setDisplayName(user?.name || ""); setEditingName(false); }}
+                    className="px-3 py-1.5 rounded-lg bg-neutral-900 text-neutral-500 text-xs font-medium">
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <button onClick={() => setEditingName(true)}
+                  className="p-1.5 rounded-lg text-neutral-500 hover:text-white hover:bg-neutral-900 transition-colors shrink-0">
+                  <Pencil strokeWidth={1.5} size={12} />
                 </button>
-                <button onClick={() => { setDisplayName(user?.name || ""); setEditingName(false); }}
-                  className="px-3 py-1.5 rounded-lg bg-neutral-900 text-neutral-500 text-xs font-medium">
-                  Cancel
-                </button>
-              </div>
-            ) : (
-              <button onClick={() => setEditingName(true)}
-                className="p-1.5 rounded-lg text-neutral-500 hover:text-white hover:bg-neutral-900 transition-colors shrink-0">
-                <Pencil strokeWidth={1.5} size={12} />
-              </button>
-            )}
+              )}
           </div>
-          <div className="flex items-center justify-between gap-4 px-5 py-4">
+          <div className="flex items-center justify-between gap-4 px-6 py-5">
             <div>
-              <p className="text-xs text-neutral-500 mb-0.5">Email</p>
-              <p className="text-sm text-neutral-400">{user?.email}</p>
+              <p className="text-xs text-neutral-500 mb-1 font-medium">Email</p>
+              <p className="text-sm text-neutral-300">{user?.email}</p>
             </div>
-            <span className="text-[10px] px-2 py-0.5 rounded-full border border-white/10 bg-neutral-900 text-neutral-500 shrink-0">
+            <span className="text-[11px] px-2.5 py-1 rounded-full border border-white/10 bg-neutral-900 text-neutral-400 shrink-0 font-medium">
               Google OAuth
             </span>
           </div>
-        </SectionCard>
+          </SectionCard>
 
-        {/* ── AI Model ── */}
-        <SectionCard label="MODEL ENGINE" icon={Brain} title="Intelligence Engine"
-          subtitle="The AI model powering your conversations. Applies to all new sessions.">
-          <div className="p-4">
-            <div className="grid grid-cols-2 gap-3">
+          {/* ── Timezone ── */}
+          <SectionCard label="PREFERENCES" icon={Globe} title="Timezone"
+            subtitle="Auto-detected from your browser. Used for briefing schedule and calendar times.">
+            <div className="flex items-center gap-3 px-5 py-4">
+              <Globe strokeWidth={1.5} size={13} className="text-neutral-500 shrink-0" />
+              <div>
+                <p className="text-sm font-medium text-white">{timezone ? formatTimezoneLabel(timezone) : "Detecting…"}</p>
+                <p className="text-xs text-neutral-500 mt-0.5">Automatically updated on each login.</p>
+              </div>
+            </div>
+          </SectionCard>
+
+          {/* ── AI Model ── */}
+          <SectionCard label="MODEL ENGINE" icon={Brain} title="Intelligence Engine"
+            subtitle="The AI model powering your conversations. Applies to all new sessions.">
+            <div className="p-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {MODEL_OPTIONS.map((m) => {
                 const isPending = pendingModel === m.id;
                 return (
                   <button key={m.id} onClick={() => setPendingModel(m.id)}
-                    className={`relative flex flex-col gap-2.5 p-4 rounded-xl border text-left transition-all ${isPending ? "border-amber-500/50 bg-amber-500/[0.06]" : "border-white/10 bg-black hover:border-white/20"
+                    className={`relative flex flex-col gap-3 p-5 rounded-lg border text-left transition-all ${isPending ? "border-amber-500/50 bg-amber-500/[0.04]" : "border-white/10 bg-black hover:border-white/20"
                       }`}>
                     {isPending && (
-                      <div className="absolute top-3 right-3 w-5 h-5 rounded-full bg-amber-500 flex items-center justify-center">
-                        <Check size={11} className="text-black" strokeWidth={2.5} />
-                      </div>
+                       <div className="absolute top-4 right-4 w-[18px] h-[18px] rounded-full bg-amber-500 flex items-center justify-center shadow-md">
+                         <Check size={12} className="text-black" strokeWidth={3} />
+                       </div>
                     )}
-                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-colors ${isPending ? "bg-amber-500/15 border border-amber-500/30" : "bg-neutral-900 border border-white/10"
+                    <div className={`w-9 h-9 rounded-md flex items-center justify-center shrink-0 transition-colors ${isPending ? "bg-amber-500/10 border border-amber-500/20" : "bg-neutral-900 border border-white/10"
                       }`}>
-                      <m.icon size={14} className={isPending ? "text-amber-400" : "text-neutral-500"} />
+                      <m.icon size={16} className={isPending ? "text-amber-400" : "text-neutral-500"} />
                     </div>
-                    <div>
-                      <p className="text-sm font-semibold text-white pr-6">{m.name}</p>
-                      <p className={`text-xs mt-0.5 leading-relaxed ${isPending ? "text-amber-400/80" : "text-neutral-500"}`}>{m.detail}</p>
-                    </div>
-                  </button>
+                      <div>
+                        <p className="text-sm font-semibold text-white pr-6">{m.name}</p>
+                        <p className={`text-xs mt-0.5 leading-relaxed ${isPending ? "text-amber-400/80" : "text-neutral-500"}`}>{m.detail}</p>
+                      </div>
+                    </button>
                 );
               })}
             </div>
           </div>
-          <div className="flex items-center justify-between px-5 py-3.5 border-t border-white/10 bg-black">
-            <p className="text-xs text-neutral-500">Changes apply to new conversations only</p>
+          <div className="flex items-center justify-between px-6 py-4 border-t border-white/10 bg-neutral-900/30">
+            <p className="text-sm text-neutral-500">Changes apply to new conversations only</p>
             <button onClick={saveModel} disabled={savingModel || !modelChanged}
-              className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${modelChanged ? "bg-amber-500 text-black hover:bg-amber-400" : "bg-neutral-900 text-neutral-500 cursor-not-allowed"
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${modelChanged ? "bg-white text-black hover:bg-neutral-200" : "bg-neutral-800 text-neutral-500 cursor-not-allowed"
                 }`}>
               {savingModel ? "Saving…" : "Save Preference"}
             </button>
           </div>
         </SectionCard>
 
-        {/* ── History & Privacy ── */}
-        <SectionCard label="HISTORY & PRIVACY" icon={Shield} title="Auto-delete Conversations"
-          subtitle="Automatically purge conversations older than the selected window. Runs nightly.">
-          <div className="px-5 py-4 border-b border-white/10">
-            <div className="flex flex-wrap gap-2">
-              {RETENTION_OPTIONS.map((opt) => {
-                const sel = retention === opt.value;
-                return (
-                  <button key={String(opt.value)} onClick={() => saveRetention(opt.value)} disabled={retSaving}
-                    className={`px-4 py-2 rounded-full text-sm font-medium transition-all disabled:opacity-40 ${sel ? "bg-amber-500 text-black" : "bg-black border border-white/10 text-neutral-400 hover:border-white/20 hover:text-white"
-                      }`}>
-                    {opt.label}
-                  </button>
-                );
-              })}
+          {/* ── History & Privacy ── */}
+          <SectionCard label="HISTORY & PRIVACY" icon={Shield} title="Conversation History"
+            subtitle="How long Aariv remembers your chats. Runs a nightly cleanup.">
+            <div className="p-6">
+              <div className="space-y-3">
+                {RETENTION_OPTIONS.map((opt) => {
+                  const sel = retention === opt.value;
+                  return (
+                    <button key={String(opt.value)} onClick={() => saveRetention(opt.value)} disabled={retSaving}
+                      className={`w-full flex items-start gap-4 p-4 rounded-lg border text-left transition-all disabled:opacity-40 ${sel ? "border-amber-500/50 bg-amber-500/[0.04]" : "border-white/10 bg-black hover:border-white/20"}`}>
+                      <div className={`mt-0.5 w-[18px] h-[18px] rounded-full border-2 shrink-0 flex items-center justify-center transition-colors ${sel ? "border-amber-500 bg-amber-500" : "border-white/20"}`}>
+                        {sel && <div className="w-2 h-2 rounded-full bg-black" />}
+                      </div>
+                      <div>
+                        <p className={`text-sm font-medium ${sel ? "text-white" : "text-neutral-400"}`}>{opt.label}</p>
+                        <p className="text-sm text-neutral-500 mt-1">{opt.description}</p>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            <div className="px-5 py-3.5 flex items-start gap-2">
+              <Clock strokeWidth={1.5} size={12} className="text-neutral-500 shrink-0 mt-0.5" />
+              <p className="text-xs text-neutral-500">
+                Applies to chat conversations only. Trigger events and activity feed are kept for 90 days regardless.
+              </p>
             </div>
-          </div>
-          <div className="flex items-center gap-2 px-5 py-3.5">
-            <Clock strokeWidth={1.5} size={12} className="text-neutral-500 shrink-0" />
-            <p className="text-xs text-neutral-500">
-              Conversations older than <span className="font-semibold text-neutral-400">{retentionLabel}</span> are removed each night.
-            </p>
-          </div>
-        </SectionCard>
+          </SectionCard>
 
-        {/* ── Usage & Billing ── */}
-        <SectionCard label="USAGE & BILLING" icon={Wallet} title="Credit Balance"
-          subtitle="Credits are consumed per message based on your active model.">
-          <div className="px-5 py-5">
-            <div className="flex items-start justify-between gap-6">
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-neutral-500 mb-2">Available Credits</p>
-                <p className={`text-4xl font-bold tabular-nums ${balance === null || balance >= 1 ? "text-amber-400" : balance <= 0 ? "text-red-500" : "text-amber-500"
-                  }`}>{balanceFmt}</p>
-                {/* {estimatedMessages !== null && (
+          {/* ── Usage & Billing ── */}
+          <SectionCard label="USAGE & BILLING" icon={Wallet} title="Credit Balance"
+            subtitle="Credits are consumed per message based on your active model.">
+            <div className="px-5 py-5">
+              <div className="flex items-start justify-between gap-6">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-neutral-500 mb-2">Available Credits</p>
+                  <p className={`text-4xl font-bold tabular-nums ${balance === null || balance >= 1 ? "text-amber-400" : balance <= 0 ? "text-red-500" : "text-amber-500"
+                    }`}>{balanceFmt}</p>
+                  {/* {estimatedMessages !== null && (
                   <p className="text-xs text-neutral-500 mt-1.5">
                     ≈ {estimatedMessages.toLocaleString()} {activeModelName} messages remaining
                   </p>
                 )} */}
-              </div>
-              <div className="flex flex-col gap-2 shrink-0">
-                <button onClick={() => setShowAddCredits(true)}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-white/10 bg-black text-sm font-medium text-neutral-400 hover:text-white hover:border-white/20 transition-colors whitespace-nowrap">
-                  <Wallet strokeWidth={1.5} size={13} /> Add Credits
-                </button>
-                <button onClick={() => setShowUsageHistory(true)}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-white/10 bg-black text-sm font-medium text-neutral-400 hover:text-white hover:border-white/20 transition-colors whitespace-nowrap">
-                  <History strokeWidth={1.5} size={13} /> View History
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Auto-refill */}
-          <div className="px-5 py-4 border-t border-white/10">
-            <div className="flex items-center justify-between mb-1">
-              <div className="flex items-center gap-2">
-                <RefreshCw strokeWidth={1.5} size={13} className="text-neutral-500" />
-                <p className="text-sm font-medium text-white">Auto-refill</p>
-              </div>
-              <button
-                onClick={() => setAutoRefill((v) => !v)}
-                className={`relative w-10 h-6 rounded-full transition-colors shrink-0 ${autoRefill ? "bg-amber-500" : "bg-neutral-900 border border-white/10"}`}
-                aria-pressed={autoRefill}
-              >
-                <span className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-all ${autoRefill ? "left-5" : "left-1"}`} />
-              </button>
-            </div>
-            <p className="text-xs text-neutral-500 mb-4">
-              Automatically add credits when your balance drops below a threshold.
-            </p>
-
-            {autoRefill && (
-              <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-xs font-medium text-neutral-500 mb-1.5 block">Refill when below</label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500 text-sm">$</span>
-                      <input
-                        type="number" min={0.5} max={50} step={0.5}
-                        value={refillThreshold}
-                        onChange={(e) => setRefillThreshold(parseFloat(e.target.value) || 0)}
-                        className="w-full py-2.5 pl-7 pr-3 rounded-xl bg-black border border-white/10 text-white text-sm outline-none focus:border-white/20 transition-colors"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-xs font-medium text-neutral-500 mb-1.5 block">Amount to add</label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500 text-sm">$</span>
-                      <input
-                        type="number" min={5} max={200} step={5}
-                        value={refillAmount}
-                        onChange={(e) => setRefillAmount(parseFloat(e.target.value) || 0)}
-                        className="w-full py-2.5 pl-7 pr-3 rounded-xl bg-black border border-white/10 text-white text-sm outline-none focus:border-white/20 transition-colors"
-                      />
-                    </div>
-                  </div>
                 </div>
+                <div className="flex flex-col gap-2 shrink-0">
+                  <button onClick={() => setShowAddCredits(true)}
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-white/10 bg-black text-sm font-medium text-neutral-400 hover:text-white hover:border-white/20 transition-colors whitespace-nowrap">
+                    <Wallet strokeWidth={1.5} size={13} /> Add Credits
+                  </button>
+                  <button onClick={() => setShowUsageHistory(true)}
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-white/10 bg-black text-sm font-medium text-neutral-400 hover:text-white hover:border-white/20 transition-colors whitespace-nowrap">
+                    <History strokeWidth={1.5} size={13} /> View History
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Auto-refill */}
+            <div className="px-5 py-4 border-t border-white/10">
+              <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center gap-2">
+                  <RefreshCw strokeWidth={1.5} size={13} className="text-neutral-500" />
+                  <p className="text-sm font-medium text-white">Auto-refill</p>
+                </div>
+                <button
+                  onClick={() => setAutoRefill((v) => !v)}
+                  className={`relative w-10 h-6 rounded-full transition-colors shrink-0 ${autoRefill ? "bg-amber-500" : "bg-neutral-900 border border-white/10"}`}
+                  aria-pressed={autoRefill}
+                >
+                  <span className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-all ${autoRefill ? "left-5" : "left-1"}`} />
+                </button>
+              </div>
+              <p className="text-xs text-neutral-500 mb-4">
+                Automatically add credits when your balance drops below a threshold.
+              </p>
+
+              {autoRefill && (
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs font-medium text-neutral-500 mb-1.5 block">Refill when below</label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500 text-sm">$</span>
+                        <input
+                          type="number" min={0.5} max={50} step={0.5}
+                          value={refillThreshold}
+                          onChange={(e) => setRefillThreshold(parseFloat(e.target.value) || 0)}
+                          className="w-full py-2.5 pl-7 pr-3 rounded-xl bg-black border border-white/10 text-white text-sm outline-none focus:border-white/20 transition-colors"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-neutral-500 mb-1.5 block">Amount to add</label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500 text-sm">$</span>
+                        <input
+                          type="number" min={5} max={200} step={5}
+                          value={refillAmount}
+                          onChange={(e) => setRefillAmount(parseFloat(e.target.value) || 0)}
+                          className="w-full py-2.5 pl-7 pr-3 rounded-xl bg-black border border-white/10 text-white text-sm outline-none focus:border-white/20 transition-colors"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    onClick={saveAutoRefill}
+                    disabled={savingRefill}
+                    className="w-full py-2.5 rounded-xl bg-amber-500 text-black text-sm font-semibold hover:bg-amber-400 transition-colors disabled:opacity-50"
+                  >
+                    {savingRefill ? "Saving…" : "Save Auto-refill"}
+                  </button>
+                </div>
+              )}
+
+              {!autoRefill && (
                 <button
                   onClick={saveAutoRefill}
                   disabled={savingRefill}
-                  className="w-full py-2.5 rounded-xl bg-amber-500 text-black text-sm font-semibold hover:bg-amber-400 transition-colors disabled:opacity-50"
+                  className="text-xs text-neutral-500 hover:text-neutral-400 transition-colors disabled:opacity-40"
                 >
-                  {savingRefill ? "Saving…" : "Save Auto-refill"}
+                  {savingRefill ? "Saving…" : "Save (disabled)"}
                 </button>
-              </div>
-            )}
+              )}
+            </div>
+          </SectionCard>
 
-            {!autoRefill && (
+          {/* ── Referral Program ── */}
+          <SectionCard label="REFERRAL PROGRAM" icon={Gift} title="Invite Friends, Earn Credits"
+            subtitle="Share your link — you get $2, they get $5 to start.">
+            <div className="px-5 py-5">
+              {referralLoading ? (
+                <div className="flex items-center justify-center py-6">
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-transparent rounded-full animate-spin" />
+                </div>
+              ) : (
+                <>
+                  {/* Referral Link */}
+                  <div className="mb-5">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-neutral-500 mb-2">Your Referral Link</p>
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 py-2.5 px-3.5 rounded-xl bg-black border border-white/10 text-sm text-neutral-400 font-mono truncate">
+                        {referralCode
+                          ? `${typeof window !== "undefined" ? window.location.origin : "calmpilot.app"}/login?ref=${referralCode}`
+                          : "Loading..."}
+                      </div>
+                      <button
+                        onClick={copyReferralLink}
+                        disabled={!referralCode}
+                        className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-medium transition-all shrink-0 ${codeCopied
+                          ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30"
+                          : "bg-amber-500 text-black hover:bg-amber-400"
+                          }`}
+                      >
+                        {codeCopied ? <Check strokeWidth={1.5} size={14} /> : <Copy strokeWidth={1.5} size={14} />}
+                        {codeCopied ? "Copied" : "Copy"}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Stats */}
+                  {referralStats && (
+                    <div className="grid grid-cols-3 gap-3">
+                      <div className="rounded-xl bg-black border border-white/10 p-3.5 text-center">
+                        <div className="flex items-center justify-center gap-1 mb-1">
+                          <Users strokeWidth={1.5} size={12} className="text-neutral-500" />
+                        </div>
+                        <p className="text-xl font-bold text-white tabular-nums">{referralStats.credited}</p>
+                        <p className="text-[10px] text-neutral-500 mt-0.5">Successful</p>
+                      </div>
+                      <div className="rounded-xl bg-black border border-white/10 p-3.5 text-center">
+                        <div className="flex items-center justify-center gap-1 mb-1">
+                          <Wallet strokeWidth={1.5} size={12} className="text-neutral-500" />
+                        </div>
+                        <p className="text-xl font-bold text-amber-400 tabular-nums">${referralStats.earned.toFixed(0)}</p>
+                        <p className="text-[10px] text-neutral-500 mt-0.5">Earned</p>
+                      </div>
+                      <div className="rounded-xl bg-black border border-white/10 p-3.5 text-center">
+                        <div className="flex items-center justify-center gap-1 mb-1">
+                          <Gift strokeWidth={1.5} size={12} className="text-neutral-500" />
+                        </div>
+                        <p className="text-xl font-bold text-neutral-400 tabular-nums">${referralStats.remaining.toFixed(0)}</p>
+                        <p className="text-[10px] text-neutral-500 mt-0.5">Remaining</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* How it works */}
+                  <div className="mt-4 pt-4 border-t border-white/10">
+                    <p className="text-xs font-medium text-neutral-500 mb-2">How it works</p>
+                    <div className="space-y-1.5 text-xs text-neutral-500">
+                      <p>1. Share your link with a friend</p>
+                      <p>2. They sign up and get <span className="text-amber-400 font-medium">$5</span> free credits</p>
+                      <p>3. When they make their first purchase, you earn <span className="text-amber-400 font-medium">$2</span></p>
+                      <p>4. Earn up to <span className="text-amber-400 font-medium">$50</span> total (25 referrals)</p>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          </SectionCard>
+
+          {/* ── Appearance ── */}
+          <SectionCard label="APPEARANCE" icon={Moon} title="Theme"
+            subtitle="Choose between light and dark mode.">
+            <div className="flex items-center justify-between px-5 py-4">
+              <div>
+                <p className="text-sm text-white">{isDark ? "Dark Mode" : "Light Mode"}</p>
+                <p className="text-xs text-neutral-500 mt-0.5">{isDark ? "Easy on the eyes at night" : "Bright and clear"}</p>
+              </div>
               <button
-                onClick={saveAutoRefill}
-                disabled={savingRefill}
-                className="text-xs text-neutral-500 hover:text-neutral-400 transition-colors disabled:opacity-40"
+                onClick={toggleTheme}
+                className={`relative w-12 h-7 rounded-full transition-colors shrink-0 ${isDark ? "bg-amber-500" : "bg-neutral-900 border border-white/10"}`}
+                aria-pressed={isDark}
               >
-                {savingRefill ? "Saving…" : "Save (disabled)"}
+                <span className={`absolute top-1 w-5 h-5 rounded-full bg-white shadow transition-all flex items-center justify-center ${isDark ? "left-6" : "left-1"}`}>
+                  {isDark
+                    ? <Moon strokeWidth={1.5} size={10} className="text-amber-500" />
+                    : <Sun strokeWidth={1.5} size={10} className="text-amber-400" />}
+                </span>
               </button>
-            )}
-          </div>
-        </SectionCard>
+            </div>
+          </SectionCard>
 
-        {/* ── Referral Program ── */}
-        <SectionCard label="REFERRAL PROGRAM" icon={Gift} title="Invite Friends, Earn Credits"
-          subtitle="Share your link — you get $2, they get $7 to start.">
-          <div className="px-5 py-5">
-            {referralLoading ? (
-              <div className="flex items-center justify-center py-6">
-                <div className="w-5 h-5 border-2 border-white/30 border-t-transparent rounded-full animate-spin" />
-              </div>
-            ) : (
-              <>
-                {/* Referral Link */}
-                <div className="mb-5">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-neutral-500 mb-2">Your Referral Link</p>
-                  <div className="flex items-center gap-2">
-                    <div className="flex-1 py-2.5 px-3.5 rounded-xl bg-black border border-white/10 text-sm text-neutral-400 font-mono truncate">
-                      {referralCode
-                        ? `${typeof window !== "undefined" ? window.location.origin : "calmpilot.app"}/login?ref=${referralCode}`
-                        : "Loading..."}
-                    </div>
-                    <button
-                      onClick={copyReferralLink}
-                      disabled={!referralCode}
-                      className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-medium transition-all shrink-0 ${codeCopied
-                        ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30"
-                        : "bg-amber-500 text-black hover:bg-amber-400"
-                        }`}
-                    >
-                      {codeCopied ? <Check strokeWidth={1.5} size={14} /> : <Copy strokeWidth={1.5} size={14} />}
-                      {codeCopied ? "Copied" : "Copy"}
-                    </button>
+          {/* ── Notifications (stub) ── */}
+          <SectionCard label="NOTIFICATIONS" icon={Bell} title="Notifications"
+            subtitle="Control when and how Aariv alerts you.">
+            <div className="px-5 py-4 space-y-3">
+              {[
+                "Email me when high-priority items need review",
+                "Email me when my morning briefing is ready",
+                "Email me when my credits drop below $1.00",
+                "Push notifications (mobile)",
+              ].map((label) => (
+                <div key={label} className="flex items-center gap-3 opacity-40 cursor-not-allowed select-none">
+                  <div className="w-4 h-4 rounded border border-white/20 bg-black shrink-0" />
+                  <p className="text-sm text-neutral-400">{label}</p>
+                </div>
+              ))}
+              <p className="text-xs text-neutral-600 pt-1">Coming soon — notifications are not yet available.</p>
+            </div>
+          </SectionCard>
+
+          {/* ── Advanced ── */}
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-neutral-500 mb-3 px-1">ADVANCED</p>
+            <div className="space-y-3">
+              <div className="rounded-xl border border-white/10 bg-neutral-900 overflow-hidden">
+                <div className="flex items-center gap-3.5 px-5 py-4 border-b border-white/10">
+                  <div className="w-9 h-9 rounded-xl bg-neutral-900 border border-white/10 flex items-center justify-center shrink-0">
+                    <LogOut strokeWidth={1.5} size={15} className="text-neutral-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-white">Session Management</p>
+                    <p className="text-xs text-neutral-500 mt-0.5">Control your active login session on this device.</p>
                   </div>
                 </div>
+                <div className="flex items-center justify-between gap-6 px-5 py-4">
+                  <p className="text-sm text-neutral-500">End your current session. You can sign back in anytime.</p>
+                  <button onClick={() => setShowSignOut(true)}
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-white/10 bg-black text-sm font-medium text-neutral-400 hover:text-white hover:border-white/20 transition-colors shrink-0 whitespace-nowrap">
+                    <LogOut strokeWidth={1.5} size={13} /> Sign Out
+                  </button>
+                </div>
+              </div>
 
-                {/* Stats */}
-                {referralStats && (
-                  <div className="grid grid-cols-3 gap-3">
-                    <div className="rounded-xl bg-black border border-white/10 p-3.5 text-center">
-                      <div className="flex items-center justify-center gap-1 mb-1">
-                        <Users strokeWidth={1.5} size={12} className="text-neutral-500" />
-                      </div>
-                      <p className="text-xl font-bold text-white tabular-nums">{referralStats.credited}</p>
-                      <p className="text-[10px] text-neutral-500 mt-0.5">Successful</p>
-                    </div>
-                    <div className="rounded-xl bg-black border border-white/10 p-3.5 text-center">
-                      <div className="flex items-center justify-center gap-1 mb-1">
-                        <Wallet strokeWidth={1.5} size={12} className="text-neutral-500" />
-                      </div>
-                      <p className="text-xl font-bold text-amber-400 tabular-nums">${referralStats.earned.toFixed(0)}</p>
-                      <p className="text-[10px] text-neutral-500 mt-0.5">Earned</p>
-                    </div>
-                    <div className="rounded-xl bg-black border border-white/10 p-3.5 text-center">
-                      <div className="flex items-center justify-center gap-1 mb-1">
-                        <Gift strokeWidth={1.5} size={12} className="text-neutral-500" />
-                      </div>
-                      <p className="text-xl font-bold text-neutral-400 tabular-nums">${referralStats.remaining.toFixed(0)}</p>
-                      <p className="text-[10px] text-neutral-500 mt-0.5">Remaining</p>
-                    </div>
+              <div className="rounded-xl border border-white/10 bg-neutral-900 overflow-hidden">
+                <div className="flex items-center justify-between gap-6 px-5 py-4">
+                  <div>
+                    <p className="text-sm font-medium text-white">Chat History</p>
+                    <p className="text-xs text-neutral-500 mt-0.5">Permanently delete all conversations from your account.</p>
                   </div>
-                )}
+                  <button onClick={() => setShowClearHist(true)} disabled={clearingHist}
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-white/10 bg-black text-sm font-medium text-neutral-400 hover:text-white hover:border-white/20 transition-colors shrink-0 whitespace-nowrap disabled:opacity-40">
+                    <Trash2 strokeWidth={1.5} size={13} /> {clearingHist ? "Clearing…" : "Clear History"}
+                  </button>
+                </div>
+              </div>
 
-                {/* How it works */}
-                <div className="mt-4 pt-4 border-t border-white/10">
-                  <p className="text-xs font-medium text-neutral-500 mb-2">How it works</p>
-                  <div className="space-y-1.5 text-xs text-neutral-500">
-                    <p>1. Share your link with a friend</p>
-                    <p>2. They sign up and get <span className="text-amber-400 font-medium">$7</span> free credits (vs $5)</p>
-                    <p>3. When they make their first purchase, you earn <span className="text-amber-400 font-medium">$2</span></p>
-                    <p>4. Earn up to <span className="text-amber-400 font-medium">$50</span> total (25 referrals)</p>
+              <div className="rounded-xl border border-red-200 bg-red-50 dark:border-red-900/40 dark:bg-red-950/20 overflow-hidden">
+                <div className="flex items-center gap-3.5 px-5 py-4 border-b border-red-200 dark:border-red-900/30">
+                  <div className="w-9 h-9 rounded-xl bg-red-100 border border-red-200 dark:bg-red-500/10 dark:border-red-500/20 flex items-center justify-center shrink-0">
+                    <Trash2 strokeWidth={1.5} size={15} className="text-red-600 dark:text-red-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-red-600 dark:text-red-400">Danger Zone</p>
+                    <p className="text-xs text-red-600/70 dark:text-red-400/60 mt-0.5">Irreversible actions. Proceed with absolute caution.</p>
                   </div>
                 </div>
-              </>
-            )}
-          </div>
-        </SectionCard>
-
-        {/* ── Appearance ── */}
-        <SectionCard label="APPEARANCE" icon={Moon} title="Theme"
-          subtitle="Choose between light and dark mode.">
-          <div className="flex items-center justify-between px-5 py-4">
-            <div>
-              <p className="text-sm text-white">{isDark ? "Dark Mode" : "Light Mode"}</p>
-              <p className="text-xs text-neutral-500 mt-0.5">{isDark ? "Easy on the eyes at night" : "Bright and clear"}</p>
-            </div>
-            <button
-              onClick={toggleTheme}
-              className={`relative w-12 h-7 rounded-full transition-colors shrink-0 ${isDark ? "bg-amber-500" : "bg-neutral-900 border border-white/10"}`}
-              aria-pressed={isDark}
-            >
-              <span className={`absolute top-1 w-5 h-5 rounded-full bg-white shadow transition-all flex items-center justify-center ${isDark ? "left-6" : "left-1"}`}>
-                {isDark
-                  ? <Moon strokeWidth={1.5} size={10} className="text-amber-500" />
-                  : <Sun strokeWidth={1.5} size={10} className="text-amber-400" />}
-              </span>
-            </button>
-          </div>
-        </SectionCard>
-
-        {/* ── Advanced ── */}
-        <div>
-          <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-neutral-500 mb-3 px-1">ADVANCED</p>
-          <div className="space-y-3">
-            <div className="rounded-xl border border-white/10 bg-neutral-900 overflow-hidden">
-              <div className="flex items-center gap-3.5 px-5 py-4 border-b border-white/10">
-                <div className="w-9 h-9 rounded-xl bg-neutral-900 border border-white/10 flex items-center justify-center shrink-0">
-                  <LogOut strokeWidth={1.5} size={15} className="text-neutral-400" />
+                <div className="flex items-center justify-between gap-6 px-5 py-4">
+                  <p className="text-sm text-red-600/80 dark:text-red-400/70">
+                    Permanently removes your account, all messages, and connected integrations. Cannot be undone.
+                  </p>
+                  <button onClick={() => setShowDelete(true)} disabled={deleteLoading}
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-red-300 bg-red-100 text-sm font-medium text-red-600 hover:bg-red-200 hover:border-red-400 dark:border-red-700/60 dark:bg-red-950/40 dark:text-red-400 dark:hover:bg-red-950/60 dark:hover:border-red-600 transition-colors shrink-0 whitespace-nowrap disabled:opacity-40">
+                    <Trash2 strokeWidth={1.5} size={13} /> {deleteLoading ? "Deleting…" : "Delete Account"}
+                  </button>
                 </div>
-                <div>
-                  <p className="text-sm font-semibold text-white">Session Management</p>
-                  <p className="text-xs text-neutral-500 mt-0.5">Control your active login session on this device.</p>
-                </div>
-              </div>
-              <div className="flex items-center justify-between gap-6 px-5 py-4">
-                <p className="text-sm text-neutral-500">End your current session. You can sign back in anytime.</p>
-                <button onClick={() => setShowSignOut(true)}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-white/10 bg-black text-sm font-medium text-neutral-400 hover:text-white hover:border-white/20 transition-colors shrink-0 whitespace-nowrap">
-                  <LogOut strokeWidth={1.5} size={13} /> Sign Out
-                </button>
-              </div>
-            </div>
-
-            <div className="rounded-xl border border-white/10 bg-neutral-900 overflow-hidden">
-              <div className="flex items-center justify-between gap-6 px-5 py-4">
-                <div>
-                  <p className="text-sm font-medium text-white">Chat History</p>
-                  <p className="text-xs text-neutral-500 mt-0.5">Permanently delete all conversations from your account.</p>
-                </div>
-                <button onClick={() => setShowClearHist(true)} disabled={clearingHist}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-white/10 bg-black text-sm font-medium text-neutral-400 hover:text-white hover:border-white/20 transition-colors shrink-0 whitespace-nowrap disabled:opacity-40">
-                  <Trash2 strokeWidth={1.5} size={13} /> {clearingHist ? "Clearing…" : "Clear History"}
-                </button>
-              </div>
-            </div>
-
-            <div className="rounded-xl border border-red-200 bg-red-50 dark:border-red-900/40 dark:bg-red-950/20 overflow-hidden">
-              <div className="flex items-center gap-3.5 px-5 py-4 border-b border-red-200 dark:border-red-900/30">
-                <div className="w-9 h-9 rounded-xl bg-red-100 border border-red-200 dark:bg-red-500/10 dark:border-red-500/20 flex items-center justify-center shrink-0">
-                  <Trash2 strokeWidth={1.5} size={15} className="text-red-600 dark:text-red-400" />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-red-600 dark:text-red-400">Danger Zone</p>
-                  <p className="text-xs text-red-600/70 dark:text-red-400/60 mt-0.5">Irreversible actions. Proceed with absolute caution.</p>
-                </div>
-              </div>
-              <div className="flex items-center justify-between gap-6 px-5 py-4">
-                <p className="text-sm text-red-600/80 dark:text-red-400/70">
-                  Permanently removes your account, all messages, and connected integrations. Cannot be undone.
-                </p>
-                <button onClick={() => setShowDelete(true)} disabled={deleteLoading}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-red-300 bg-red-100 text-sm font-medium text-red-600 hover:bg-red-200 hover:border-red-400 dark:border-red-700/60 dark:bg-red-950/40 dark:text-red-400 dark:hover:bg-red-950/60 dark:hover:border-red-600 transition-colors shrink-0 whitespace-nowrap disabled:opacity-40">
-                  <Trash2 strokeWidth={1.5} size={13} /> {deleteLoading ? "Deleting…" : "Delete Account"}
-                </button>
               </div>
             </div>
           </div>
+
+          <div className="pb-8" />
         </div>
-
-        <div className="pb-8" />
       </div>
     </div>
   );

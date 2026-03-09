@@ -2,6 +2,7 @@
 
 import { useAuth } from "@/context/AuthContext";
 import { api } from "@/lib/api";
+import { getAppColor } from "@/lib/appMeta";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Activity,
@@ -92,29 +93,6 @@ const PRIORITY_STYLES: Record<
     text: "text-emerald-800 dark:text-[#6BD46B]",
     label: "Low priority",
   },
-};
-
-const APP_COLORS: Record<string, string> = {
-  gmail: "#EA4335",
-  github: "#24292e",
-  slack: "#E01E5A",
-  googlecalendar: "#4285F4",
-  notion: "#FFFFFF",
-  linear: "#5E6AD2",
-  discord: "#5865F2",
-  outlook: "#0078D4",
-  googledrive: "#0F9D58",
-  googledocs: "#4285F4",
-  stripe: "#635BFF",
-  jira: "#0052CC",
-  trello: "#0079BF",
-  todoist: "#E44332",
-  pipedrive: "#1BAA6B",
-  salesforce: "#00A1E0",
-  spotify: "#1DB954",
-  youtube: "#FF0000",
-  fireflies: "#6C2BD9",
-  slackbot: "#4A154B",
 };
 
 // ─── Helpers ────────────────────────────────────────────────────────────
@@ -260,7 +238,7 @@ export default function ReviewPage() {
   if (loading) {
     return (
       <div className="bg-black min-h-screen">
-        <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-8 sm:py-12 flex flex-col items-start min-h-full">
+        <div className="max-w-[1048px] mx-auto px-4 sm:px-6 py-8 sm:py-12 flex flex-col items-start min-h-full">
           {/* Static header always visible */}
           <header className="mb-8 w-full">
             <h1 className="text-3xl font-bold text-white tracking-tight mb-2">
@@ -331,7 +309,7 @@ export default function ReviewPage() {
 
   return (
     <div className="bg-black min-h-screen">
-      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-8 sm:py-12 flex flex-col items-start min-h-full">
+      <div className="max-w-[1048px] mx-auto px-4 sm:px-6 py-8 sm:py-12 flex flex-col items-start min-h-full">
         {/* Header */}
         <header className="mb-8 w-full">
           <div className="flex items-center justify-between mb-2">
@@ -473,7 +451,7 @@ export default function ReviewPage() {
                 const isActing = actingOn === item.id;
                 const result =
                   actionResult?.id === item.id ? actionResult : null;
-                const appColor = APP_COLORS[item.source_app] || "#888";
+                const appColor = getAppColor(item.source_app);
 
                 return (
                   <motion.div

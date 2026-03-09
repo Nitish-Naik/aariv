@@ -210,7 +210,7 @@ export default function FeedPage() {
 
   return (
     <div className="bg-black min-h-screen">
-      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-8 sm:py-12">
+      <div className="max-w-[1048px] mx-auto px-4 sm:px-6 py-8 sm:py-12">
         {/* ── Header ────────────────────────────────────── */}
         <div className="flex items-start justify-between mb-8">
           <div>
@@ -328,11 +328,10 @@ export default function FeedPage() {
             <div className="flex items-center gap-2 flex-wrap">
               <button
                 onClick={() => setAppFilter("all")}
-                className={`shrink-0 px-4 py-1.5 text-xs font-medium rounded-full transition-all duration-300 border ${
-                  appFilter === "all"
+                className={`shrink-0 px-4 py-1.5 text-xs font-medium rounded-full transition-all duration-300 border ${appFilter === "all"
                     ? "bg-white text-black border-white shadow-sm"
                     : "bg-neutral-900 text-neutral-500 border-white/10 hover:border-white/20 hover:text-white"
-                }`}
+                  }`}
               >
                 All
               </button>
@@ -340,11 +339,10 @@ export default function FeedPage() {
                 <button
                   key={app}
                   onClick={() => setAppFilter(app)}
-                  className={`group flex items-center gap-1.5 shrink-0 px-4 py-1.5 text-xs font-medium rounded-full transition-all duration-300 border ${
-                    appFilter === app
+                  className={`group flex items-center gap-1.5 shrink-0 px-4 py-1.5 text-xs font-medium rounded-full transition-all duration-300 border ${appFilter === app
                       ? "bg-white text-black border-white shadow-sm"
                       : "bg-neutral-900 text-neutral-500 border-white/10 hover:border-white/20 hover:text-white"
-                  }`}
+                    }`}
                 >
                   <div
                     className={`w-1.5 h-1.5 rounded-full transition-all ${appFilter === app ? "scale-110 shadow-[0_0_8px_currentColor]" : "group-hover:scale-110"}`}

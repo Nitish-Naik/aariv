@@ -1,4 +1,5 @@
-import { AlertCircle, ChevronDown, ChevronRight, ExternalLink } from "lucide-react";
+import { formatToolName, getAppMeta, getToolAppSlug } from "@/lib/appMeta";
+import { AlertCircle, ChevronDown, ChevronRight } from "lucide-react";
 import { useState } from "react";
 
 interface LogEntryProps {
@@ -16,7 +17,6 @@ export function DetailedLogEntry({ log }: LogEntryProps) {
     const [isArgsOpen, setIsArgsOpen] = useState(false);
     const [isResultOpen, setIsResultOpen] = useState(false);
 
-    // Helper to safely format JSON
     const formatJSON = (data: any) => {
         if (!data) return null;
         try {
@@ -33,6 +33,10 @@ export function DetailedLogEntry({ log }: LogEntryProps) {
     const formattedArgs = formatJSON(log.args);
     const formattedResult = formatJSON(log.result);
 
+    const appSlug = getToolAppSlug(log.tool);
+    const appMeta = getAppMeta(appSlug);
+    const readableToolName = formatToolName(log.tool);
+
     return (
         <div
             className={`rounded-md border border-white/5 overflow-hidden transition-colors ${log.status === "loading" ? "bg-purple-500/5 animate-pulse" :
@@ -40,14 +44,25 @@ export function DetailedLogEntry({ log }: LogEntryProps) {
                 }`}
         >
             {/* Header */}
-            <div className="flex items-start justify-between p-3">
-                <div className="flex flex-col">
-                    <span className={`text-[11px] uppercase tracking-wider mb-1 font-semibold ${log.status === "loading" ? "text-purple-400" :
-                            log.status === "error" ? "text-red-400" : "text-emerald-400"
-                        }`}>
-                        {log.tool?.replace(/_/g, " ") || "system task"}
-                    </span>
-                    <span className="text-xs text-zinc-300">{log.label}</span>
+            <div className="flex items-start justify-between p-3 gap-2">
+                <div className="flex items-start gap-2.5 min-w-0">
+                    {/* App color dot */}
+                    <div
+                        className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0"
+                        style={{ backgroundColor: appMeta.color || "#737373" }}
+                    />
+                    <div className="min-w-0">
+                        <span className={`text-[11px] uppercase tracking-wider mb-0.5 font-semibold block ${log.status === "loading" ? "text-purple-400" :
+                                log.status === "error" ? "text-red-400" : "text-emerald-400"
+                            }`}>
+                            {readableToolName}
+                        </span>
+                        {log.label && log.label !== readableToolName && (
+                            <span className="text-[11px] text-zinc-500 block leading-snug truncate">
+                                {log.label}
+                            </span>
+                        )}
+                    </div>
                 </div>
 
                 {log.status === "loading" && (
@@ -121,7 +136,6 @@ export function DetailedLogEntry({ log }: LogEntryProps) {
                                     className="flex items-center justify-between px-3 py-2 mt-1 rounded bg-yellow-500 text-black hover:bg-yellow-400 text-xs font-semibold transition-colors"
                                 >
                                     {log.action_required.message}
-                                    <ExternalLink strokeWidth={1.5} size={12} />
                                 </a>
                                 <span className="text-[10px] text-yellow-500/60 mt-1 flex items-center gap-1">
                                     ⏱ Link expires in 10 minutes
