@@ -203,7 +203,7 @@ export default function Hero() {
                                             ) : (
                                                 <span className="flex items-center gap-2">
                                                     Join Waitlist
-                                                    <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                                                    <ArrowRight strokeWidth={1.5} className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
                                                 </span>
                                             )}
                                         </Button>
@@ -212,7 +212,7 @@ export default function Hero() {
                                     <div className="flex items-center gap-3 mt-3">
                                         {total !== null && total > 0 && (
                                             <div className="flex items-center gap-1.5 text-sm text-zinc-500">
-                                                <Users className="w-3.5 h-3.5" />
+                                                <Users strokeWidth={1.5} className="w-3.5 h-3.5" />
                                                 <span><span className="text-zinc-300 font-medium">{total.toLocaleString()}</span> on the waitlist</span>
                                             </div>
                                         )}
@@ -223,7 +223,7 @@ export default function Hero() {
                                 /* ── Post-signup: Position + Referral ── */
                                 <div className="rounded-2xl bg-white/[0.04] border border-white/[0.08] p-6 space-y-4">
                                     <div className="flex items-center gap-2 text-emerald-400">
-                                        <Check className="w-5 h-5" />
+                                        <Check strokeWidth={1.5} className="w-5 h-5" />
                                         <span className="font-semibold">You&apos;re on the list!</span>
                                     </div>
 
@@ -259,7 +259,7 @@ export default function Hero() {
                                                     : "bg-white text-black hover:bg-neutral-200"
                                                     }`}
                                             >
-                                                {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                                                {copied ? <Check strokeWidth={1.5} className="w-4 h-4" /> : <Copy strokeWidth={1.5} className="w-4 h-4" />}
                                                 {copied ? "Copied" : "Copy"}
                                             </Button>
                                         </div>
@@ -327,7 +327,7 @@ export default function Hero() {
                                         transition={{ duration: 0.35, ease: "easeOut" }}
                                         className="flex items-start gap-3"
                                     >
-                                        <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                                        <CheckCircle2 strokeWidth={1.5} className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
                                         <span className="text-zinc-300 text-[13px] leading-snug">{item.text}</span>
                                     </motion.div>
                                 ))}
@@ -338,7 +338,7 @@ export default function Hero() {
 
                             {/* Alert */}
                             <div className="mx-4 my-3 flex items-center gap-2.5 px-4 py-3 rounded-xl bg-amber-500/[0.07] border border-amber-500/15">
-                                <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
+                                <AlertCircle strokeWidth={1.5} className="w-4 h-4 text-amber-400 shrink-0" />
                                 <p className="text-amber-300/90 text-[13px] font-medium">2 items need your review</p>
                             </div>
 

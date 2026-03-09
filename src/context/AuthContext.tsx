@@ -89,6 +89,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await api.post("/auth/sync", {
         name: mappedUser.name,
         avatar: mappedUser.avatar,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       });
       console.log("✅ Backend sync successful");
 

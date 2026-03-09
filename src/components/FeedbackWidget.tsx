@@ -81,12 +81,12 @@ export function FeedbackWidget() {
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95, y: 10 }}
                         transition={{ duration: 0.2 }}
-                        className="relative mb-4 w-[340px] rounded-[20px] bg-[#f0f0f0] dark:bg-[var(--bg-elevated)] border border-gray-200 dark:border-[var(--border)] shadow-xl p-5"
+                        className="relative mb-4 w-[340px] rounded-[20px] bg-[#f0f0f0] dark:bg-neutral-900 border border-gray-200 dark:border-white/10 shadow-xl p-5"
                     >
                         {/* Close Button */}
                         <button
                             onClick={() => { setIsOpen(false); resetForm(); }}
-                            className="absolute -top-3 -right-3 w-10 h-10 rounded-full bg-white dark:bg-[var(--bg-elevated)] border border-gray-200 dark:border-[var(--border)] shadow-md flex items-center justify-center text-gray-500 hover:text-gray-800 dark:text-[var(--text-muted)] dark:hover:text-[var(--text-primary)] transition-colors hover:scale-105 active:scale-95"
+                            className="absolute -top-3 -right-3 w-10 h-10 rounded-full bg-white dark:bg-neutral-900 border border-gray-200 dark:border-white/10 shadow-md flex items-center justify-center text-gray-500 hover:text-gray-800 dark:text-neutral-500 dark:hover:text-white transition-colors hover:scale-105 active:scale-95"
                         >
                             <X size={18} strokeWidth={1.5} />
                         </button>
@@ -94,13 +94,13 @@ export function FeedbackWidget() {
                         {submitted ? (
                             <div className="flex flex-col items-center justify-center py-6 text-center">
                                 <div className="text-3xl mb-3">Thanks!</div>
-                                <p className="text-sm text-gray-500 dark:text-[var(--text-muted)]">
+                                <p className="text-sm text-gray-500 dark:text-neutral-500">
                                     Your feedback helps us improve.
                                 </p>
                             </div>
                         ) : (
                             <>
-                                <h3 className="text-[17px] font-medium text-gray-900 dark:text-[var(--text-primary)] mb-4 pr-6 leading-snug">
+                                <h3 className="text-[17px] font-medium text-gray-900 dark:text-white mb-4 pr-6 leading-snug">
                                     How can we improve?
                                 </h3>
 
@@ -115,8 +115,8 @@ export function FeedbackWidget() {
                                                 onClick={() => setCategory(cat.id)}
                                                 className={`flex-1 flex flex-col items-center gap-1.5 py-2.5 px-2 rounded-xl text-[11px] font-medium transition-all ${
                                                     isActive
-                                                        ? "bg-[var(--accent)] text-black shadow-sm"
-                                                        : "bg-white/60 dark:bg-[rgba(255,255,255,0.05)] text-gray-500 dark:text-[var(--text-muted)] hover:bg-white dark:hover:bg-[rgba(255,255,255,0.08)]"
+                                                        ? "bg-white text-black shadow-sm"
+                                                        : "bg-white/60 dark:bg-white/5 text-gray-500 dark:text-neutral-500 hover:bg-white dark:hover:bg-white/[0.08]"
                                                 }`}
                                             >
                                                 <Icon size={16} strokeWidth={1.5} />
@@ -128,7 +128,7 @@ export function FeedbackWidget() {
 
                                 {/* Star rating */}
                                 <div className="flex items-center gap-1 mb-4">
-                                    <span className="text-xs text-gray-500 dark:text-[var(--text-muted)] mr-2">Rating</span>
+                                    <span className="text-xs text-gray-500 dark:text-neutral-500 mr-2">Rating</span>
                                     {[1, 2, 3, 4, 5].map((star) => (
                                         <button
                                             key={star}
@@ -137,7 +137,7 @@ export function FeedbackWidget() {
                                             onMouseLeave={() => setHoveredStar(null)}
                                             className="p-0.5 transition-transform hover:scale-110"
                                         >
-                                            <Star
+                                            <Star strokeWidth={1.5}
                                                 size={20}
                                                 className={`transition-colors ${
                                                     star <= (hoveredStar ?? rating ?? 0)
@@ -148,7 +148,7 @@ export function FeedbackWidget() {
                                         </button>
                                     ))}
                                     {rating && (
-                                        <span className="text-xs text-gray-400 dark:text-[var(--text-muted)] ml-1">
+                                        <span className="text-xs text-gray-400 dark:text-neutral-500 ml-1">
                                             {rating}/5
                                         </span>
                                     )}
@@ -165,14 +165,14 @@ export function FeedbackWidget() {
                                                 ? "What feature would help you?"
                                                 : "Tell us more..."
                                     }
-                                    className="w-full h-24 p-3.5 rounded-xl border border-gray-300 dark:border-[var(--border)] bg-white dark:bg-[var(--bg-deep)] text-gray-900 dark:text-[var(--text-primary)] placeholder-gray-400 dark:placeholder-[var(--text-muted)] text-[15px] resize-none outline-none focus:border-gray-400 dark:focus:border-[var(--border-strong)] focus:ring-1 focus:ring-gray-400 dark:focus:ring-[var(--border-strong)] transition-all"
+                                    className="w-full h-24 p-3.5 rounded-xl border border-gray-300 dark:border-white/10 bg-white dark:bg-black text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-neutral-600 text-[15px] resize-none outline-none focus:border-gray-400 dark:focus:border-white/20 focus:ring-1 focus:ring-gray-400 dark:focus:ring-[var(--border-strong)] transition-all"
                                 />
 
                                 {/* Submit */}
                                 <button
                                     onClick={handleSubmit}
                                     disabled={!message.trim() || !category || isSubmitting}
-                                    className="w-full mt-3 py-3 rounded-xl bg-[#595959] dark:bg-[var(--accent)] hover:bg-[#4d4d4d] dark:hover:bg-[var(--accent)] text-white font-semibold text-[15px] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                                    className="w-full mt-3 py-3 rounded-xl bg-[#595959] dark:bg-white hover:bg-[#4d4d4d] dark:hover:bg-white text-white font-semibold text-[15px] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                                 >
                                     {isSubmitting ? "Submitting..." : "Submit Feedback"}
                                 </button>

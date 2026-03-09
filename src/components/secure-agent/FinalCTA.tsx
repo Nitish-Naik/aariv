@@ -109,7 +109,7 @@ export default function FinalCTA() {
                                 ) : (
                                     <span className="flex items-center gap-2">
                                         Join Waitlist
-                                        <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                                        <ArrowRight strokeWidth={1.5} className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
                                     </span>
                                 )}
                             </button>
@@ -118,7 +118,7 @@ export default function FinalCTA() {
                         <div className="flex items-center justify-center gap-3 mt-4">
                             {total !== null && total > 0 && (
                                 <div className="flex items-center gap-1.5 text-sm text-zinc-500">
-                                    <Users className="w-3.5 h-3.5" />
+                                    <Users strokeWidth={1.5} className="w-3.5 h-3.5" />
                                     <span>Join <span className="text-zinc-300 font-medium">{total.toLocaleString()}+</span> on the waitlist</span>
                                 </div>
                             )}
@@ -127,7 +127,7 @@ export default function FinalCTA() {
                 ) : (
                     <div className="max-w-md mx-auto rounded-2xl bg-white/[0.04] border border-white/[0.08] p-6 space-y-4 text-left">
                         <div className="flex items-center gap-2 text-emerald-400">
-                            <Check className="w-5 h-5" />
+                            <Check strokeWidth={1.5} className="w-5 h-5" />
                             <span className="font-semibold">You&apos;re on the list!</span>
                         </div>
 
@@ -161,7 +161,7 @@ export default function FinalCTA() {
                                         : "bg-indigo-500 text-white hover:bg-indigo-400"
                                         }`}
                                 >
-                                    {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                                    {copied ? <Check strokeWidth={1.5} className="w-4 h-4" /> : <Copy strokeWidth={1.5} className="w-4 h-4" />}
                                     {copied ? "Copied" : "Copy"}
                                 </button>
                             </div>

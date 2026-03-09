@@ -81,17 +81,17 @@ function SectionCard({
 }) {
   return (
     <div>
-      <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--text-muted)] mb-3 px-1">
+      <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-neutral-500 mb-3 px-1">
         {label}
       </p>
-      <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-elevated)] overflow-hidden">
-        <div className="flex items-center gap-3.5 px-5 py-4 border-b border-[var(--border)]">
-          <div className="w-9 h-9 rounded-xl bg-[var(--overlay)] border border-[var(--border)] flex items-center justify-center shrink-0">
-            <Icon size={15} className="text-[var(--text-secondary)]" />
+      <div className="rounded-xl border border-white/10 bg-neutral-900 overflow-hidden">
+        <div className="flex items-center gap-3.5 px-5 py-4 border-b border-white/10">
+          <div className="w-9 h-9 rounded-xl bg-neutral-900 border border-white/10 flex items-center justify-center shrink-0">
+            <Icon size={15} className="text-neutral-400" />
           </div>
           <div>
-            <p className="text-sm font-semibold text-[var(--text-primary)]">{title}</p>
-            <p className="text-xs text-[var(--text-muted)] mt-0.5">{subtitle}</p>
+            <p className="text-sm font-semibold text-white">{title}</p>
+            <p className="text-xs text-neutral-500 mt-0.5">{subtitle}</p>
           </div>
         </div>
         {children}
@@ -334,12 +334,12 @@ export default function SettingsPage() {
   const checkoutValid = checkoutAmount !== null && checkoutAmount !== undefined && checkoutAmount >= 5 && checkoutAmount <= 500;
 
   return (
-    <div className="min-h-screen bg-[var(--bg-deep)]">
+    <div className="min-h-screen bg-black">
       {/* Toast */}
       <div className={`pointer-events-none fixed inset-x-0 top-5 z-50 flex justify-center transition-all duration-200 ${toast ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-1"}`}>
         <div className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium shadow-lg border ${toast?.ok === false
-            ? "bg-red-50 dark:bg-red-950/60 border-red-200 dark:border-red-800 text-red-600 dark:text-red-400"
-            : "bg-[var(--bg-elevated)] border-[var(--border)] text-[var(--text-primary)]"
+          ? "bg-red-50 dark:bg-red-950/60 border-red-200 dark:border-red-800 text-red-600 dark:text-red-400"
+          : "bg-neutral-900 border-white/10 text-white"
           }`}>
           {toast?.ok !== false && <Check size={13} className="text-emerald-500 shrink-0" strokeWidth={2.5} />}
           {toast?.msg}
@@ -366,21 +366,21 @@ export default function SettingsPage() {
       {/* ── Add Credits Dialog ── */}
       {showAddCredits && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" role="dialog" aria-modal="true">
-          <div className="absolute inset-0 bg-[var(--bg-deep)]/80 backdrop-blur-sm" onClick={() => setShowAddCredits(false)} />
-          <div className="relative bg-[var(--bg-elevated)] border border-[var(--border)] rounded-2xl w-full max-w-sm p-7 shadow-2xl">
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setShowAddCredits(false)} />
+          <div className="relative bg-neutral-900 border border-white/10 rounded-xl w-full max-w-sm p-7 shadow-2xl">
             <button onClick={() => setShowAddCredits(false)}
-              className="absolute top-4 right-4 w-7 h-7 rounded-lg bg-[var(--overlay)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
-              <X size={14} />
+              className="absolute top-4 right-4 w-7 h-7 rounded-lg bg-neutral-900 flex items-center justify-center text-neutral-500 hover:text-white transition-colors">
+              <X strokeWidth={1.5} size={14} />
             </button>
-            <h2 className="text-base font-semibold text-[var(--text-primary)] mb-0.5">Add Credits</h2>
-            <p className="text-xs text-[var(--text-muted)] mb-5">Choose an amount to add to your balance.</p>
+            <h2 className="text-base font-semibold text-white mb-0.5">Add Credits</h2>
+            <p className="text-xs text-neutral-500 mb-5">Choose an amount to add to your balance.</p>
 
             <div className="grid grid-cols-2 gap-2 mb-4">
               {[10, 25, 50, 100].map((amt) => (
                 <button key={amt} onClick={() => { setSelectedAmount(amt); setCustomAmount(""); }}
                   className={`py-2.5 rounded-xl text-sm font-medium transition-all border ${selectedAmount === amt && !customAmount
-                      ? "bg-amber-500/10 text-amber-400 border-amber-500/40"
-                      : "bg-[var(--bg-deep)] text-[var(--text-secondary)] border-[var(--border)] hover:border-[var(--border-strong)]"
+                    ? "bg-amber-500/10 text-amber-400 border-amber-500/40"
+                    : "bg-black text-neutral-400 border-white/10 hover:border-white/20"
                     }`}>
                   ${amt}
                 </button>
@@ -388,13 +388,13 @@ export default function SettingsPage() {
             </div>
 
             <div className="mb-5">
-              <label className="text-xs font-medium text-[var(--text-primary)] mb-1.5 block">Custom amount</label>
+              <label className="text-xs font-medium text-white mb-1.5 block">Custom amount</label>
               <div className="relative">
-                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] text-sm">$</span>
+                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-500 text-sm">$</span>
                 <input type="number" min={5} max={500} step={0.01} value={customAmount}
                   onChange={(e) => { setCustomAmount(e.target.value); setSelectedAmount(null); }}
                   placeholder="5.00 – 500.00"
-                  className="w-full py-2.5 pl-7 pr-4 rounded-xl bg-[var(--bg-deep)] border border-[var(--border)] text-[var(--text-primary)] text-sm placeholder:text-[var(--text-muted)] outline-none focus:border-[var(--border-strong)] transition-colors" />
+                  className="w-full py-2.5 pl-7 pr-4 rounded-xl bg-black border border-white/10 text-white text-sm placeholder:text-neutral-500 outline-none focus:border-white/20 transition-colors" />
               </div>
               {customAmount && parseFloat(customAmount) < 5 && (
                 <p className="text-[11px] text-red-400 mt-1">Minimum $5.00</p>
@@ -403,15 +403,15 @@ export default function SettingsPage() {
 
             <button onClick={handleCheckout} disabled={!checkoutValid || isCreatingCheckout}
               className={`w-full py-3 rounded-xl font-medium text-sm flex items-center justify-center gap-2 transition-all ${checkoutValid && !isCreatingCheckout
-                  ? "bg-amber-500 text-black hover:bg-amber-400"
-                  : "bg-[var(--overlay)] text-[var(--text-muted)] cursor-not-allowed opacity-50"
+                ? "bg-amber-500 text-black hover:bg-amber-400"
+                : "bg-neutral-900 text-neutral-500 cursor-not-allowed opacity-50"
                 }`}>
-              <CreditCard size={15} />
+              <CreditCard strokeWidth={1.5} size={15} />
               {isCreatingCheckout ? "Redirecting…" : "Pay with Dodo"}
-              {!isCreatingCheckout && <ExternalLink size={13} />}
+              {!isCreatingCheckout && <ExternalLink strokeWidth={1.5} size={13} />}
             </button>
             {checkoutError && <p className="text-[11px] text-red-400 text-center mt-2">{checkoutError}</p>}
-            <p className="text-[10px] text-[var(--text-muted)] text-center mt-3">
+            <p className="text-[10px] text-neutral-500 text-center mt-3">
               You will be redirected to Dodo Payments to complete your purchase.
             </p>
           </div>
@@ -421,28 +421,28 @@ export default function SettingsPage() {
       {/* ── Usage History Dialog ── */}
       {showUsageHistory && (
         <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4" role="dialog" aria-modal="true">
-          <div className="absolute inset-0 bg-[var(--bg-deep)]/80 backdrop-blur-sm" onClick={() => setShowUsageHistory(false)} />
-          <div className="relative bg-[var(--bg-elevated)] border border-[var(--border)] rounded-t-2xl sm:rounded-2xl w-full sm:max-w-lg max-h-[85vh] flex flex-col shadow-2xl">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--border)] shrink-0">
-              <h2 className="text-base font-semibold text-[var(--text-primary)]">Usage & History</h2>
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setShowUsageHistory(false)} />
+          <div className="relative bg-neutral-900 border border-white/10 rounded-t-2xl sm:rounded-xl w-full sm:max-w-lg max-h-[85vh] flex flex-col shadow-2xl">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-white/10 shrink-0">
+              <h2 className="text-base font-semibold text-white">Usage & History</h2>
               <button onClick={() => setShowUsageHistory(false)}
-                className="w-7 h-7 rounded-lg bg-[var(--overlay)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
-                <X size={14} />
+                className="w-7 h-7 rounded-lg bg-neutral-900 flex items-center justify-center text-neutral-500 hover:text-white transition-colors">
+                <X strokeWidth={1.5} size={14} />
               </button>
             </div>
 
             <div className="overflow-y-auto flex-1">
               {loadingExtras ? (
                 <div className="flex items-center justify-center py-16">
-                  <div className="w-6 h-6 border-2 border-[var(--accent)] border-t-transparent rounded-full animate-spin" />
+                  <div className="w-6 h-6 border-2 border-white/30 border-t-transparent rounded-full animate-spin" />
                 </div>
               ) : (
                 <>
                   {/* Usage Summary */}
-                  <div className="px-5 pt-5 pb-4 border-b border-[var(--border)]">
+                  <div className="px-5 pt-5 pb-4 border-b border-white/10">
                     <div className="flex items-center gap-2 mb-3">
-                      <Activity size={13} className="text-[var(--text-muted)]" />
-                      <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider">
+                      <Activity strokeWidth={1.5} size={13} className="text-neutral-500" />
+                      <p className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">
                         {usageData?.period || "Last 30 days"}
                       </p>
                     </div>
@@ -451,29 +451,29 @@ export default function SettingsPage() {
                         {Object.entries(usageData.summary).map(([mdl, data]) => (
                           <div key={mdl} className="flex items-center justify-between">
                             <div>
-                              <p className="text-sm font-medium text-[var(--text-primary)]">{mdl}</p>
-                              <p className="text-[11px] text-[var(--text-muted)]">
+                              <p className="text-sm font-medium text-white">{mdl}</p>
+                              <p className="text-[11px] text-neutral-500">
                                 {data.input_tokens.toLocaleString()} in · {data.output_tokens.toLocaleString()} out
                               </p>
                             </div>
                             <span className="text-sm font-mono font-semibold text-amber-400">${data.cost.toFixed(4)}</span>
                           </div>
                         ))}
-                        <div className="flex items-center justify-between pt-2 border-t border-[var(--border)]">
-                          <p className="text-xs font-medium text-[var(--text-muted)]">Total spent</p>
+                        <div className="flex items-center justify-between pt-2 border-t border-white/10">
+                          <p className="text-xs font-medium text-neutral-500">Total spent</p>
                           <p className="text-sm font-mono font-bold text-amber-400">${usageData.total_cost.toFixed(4)}</p>
                         </div>
                       </div>
                     ) : (
-                      <p className="text-sm text-[var(--text-muted)]">No usage recorded yet.</p>
+                      <p className="text-sm text-neutral-500">No usage recorded yet.</p>
                     )}
                   </div>
 
                   {/* Transaction History */}
                   {/* <div className="px-5 pt-4 pb-5">
                     <div className="flex items-center gap-2 mb-3">
-                      <History size={13} className="text-[var(--text-muted)]" />
-                      <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider">
+                      <History strokeWidth={1.5} size={13} className="text-neutral-500" />
+                      <p className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">
                         Transaction History
                       </p>
                     </div>
@@ -482,30 +482,30 @@ export default function SettingsPage() {
                         {historyData.map((tx) => {
                           const isPositive = tx.amount > 0;
                           return (
-                            <div key={tx.id} className="flex items-center gap-3 py-2.5 border-b border-[var(--border)] last:border-0">
-                              <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${isPositive ? "bg-emerald-500/10" : "bg-[var(--overlay)]"}`}>
+                            <div key={tx.id} className="flex items-center gap-3 py-2.5 border-b border-white/10 last:border-0">
+                              <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${isPositive ? "bg-emerald-500/10" : "bg-neutral-900"}`}>
                                 {isPositive
                                   ? <ArrowUpRight size={13} className="text-emerald-400" />
-                                  : <ArrowDownRight size={13} className="text-[var(--text-muted)]" />}
+                                  : <ArrowDownRight size={13} className="text-neutral-500" />}
                               </div>
                               <div className="flex-1 min-w-0">
-                                <p className="text-sm text-[var(--text-primary)] truncate">{tx.description}</p>
-                                <p className="text-[11px] text-[var(--text-muted)]">
+                                <p className="text-sm text-white truncate">{tx.description}</p>
+                                <p className="text-[11px] text-neutral-500">
                                   {new Date(tx.date).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
                                 </p>
                               </div>
                               <div className="text-right shrink-0">
-                                <p className={`text-sm font-mono font-medium ${isPositive ? "text-emerald-400" : "text-[var(--text-muted)]"}`}>
+                                <p className={`text-sm font-mono font-medium ${isPositive ? "text-emerald-400" : "text-neutral-500"}`}>
                                   {isPositive ? "+" : ""}${Math.abs(tx.amount).toFixed(isPositive ? 2 : 4)}
                                 </p>
-                                <p className="text-[11px] font-mono text-[var(--text-muted)]">${tx.balance.toFixed(2)}</p>
+                                <p className="text-[11px] font-mono text-neutral-500">${tx.balance.toFixed(2)}</p>
                               </div>
                             </div>
                           );
                         })}
                       </div>
                     ) : (
-                      <p className="text-sm text-[var(--text-muted)]">No transaction history.</p>
+                      <p className="text-sm text-neutral-500">No transaction history.</p>
                     )}
                   </div> */}
                 </>
@@ -518,50 +518,50 @@ export default function SettingsPage() {
       <div className="max-w-2xl mx-auto px-6 md:px-8 py-10 md:py-14 space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-xl font-semibold text-[var(--text-primary)]">Settings</h1>
-          <p className="text-sm text-[var(--text-muted)] mt-0.5">Manage your account, preferences, and data.</p>
+          <h1 className="text-xl font-semibold text-white">Settings</h1>
+          <p className="text-sm text-neutral-500 mt-0.5">Manage your account, preferences, and data.</p>
         </div>
 
         {/* ── Profile ── */}
         <SectionCard label="PROFILE" icon={Pencil} title="Account Profile" subtitle="Your display name and connected account.">
-          <div className="flex items-center justify-between gap-4 px-5 py-4 border-b border-[var(--border)]">
+          <div className="flex items-center justify-between gap-4 px-5 py-4 border-b border-white/10">
             <div className="flex items-center gap-3 min-w-0">
               <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 overflow-hidden"
-                style={{ background: "var(--accent)", color: "var(--bg-deep)" }}>
+                style={{ background: "white", color: "black" }}>
                 {user?.avatar ? <img src={user.avatar} className="w-full h-full object-cover" alt="" /> : initials}
               </div>
               {editingName ? (
                 <input autoFocus value={displayName} onChange={(e) => setDisplayName(e.target.value)}
                   onKeyDown={(e) => { if (e.key === "Enter") saveProfile(); if (e.key === "Escape") setEditingName(false); }}
-                  className="text-sm bg-[var(--bg-deep)] border border-[var(--border-strong)] rounded-lg px-3 py-1.5 outline-none text-[var(--text-primary)] w-48" />
+                  className="text-sm bg-black border border-white/20 rounded-lg px-3 py-1.5 outline-none text-white w-48" />
               ) : (
-                <span className="text-sm text-[var(--text-primary)] truncate">{user?.name || "User"}</span>
+                <span className="text-sm text-white truncate">{user?.name || "User"}</span>
               )}
             </div>
             {editingName ? (
               <div className="flex items-center gap-2 shrink-0">
                 <button onClick={saveProfile} disabled={savingProf}
-                  className="px-3 py-1.5 rounded-lg bg-[var(--text-primary)] text-[var(--bg-deep)] text-xs font-semibold disabled:opacity-50">
+                  className="px-3 py-1.5 rounded-lg bg-white text-[black] text-xs font-semibold disabled:opacity-50">
                   {savingProf ? "…" : "Save"}
                 </button>
                 <button onClick={() => { setDisplayName(user?.name || ""); setEditingName(false); }}
-                  className="px-3 py-1.5 rounded-lg bg-[var(--overlay)] text-[var(--text-muted)] text-xs font-medium">
+                  className="px-3 py-1.5 rounded-lg bg-neutral-900 text-neutral-500 text-xs font-medium">
                   Cancel
                 </button>
               </div>
             ) : (
               <button onClick={() => setEditingName(true)}
-                className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--overlay)] transition-colors shrink-0">
-                <Pencil size={12} />
+                className="p-1.5 rounded-lg text-neutral-500 hover:text-white hover:bg-neutral-900 transition-colors shrink-0">
+                <Pencil strokeWidth={1.5} size={12} />
               </button>
             )}
           </div>
           <div className="flex items-center justify-between gap-4 px-5 py-4">
             <div>
-              <p className="text-xs text-[var(--text-muted)] mb-0.5">Email</p>
-              <p className="text-sm text-[var(--text-secondary)]">{user?.email}</p>
+              <p className="text-xs text-neutral-500 mb-0.5">Email</p>
+              <p className="text-sm text-neutral-400">{user?.email}</p>
             </div>
-            <span className="text-[10px] px-2 py-0.5 rounded-full border border-[var(--border)] bg-[var(--overlay)] text-[var(--text-muted)] shrink-0">
+            <span className="text-[10px] px-2 py-0.5 rounded-full border border-white/10 bg-neutral-900 text-neutral-500 shrink-0">
               Google OAuth
             </span>
           </div>
@@ -576,30 +576,30 @@ export default function SettingsPage() {
                 const isPending = pendingModel === m.id;
                 return (
                   <button key={m.id} onClick={() => setPendingModel(m.id)}
-                    className={`relative flex flex-col gap-2.5 p-4 rounded-xl border text-left transition-all ${isPending ? "border-amber-500/50 bg-amber-500/[0.06]" : "border-[var(--border)] bg-[var(--bg-deep)] hover:border-[var(--border-strong)]"
+                    className={`relative flex flex-col gap-2.5 p-4 rounded-xl border text-left transition-all ${isPending ? "border-amber-500/50 bg-amber-500/[0.06]" : "border-white/10 bg-black hover:border-white/20"
                       }`}>
                     {isPending && (
                       <div className="absolute top-3 right-3 w-5 h-5 rounded-full bg-amber-500 flex items-center justify-center">
                         <Check size={11} className="text-black" strokeWidth={2.5} />
                       </div>
                     )}
-                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-colors ${isPending ? "bg-amber-500/15 border border-amber-500/30" : "bg-[var(--bg-elevated)] border border-[var(--border)]"
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-colors ${isPending ? "bg-amber-500/15 border border-amber-500/30" : "bg-neutral-900 border border-white/10"
                       }`}>
-                      <m.icon size={14} className={isPending ? "text-amber-400" : "text-[var(--text-muted)]"} />
+                      <m.icon size={14} className={isPending ? "text-amber-400" : "text-neutral-500"} />
                     </div>
                     <div>
-                      <p className="text-sm font-semibold text-[var(--text-primary)] pr-6">{m.name}</p>
-                      <p className={`text-xs mt-0.5 leading-relaxed ${isPending ? "text-amber-400/80" : "text-[var(--text-muted)]"}`}>{m.detail}</p>
+                      <p className="text-sm font-semibold text-white pr-6">{m.name}</p>
+                      <p className={`text-xs mt-0.5 leading-relaxed ${isPending ? "text-amber-400/80" : "text-neutral-500"}`}>{m.detail}</p>
                     </div>
                   </button>
                 );
               })}
             </div>
           </div>
-          <div className="flex items-center justify-between px-5 py-3.5 border-t border-[var(--border)] bg-[var(--bg-deep)]">
-            <p className="text-xs text-[var(--text-muted)]">Changes apply to new conversations only</p>
+          <div className="flex items-center justify-between px-5 py-3.5 border-t border-white/10 bg-black">
+            <p className="text-xs text-neutral-500">Changes apply to new conversations only</p>
             <button onClick={saveModel} disabled={savingModel || !modelChanged}
-              className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${modelChanged ? "bg-amber-500 text-black hover:bg-amber-400" : "bg-[var(--overlay)] text-[var(--text-muted)] cursor-not-allowed"
+              className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${modelChanged ? "bg-amber-500 text-black hover:bg-amber-400" : "bg-neutral-900 text-neutral-500 cursor-not-allowed"
                 }`}>
               {savingModel ? "Saving…" : "Save Preference"}
             </button>
@@ -609,13 +609,13 @@ export default function SettingsPage() {
         {/* ── History & Privacy ── */}
         <SectionCard label="HISTORY & PRIVACY" icon={Shield} title="Auto-delete Conversations"
           subtitle="Automatically purge conversations older than the selected window. Runs nightly.">
-          <div className="px-5 py-4 border-b border-[var(--border)]">
+          <div className="px-5 py-4 border-b border-white/10">
             <div className="flex flex-wrap gap-2">
               {RETENTION_OPTIONS.map((opt) => {
                 const sel = retention === opt.value;
                 return (
                   <button key={String(opt.value)} onClick={() => saveRetention(opt.value)} disabled={retSaving}
-                    className={`px-4 py-2 rounded-full text-sm font-medium transition-all disabled:opacity-40 ${sel ? "bg-amber-500 text-black" : "bg-[var(--bg-deep)] border border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--border-strong)] hover:text-[var(--text-primary)]"
+                    className={`px-4 py-2 rounded-full text-sm font-medium transition-all disabled:opacity-40 ${sel ? "bg-amber-500 text-black" : "bg-black border border-white/10 text-neutral-400 hover:border-white/20 hover:text-white"
                       }`}>
                     {opt.label}
                   </button>
@@ -624,9 +624,9 @@ export default function SettingsPage() {
             </div>
           </div>
           <div className="flex items-center gap-2 px-5 py-3.5">
-            <Clock size={12} className="text-[var(--text-muted)] shrink-0" />
-            <p className="text-xs text-[var(--text-muted)]">
-              Conversations older than <span className="font-semibold text-[var(--text-secondary)]">{retentionLabel}</span> are removed each night.
+            <Clock strokeWidth={1.5} size={12} className="text-neutral-500 shrink-0" />
+            <p className="text-xs text-neutral-500">
+              Conversations older than <span className="font-semibold text-neutral-400">{retentionLabel}</span> are removed each night.
             </p>
           </div>
         </SectionCard>
@@ -637,44 +637,44 @@ export default function SettingsPage() {
           <div className="px-5 py-5">
             <div className="flex items-start justify-between gap-6">
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)] mb-2">Available Credits</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-neutral-500 mb-2">Available Credits</p>
                 <p className={`text-4xl font-bold tabular-nums ${balance === null || balance >= 1 ? "text-amber-400" : balance <= 0 ? "text-red-500" : "text-amber-500"
                   }`}>{balanceFmt}</p>
                 {/* {estimatedMessages !== null && (
-                  <p className="text-xs text-[var(--text-muted)] mt-1.5">
+                  <p className="text-xs text-neutral-500 mt-1.5">
                     ≈ {estimatedMessages.toLocaleString()} {activeModelName} messages remaining
                   </p>
                 )} */}
               </div>
               <div className="flex flex-col gap-2 shrink-0">
                 <button onClick={() => setShowAddCredits(true)}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-[var(--border)] bg-[var(--bg-deep)] text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--border-strong)] transition-colors whitespace-nowrap">
-                  <Wallet size={13} /> Add Credits
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-white/10 bg-black text-sm font-medium text-neutral-400 hover:text-white hover:border-white/20 transition-colors whitespace-nowrap">
+                  <Wallet strokeWidth={1.5} size={13} /> Add Credits
                 </button>
                 <button onClick={() => setShowUsageHistory(true)}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-[var(--border)] bg-[var(--bg-deep)] text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--border-strong)] transition-colors whitespace-nowrap">
-                  <History size={13} /> View History
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-white/10 bg-black text-sm font-medium text-neutral-400 hover:text-white hover:border-white/20 transition-colors whitespace-nowrap">
+                  <History strokeWidth={1.5} size={13} /> View History
                 </button>
               </div>
             </div>
           </div>
 
           {/* Auto-refill */}
-          <div className="px-5 py-4 border-t border-[var(--border)]">
+          <div className="px-5 py-4 border-t border-white/10">
             <div className="flex items-center justify-between mb-1">
               <div className="flex items-center gap-2">
-                <RefreshCw size={13} className="text-[var(--text-muted)]" />
-                <p className="text-sm font-medium text-[var(--text-primary)]">Auto-refill</p>
+                <RefreshCw strokeWidth={1.5} size={13} className="text-neutral-500" />
+                <p className="text-sm font-medium text-white">Auto-refill</p>
               </div>
               <button
                 onClick={() => setAutoRefill((v) => !v)}
-                className={`relative w-10 h-6 rounded-full transition-colors shrink-0 ${autoRefill ? "bg-amber-500" : "bg-[var(--overlay)] border border-[var(--border)]"}`}
+                className={`relative w-10 h-6 rounded-full transition-colors shrink-0 ${autoRefill ? "bg-amber-500" : "bg-neutral-900 border border-white/10"}`}
                 aria-pressed={autoRefill}
               >
                 <span className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-all ${autoRefill ? "left-5" : "left-1"}`} />
               </button>
             </div>
-            <p className="text-xs text-[var(--text-muted)] mb-4">
+            <p className="text-xs text-neutral-500 mb-4">
               Automatically add credits when your balance drops below a threshold.
             </p>
 
@@ -682,26 +682,26 @@ export default function SettingsPage() {
               <div className="space-y-3">
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-xs font-medium text-[var(--text-muted)] mb-1.5 block">Refill when below</label>
+                    <label className="text-xs font-medium text-neutral-500 mb-1.5 block">Refill when below</label>
                     <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] text-sm">$</span>
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500 text-sm">$</span>
                       <input
                         type="number" min={0.5} max={50} step={0.5}
                         value={refillThreshold}
                         onChange={(e) => setRefillThreshold(parseFloat(e.target.value) || 0)}
-                        className="w-full py-2.5 pl-7 pr-3 rounded-xl bg-[var(--bg-deep)] border border-[var(--border)] text-[var(--text-primary)] text-sm outline-none focus:border-[var(--border-strong)] transition-colors"
+                        className="w-full py-2.5 pl-7 pr-3 rounded-xl bg-black border border-white/10 text-white text-sm outline-none focus:border-white/20 transition-colors"
                       />
                     </div>
                   </div>
                   <div>
-                    <label className="text-xs font-medium text-[var(--text-muted)] mb-1.5 block">Amount to add</label>
+                    <label className="text-xs font-medium text-neutral-500 mb-1.5 block">Amount to add</label>
                     <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] text-sm">$</span>
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500 text-sm">$</span>
                       <input
                         type="number" min={5} max={200} step={5}
                         value={refillAmount}
                         onChange={(e) => setRefillAmount(parseFloat(e.target.value) || 0)}
-                        className="w-full py-2.5 pl-7 pr-3 rounded-xl bg-[var(--bg-deep)] border border-[var(--border)] text-[var(--text-primary)] text-sm outline-none focus:border-[var(--border-strong)] transition-colors"
+                        className="w-full py-2.5 pl-7 pr-3 rounded-xl bg-black border border-white/10 text-white text-sm outline-none focus:border-white/20 transition-colors"
                       />
                     </div>
                   </div>
@@ -720,7 +720,7 @@ export default function SettingsPage() {
               <button
                 onClick={saveAutoRefill}
                 disabled={savingRefill}
-                className="text-xs text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors disabled:opacity-40"
+                className="text-xs text-neutral-500 hover:text-neutral-400 transition-colors disabled:opacity-40"
               >
                 {savingRefill ? "Saving…" : "Save (disabled)"}
               </button>
@@ -734,15 +734,15 @@ export default function SettingsPage() {
           <div className="px-5 py-5">
             {referralLoading ? (
               <div className="flex items-center justify-center py-6">
-                <div className="w-5 h-5 border-2 border-[var(--accent)] border-t-transparent rounded-full animate-spin" />
+                <div className="w-5 h-5 border-2 border-white/30 border-t-transparent rounded-full animate-spin" />
               </div>
             ) : (
               <>
                 {/* Referral Link */}
                 <div className="mb-5">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)] mb-2">Your Referral Link</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-neutral-500 mb-2">Your Referral Link</p>
                   <div className="flex items-center gap-2">
-                    <div className="flex-1 py-2.5 px-3.5 rounded-xl bg-[var(--bg-deep)] border border-[var(--border)] text-sm text-[var(--text-secondary)] font-mono truncate">
+                    <div className="flex-1 py-2.5 px-3.5 rounded-xl bg-black border border-white/10 text-sm text-neutral-400 font-mono truncate">
                       {referralCode
                         ? `${typeof window !== "undefined" ? window.location.origin : "calmpilot.app"}/login?ref=${referralCode}`
                         : "Loading..."}
@@ -751,11 +751,11 @@ export default function SettingsPage() {
                       onClick={copyReferralLink}
                       disabled={!referralCode}
                       className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-medium transition-all shrink-0 ${codeCopied
-                          ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30"
-                          : "bg-amber-500 text-black hover:bg-amber-400"
+                        ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30"
+                        : "bg-amber-500 text-black hover:bg-amber-400"
                         }`}
                     >
-                      {codeCopied ? <Check size={14} /> : <Copy size={14} />}
+                      {codeCopied ? <Check strokeWidth={1.5} size={14} /> : <Copy strokeWidth={1.5} size={14} />}
                       {codeCopied ? "Copied" : "Copy"}
                     </button>
                   </div>
@@ -764,34 +764,34 @@ export default function SettingsPage() {
                 {/* Stats */}
                 {referralStats && (
                   <div className="grid grid-cols-3 gap-3">
-                    <div className="rounded-xl bg-[var(--bg-deep)] border border-[var(--border)] p-3.5 text-center">
+                    <div className="rounded-xl bg-black border border-white/10 p-3.5 text-center">
                       <div className="flex items-center justify-center gap-1 mb-1">
-                        <Users size={12} className="text-[var(--text-muted)]" />
+                        <Users strokeWidth={1.5} size={12} className="text-neutral-500" />
                       </div>
-                      <p className="text-xl font-bold text-[var(--text-primary)] tabular-nums">{referralStats.credited}</p>
-                      <p className="text-[10px] text-[var(--text-muted)] mt-0.5">Successful</p>
+                      <p className="text-xl font-bold text-white tabular-nums">{referralStats.credited}</p>
+                      <p className="text-[10px] text-neutral-500 mt-0.5">Successful</p>
                     </div>
-                    <div className="rounded-xl bg-[var(--bg-deep)] border border-[var(--border)] p-3.5 text-center">
+                    <div className="rounded-xl bg-black border border-white/10 p-3.5 text-center">
                       <div className="flex items-center justify-center gap-1 mb-1">
-                        <Wallet size={12} className="text-[var(--text-muted)]" />
+                        <Wallet strokeWidth={1.5} size={12} className="text-neutral-500" />
                       </div>
                       <p className="text-xl font-bold text-amber-400 tabular-nums">${referralStats.earned.toFixed(0)}</p>
-                      <p className="text-[10px] text-[var(--text-muted)] mt-0.5">Earned</p>
+                      <p className="text-[10px] text-neutral-500 mt-0.5">Earned</p>
                     </div>
-                    <div className="rounded-xl bg-[var(--bg-deep)] border border-[var(--border)] p-3.5 text-center">
+                    <div className="rounded-xl bg-black border border-white/10 p-3.5 text-center">
                       <div className="flex items-center justify-center gap-1 mb-1">
-                        <Gift size={12} className="text-[var(--text-muted)]" />
+                        <Gift strokeWidth={1.5} size={12} className="text-neutral-500" />
                       </div>
-                      <p className="text-xl font-bold text-[var(--text-secondary)] tabular-nums">${referralStats.remaining.toFixed(0)}</p>
-                      <p className="text-[10px] text-[var(--text-muted)] mt-0.5">Remaining</p>
+                      <p className="text-xl font-bold text-neutral-400 tabular-nums">${referralStats.remaining.toFixed(0)}</p>
+                      <p className="text-[10px] text-neutral-500 mt-0.5">Remaining</p>
                     </div>
                   </div>
                 )}
 
                 {/* How it works */}
-                <div className="mt-4 pt-4 border-t border-[var(--border)]">
-                  <p className="text-xs font-medium text-[var(--text-muted)] mb-2">How it works</p>
-                  <div className="space-y-1.5 text-xs text-[var(--text-muted)]">
+                <div className="mt-4 pt-4 border-t border-white/10">
+                  <p className="text-xs font-medium text-neutral-500 mb-2">How it works</p>
+                  <div className="space-y-1.5 text-xs text-neutral-500">
                     <p>1. Share your link with a friend</p>
                     <p>2. They sign up and get <span className="text-amber-400 font-medium">$7</span> free credits (vs $5)</p>
                     <p>3. When they make their first purchase, you earn <span className="text-amber-400 font-medium">$2</span></p>
@@ -808,18 +808,18 @@ export default function SettingsPage() {
           subtitle="Choose between light and dark mode.">
           <div className="flex items-center justify-between px-5 py-4">
             <div>
-              <p className="text-sm text-[var(--text-primary)]">{isDark ? "Dark Mode" : "Light Mode"}</p>
-              <p className="text-xs text-[var(--text-muted)] mt-0.5">{isDark ? "Easy on the eyes at night" : "Bright and clear"}</p>
+              <p className="text-sm text-white">{isDark ? "Dark Mode" : "Light Mode"}</p>
+              <p className="text-xs text-neutral-500 mt-0.5">{isDark ? "Easy on the eyes at night" : "Bright and clear"}</p>
             </div>
             <button
               onClick={toggleTheme}
-              className={`relative w-12 h-7 rounded-full transition-colors shrink-0 ${isDark ? "bg-amber-500" : "bg-[var(--overlay)] border border-[var(--border)]"}`}
+              className={`relative w-12 h-7 rounded-full transition-colors shrink-0 ${isDark ? "bg-amber-500" : "bg-neutral-900 border border-white/10"}`}
               aria-pressed={isDark}
             >
               <span className={`absolute top-1 w-5 h-5 rounded-full bg-white shadow transition-all flex items-center justify-center ${isDark ? "left-6" : "left-1"}`}>
                 {isDark
-                  ? <Moon size={10} className="text-amber-500" />
-                  : <Sun size={10} className="text-amber-400" />}
+                  ? <Moon strokeWidth={1.5} size={10} className="text-amber-500" />
+                  : <Sun strokeWidth={1.5} size={10} className="text-amber-400" />}
               </span>
             </button>
           </div>
@@ -827,44 +827,44 @@ export default function SettingsPage() {
 
         {/* ── Advanced ── */}
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--text-muted)] mb-3 px-1">ADVANCED</p>
+          <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-neutral-500 mb-3 px-1">ADVANCED</p>
           <div className="space-y-3">
-            <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-elevated)] overflow-hidden">
-              <div className="flex items-center gap-3.5 px-5 py-4 border-b border-[var(--border)]">
-                <div className="w-9 h-9 rounded-xl bg-[var(--overlay)] border border-[var(--border)] flex items-center justify-center shrink-0">
-                  <LogOut size={15} className="text-[var(--text-secondary)]" />
+            <div className="rounded-xl border border-white/10 bg-neutral-900 overflow-hidden">
+              <div className="flex items-center gap-3.5 px-5 py-4 border-b border-white/10">
+                <div className="w-9 h-9 rounded-xl bg-neutral-900 border border-white/10 flex items-center justify-center shrink-0">
+                  <LogOut strokeWidth={1.5} size={15} className="text-neutral-400" />
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-[var(--text-primary)]">Session Management</p>
-                  <p className="text-xs text-[var(--text-muted)] mt-0.5">Control your active login session on this device.</p>
+                  <p className="text-sm font-semibold text-white">Session Management</p>
+                  <p className="text-xs text-neutral-500 mt-0.5">Control your active login session on this device.</p>
                 </div>
               </div>
               <div className="flex items-center justify-between gap-6 px-5 py-4">
-                <p className="text-sm text-[var(--text-muted)]">End your current session. You can sign back in anytime.</p>
+                <p className="text-sm text-neutral-500">End your current session. You can sign back in anytime.</p>
                 <button onClick={() => setShowSignOut(true)}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-[var(--border)] bg-[var(--bg-deep)] text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--border-strong)] transition-colors shrink-0 whitespace-nowrap">
-                  <LogOut size={13} /> Sign Out
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-white/10 bg-black text-sm font-medium text-neutral-400 hover:text-white hover:border-white/20 transition-colors shrink-0 whitespace-nowrap">
+                  <LogOut strokeWidth={1.5} size={13} /> Sign Out
                 </button>
               </div>
             </div>
 
-            <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-elevated)] overflow-hidden">
+            <div className="rounded-xl border border-white/10 bg-neutral-900 overflow-hidden">
               <div className="flex items-center justify-between gap-6 px-5 py-4">
                 <div>
-                  <p className="text-sm font-medium text-[var(--text-primary)]">Chat History</p>
-                  <p className="text-xs text-[var(--text-muted)] mt-0.5">Permanently delete all conversations from your account.</p>
+                  <p className="text-sm font-medium text-white">Chat History</p>
+                  <p className="text-xs text-neutral-500 mt-0.5">Permanently delete all conversations from your account.</p>
                 </div>
                 <button onClick={() => setShowClearHist(true)} disabled={clearingHist}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-[var(--border)] bg-[var(--bg-deep)] text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--border-strong)] transition-colors shrink-0 whitespace-nowrap disabled:opacity-40">
-                  <Trash2 size={13} /> {clearingHist ? "Clearing…" : "Clear History"}
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-white/10 bg-black text-sm font-medium text-neutral-400 hover:text-white hover:border-white/20 transition-colors shrink-0 whitespace-nowrap disabled:opacity-40">
+                  <Trash2 strokeWidth={1.5} size={13} /> {clearingHist ? "Clearing…" : "Clear History"}
                 </button>
               </div>
             </div>
 
-            <div className="rounded-2xl border border-red-200 bg-red-50 dark:border-red-900/40 dark:bg-red-950/20 overflow-hidden">
+            <div className="rounded-xl border border-red-200 bg-red-50 dark:border-red-900/40 dark:bg-red-950/20 overflow-hidden">
               <div className="flex items-center gap-3.5 px-5 py-4 border-b border-red-200 dark:border-red-900/30">
                 <div className="w-9 h-9 rounded-xl bg-red-100 border border-red-200 dark:bg-red-500/10 dark:border-red-500/20 flex items-center justify-center shrink-0">
-                  <Trash2 size={15} className="text-red-600 dark:text-red-400" />
+                  <Trash2 strokeWidth={1.5} size={15} className="text-red-600 dark:text-red-400" />
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-red-600 dark:text-red-400">Danger Zone</p>
@@ -877,7 +877,7 @@ export default function SettingsPage() {
                 </p>
                 <button onClick={() => setShowDelete(true)} disabled={deleteLoading}
                   className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-red-300 bg-red-100 text-sm font-medium text-red-600 hover:bg-red-200 hover:border-red-400 dark:border-red-700/60 dark:bg-red-950/40 dark:text-red-400 dark:hover:bg-red-950/60 dark:hover:border-red-600 transition-colors shrink-0 whitespace-nowrap disabled:opacity-40">
-                  <Trash2 size={13} /> {deleteLoading ? "Deleting…" : "Delete Account"}
+                  <Trash2 strokeWidth={1.5} size={13} /> {deleteLoading ? "Deleting…" : "Delete Account"}
                 </button>
               </div>
             </div>

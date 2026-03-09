@@ -70,26 +70,26 @@ interface Briefing {
 /* ─── Helpers ────────────────────────────────────────────── */
 
 const APP_ICON: Record<string, React.ReactNode> = {
-  gmail: <Mail size={15} />,
-  googlecalendar: <Calendar size={15} />,
-  slack: <MessageSquare size={15} />,
-  github: <Target size={15} />,
-  notion: <Zap size={15} />,
-  linear: <Zap size={15} />,
-  discord: <MessageSquare size={15} />,
-  outlook: <Mail size={15} />,
-  googledrive: <FolderOpen size={15} />,
-  googledocs: <FileText size={15} />,
-  stripe: <CreditCard size={15} />,
-  jira: <CheckSquare size={15} />,
-  trello: <CheckSquare size={15} />,
-  todoist: <CheckSquare size={15} />,
-  pipedrive: <Activity size={15} />,
-  salesforce: <Activity size={15} />,
-  spotify: <Music size={15} />,
-  youtube: <Music size={15} />,
-  fireflies: <Mic size={15} />,
-  slackbot: <MessageSquare size={15} />,
+  gmail: <Mail strokeWidth={1.5} size={15} />,
+  googlecalendar: <Calendar strokeWidth={1.5} size={15} />,
+  slack: <MessageSquare strokeWidth={1.5} size={15} />,
+  github: <Target strokeWidth={1.5} size={15} />,
+  notion: <Zap strokeWidth={1.5} size={15} />,
+  linear: <Zap strokeWidth={1.5} size={15} />,
+  discord: <MessageSquare strokeWidth={1.5} size={15} />,
+  outlook: <Mail strokeWidth={1.5} size={15} />,
+  googledrive: <FolderOpen strokeWidth={1.5} size={15} />,
+  googledocs: <FileText strokeWidth={1.5} size={15} />,
+  stripe: <CreditCard strokeWidth={1.5} size={15} />,
+  jira: <CheckSquare strokeWidth={1.5} size={15} />,
+  trello: <CheckSquare strokeWidth={1.5} size={15} />,
+  todoist: <CheckSquare strokeWidth={1.5} size={15} />,
+  pipedrive: <Activity strokeWidth={1.5} size={15} />,
+  salesforce: <Activity strokeWidth={1.5} size={15} />,
+  spotify: <Music strokeWidth={1.5} size={15} />,
+  youtube: <Music strokeWidth={1.5} size={15} />,
+  fireflies: <Mic strokeWidth={1.5} size={15} />,
+  slackbot: <MessageSquare strokeWidth={1.5} size={15} />,
 };
 
 const APP_COLOR: Record<string, string> = {
@@ -171,14 +171,14 @@ function StatCard({
   icon: React.ReactNode;
 }) {
   return (
-    <div className="bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl px-4 py-3 flex flex-col gap-1 min-w-0">
-      <div className="flex items-center gap-2 text-[var(--text-muted)]">
+    <div className="bg-black border border-white/10 rounded-xl px-4 py-3 flex flex-col gap-1 min-w-0">
+      <div className="flex items-center gap-2 text-neutral-500">
         {icon}
         <span className="text-[11px] font-medium uppercase tracking-wider truncate">
           {label}
         </span>
       </div>
-      <span className="text-xl font-semibold text-[var(--text-primary)]">
+      <span className="text-xl font-semibold text-white">
         {value}
       </span>
     </div>
@@ -196,15 +196,14 @@ function ProposalCard({
   logoUrl?: string;
   onAction?: (proposal: Proposal, action: string) => void;
 }) {
-  const icon = APP_ICON[proposal.app] || <Zap size={15} />;
-  const color = APP_COLOR[proposal.app] || "var(--accent)";
+  const icon = APP_ICON[proposal.app] || <Zap strokeWidth={1.5} size={15} />;
+  const color = APP_COLOR[proposal.app] || "white";
   const isHigh = proposal.priority === "high";
 
   return (
     <div
-      className={`bg-[var(--bg-surface)] border rounded-xl p-4 space-y-3 ${
-        isHigh ? "border-amber-500/30" : "border-[var(--border)]"
-      }`}
+      className={`bg-black border rounded-xl p-4 space-y-3 ${isHigh ? "border-amber-500/30" : "border-white/10"
+        }`}
     >
       {/* Tag */}
       {isHigh && (
@@ -230,10 +229,10 @@ function ProposalCard({
           </span>
         )}
         <div className="min-w-0">
-          <h4 className="text-sm font-semibold text-[var(--text-primary)] leading-snug">
+          <h4 className="text-sm font-semibold text-white leading-snug">
             {proposal.title}
           </h4>
-          <p className="text-xs text-[var(--text-secondary)] mt-1 leading-relaxed">
+          <p className="text-xs text-neutral-400 mt-1 leading-relaxed">
             {proposal.description}
           </p>
         </div>
@@ -246,11 +245,10 @@ function ProposalCard({
             <button
               key={i}
               onClick={() => onAction?.(proposal, action)}
-              className={`text-xs font-medium px-3 py-1.5 rounded-lg transition-colors ${
-                i === 0
-                  ? "bg-[var(--accent)] text-white hover:opacity-90"
-                  : "bg-[var(--accent-soft)] text-[var(--accent)] hover:opacity-80"
-              }`}
+              className={`text-xs font-medium px-3 py-1.5 rounded-lg transition-colors ${i === 0
+                  ? "bg-white text-white hover:opacity-90"
+                  : "bg-white/5 text-white hover:opacity-80"
+                }`}
             >
               {action}
             </button>
@@ -278,19 +276,18 @@ function TimelineEvent({
       {/* Timeline line */}
       <div className="flex flex-col items-center">
         <div
-          className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${
-            isPast ? "bg-[var(--text-muted)]" : "bg-[var(--accent)]"
-          }`}
+          className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${isPast ? "bg-neutral-500" : "bg-white"
+            }`}
         />
-        {!isLast && <div className="w-px flex-1 bg-[var(--border)] mt-1" />}
+        {!isLast && <div className="w-px flex-1 bg-white/10 mt-1" />}
       </div>
 
       {/* Content */}
       <div className={`pb-4 min-w-0 ${isPast ? "opacity-50" : ""}`}>
-        <span className="text-[11px] font-medium text-[var(--text-muted)] uppercase tracking-wider">
+        <span className="text-[11px] font-medium text-neutral-500 uppercase tracking-wider">
           {time}
         </span>
-        <p className="text-sm text-[var(--text-primary)] font-medium mt-0.5 leading-snug">
+        <p className="text-sm text-white font-medium mt-0.5 leading-snug">
           {event.title}
         </p>
       </div>
@@ -306,7 +303,7 @@ const RECOMMENDED_APPS = [
     name: "Gmail",
     description: "Read, draft, and manage your emails automatically.",
     color: "#EA4335",
-    icon: <Mail size={20} />,
+    icon: <Mail strokeWidth={1.5} size={20} />,
     free: true,
   },
   {
@@ -315,7 +312,7 @@ const RECOMMENDED_APPS = [
     description:
       "Track meetings, schedule events, and stay on top of your day.",
     color: "#4285F4",
-    icon: <Calendar size={20} />,
+    icon: <Calendar strokeWidth={1.5} size={20} />,
     free: true,
   },
   {
@@ -324,7 +321,7 @@ const RECOMMENDED_APPS = [
     description:
       "Monitor channels, respond to messages, and manage notifications.",
     color: "#E01E5A",
-    icon: <MessageSquare size={20} />,
+    icon: <MessageSquare strokeWidth={1.5} size={20} />,
     free: false,
   },
 ];
@@ -336,13 +333,13 @@ function OnboardingState({ firstName }: { firstName: string }) {
     <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-12 md:py-20 flex flex-col items-center">
       {/* Header */}
       <div className="text-center mb-12 max-w-2xl">
-        <div className="w-16 h-16 bg-gradient-to-br from-[var(--bg-elevated)] to-[var(--bg-deep)] border border-[var(--border)] rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl">
-          <Sparkles className="text-[var(--text-primary)]" size={28} />
+        <div className="w-16 h-16 bg-gradient-to-br from-neutral-900 to-[black] border border-white/10 rounded-xl flex items-center justify-center mx-auto mb-6 shadow-xl">
+          <Sparkles strokeWidth={1.5} className="text-white" size={28} />
         </div>
-        <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-[var(--text-primary)] mb-4 leading-tight">
+        <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-white mb-4 leading-tight">
           Welcome, {firstName}!
         </h1>
-        <p className="text-sm text-[var(--text-secondary)] max-w-md leading-relaxed">
+        <p className="text-sm text-neutral-400 max-w-md leading-relaxed">
           Connect your first app so CalmPilot can start managing your day —
           reading emails, checking your calendar, and surfacing what needs your
           attention.
@@ -351,7 +348,7 @@ function OnboardingState({ firstName }: { firstName: string }) {
 
       {/* Recommended Apps */}
       <div className="mb-8 max-w-xl w-full">
-        <h2 className="text-xs font-medium uppercase tracking-widest text-[var(--text-muted)] mb-4">
+        <h2 className="text-xs font-medium uppercase tracking-widest text-neutral-500 mb-4">
           Get started with
         </h2>
         <div className="space-y-3">
@@ -361,7 +358,7 @@ function OnboardingState({ firstName }: { firstName: string }) {
               onClick={() =>
                 router.push(`/dashboard/integrations?connect=${app.slug}`)
               }
-              className="w-full flex items-center gap-4 bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl px-4 py-4 hover:border-[var(--accent)] transition-colors text-left group"
+              className="w-full flex items-center gap-4 bg-black border border-white/10 rounded-xl px-4 py-4 hover:border-white/30 transition-colors text-left group"
             >
               <div
                 className="w-10 h-10 rounded-xl flex items-center justify-center text-white shrink-0"
@@ -371,7 +368,7 @@ function OnboardingState({ firstName }: { firstName: string }) {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-semibold text-[var(--text-primary)]">
+                  <span className="text-sm font-semibold text-white">
                     {app.name}
                   </span>
                   {app.free && (
@@ -380,13 +377,13 @@ function OnboardingState({ firstName }: { firstName: string }) {
                     </span>
                   )}
                 </div>
-                <p className="text-xs text-[var(--text-secondary)] mt-0.5 leading-relaxed">
+                <p className="text-xs text-neutral-400 mt-0.5 leading-relaxed">
                   {app.description}
                 </p>
               </div>
-              <ArrowRight
+              <ArrowRight strokeWidth={1.5}
                 size={16}
-                className="text-[var(--text-muted)] group-hover:text-[var(--accent)] transition-colors shrink-0"
+                className="text-neutral-500 group-hover:text-white transition-colors shrink-0"
               />
             </button>
           ))}
@@ -397,23 +394,23 @@ function OnboardingState({ firstName }: { firstName: string }) {
       <div className="flex flex-col sm:flex-row items-center gap-3 max-w-xl w-full">
         <button
           onClick={() => router.push("/dashboard/integrations")}
-          className="w-full sm:flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[var(--accent)] text-white text-sm font-medium hover:opacity-90 transition-opacity"
+          className="w-full sm:flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-white text-white text-sm font-medium hover:opacity-90 transition-opacity"
         >
-          <Plug size={15} />
+          <Plug strokeWidth={1.5} size={15} />
           Browse all apps
         </button>
         <button
           onClick={() => router.push("/dashboard/assistant")}
-          className="w-full sm:flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[var(--bg-surface)] border border-[var(--border)] text-sm font-medium text-[var(--text-primary)] hover:border-[var(--accent)] transition-colors"
+          className="w-full sm:flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-black border border-white/10 text-sm font-medium text-white hover:border-white/30 transition-colors"
         >
-          <Sparkles size={15} className="text-[var(--accent)]" />
+          <Sparkles strokeWidth={1.5} size={15} className="text-white" />
           Skip — chat with Aariv
         </button>
       </div>
 
       {/* How it works */}
-      <div className="mt-10 bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl p-5 max-w-xl w-full">
-        <h3 className="text-xs font-medium uppercase tracking-widest text-[var(--text-muted)] mb-4">
+      <div className="mt-10 bg-black border border-white/10 rounded-xl p-5 max-w-xl w-full">
+        <h3 className="text-xs font-medium uppercase tracking-widest text-neutral-500 mb-4">
           How it works
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -435,13 +432,13 @@ function OnboardingState({ firstName }: { firstName: string }) {
             },
           ].map((item) => (
             <div key={item.step} className="text-center sm:text-left">
-              <div className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-[var(--accent)]/10 text-[var(--accent)] text-xs font-bold mb-2">
+              <div className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-white/10 text-white text-xs font-bold mb-2">
                 {item.step}
               </div>
-              <h4 className="text-sm font-semibold text-[var(--text-primary)] mb-1">
+              <h4 className="text-sm font-semibold text-white mb-1">
                 {item.title}
               </h4>
-              <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
+              <p className="text-xs text-neutral-400 leading-relaxed">
                 {item.desc}
               </p>
             </div>
@@ -478,13 +475,13 @@ function CalmState({
     <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-10">
       {/* Hero */}
       <div className="flex flex-col items-center text-center mb-10">
-        <div className="mb-6 text-[var(--text-muted)]">
+        <div className="mb-6 text-neutral-500">
           <Cloud size={48} strokeWidth={1.2} />
         </div>
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[var(--text-primary)] mb-3">
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white mb-3">
           {getGreeting()}, {firstName}
         </h1>
-        <p className="text-sm text-[var(--text-secondary)] max-w-sm leading-relaxed mb-8">
+        <p className="text-sm text-neutral-400 max-w-sm leading-relaxed mb-8">
           {subtitle}
         </p>
 
@@ -492,23 +489,23 @@ function CalmState({
         <div className="flex flex-col sm:flex-row gap-3 w-full max-w-md">
           <button
             onClick={() => router.push("/dashboard/assistant")}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[var(--bg-surface)] border border-[var(--border)] text-sm font-medium text-[var(--text-primary)] hover:border-[var(--accent)] transition-colors"
+            className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-black border border-white/10 text-sm font-medium text-white hover:border-white/30 transition-colors"
           >
-            <Sparkles size={15} className="text-[var(--accent)]" />
+            <Sparkles strokeWidth={1.5} size={15} className="text-white" />
             Ask Aariv something
           </button>
           <button
             onClick={() => router.push("/dashboard/triggers")}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[var(--bg-surface)] border border-[var(--border)] text-sm font-medium text-[var(--text-primary)] hover:border-[var(--accent)] transition-colors"
+            className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-black border border-white/10 text-sm font-medium text-white hover:border-white/30 transition-colors"
           >
-            <Eye size={15} className="text-[var(--accent)]" />
+            <Eye strokeWidth={1.5} size={15} className="text-white" />
             Manage triggers
           </button>
           <button
             onClick={() => router.push("/dashboard/review")}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[var(--bg-surface)] border border-[var(--border)] text-sm font-medium text-[var(--text-primary)] hover:border-[var(--accent)] transition-colors"
+            className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-black border border-white/10 text-sm font-medium text-white hover:border-white/30 transition-colors"
           >
-            <CheckCircle2 size={15} className="text-[var(--accent)]" />
+            <CheckCircle2 strokeWidth={1.5} size={15} className="text-white" />
             Review items
           </button>
         </div>
@@ -517,10 +514,10 @@ function CalmState({
       {/* Calendar events — calm day can still have meetings */}
       {calendarEvents.length > 0 && (
         <div className="mb-6 max-w-xl w-full">
-          <h2 className="text-xs font-medium uppercase tracking-widest text-[var(--text-muted)] mb-3">
+          <h2 className="text-xs font-medium uppercase tracking-widest text-neutral-500 mb-3">
             What&apos;s ahead today
           </h2>
-          <div className="bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl p-4">
+          <div className="bg-black border border-white/10 rounded-xl p-4">
             {calendarEvents.map((event, i) => (
               <TimelineEvent
                 key={event.id || i}
@@ -537,10 +534,10 @@ function CalmState({
         {reviewCounts.total > 0 && (
           <Link
             href="/dashboard/review"
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border)] hover:border-[var(--accent)] transition-colors group"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-black border border-white/10 hover:border-white/30 transition-colors group"
           >
-            <CheckCircle2 size={15} className="text-[var(--accent)]" />
-            <span className="text-sm font-medium text-[var(--text-primary)]">
+            <CheckCircle2 strokeWidth={1.5} size={15} className="text-white" />
+            <span className="text-sm font-medium text-white">
               {reviewCounts.total} item{reviewCounts.total !== 1 ? "s" : ""} to
               review
             </span>
@@ -549,18 +546,18 @@ function CalmState({
                 {reviewCounts.high} urgent
               </span>
             )}
-            <ArrowRight
+            <ArrowRight strokeWidth={1.5}
               size={13}
-              className="text-[var(--text-muted)] group-hover:text-[var(--accent)] transition-colors"
+              className="text-neutral-500 group-hover:text-white transition-colors"
             />
           </Link>
         )}
         <Link
           href="/dashboard/feed"
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border)] hover:border-[var(--border-strong)] transition-colors group"
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-black border border-white/10 hover:border-white/20 transition-colors group"
         >
-          <Activity size={15} className="text-[var(--text-muted)]" />
-          <span className="text-sm text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition-colors">
+          <Activity strokeWidth={1.5} size={15} className="text-neutral-500" />
+          <span className="text-sm text-neutral-400 group-hover:text-white transition-colors">
             View feed
           </span>
         </Link>
@@ -568,10 +565,10 @@ function CalmState({
           <button
             onClick={onRefresh}
             disabled={refreshing}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[var(--bg-surface)] border border-[var(--border)] hover:border-[var(--border-strong)] transition-colors text-[var(--text-muted)] hover:text-[var(--text-secondary)] disabled:opacity-40 ml-auto"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-black border border-white/10 hover:border-white/20 transition-colors text-neutral-500 hover:text-neutral-400 disabled:opacity-40 ml-auto"
             title="Refresh briefing"
           >
-            <Loader2 size={13} className={refreshing ? "animate-spin" : ""} />
+            <Loader2 strokeWidth={1.5} size={13} className={refreshing ? "animate-spin" : ""} />
             <span className="text-xs">Refresh</span>
           </button>
         )}
@@ -579,16 +576,16 @@ function CalmState({
 
       {/* Aariv insight */}
       {insight && (
-        <div className="mt-8 flex items-center gap-3 bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl px-4 py-3 max-w-xl w-full">
-          <Sparkles size={16} className="text-[var(--accent)] shrink-0" />
-          <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
+        <div className="mt-8 flex items-center gap-3 bg-black border border-white/10 rounded-xl px-4 py-3 max-w-xl w-full">
+          <Sparkles strokeWidth={1.5} size={16} className="text-white shrink-0" />
+          <p className="text-sm text-neutral-400 leading-relaxed">
             {insight}
           </p>
         </div>
       )}
 
       {/* Date/time footer */}
-      <p className="mt-10 text-xs text-[var(--text-muted)] text-center">
+      <p className="mt-10 text-xs text-neutral-500 text-center">
         {formatFullDateTime()}
       </p>
     </div>
@@ -627,27 +624,27 @@ function ActiveState({
     <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-6 sm:py-10">
       {/* Header */}
       <div className="flex items-start justify-between mb-2">
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[var(--text-primary)]">
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
           {getGreeting()}, {firstName}
         </h1>
         <div className="flex items-center gap-3 mt-1">
-          <span className="text-sm text-[var(--text-muted)] hidden sm:block">
+          <span className="text-sm text-neutral-500 hidden sm:block">
             {formatDate()}
           </span>
           {onRefresh && (
             <button
               onClick={onRefresh}
               disabled={refreshing}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--bg-surface)] border border-[var(--border)] hover:border-[var(--border-strong)] transition-colors text-[var(--text-muted)] hover:text-[var(--text-secondary)] disabled:opacity-40 text-xs"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-black border border-white/10 hover:border-white/20 transition-colors text-neutral-500 hover:text-neutral-400 disabled:opacity-40 text-xs"
               title="Refresh briefing"
             >
-              <Loader2 size={12} className={refreshing ? "animate-spin" : ""} />
+              <Loader2 strokeWidth={1.5} size={12} className={refreshing ? "animate-spin" : ""} />
               Refresh
             </button>
           )}
         </div>
       </div>
-      <p className="text-sm text-[var(--text-secondary)] mb-8">
+      <p className="text-sm text-neutral-400 mb-8">
         {briefing.subtitle}
       </p>
 
@@ -656,22 +653,22 @@ function ActiveState({
         <StatCard
           label="Meetings"
           value={counts.meetings}
-          icon={<Calendar size={13} />}
+          icon={<Calendar strokeWidth={1.5} size={13} />}
         />
         <StatCard
           label="Focus Hours"
           value={`${counts.focus_hours}h`}
-          icon={<Clock size={13} />}
+          icon={<Clock strokeWidth={1.5} size={13} />}
         />
         <StatCard
           label="Emails to Review"
           value={counts.emails}
-          icon={<Mail size={13} />}
+          icon={<Mail strokeWidth={1.5} size={13} />}
         />
         <StatCard
           label="Needs Judgment"
           value={counts.needs_judgment}
-          icon={<Target size={13} />}
+          icon={<Target strokeWidth={1.5} size={13} />}
         />
       </div>
 
@@ -679,7 +676,7 @@ function ActiveState({
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
         {/* Left: Proposals */}
         <div className="lg:col-span-3 space-y-4">
-          <h2 className="text-xs font-medium uppercase tracking-widest text-[var(--text-muted)] mb-1">
+          <h2 className="text-xs font-medium uppercase tracking-widest text-neutral-500 mb-1">
             Aariv&apos;s proposals
           </h2>
           {proposals.length > 0 ? (
@@ -694,8 +691,8 @@ function ActiveState({
               ))}
             </div>
           ) : (
-            <div className="bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl p-6 text-center">
-              <p className="text-sm text-[var(--text-secondary)]">
+            <div className="bg-black border border-white/10 rounded-xl p-6 text-center">
+              <p className="text-sm text-neutral-400">
                 No proposals right now. You&apos;re all caught up.
               </p>
             </div>
@@ -704,11 +701,11 @@ function ActiveState({
 
         {/* Right: Calendar Timeline */}
         <div className="lg:col-span-2">
-          <h2 className="text-xs font-medium uppercase tracking-widest text-[var(--text-muted)] mb-3">
+          <h2 className="text-xs font-medium uppercase tracking-widest text-neutral-500 mb-3">
             What&apos;s ahead
           </h2>
           {events.length > 0 ? (
-            <div className="bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl p-4">
+            <div className="bg-black border border-white/10 rounded-xl p-4">
               {events.map((event, i) => (
                 <TimelineEvent
                   key={event.id || i}
@@ -718,8 +715,8 @@ function ActiveState({
               ))}
             </div>
           ) : (
-            <div className="bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl p-6 text-center">
-              <p className="text-sm text-[var(--text-secondary)]">
+            <div className="bg-black border border-white/10 rounded-xl p-6 text-center">
+              <p className="text-sm text-neutral-400">
                 No events scheduled
               </p>
             </div>
@@ -732,10 +729,10 @@ function ActiveState({
         {reviewCounts.total > 0 && (
           <Link
             href="/dashboard/review"
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border)] hover:border-[var(--accent)] transition-colors group"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-black border border-white/10 hover:border-white/30 transition-colors group"
           >
-            <CheckCircle2 size={15} className="text-[var(--accent)]" />
-            <span className="text-sm font-medium text-[var(--text-primary)]">
+            <CheckCircle2 strokeWidth={1.5} size={15} className="text-white" />
+            <span className="text-sm font-medium text-white">
               {reviewCounts.total} item{reviewCounts.total !== 1 ? "s" : ""} to
               review
             </span>
@@ -744,18 +741,18 @@ function ActiveState({
                 {reviewCounts.high} urgent
               </span>
             )}
-            <ArrowRight
+            <ArrowRight strokeWidth={1.5}
               size={13}
-              className="text-[var(--text-muted)] group-hover:text-[var(--accent)] transition-colors"
+              className="text-neutral-500 group-hover:text-white transition-colors"
             />
           </Link>
         )}
         <Link
           href="/dashboard/feed"
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border)] hover:border-[var(--border-strong)] transition-colors group"
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-black border border-white/10 hover:border-white/20 transition-colors group"
         >
-          <Activity size={15} className="text-[var(--text-muted)]" />
-          <span className="text-sm text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition-colors">
+          <Activity strokeWidth={1.5} size={15} className="text-neutral-500" />
+          <span className="text-sm text-neutral-400 group-hover:text-white transition-colors">
             View feed
           </span>
         </Link>
@@ -763,9 +760,9 @@ function ActiveState({
 
       {/* Bottom Insight Bar */}
       {insight && (
-        <div className="mt-8 flex items-center gap-3 bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl px-4 py-3">
-          <Sparkles size={16} className="text-[var(--accent)] shrink-0" />
-          <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
+        <div className="mt-8 flex items-center gap-3 bg-black border border-white/10 rounded-xl px-4 py-3">
+          <Sparkles strokeWidth={1.5} size={16} className="text-white shrink-0" />
+          <p className="text-sm text-neutral-400 leading-relaxed">
             {insight}
           </p>
         </div>
@@ -849,10 +846,10 @@ export default function DashboardHome() {
     return (
       <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-10">
         <div className="flex flex-col items-center text-center mb-10">
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[var(--text-primary)] mb-3">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white mb-3">
             {getGreeting()}, {firstName}
           </h1>
-          <p className="text-sm text-[var(--text-secondary)]">
+          <p className="text-sm text-neutral-400">
             Preparing your day…
           </p>
         </div>
@@ -860,10 +857,10 @@ export default function DashboardHome() {
           {[1, 2, 3, 4].map((i) => (
             <div
               key={i}
-              className="bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl px-4 py-5"
+              className="bg-black border border-white/10 rounded-xl px-4 py-5"
             >
-              <div className="h-3 w-16 rounded bg-[var(--overlay)] animate-pulse mb-3" />
-              <div className="h-6 w-10 rounded bg-[var(--overlay)] animate-pulse" />
+              <div className="h-3 w-16 rounded bg-neutral-900 animate-pulse mb-3" />
+              <div className="h-6 w-10 rounded bg-neutral-900 animate-pulse" />
             </div>
           ))}
         </div>
@@ -871,13 +868,13 @@ export default function DashboardHome() {
           {[1, 2, 3].map((i) => (
             <div
               key={i}
-              className="bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl p-5"
+              className="bg-black border border-white/10 rounded-xl p-5"
             >
               <div className="flex items-start gap-3">
-                <div className="w-7 h-7 rounded-lg bg-[var(--overlay)] animate-pulse shrink-0" />
+                <div className="w-7 h-7 rounded-lg bg-neutral-900 animate-pulse shrink-0" />
                 <div className="flex-1 space-y-2 pt-0.5">
-                  <div className="h-4 w-2/5 rounded bg-[var(--overlay)] animate-pulse" />
-                  <div className="h-3 w-3/5 rounded bg-[var(--overlay)] animate-pulse" />
+                  <div className="h-4 w-2/5 rounded bg-neutral-900 animate-pulse" />
+                  <div className="h-3 w-3/5 rounded bg-neutral-900 animate-pulse" />
                 </div>
               </div>
             </div>
@@ -888,6 +885,13 @@ export default function DashboardHome() {
   }
 
   if (hasConnections === false) {
+    // If welcome screen hasn't been seen yet, redirect there for full-screen onboarding
+    const welcomeKey = `aariv_welcome_seen_${user?.id}`;
+    if (typeof window !== "undefined" && !localStorage.getItem(welcomeKey)) {
+      router.replace("/welcome");
+      return null;
+    }
+    // Already seen welcome — show inline onboarding state
     return <OnboardingState firstName={firstName} />;
   }
 
@@ -897,30 +901,30 @@ export default function DashboardHome() {
     return (
       <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-10 flex flex-col items-center justify-center min-h-[80vh]">
         {isCredits ? (
-          <div className="flex flex-col items-center gap-4 p-8 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border)] max-w-md w-full">
+          <div className="flex flex-col items-center gap-4 p-8 rounded-xl bg-neutral-900 border border-white/10 max-w-md w-full">
             <div className="w-12 h-12 rounded-full bg-amber-500/10 flex items-center justify-center">
-              <CreditCard size={22} className="text-amber-400" />
+              <CreditCard strokeWidth={1.5} size={22} className="text-amber-400" />
             </div>
             <div className="text-center">
-              <h3 className="text-base font-semibold text-[var(--text-primary)] mb-1">Out of credits</h3>
-              <p className="text-sm text-[var(--text-muted)]">Add credits to continue using Aariv.</p>
+              <h3 className="text-base font-semibold text-white mb-1">Out of credits</h3>
+              <p className="text-sm text-neutral-500">Add credits to continue using Aariv.</p>
             </div>
             <a
               href="/dashboard/settings"
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[var(--accent)] text-white text-sm font-medium hover:opacity-90 transition-opacity"
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white text-white text-sm font-medium hover:opacity-90 transition-opacity"
             >
-              <CreditCard size={14} />
+              <CreditCard strokeWidth={1.5} size={14} />
               Add Credits
             </a>
           </div>
         ) : (
           <div className="flex flex-col items-center gap-3">
-            <p className="text-sm text-[var(--text-secondary)]">{error}</p>
+            <p className="text-sm text-neutral-400">{error}</p>
             <button
               onClick={() => fetchBriefing()}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[var(--accent)] text-white text-sm font-medium hover:opacity-90 transition-opacity"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white text-white text-sm font-medium hover:opacity-90 transition-opacity"
             >
-              <Loader2 size={14} />
+              <Loader2 strokeWidth={1.5} size={14} />
               Try again
             </button>
           </div>

@@ -62,7 +62,7 @@ export function Sheet({ isOpen, onClose, title, description, children }: SheetPr
                                 onClick={onClose}
                                 className="p-2 -mr-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition-colors"
                             >
-                                <X size={20} />
+                                <X strokeWidth={1.5} size={20} />
                             </button>
                         </div>
 

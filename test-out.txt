@@ -1,0 +1,2 @@
+hello from node
+var(-- count in triggers: 11

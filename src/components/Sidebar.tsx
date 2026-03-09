@@ -4,16 +4,16 @@ import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { useAuth } from "@/context/AuthContext";
 import { useBilling } from "@/context/useBilling";
 import {
-    Activity,
-    Home,
-    Link2,
-    ListChecks,
-    LogOut,
-    Menu,
-    MessageSquare,
-    Settings,
-    X,
-    Zap,
+  Activity,
+  Home,
+  Link2,
+  ListChecks,
+  LogOut,
+  Menu,
+  MessageSquare,
+  Settings,
+  X,
+  Zap,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -65,16 +65,16 @@ export function Sidebar() {
   return (
     <>
       {/* ─── DESKTOP SIDEBAR (hidden on mobile) ─── */}
-      <aside className="hidden md:flex flex-col w-[240px] h-screen border-r border-[var(--border)] bg-[var(--bg-surface)] fixed left-0 top-0 z-30">
+      <aside className="hidden md:flex flex-col w-[240px] h-screen border-r border-white/10 bg-black fixed left-0 top-0 z-30">
         {/* Logo */}
-        <div className="px-4 py-3 border-b border-[var(--border)] shrink-0">
+        <div className="px-4 py-3 border-b border-white/10 shrink-0">
           <div className="flex items-center gap-2">
             <img src="/icons/icon-192.svg" alt="CalmPilot" className="w-5 h-5 rounded-md shrink-0" />
             <div>
-              <h1 className="text-sm font-serif font-semibold tracking-wide text-[var(--text-primary)] leading-tight">
+              <h1 className="text-sm font-serif font-semibold tracking-wide text-white leading-tight">
                 CalmPilot
               </h1>
-              <p className="text-[10px] text-[var(--text-muted)] leading-tight">
+              <p className="text-[10px] text-neutral-500 leading-tight">
                 a quieter way to get work done
               </p>
             </div>
@@ -93,11 +93,10 @@ export function Sidebar() {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                  isActive
-                    ? "bg-[var(--accent-soft)] text-[var(--accent)]"
-                    : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--accent-soft)]"
-                }`}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${isActive
+                    ? "bg-white/5 text-white"
+                    : "text-neutral-400 hover:text-white hover:bg-white/5"
+                  }`}
               >
                 <Icon size={18} strokeWidth={1.5} />
                 {item.label}
@@ -107,7 +106,7 @@ export function Sidebar() {
         </nav>
 
         {/* Bottom section */}
-        <div className="px-3 py-4 border-t border-[var(--border)] space-y-2">
+        <div className="px-3 py-4 border-t border-white/10 space-y-2">
           {user && (
             <div className="flex items-center gap-3 px-3 py-2 rounded-lg">
               {user.avatar ? (
@@ -122,10 +121,10 @@ export function Sidebar() {
                 </div>
               )}
               <div className="flex-1 min-w-0">
-                <p className="text-sm text-[var(--text-primary)] truncate">
+                <p className="text-sm text-white truncate">
                   {user.name}
                 </p>
-                <p className="text-xs text-[var(--text-muted)] truncate">
+                <p className="text-xs text-neutral-500 truncate">
                   {/* {user.email} */}
                 </p>
               </div>
@@ -135,13 +134,13 @@ export function Sidebar() {
           {user && balanceData && (
             <Link
               href=""
-              className="flex items-center justify-between px-3 py-2 rounded-lg text-sm bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] border border-[var(--border)] transition-colors"
+              className="flex items-center justify-between px-3 py-2 rounded-lg text-sm bg-white/5 hover:bg-white/5 border border-white/10 transition-colors"
             >
               <div className="flex items-center gap-2">
-                <div className="w-1.5 h-1.5 rounded-full bg-[var(--accent)]"></div>
-                <span className="font-medium text-[var(--accent)]">Credits</span>
+                <div className="w-1.5 h-1.5 rounded-full bg-white"></div>
+                <span className="font-medium text-white">Credits</span>
               </div>
-              <span className="font-bold text-[var(--accent)]">${Math.max(0, balanceData.balance).toFixed(2)}</span>
+              <span className="font-bold text-white">${Math.max(0, balanceData.balance).toFixed(2)}</span>
             </Link>
           )}
 
@@ -156,24 +155,24 @@ export function Sidebar() {
       </aside>
 
       {/* ─── MOBILE TOP BAR (visible on mobile only) ─── */}
-      <header className="md:hidden fixed top-0 left-0 right-0 z-40 flex items-center justify-between px-4 py-3 bg-[var(--bg-surface)] border-b border-[var(--border)] safe-top">
+      <header className="md:hidden fixed top-0 left-0 right-0 z-40 flex items-center justify-between px-4 py-3 bg-black border-b border-white/10 safe-top">
         <div className="flex items-center gap-2">
           <img src="/icons/icon-192.svg" alt="CalmPilot" className="w-6 h-6 rounded-md shrink-0" />
-          <h1 className="text-base font-serif font-semibold tracking-wide text-[var(--text-primary)]">
+          <h1 className="text-base font-serif font-semibold tracking-wide text-white">
             CalmPilot
           </h1>
         </div>
         <button
           onClick={() => setMobileMenuOpen(true)}
-          className="p-2 rounded-lg hover:bg-[var(--accent-soft)] transition-colors"
+          className="p-2 rounded-lg hover:bg-white/5 transition-colors"
           aria-label="Open menu"
         >
-          <Menu size={20} className="text-[var(--text-primary)]" />
+          <Menu strokeWidth={1.5} size={20} className="text-white" />
         </button>
       </header>
 
       {/* ─── MOBILE BOTTOM TAB BAR ─── */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 flex items-center justify-around bg-[var(--bg-surface)] border-t border-[var(--border)] safe-bottom px-1 py-1">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 flex items-center justify-around bg-black border-t border-white/10 safe-bottom px-1 py-1">
         {bottomBarItems.map((item) => {
           const isActive =
             pathname === item.href ||
@@ -184,9 +183,8 @@ export function Sidebar() {
             <Link
               key={item.href}
               href={item.href}
-              className={`flex flex-col items-center gap-0.5 px-3 py-2 rounded-lg min-w-[56px] transition-colors ${
-                isActive ? "text-[var(--accent)]" : "text-[var(--text-muted)]"
-              }`}
+              className={`flex flex-col items-center gap-0.5 px-3 py-2 rounded-lg min-w-[56px] transition-colors ${isActive ? "text-white" : "text-neutral-500"
+                }`}
             >
               <Icon size={20} strokeWidth={1.5} />
               <span className="text-[10px] font-medium leading-tight">
@@ -207,24 +205,24 @@ export function Sidebar() {
           />
 
           {/* Drawer */}
-          <div className="absolute right-0 top-0 bottom-0 w-[280px] bg-[var(--bg-surface)] border-l border-[var(--border)] flex flex-col animate-slide-in-right">
+          <div className="absolute right-0 top-0 bottom-0 w-[280px] bg-black border-l border-white/10 flex flex-col animate-slide-in-right">
             {/* Close button */}
-            <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--border)]">
-              <span className="text-sm font-semibold text-[var(--text-primary)]">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
+              <span className="text-sm font-semibold text-white">
                 Menu
               </span>
               <button
                 onClick={() => setMobileMenuOpen(false)}
-                className="p-1.5 rounded-lg hover:bg-[var(--accent-soft)] transition-colors"
+                className="p-1.5 rounded-lg hover:bg-white/5 transition-colors"
                 aria-label="Close menu"
               >
-                <X size={18} className="text-[var(--text-secondary)]" />
+                <X strokeWidth={1.5} size={18} className="text-neutral-400" />
               </button>
             </div>
 
             {/* User info */}
             {user && (
-              <div className="px-5 py-4 border-b border-[var(--border)]">
+              <div className="px-5 py-4 border-b border-white/10">
                 <div className="flex items-center gap-3">
                   {user.avatar ? (
                     <img
@@ -238,10 +236,10 @@ export function Sidebar() {
                     </div>
                   )}
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-[var(--text-primary)] truncate">
+                    <p className="text-sm font-medium text-white truncate">
                       {user.name}
                     </p>
-                    <p className="text-xs text-[var(--text-muted)] truncate">
+                    <p className="text-xs text-neutral-500 truncate">
                       {user.email}
                     </p>
                   </div>
@@ -262,11 +260,10 @@ export function Sidebar() {
                   <Link
                     key={item.href}
                     href={item.href}
-                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                      isActive
-                        ? "bg-[var(--accent-soft)] text-[var(--accent)]"
-                        : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--accent-soft)]"
-                    }`}
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${isActive
+                        ? "bg-white/5 text-white"
+                        : "text-neutral-400 hover:text-white hover:bg-white/5"
+                      }`}
                   >
                     <Icon size={18} strokeWidth={1.5} />
                     {item.label}
@@ -276,18 +273,18 @@ export function Sidebar() {
             </nav>
 
             {/* Bottom actions */}
-            <div className="px-3 py-4 border-t border-[var(--border)] space-y-1">
+            <div className="px-3 py-4 border-t border-white/10 space-y-1">
               {user && balanceData && (
                 <Link
                   href="/dashboard/usage"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center justify-between px-3 py-2 rounded-lg text-sm bg-[var(--accent-soft)] border border-[var(--border)] transition-colors"
+                  className="flex items-center justify-between px-3 py-2 rounded-lg text-sm bg-white/5 border border-white/10 transition-colors"
                 >
                   <div className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-[var(--accent)]"></div>
-                    <span className="font-medium text-[var(--accent)]">Credits</span>
+                    <div className="w-1.5 h-1.5 rounded-full bg-white"></div>
+                    <span className="font-medium text-white">Credits</span>
                   </div>
-                  <span className="font-bold text-[var(--accent)]">${Math.max(0, balanceData.balance).toFixed(2)}</span>
+                  <span className="font-bold text-white">${Math.max(0, balanceData.balance).toFixed(2)}</span>
                 </Link>
               )}
               <button

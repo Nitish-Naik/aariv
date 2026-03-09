@@ -13,13 +13,13 @@ export function StatusLogCard({ label, status, tool }: StatusLogCardProps) {
   const isError = status === "error" || status === "failed";
 
   return (
-    <div className="flex items-center gap-2 py-1.5 px-2 rounded-md text-xs text-[var(--text-muted)]">
+    <div className="flex items-center gap-2 py-1.5 px-2 rounded-md text-xs text-neutral-500">
       {isRunning ? (
-        <Loader2 size={12} className="animate-spin text-[var(--accent)]" />
+        <Loader2 strokeWidth={1.5} size={12} className="animate-spin text-white" />
       ) : isError ? (
-        <AlertCircle size={12} className="text-error" />
+        <AlertCircle strokeWidth={1.5} size={12} className="text-error" />
       ) : (
-        <CheckCircle size={12} className="text-success" />
+        <CheckCircle strokeWidth={1.5} size={12} className="text-success" />
       )}
       <span className="truncate">{label}</span>
     </div>

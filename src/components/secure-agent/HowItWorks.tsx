@@ -13,21 +13,21 @@ export default function HowItWorks() {
     const steps = [
         {
             number: "01",
-            icon: <Link2 className="w-6 h-6 text-indigo-400" />,
+            icon: <Link2 strokeWidth={1.5} className="w-6 h-6 text-indigo-400" />,
             title: "Connect your apps",
             description: "Link Gmail, Slack, Notion, GitHub and 1000+ more in one click. Pure OAuth — no passwords, no API keys, no config files.",
             color: "indigo",
         },
         {
             number: "02",
-            icon: <MessageSquare className="w-6 h-6 text-violet-400" />,
+            icon: <MessageSquare strokeWidth={1.5} className="w-6 h-6 text-violet-400" />,
             title: "Tell it what matters",
             description: 'Describe your workflow in plain English. "Draft replies to customer emails every morning." CalmPilot figures out the rest.',
             color: "violet",
         },
         {
             number: "03",
-            icon: <Moon className="w-6 h-6 text-emerald-400" />,
+            icon: <Moon strokeWidth={1.5} className="w-6 h-6 text-emerald-400" />,
             title: "Wake up to work done",
             description: "Your agent runs while you sleep — silently handling tasks, drafting content, and preparing your morning brief. You review, it executes.",
             color: "emerald",

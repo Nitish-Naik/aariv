@@ -26,7 +26,7 @@ export default function UseCaseList() {
                         viewport={{ once: true }}
                         className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-sm font-medium mb-6"
                     >
-                        <Sparkles className="w-4 h-4" />
+                        <Sparkles strokeWidth={1.5} className="w-4 h-4" />
                         <span>Command Center</span>
                     </motion.div>
                     <motion.h2
@@ -83,7 +83,7 @@ export default function UseCaseList() {
                                     <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-0 bg-indigo-500 group-hover:h-1/2 transition-all rounded-r-full" />
 
                                     <div className="mt-1 w-8 h-8 shrink-0 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 group-hover:scale-110 transition-transform">
-                                        <Terminal className="w-4 h-4" />
+                                        <Terminal strokeWidth={1.5} className="w-4 h-4" />
                                     </div>
                                     <div className="flex-1">
                                         <p className="text-zinc-300 font-mono text-sm md:text-[15px] leading-relaxed group-hover:text-white transition-colors">
@@ -92,7 +92,7 @@ export default function UseCaseList() {
                                         </p>
                                     </div>
                                     <div className="opacity-0 group-hover:opacity-100 transition-opacity self-center">
-                                        <ArrowRight className="w-5 h-5 text-zinc-500" />
+                                        <ArrowRight strokeWidth={1.5} className="w-5 h-5 text-zinc-500" />
                                     </div>
                                 </motion.div>
                             ))}

@@ -62,12 +62,12 @@ const SNOOZE_OPTIONS = [
 ];
 
 const CATEGORY_ICONS: Record<string, React.ReactNode> = {
-  email: <Mail size={14} />,
-  calendar: <Calendar size={14} />,
-  code: <GitPullRequest size={14} />,
-  message: <MessageSquare size={14} />,
-  task: <CheckSquare size={14} />,
-  general: <Inbox size={14} />,
+  email: <Mail strokeWidth={1.5} size={14} />,
+  calendar: <Calendar strokeWidth={1.5} size={14} />,
+  code: <GitPullRequest strokeWidth={1.5} size={14} />,
+  message: <MessageSquare strokeWidth={1.5} size={14} />,
+  task: <CheckSquare strokeWidth={1.5} size={14} />,
+  general: <Inbox strokeWidth={1.5} size={14} />,
 };
 
 const PRIORITY_STYLES: Record<
@@ -259,32 +259,32 @@ export default function ReviewPage() {
 
   if (loading) {
     return (
-      <div className="bg-[var(--bg-deep)] min-h-screen">
+      <div className="bg-black min-h-screen">
         <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-8 sm:py-12 flex flex-col items-start min-h-full">
           {/* Static header always visible */}
           <header className="mb-8 w-full">
-            <h1 className="text-3xl font-bold text-[var(--text-primary)] tracking-tight mb-2">
+            <h1 className="text-3xl font-bold text-white tracking-tight mb-2">
               Inbox
             </h1>
-            <p className="text-[15px] font-medium text-[var(--text-muted)]">
+            <p className="text-[15px] font-medium text-neutral-500">
               Loading review items…
             </p>
 
             {/* Filter tabs */}
-            <div className="inline-flex p-1 space-x-1 rounded-xl bg-[var(--tab-bg)] backdrop-blur-sm border border-[var(--border)] shadow-sm mt-5">
+            <div className="inline-flex p-1 space-x-1 rounded-xl bg-neutral-900 backdrop-blur-sm border border-white/10 shadow-sm mt-5">
               {(["pending", "resolved", "all"] as ViewFilter[]).map((filter) => (
                 <button
                   key={filter}
                   onClick={() => setViewFilter(filter)}
                   className={`relative px-4 py-1.5 text-sm font-medium rounded-lg transition-colors focus-visible:outline-none capitalize ${viewFilter === filter
-                    ? "text-[var(--text-primary)]"
-                    : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                    ? "text-white"
+                    : "text-neutral-500 hover:text-white"
                     }`}
                 >
                   {viewFilter === filter && (
                     <motion.div
                       layoutId="reviewTabIndicator"
-                      className="absolute inset-0 rounded-lg shadow-sm bg-[var(--tab-active)]"
+                      className="absolute inset-0 rounded-lg shadow-sm bg-white/10"
                       style={{ zIndex: -1 }}
                       transition={{ type: "spring", bounce: 0.2, duration: 0.5 }}
                     />
@@ -297,9 +297,9 @@ export default function ReviewPage() {
             <div className="mt-4">
               <Link
                 href="/dashboard/feed"
-                className="inline-flex items-center gap-1.5 text-xs font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+                className="inline-flex items-center gap-1.5 text-xs font-medium text-neutral-500 hover:text-white transition-colors"
               >
-                <Activity size={12} />
+                <Activity strokeWidth={1.5} size={12} />
                 View all events in feed &rarr;
               </Link>
             </div>
@@ -310,17 +310,17 @@ export default function ReviewPage() {
             {[1, 2, 3].map((i) => (
               <div
                 key={i}
-                className="bg-[var(--bg-elevated)] border border-[rgba(255,255,255,0.02)] rounded-2xl p-6"
+                className="bg-neutral-900 border border-white/[0.02] rounded-xl p-6"
               >
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2.5">
-                    <div className="w-2 h-2 rounded-full bg-[rgba(255,255,255,0.06)] animate-pulse" />
-                    <div className="h-3 w-16 rounded bg-[rgba(255,255,255,0.04)] animate-pulse" />
+                    <div className="w-2 h-2 rounded-full bg-white/[0.06] animate-pulse" />
+                    <div className="h-3 w-16 rounded bg-white/[0.04] animate-pulse" />
                   </div>
-                  <div className="h-5 w-20 rounded-full bg-[rgba(255,255,255,0.04)] animate-pulse" />
+                  <div className="h-5 w-20 rounded-full bg-white/[0.04] animate-pulse" />
                 </div>
-                <div className="h-4 w-3/5 rounded bg-[rgba(255,255,255,0.04)] animate-pulse mb-2" />
-                <div className="h-3 w-4/5 rounded bg-[rgba(255,255,255,0.03)] animate-pulse" />
+                <div className="h-4 w-3/5 rounded bg-white/[0.04] animate-pulse mb-2" />
+                <div className="h-3 w-4/5 rounded bg-white/[0.03] animate-pulse" />
               </div>
             ))}
           </div>
@@ -330,30 +330,30 @@ export default function ReviewPage() {
   }
 
   return (
-    <div className="bg-[var(--bg-deep)] min-h-screen">
+    <div className="bg-black min-h-screen">
       <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-8 sm:py-12 flex flex-col items-start min-h-full">
         {/* Header */}
         <header className="mb-8 w-full">
           <div className="flex items-center justify-between mb-2">
-            <h1 className="text-3xl font-bold text-[var(--text-primary)] tracking-tight">
+            <h1 className="text-3xl font-bold text-white tracking-tight">
               Inbox
             </h1>
             {counts.total > 0 && viewFilter === "pending" && (
               <button
                 onClick={handleDismissAll}
                 disabled={dismissingAll}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[rgba(255,255,255,0.03)] rounded-lg transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-neutral-500 hover:text-white hover:bg-white/[0.03] rounded-lg transition-colors"
               >
                 {dismissingAll ? (
-                  <Loader2 size={12} className="animate-spin" />
+                  <Loader2 strokeWidth={1.5} size={12} className="animate-spin" />
                 ) : (
-                  <XCircle size={12} />
+                  <XCircle strokeWidth={1.5} size={12} />
                 )}
                 Dismiss all
               </button>
             )}
           </div>
-          <p className="text-[15px] font-medium text-[var(--text-muted)]">
+          <p className="text-[15px] font-medium text-neutral-500">
             {viewFilter === "pending"
               ? counts.total === 0
                 ? "Nothing needs your judgment"
@@ -370,7 +370,7 @@ export default function ReviewPage() {
                 <span
                   className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-semibold tracking-wide rounded-full ${PRIORITY_STYLES.high.bg} border ${PRIORITY_STYLES.high.border} ${PRIORITY_STYLES.high.text}`}
                 >
-                  <AlertTriangle size={10} />
+                  <AlertTriangle strokeWidth={1.5} size={10} />
                   {counts.high} urgent
                 </span>
               )}
@@ -392,20 +392,20 @@ export default function ReviewPage() {
           )}
 
           {/* Filter tabs */}
-          <div className="inline-flex p-1 space-x-1 rounded-xl bg-[var(--tab-bg)] backdrop-blur-sm border border-[var(--border)] shadow-sm mt-5">
+          <div className="inline-flex p-1 space-x-1 rounded-xl bg-neutral-900 backdrop-blur-sm border border-white/10 shadow-sm mt-5">
             {(["pending", "resolved", "all"] as ViewFilter[]).map((filter) => (
               <button
                 key={filter}
                 onClick={() => setViewFilter(filter)}
                 className={`relative px-4 py-1.5 text-sm font-medium rounded-lg transition-colors focus-visible:outline-none capitalize ${viewFilter === filter
-                  ? "text-[var(--text-primary)]"
-                  : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                  ? "text-white"
+                  : "text-neutral-500 hover:text-white"
                   }`}
               >
                 {viewFilter === filter && (
                   <motion.div
                     layoutId="reviewTabIndicator"
-                    className="absolute inset-0 rounded-lg shadow-sm bg-[var(--tab-active)]"
+                    className="absolute inset-0 rounded-lg shadow-sm bg-white/10"
                     style={{ zIndex: -1 }}
                     transition={{ type: "spring", bounce: 0.2, duration: 0.5 }}
                   />
@@ -419,9 +419,9 @@ export default function ReviewPage() {
           <div className="mt-4">
             <Link
               href="/dashboard/feed"
-              className="inline-flex items-center gap-1.5 text-xs font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-neutral-500 hover:text-white transition-colors"
             >
-              <Activity size={12} />
+              <Activity strokeWidth={1.5} size={12} />
               View all events in feed &rarr;
             </Link>
           </div>
@@ -430,7 +430,7 @@ export default function ReviewPage() {
         {/* Error */}
         {error && (
           <div className={`w-full mb-6 p-4 ${error === "INSUFFICIENT_CREDITS" ? "bg-amber-500/10 border-amber-500/20" : "bg-red-500/10 border-red-500/20"} border rounded-xl flex items-center gap-3`}>
-            <AlertTriangle size={16} className={`${error === "INSUFFICIENT_CREDITS" ? "text-amber-400" : "text-red-500"} shrink-0`} />
+            <AlertTriangle strokeWidth={1.5} size={16} className={`${error === "INSUFFICIENT_CREDITS" ? "text-amber-400" : "text-red-500"} shrink-0`} />
             <p className={`text-sm flex-1 ${error === "INSUFFICIENT_CREDITS" ? "text-amber-400" : "text-red-500"}`}>
               {error === "INSUFFICIENT_CREDITS" ? "You're out of credits. Add credits to continue." : error}
             </p>
@@ -449,15 +449,15 @@ export default function ReviewPage() {
             animate={{ opacity: 1, y: 0 }}
             className="flex flex-col items-center justify-center w-full mt-24 text-center"
           >
-            <Cloud size={48} className="text-[var(--text-muted)] mb-6 stroke-[1.5]" />
-            <h2 className="text-lg font-semibold text-[var(--text-primary)] mb-2 tracking-tight">
+            <Cloud strokeWidth={1.5} size={48} className="text-neutral-500 mb-6 stroke-[1.5]" />
+            <h2 className="text-lg font-semibold text-white mb-2 tracking-tight">
               {viewFilter === "pending"
                 ? "Nothing needs your judgment"
                 : viewFilter === "resolved"
                   ? "No resolved items yet"
                   : "No review items"}
             </h2>
-            <p className="text-[15px] font-medium text-[var(--text-muted)]">
+            <p className="text-[15px] font-medium text-neutral-500">
               {viewFilter === "pending"
                 ? "I've processed everything. You're clear."
                 : "Items will appear here as triggers fire."}
@@ -486,7 +486,7 @@ export default function ReviewPage() {
                       x: -60,
                       transition: { duration: 0.25 },
                     }}
-                    className="bg-[var(--bg-elevated)] border border-[rgba(255,255,255,0.02)] rounded-2xl p-6 shadow-sm transition-all hover:bg-[rgba(255,255,255,0.03)] w-full"
+                    className="bg-neutral-900 border border-white/[0.02] rounded-xl p-6 shadow-sm transition-all hover:bg-white/[0.03] w-full"
                   >
                     {/* Top row: source + time + priority */}
                     <div className="flex items-center justify-between mb-4">
@@ -495,14 +495,14 @@ export default function ReviewPage() {
                           className="w-2 h-2 rounded-full shrink-0"
                           style={{ backgroundColor: appColor }}
                         />
-                        <span className="text-xs font-semibold tracking-wider text-[var(--text-muted)] uppercase">
+                        <span className="text-xs font-semibold tracking-wider text-neutral-500 uppercase">
                           {item.source_app}
                         </span>
-                        <span className="text-xs text-[var(--text-muted)] opacity-50">
+                        <span className="text-xs text-neutral-500 opacity-50">
                           {timeAgo(item.created_at)}
                         </span>
                         {item.category && CATEGORY_ICONS[item.category] && (
-                          <span className="text-[var(--text-muted)] opacity-40">
+                          <span className="text-neutral-500 opacity-40">
                             {CATEGORY_ICONS[item.category]}
                           </span>
                         )}
@@ -515,10 +515,10 @@ export default function ReviewPage() {
                     </div>
 
                     {/* Title + description */}
-                    <h3 className="text-[15px] font-medium text-[var(--text-primary)] mb-1.5 leading-snug">
+                    <h3 className="text-[15px] font-medium text-white mb-1.5 leading-snug">
                       {item.title}
                     </h3>
-                    <p className="text-sm text-[var(--text-muted)] mb-5 leading-relaxed">
+                    <p className="text-sm text-neutral-500 mb-5 leading-relaxed">
                       {item.description}
                     </p>
 
@@ -526,7 +526,7 @@ export default function ReviewPage() {
                     {item.ai_confidence !== null &&
                       item.ai_confidence !== undefined && (
                         <div className="flex items-center gap-2 mb-4">
-                          <div className="h-1 w-16 bg-[rgba(255,255,255,0.05)] rounded-full overflow-hidden">
+                          <div className="h-1 w-16 bg-white/5 rounded-full overflow-hidden">
                             <div
                               className="h-full rounded-full bg-[rgba(255,255,255,0.2)]"
                               style={{
@@ -534,7 +534,7 @@ export default function ReviewPage() {
                               }}
                             />
                           </div>
-                          <span className="text-[10px] text-[var(--text-muted)] opacity-50">
+                          <span className="text-[10px] text-neutral-500 opacity-50">
                             {Math.round(item.ai_confidence * 100)}% confidence
                           </span>
                         </div>
@@ -560,21 +560,21 @@ export default function ReviewPage() {
                         <button
                           onClick={() => handleAction(item.id, "approve")}
                           disabled={isActing}
-                          className="flex items-center gap-2 px-4 py-2 bg-[rgba(255,255,255,0.05)] hover:bg-[rgba(255,255,255,0.08)] border border-[rgba(255,255,255,0.05)] text-[var(--text-primary)] text-sm font-medium rounded-xl transition-colors shadow-sm disabled:opacity-50"
+                          className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/[0.08] border border-white/5 text-white text-sm font-medium rounded-xl transition-colors shadow-sm disabled:opacity-50"
                         >
                           {isActing ? (
-                            <Loader2 size={14} className="animate-spin" />
+                            <Loader2 strokeWidth={1.5} size={14} className="animate-spin" />
                           ) : (
-                            <Check size={14} />
+                            <Check strokeWidth={1.5} size={14} />
                           )}
                           Yes, do it
                         </button>
                         <button
                           onClick={() => handleAction(item.id, "dismiss")}
                           disabled={isActing}
-                          className="flex items-center gap-2 px-4 py-2 bg-transparent hover:bg-[rgba(255,255,255,0.03)] text-[var(--text-muted)] hover:text-[var(--text-primary)] text-sm font-medium rounded-xl transition-colors disabled:opacity-50"
+                          className="flex items-center gap-2 px-4 py-2 bg-transparent hover:bg-white/[0.03] text-neutral-500 hover:text-white text-sm font-medium rounded-xl transition-colors disabled:opacity-50"
                         >
-                          <X size={14} />
+                          <X strokeWidth={1.5} size={14} />
                           Dismiss
                         </button>
 
@@ -587,16 +587,16 @@ export default function ReviewPage() {
                               )
                             }
                             disabled={isActing}
-                            className="flex items-center gap-1.5 px-3 py-2 bg-transparent hover:bg-[rgba(255,255,255,0.03)] text-[var(--text-muted)] hover:text-[var(--text-primary)] text-sm font-medium rounded-xl transition-colors disabled:opacity-50"
+                            className="flex items-center gap-1.5 px-3 py-2 bg-transparent hover:bg-white/[0.03] text-neutral-500 hover:text-white text-sm font-medium rounded-xl transition-colors disabled:opacity-50"
                           >
-                            <Clock size={14} />
+                            <Clock strokeWidth={1.5} size={14} />
                             Snooze
                           </button>
                           {snoozeOpen === item.id && (
                             <motion.div
                               initial={{ opacity: 0, y: 4 }}
                               animate={{ opacity: 1, y: 0 }}
-                              className="absolute bottom-full left-0 mb-2 bg-[var(--bg-elevated)] border border-[rgba(255,255,255,0.06)] rounded-xl shadow-lg overflow-hidden z-10"
+                              className="absolute bottom-full left-0 mb-2 bg-neutral-900 border border-white/[0.06] rounded-xl shadow-lg overflow-hidden z-10"
                             >
                               {SNOOZE_OPTIONS.map((opt) => (
                                 <button
@@ -604,7 +604,7 @@ export default function ReviewPage() {
                                   onClick={() =>
                                     handleAction(item.id, "snooze", opt.minutes)
                                   }
-                                  className="block w-full text-left px-4 py-2.5 text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[rgba(255,255,255,0.04)] transition-colors whitespace-nowrap"
+                                  className="block w-full text-left px-4 py-2.5 text-sm text-neutral-500 hover:text-white hover:bg-white/[0.04] transition-colors whitespace-nowrap"
                                 >
                                   {opt.label}
                                 </button>
@@ -622,7 +622,7 @@ export default function ReviewPage() {
                           <span
                             className={`text-xs font-medium px-2.5 py-1 rounded-full ${item.status === "approved"
                               ? "bg-emerald-100 text-emerald-700 dark:bg-[#1A2C1A] dark:text-[#6BD46B]"
-                              : "bg-[var(--overlay)] text-[var(--text-muted)]"
+                              : "bg-neutral-900 text-neutral-500"
                               }`}
                           >
                             {item.status === "approved"
@@ -630,7 +630,7 @@ export default function ReviewPage() {
                               : "Dismissed"}
                           </span>
                           {item.resolved_at && (
-                            <span className="text-[11px] text-[var(--text-muted)] opacity-50">
+                            <span className="text-[11px] text-neutral-500 opacity-50">
                               {timeAgo(item.resolved_at)}
                             </span>
                           )}

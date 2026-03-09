@@ -69,7 +69,7 @@ export default function FAQ() {
           </p>
         </motion.div>
 
-        <Accordion type="single" collapsible className="w-full space-y-3">
+        <Accordion className="w-full space-y-3">
           {faqs.map((faq, idx) => (
             <motion.div
               key={idx}

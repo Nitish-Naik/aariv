@@ -458,7 +458,7 @@ export default function IntegrationsPage() {
                   className="px-4 py-2 bg-emerald-500/10 hover:bg-red-500/20 text-emerald-400 hover:text-red-400 text-sm font-semibold rounded-xl transition-all duration-300 disabled:opacity-50"
                 >
                   {disconnecting === integration.appName ? (
-                    <Loader2 size={14} className="animate-spin" />
+                    <Loader2 strokeWidth={1.5} size={14} className="animate-spin" />
                   ) : (
                     "Connected"
                   )}
@@ -475,7 +475,7 @@ export default function IntegrationsPage() {
                 className="px-5 py-2 bg-[#e2e2e2] hover:bg-white text-black text-[15px] font-semibold rounded-xl transition-all duration-300 disabled:opacity-50 shadow-sm"
               >
                 {isConnecting ? (
-                  <Loader2 size={16} className="animate-spin" />
+                  <Loader2 strokeWidth={1.5} size={16} className="animate-spin" />
                 ) : (
                   "Connect"
                 )}
@@ -496,7 +496,7 @@ export default function IntegrationsPage() {
                   if (parent && !parent.querySelector('.fallback-logo')) {
                     const fb = document.createElement("div");
                     fb.className =
-                      "fallback-logo w-[72px] h-[72px] rounded-2xl flex items-center justify-center text-white font-bold text-3xl mb-5 shadow-lg shrink-0";
+                      "fallback-logo w-[72px] h-[72px] rounded-xl flex items-center justify-center text-white font-bold text-3xl mb-5 shadow-lg shrink-0";
                     fb.style.backgroundColor = color;
                     fb.textContent = displayName.charAt(0);
                     parent.prepend(fb);
@@ -505,7 +505,7 @@ export default function IntegrationsPage() {
               />
             ) : (
               <motion.div
-                className="w-[72px] h-[72px] rounded-2xl flex items-center justify-center text-white font-bold text-3xl mb-5 shadow-lg shrink-0 transition-all duration-500"
+                className="w-[72px] h-[72px] rounded-xl flex items-center justify-center text-white font-bold text-3xl mb-5 shadow-lg shrink-0 transition-all duration-500"
                 style={{ backgroundColor: color }}
                 whileHover={{ scale: 1.05 }}
               >
@@ -522,12 +522,12 @@ export default function IntegrationsPage() {
   };
 
   return (
-    <div className="bg-[var(--bg-deep)] min-h-screen">
-      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-8 sm:py-12 text-[var(--text-primary)]">
+    <div className="bg-black min-h-screen">
+      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-8 sm:py-12 text-white">
         {/* Success toast */}
         {toast && (
           <div className="fixed top-4 right-4 z-50 flex items-center gap-2 bg-emerald-500/90 text-white px-5 py-3 rounded-xl shadow-lg text-sm font-medium animate-in slide-in-from-top fade-in duration-300">
-            <Check size={16} />
+            <Check strokeWidth={1.5} size={16} />
             {toast}
           </div>
         )}
@@ -535,7 +535,7 @@ export default function IntegrationsPage() {
         {/* Error toast */}
         {errorToast && (
           <div className="fixed top-4 right-4 z-50 flex items-center gap-2 bg-red-500/90 text-white px-5 py-3 rounded-xl shadow-lg text-sm font-medium animate-in slide-in-from-top fade-in duration-300">
-            <AlertCircle size={16} />
+            <AlertCircle strokeWidth={1.5} size={16} />
             {errorToast}
           </div>
         )}
@@ -546,20 +546,20 @@ export default function IntegrationsPage() {
 
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             {/* Segmented Control */}
-            <div className="inline-flex p-1 space-x-1 rounded-xl bg-[var(--tab-bg)] backdrop-blur-sm border border-[var(--border)] shadow-sm">
+            <div className="inline-flex p-1 space-x-1 rounded-xl bg-neutral-900 backdrop-blur-sm border border-white/10 shadow-sm">
               {(["all", "connected"] as const).map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
                   className={`relative px-4 py-1.5 text-sm font-medium rounded-lg transition-colors focus-visible:outline-none ${activeTab === tab
-                    ? "text-[var(--text-primary)]"
-                    : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                    ? "text-white"
+                    : "text-neutral-500 hover:text-white"
                     }`}
                 >
                   {activeTab === tab && (
                     <motion.div
                       layoutId="activeTabBadge"
-                      className="absolute inset-0 rounded-lg shadow-sm bg-[var(--tab-active)]"
+                      className="absolute inset-0 rounded-lg shadow-sm bg-white/10"
                       style={{ zIndex: -1 }}
                       transition={{
                         type: "spring",
@@ -578,9 +578,9 @@ export default function IntegrationsPage() {
             {/* Search Input */}
             <div className="relative w-full sm:w-80 group">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Search
+                <Search strokeWidth={1.5}
                   size={16}
-                  className="transition-colors text-[var(--text-muted)] group-focus-within:text-[var(--text-secondary)]"
+                  className="transition-colors text-neutral-500 group-focus-within:text-neutral-400"
                 />
               </div>
               <input
@@ -588,7 +588,7 @@ export default function IntegrationsPage() {
                 placeholder="Search across toolkits..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 text-sm rounded-xl outline-none transition-all duration-200 bg-[var(--bg-surface)] border border-[var(--border)] text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:border-[var(--text-secondary)] focus:ring-1 focus:ring-[var(--text-secondary)]"
+                className="w-full pl-10 pr-4 py-2 text-sm rounded-xl outline-none transition-all duration-200 bg-black border border-white/10 text-white placeholder-neutral-600 focus:border-white/20 focus:ring-1 focus:ring-white/20"
               />
             </div>
           </div>
@@ -607,8 +607,8 @@ export default function IntegrationsPage() {
                   <button
                     onClick={() => setActiveCategory("all")}
                     className={`shrink-0 z-10 px-4 py-1.5 text-xs font-medium rounded-full transition-all duration-300 border ${activeCategory === "all"
-                      ? "bg-[var(--pill-active-bg)] text-[var(--pill-active-text)] border-[var(--pill-active-bg)] shadow-sm"
-                      : "bg-[var(--pill-bg)] text-[var(--text-muted)] border-[var(--border)] hover:border-[var(--border-strong)] hover:text-[var(--text-primary)]"
+                      ? "bg-white text-black border-white shadow-sm"
+                      : "bg-neutral-900 text-neutral-500 border-white/10 hover:border-white/20 hover:text-white"
                       }`}
                   >
                     All
@@ -617,7 +617,7 @@ export default function IntegrationsPage() {
                   {CATEGORIES.length > 1 && (
                     <>
                       {/* Vertical Divider */}
-                      <div className="w-[1px] h-5 bg-[var(--border)] shrink-0 mx-3" />
+                      <div className="w-[1px] h-5 bg-white/10 shrink-0 mx-3" />
 
                       {/* Horizontally scrolling list for the rest */}
                       <div className="flex items-center gap-2 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] w-full scroll-smooth pt-1 pb-1">
@@ -627,8 +627,8 @@ export default function IntegrationsPage() {
                               key={category.id}
                               onClick={() => setActiveCategory(category.id)}
                               className={`shrink-0 px-4 py-1.5 text-xs font-medium rounded-full transition-all duration-300 border capitalize ${activeCategory === category.id
-                                ? "bg-[var(--pill-active-bg)] text-[var(--pill-active-text)] border-[var(--pill-active-bg)] shadow-sm"
-                                : "bg-[var(--pill-bg)] text-[var(--text-muted)] border-[var(--border)] hover:border-[var(--border-strong)] hover:text-[var(--text-primary)]"
+                                ? "bg-white text-black border-white shadow-sm"
+                                : "bg-neutral-900 text-neutral-500 border-white/10 hover:border-white/20 hover:text-white"
                                 }`}
                             >
                               {category.label}
@@ -645,22 +645,22 @@ export default function IntegrationsPage() {
                   <button
                     onClick={() => setGroupByCategory(false)}
                     className={`p-1.5 rounded-lg transition-all duration-200 ${!groupByCategory
-                      ? "bg-[var(--tab-active)] text-[var(--text-primary)]"
-                      : "text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--tab-bg)]"
+                      ? "bg-white/10 text-white"
+                      : "text-neutral-500 hover:text-white hover:bg-neutral-900"
                       }`}
                     title="Grid view"
                   >
-                    <Grid3X3 size={16} />
+                    <Grid3X3 strokeWidth={1.5} size={16} />
                   </button>
                   <button
                     onClick={() => setGroupByCategory(true)}
                     className={`p-1.5 rounded-lg transition-all duration-200 ${groupByCategory
-                      ? "bg-[var(--tab-active)] text-[var(--text-primary)]"
-                      : "text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--tab-bg)]"
+                      ? "bg-white/10 text-white"
+                      : "text-neutral-500 hover:text-white hover:bg-neutral-900"
                       }`}
                     title="Group by category"
                   >
-                    <LayoutList size={16} />
+                    <LayoutList strokeWidth={1.5} size={16} />
                   </button>
                 </div>
               </motion.div>
@@ -674,12 +674,12 @@ export default function IntegrationsPage() {
             {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
               <div
                 key={i}
-                className="rounded-2xl p-5 bg-[var(--bg-surface)] border border-[var(--border)] min-h-[180px] flex flex-col items-center justify-center animate-pulse"
+                className="rounded-xl p-5 bg-black border border-white/10 min-h-[180px] flex flex-col items-center justify-center animate-pulse"
                 style={{ animationDelay: `${i * 100}ms` }}
               >
-                <div className="w-12 h-12 rounded-2xl bg-[var(--border)] mb-4" />
-                <div className="w-24 h-4 rounded bg-[var(--border)] mb-6" />
-                <div className="w-20 h-8 rounded-full bg-[var(--border)]/50 mt-auto ml-auto" />
+                <div className="w-12 h-12 rounded-xl bg-white/10 mb-4" />
+                <div className="w-24 h-4 rounded bg-white/10 mb-6" />
+                <div className="w-20 h-8 rounded-full bg-white/10/50 mt-auto ml-auto" />
               </div>
             ))}
           </div>
@@ -687,7 +687,7 @@ export default function IntegrationsPage() {
           activeTab === "connected" ? (
             <div className="space-y-12">
               <div>
-                <h2 className="text-[15px] font-medium uppercase tracking-widest text-[var(--text-muted)] mb-5">
+                <h2 className="text-[15px] font-medium uppercase tracking-widest text-neutral-500 mb-5">
                   Your Connections
                 </h2>
                 <motion.div
@@ -713,7 +713,7 @@ export default function IntegrationsPage() {
               </div>
 
               <div>
-                <h2 className="text-[15px] font-medium uppercase tracking-widest text-[var(--text-muted)] mb-5">
+                <h2 className="text-[15px] font-medium uppercase tracking-widest text-neutral-500 mb-5">
                   Built-in Features
                 </h2>
                 <motion.div
@@ -749,10 +749,10 @@ export default function IntegrationsPage() {
                   transition={{ duration: 0.3 }}
                 >
                   <div className="flex items-center gap-3 mb-5">
-                    <h2 className="text-[15px] font-medium uppercase tracking-widest text-[var(--text-muted)]">
+                    <h2 className="text-[15px] font-medium uppercase tracking-widest text-neutral-500">
                       {group.label}
                     </h2>
-                    <span className="text-xs text-[var(--text-secondary)] bg-black/5 dark:bg-[#1a1a1a] px-2 py-0.5 rounded-full">
+                    <span className="text-xs text-neutral-400 bg-black/5 dark:bg-[#1a1a1a] px-2 py-0.5 rounded-full">
                       {group.items.length}
                     </span>
                   </div>
@@ -815,21 +815,21 @@ export default function IntegrationsPage() {
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              className="relative w-full max-w-sm bg-[var(--bg-surface)] border border-[var(--border)] rounded-2xl shadow-xl overflow-hidden p-6"
+              className="relative w-full max-w-sm bg-black border border-white/10 rounded-xl shadow-xl overflow-hidden p-6"
             >
               <div className="flex items-center gap-3 text-red-400 mb-4">
-                <AlertCircle size={24} />
-                <h3 className="text-lg font-semibold text-[var(--text-primary)]">
+                <AlertCircle strokeWidth={1.5} size={24} />
+                <h3 className="text-lg font-semibold text-white">
                   Disconnect {confirmDisconnect.name.replace("-", " ").replace(/\b\w/g, c => c.toUpperCase())}?
                 </h3>
               </div>
-              <p className="text-sm text-[var(--text-muted)] leading-relaxed mb-6">
+              <p className="text-sm text-neutral-500 leading-relaxed mb-6">
                 Are you sure you want to disconnect this toolkit? Any active triggers or automations relying on this connection will stop working immediately.
               </p>
               <div className="flex items-center justify-end gap-3 mt-2">
                 <button
                   onClick={() => setConfirmDisconnect(null)}
-                  className="px-4 py-2 text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] rounded-xl transition-colors"
+                  className="px-4 py-2 text-sm font-medium text-neutral-400 hover:text-white hover:bg-neutral-900 rounded-xl transition-colors"
                 >
                   Cancel
                 </button>

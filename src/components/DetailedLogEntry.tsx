@@ -35,7 +35,7 @@ export function DetailedLogEntry({ log }: LogEntryProps) {
 
     return (
         <div
-            className={`rounded-md border border-[rgba(255,255,255,0.05)] overflow-hidden transition-colors ${log.status === "loading" ? "bg-purple-500/5 animate-pulse" :
+            className={`rounded-md border border-white/5 overflow-hidden transition-colors ${log.status === "loading" ? "bg-purple-500/5 animate-pulse" :
                     log.status === "error" ? "bg-red-500/5" : "bg-[#1A1A1A]"
                 }`}
         >
@@ -62,17 +62,17 @@ export function DetailedLogEntry({ log }: LogEntryProps) {
             </div>
 
             {/* Accordions */}
-            <div className="border-t border-[rgba(255,255,255,0.02)]">
+            <div className="border-t border-white/[0.02]">
 
                 {/* Args Accordion */}
                 {formattedArgs && formattedArgs !== "{}" && (
-                    <div className="border-b border-[rgba(255,255,255,0.02)]">
+                    <div className="border-b border-white/[0.02]">
                         <button
                             onClick={() => setIsArgsOpen(!isArgsOpen)}
                             className="w-full flex items-center gap-2 px-3 py-2 text-[11px] text-zinc-400 hover:text-zinc-200 hover:bg-white/5 transition-colors"
                         >
                             <span className="flex-1 text-left font-mono">▸ Args:</span>
-                            {isArgsOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                            {isArgsOpen ? <ChevronDown strokeWidth={1.5} size={14} /> : <ChevronRight strokeWidth={1.5} size={14} />}
                         </button>
                         {isArgsOpen && (
                             <div className="px-3 pb-3 pt-1">
@@ -86,13 +86,13 @@ export function DetailedLogEntry({ log }: LogEntryProps) {
 
                 {/* Result Accordion */}
                 {formattedResult && log.status !== "loading" && (
-                    <div className="border-b border-[rgba(255,255,255,0.02)]">
+                    <div className="border-b border-white/[0.02]">
                         <button
                             onClick={() => setIsResultOpen(!isResultOpen)}
                             className="w-full flex items-center gap-2 px-3 py-2 text-[11px] text-zinc-400 hover:text-zinc-200 hover:bg-white/5 transition-colors"
                         >
                             <span className="flex-1 text-left font-mono">◂ Result:</span>
-                            {isResultOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                            {isResultOpen ? <ChevronDown strokeWidth={1.5} size={14} /> : <ChevronRight strokeWidth={1.5} size={14} />}
                         </button>
                         {isResultOpen && (
                             <div className="px-3 pb-3 pt-1">
@@ -108,7 +108,7 @@ export function DetailedLogEntry({ log }: LogEntryProps) {
                 {log.action_required && (
                     <div className="p-3 bg-yellow-500/10 border-t border-yellow-500/20">
                         <div className="flex items-start gap-2 text-yellow-500">
-                            <AlertCircle size={14} className="mt-0.5 shrink-0" />
+                            <AlertCircle strokeWidth={1.5} size={14} className="mt-0.5 shrink-0" />
                             <div className="flex flex-col gap-2 w-full">
                                 <span className="text-xs font-medium">Action Required</span>
                                 <p className="text-[11px] text-yellow-500/80 leading-relaxed">
@@ -121,7 +121,7 @@ export function DetailedLogEntry({ log }: LogEntryProps) {
                                     className="flex items-center justify-between px-3 py-2 mt-1 rounded bg-yellow-500 text-black hover:bg-yellow-400 text-xs font-semibold transition-colors"
                                 >
                                     {log.action_required.message}
-                                    <ExternalLink size={12} />
+                                    <ExternalLink strokeWidth={1.5} size={12} />
                                 </a>
                                 <span className="text-[10px] text-yellow-500/60 mt-1 flex items-center gap-1">
                                     ⏱ Link expires in 10 minutes

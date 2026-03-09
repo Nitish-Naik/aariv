@@ -467,7 +467,7 @@ function AssistantPageInner() {
   };
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[var(--bg-deep)]">
+    <div className="flex h-screen overflow-hidden bg-black">
       {/* ── SIDEBAR OVERLAY (mobile) ── */}
       {isSidebarOpen && (
         <div
@@ -478,21 +478,21 @@ function AssistantPageInner() {
 
       {/* ── LEFT SIDEBAR (Chat History) ── */}
       <aside
-        className={`fixed lg:static top-0 left-0 h-full z-40 flex flex-col bg-[var(--bg-elevated)] border-r border-[var(--border)] transition-all duration-300 ease-in-out ${isSidebarOpen
+        className={`fixed lg:static top-0 left-0 h-full z-40 flex flex-col bg-neutral-900 border-r border-white/10 transition-all duration-300 ease-in-out ${isSidebarOpen
           ? "w-72 translate-x-0"
           : "w-0 -translate-x-full lg:translate-x-0 lg:w-0 overflow-hidden"
           }`}
       >
         {/* Sidebar Header */}
-        <div className="h-16 flex items-center justify-between px-4 border-b border-[var(--border)] shrink-0">
-          <span className="text-sm font-semibold text-[var(--text-primary)] tracking-wide">
+        <div className="h-16 flex items-center justify-between px-4 border-b border-white/10 shrink-0">
+          <span className="text-sm font-semibold text-white tracking-wide">
             Chat History
           </span>
           <button
             onClick={() => setIsSidebarOpen(false)}
-            className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[rgba(255,255,255,0.05)] transition-colors"
+            className="p-1.5 rounded-lg text-neutral-500 hover:text-white hover:bg-white/5 transition-colors"
           >
-            <PanelLeftClose size={18} />
+            <PanelLeftClose strokeWidth={1.5} size={18} />
           </button>
         </div>
 
@@ -500,9 +500,9 @@ function AssistantPageInner() {
         <div className="px-3 pt-3 pb-1">
           <button
             onClick={handleNewChat}
-            className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium text-[var(--text-primary)] bg-[var(--accent-soft)] hover:bg-[var(--accent)] hover:text-black transition-colors"
+            className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium text-white bg-white/5 hover:bg-white hover:text-black transition-colors"
           >
-            <Plus size={16} />
+            <Plus strokeWidth={1.5} size={16} />
             New Chat
           </button>
         </div>
@@ -510,7 +510,7 @@ function AssistantPageInner() {
         {/* Conversations List */}
         <div className="flex-1 overflow-y-auto px-2 py-2 space-y-0.5">
           {conversations.length === 0 ? (
-            <div className="px-3 py-6 text-xs text-[var(--text-muted)] italic text-center">
+            <div className="px-3 py-6 text-xs text-neutral-500 italic text-center">
               No recent chats.
             </div>
           ) : (
@@ -518,8 +518,8 @@ function AssistantPageInner() {
               <div
                 key={conv.id}
                 className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-left transition-colors group/conv cursor-pointer ${activeConversationId === conv.id
-                  ? "bg-[rgba(255,255,255,0.08)] text-white"
-                  : "text-[var(--text-secondary)] hover:bg-[rgba(255,255,255,0.04)]"
+                  ? "bg-white/[0.08] text-white"
+                  : "text-neutral-400 hover:bg-white/[0.04]"
                   }`}
               >
                 <button
@@ -529,7 +529,7 @@ function AssistantPageInner() {
                   }}
                   className="flex items-center gap-2.5 flex-1 min-w-0"
                 >
-                  <MessageSquare size={14} className="shrink-0 opacity-50" />
+                  <MessageSquare strokeWidth={1.5} size={14} className="shrink-0 opacity-50" />
                   <span className="text-[13px] truncate">{conv.title}</span>
                 </button>
                 <button
@@ -540,10 +540,10 @@ function AssistantPageInner() {
                       conversationId: conv.id,
                     });
                   }}
-                  className="shrink-0 p-1 rounded-md opacity-0 group-hover/conv:opacity-100 text-[var(--text-muted)] hover:text-red-400 hover:bg-red-400/10 transition-all"
+                  className="shrink-0 p-1 rounded-md opacity-0 group-hover/conv:opacity-100 text-neutral-500 hover:text-red-400 hover:bg-red-400/10 transition-all"
                   title="Delete conversation"
                 >
-                  <Trash2 size={13} />
+                  <Trash2 strokeWidth={1.5} size={13} />
                 </button>
               </div>
             ))
@@ -552,16 +552,16 @@ function AssistantPageInner() {
 
         {/* Manage History Section */}
         {conversations.length > 0 && (
-          <div className="border-t border-[var(--border)] shrink-0">
+          <div className="border-t border-white/10 shrink-0">
             <button
               onClick={() => setIsDeleteMenuOpen(!isDeleteMenuOpen)}
-              className="w-full flex items-center justify-between px-4 py-3 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[rgba(255,255,255,0.03)] transition-colors"
+              className="w-full flex items-center justify-between px-4 py-3 text-sm text-neutral-400 hover:text-white hover:bg-white/[0.03] transition-colors"
             >
               <span className="flex items-center gap-2 text-xs font-medium">
-                <Shield size={14} className="opacity-60" />
+                <Shield strokeWidth={1.5} size={14} className="opacity-60" />
                 Manage History
               </span>
-              <ChevronDown
+              <ChevronDown strokeWidth={1.5}
                 size={12}
                 className={`transition-transform ${isDeleteMenuOpen ? "rotate-180" : ""}`}
               />
@@ -569,22 +569,22 @@ function AssistantPageInner() {
             {isDeleteMenuOpen && (
               <div className="bg-[rgba(0,0,0,0.15)] pb-2">
                 {/* Auto-delete retention setting */}
-                <div className="px-4 py-3 border-b border-[rgba(255,255,255,0.05)]">
+                <div className="px-4 py-3 border-b border-white/5">
                   <div className="flex items-center gap-2 mb-2">
-                    <Clock
+                    <Clock strokeWidth={1.5}
                       size={12}
-                      className="text-[var(--accent)] opacity-80"
+                      className="text-white opacity-80"
                     />
-                    <span className="text-[11px] font-medium text-[var(--text-primary)] uppercase tracking-wider">
+                    <span className="text-[11px] font-medium text-white uppercase tracking-wider">
                       Auto-delete
                     </span>
                     {retentionDays && (
-                      <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded-full bg-[var(--accent-soft)] text-[var(--accent)]">
+                      <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded-full bg-white/5 text-white">
                         Active
                       </span>
                     )}
                   </div>
-                  <p className="text-[10px] text-[var(--text-muted)] mb-2.5">
+                  <p className="text-[10px] text-neutral-500 mb-2.5">
                     Automatically delete history older than:
                   </p>
                   <div className="flex flex-wrap gap-1.5">
@@ -600,8 +600,8 @@ function AssistantPageInner() {
                         onClick={() => handleRetentionChange(opt.value)}
                         disabled={retentionSaving}
                         className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-all ${retentionDays === opt.value
-                          ? "bg-[var(--accent)] text-black"
-                          : "bg-[rgba(255,255,255,0.05)] text-[var(--text-secondary)] hover:bg-[rgba(255,255,255,0.1)] hover:text-[var(--text-primary)]"
+                          ? "bg-white text-black"
+                          : "bg-white/5 text-neutral-400 hover:bg-[rgba(255,255,255,0.1)] hover:text-white"
                           } disabled:opacity-50`}
                       >
                         {opt.label}
@@ -626,17 +626,17 @@ function AssistantPageInner() {
                         label: opt.label,
                       })
                     }
-                    className="w-full flex items-center gap-2 px-5 py-2 text-xs text-[var(--text-secondary)] hover:text-red-400 hover:bg-red-400/10 transition-colors"
+                    className="w-full flex items-center gap-2 px-5 py-2 text-xs text-neutral-400 hover:text-red-400 hover:bg-red-400/10 transition-colors"
                   >
-                    <Clock size={12} className="opacity-60" />
+                    <Clock strokeWidth={1.5} size={12} className="opacity-60" />
                     Delete {opt.label}
                   </button>
                 ))}
                 <button
                   onClick={() => setDeleteConfirm({ type: "all" })}
-                  className="w-full flex items-center gap-2 px-5 py-2 text-xs text-red-500 font-medium hover:bg-red-400/10 transition-colors border-t border-[rgba(255,255,255,0.03)]"
+                  className="w-full flex items-center gap-2 px-5 py-2 text-xs text-red-500 font-medium hover:bg-red-400/10 transition-colors border-t border-white/[0.03]"
                 >
-                  <Trash2 size={12} />
+                  <Trash2 strokeWidth={1.5} size={12} />
                   Delete Everything
                 </button>
               </div>
@@ -647,7 +647,7 @@ function AssistantPageInner() {
 
       {/* ─── MAIN CHAT PANEL ─── */}
       <div
-        className="flex flex-col h-full flex-1 bg-[var(--bg-surface)] relative"
+        className="flex flex-col h-full flex-1 bg-black relative"
         onDragEnter={handleDragEnter}
         onDragLeave={handleDragLeave}
         onDragOver={handleDragOver}
@@ -655,11 +655,11 @@ function AssistantPageInner() {
       >
         {/* Drag & Drop Overlay */}
         {isDragOver && (
-          <div className="absolute inset-0 z-20 flex items-center justify-center bg-[var(--bg-surface)]/90 backdrop-blur-sm border-2 border-dashed border-[var(--accent)] rounded-xl m-4 pointer-events-none">
-            <div className="flex flex-col items-center gap-3 text-[var(--accent)]">
+          <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/90 backdrop-blur-sm border-2 border-dashed border-white/30 rounded-xl m-4 pointer-events-none">
+            <div className="flex flex-col items-center gap-3 text-white">
               <FileUp size={40} strokeWidth={1.5} />
               <span className="text-lg font-medium">Drop files here</span>
-              <span className="text-xs text-[var(--text-muted)]">
+              <span className="text-xs text-neutral-500">
                 Text, Markdown, JSON, CSV files supported
               </span>
             </div>
@@ -667,30 +667,30 @@ function AssistantPageInner() {
         )}
 
         {/* Header */}
-        <div className="px-6 flex items-center justify-between h-16 border-b border-[var(--border)] shrink-0">
+        <div className="px-6 flex items-center justify-between h-16 border-b border-white/10 shrink-0">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className="p-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[rgba(255,255,255,0.05)] transition-colors"
+              className="p-2 rounded-lg text-neutral-500 hover:text-white hover:bg-white/5 transition-colors"
               title={isSidebarOpen ? "Close sidebar" : "Open sidebar"}
             >
-              <Menu size={18} />
+              <Menu strokeWidth={1.5} size={18} />
             </button>
             <div>
-              <h1 className="text-lg font-serif font-semibold text-[var(--text-primary)]">
+              <h1 className="text-lg font-serif font-semibold text-white">
                 Assistant
               </h1>
-              <p className="text-[11px] text-[var(--text-muted)]">
+              <p className="text-[11px] text-neutral-500">
                 Your calm thinking partner
               </p>
             </div>
           </div>
           <button
             onClick={handleNewChat}
-            className="p-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[rgba(255,255,255,0.05)] transition-colors"
+            className="p-2 rounded-lg text-neutral-500 hover:text-white hover:bg-white/5 transition-colors"
             title="New chat"
           >
-            <Plus size={18} />
+            <Plus strokeWidth={1.5} size={18} />
           </button>
         </div>
 
@@ -710,7 +710,7 @@ function AssistantPageInner() {
               >
                 Chat with 500+ Apps
               </h1>
-              <p className="text-sm text-[var(--text-muted)] -mt-2">
+              <p className="text-sm text-neutral-500 -mt-2">
                 Connect your favorite tools and let Aariv automate your work.
               </p>
 
@@ -720,7 +720,7 @@ function AssistantPageInner() {
                   e.preventDefault();
                   handleSend();
                 }}
-                className="w-full max-w-xl relative flex items-end rounded-2xl overflow-hidden bg-[var(--bg-elevated)] border border-[rgba(255,255,255,0.1)] focus-within:border-[rgba(255,255,255,0.2)] focus-within:ring-1 focus-within:ring-[rgba(255,255,255,0.1)] shadow-lg transition-all"
+                className="w-full max-w-xl relative flex items-end rounded-xl overflow-hidden bg-neutral-900 border border-[rgba(255,255,255,0.1)] focus-within:border-[rgba(255,255,255,0.2)] focus-within:ring-1 focus-within:ring-[rgba(255,255,255,0.1)] shadow-lg transition-all"
               >
                 <textarea
                   ref={inputRef}
@@ -735,15 +735,15 @@ function AssistantPageInner() {
                   placeholder="Ask me anything..."
                   disabled={isLoading}
                   rows={1}
-                  className="w-full max-h-32 min-h-[56px] py-4 pl-5 pr-14 bg-transparent text-[15px] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] resize-none outline-none disabled:opacity-50"
+                  className="w-full max-h-32 min-h-[56px] py-4 pl-5 pr-14 bg-transparent text-[15px] text-white placeholder:text-neutral-500 resize-none outline-none disabled:opacity-50"
                   style={{ height: "auto", overflowY: "auto" }}
                 />
                 <button
                   type="submit"
                   disabled={!inputText.trim() || isLoading}
-                  className="absolute right-2 bottom-2 p-2 rounded-xl bg-white text-black hover:bg-gray-200 transition-colors disabled:opacity-30 disabled:bg-transparent disabled:text-[var(--text-muted)]"
+                  className="absolute right-2 bottom-2 p-2 rounded-xl bg-white text-black hover:bg-gray-200 transition-colors disabled:opacity-30 disabled:bg-transparent disabled:text-neutral-500"
                 >
-                  <Send size={18} className="ml-0.5" />
+                  <Send strokeWidth={1.5} size={18} className="ml-0.5" />
                 </button>
               </form>
 
@@ -757,7 +757,7 @@ function AssistantPageInner() {
                         setInputText(chip.message);
                         inputRef.current?.focus();
                       }}
-                      className="px-4 py-2.5 rounded-full bg-[var(--bg-elevated)] border border-[rgba(255,255,255,0.08)] text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--accent)] transition-all"
+                      className="px-4 py-2.5 rounded-full bg-neutral-900 border border-white/[0.08] text-sm text-neutral-400 hover:text-white hover:border-white/30 transition-all"
                     >
                       {chip.label}
                     </button>
@@ -799,11 +799,11 @@ function AssistantPageInner() {
                       className={`flex flex-col group ${isUser ? "items-end" : "items-start w-full"
                         }`}
                     >
-                      <div className="max-w-[85%] lg:max-w-[90%] rounded-2xl px-5 py-4 bg-[var(--bg-elevated)] border border-[rgba(255,255,255,0.02)] shadow-sm">
+                      <div className="max-w-[85%] lg:max-w-[90%] rounded-xl px-5 py-4 bg-neutral-900 border border-white/[0.02] shadow-sm">
                         {/* Content */}
                         {isUser ? (
                           <div className="relative group/userMsg">
-                            <p className="text-[15px] leading-relaxed text-[var(--text-primary)]">
+                            <p className="text-[15px] leading-relaxed text-white">
                               {msg.content}
                             </p>
                             <div className="flex justify-end mt-1 -mb-1">
@@ -811,20 +811,20 @@ function AssistantPageInner() {
                                 onClick={() =>
                                   handleCopyMessage(msg.id, msg.content)
                                 }
-                                className="p-1 rounded-md text-[var(--text-muted)] opacity-0 group-hover/userMsg:opacity-100 hover:text-[var(--text-primary)] hover:bg-[rgba(255,255,255,0.06)] transition-all"
+                                className="p-1 rounded-md text-neutral-500 opacity-0 group-hover/userMsg:opacity-100 hover:text-white hover:bg-white/[0.06] transition-all"
                                 title="Copy message"
                               >
                                 {copiedMessageId === msg.id ? (
-                                  <Check size={14} className="text-green-400" />
+                                  <Check strokeWidth={1.5} size={14} className="text-green-400" />
                                 ) : (
-                                  <Copy size={14} />
+                                  <Copy strokeWidth={1.5} size={14} />
                                 )}
                               </button>
                             </div>
                           </div>
                         ) : msg.content ? (
                           <>
-                            <div className="markdown-content text-[15px] leading-relaxed text-[var(--text-primary)]">
+                            <div className="markdown-content text-[15px] leading-relaxed text-white">
                               <ReactMarkdown
                                 remarkPlugins={[remarkGfm]}
                                 components={{
@@ -837,7 +837,7 @@ function AssistantPageInner() {
                                       const appSlug = appName.toLowerCase().replace(/\s+/g, "");
                                       const logoUrl = getAppLogo(appSlug);
                                       return (
-                                        <div className="flex items-center gap-3 w-full my-2 px-4 py-3 rounded-xl bg-[var(--bg-deep)] border border-[var(--border)] hover:border-[var(--accent)]/40 transition-colors">
+                                        <div className="flex items-center gap-3 w-full my-2 px-4 py-3 rounded-xl bg-black border border-white/10 hover:border-white/30/40 transition-colors">
                                           {logoUrl ? (
                                             <img
                                               src={logoUrl}
@@ -845,18 +845,18 @@ function AssistantPageInner() {
                                               className="w-8 h-8 rounded-lg object-contain"
                                             />
                                           ) : (
-                                            <div className="w-8 h-8 rounded-lg bg-[var(--accent-soft)] flex items-center justify-center text-[var(--accent)] text-xs font-bold">
+                                            <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-white text-xs font-bold">
                                               {appName.charAt(0).toUpperCase()}
                                             </div>
                                           )}
-                                          <span className="flex-1 text-sm font-medium text-[var(--text-primary)]">
+                                          <span className="flex-1 text-sm font-medium text-white">
                                             Connect to {appName.charAt(0).toUpperCase() + appName.slice(1)}
                                           </span>
                                           <button
                                             onClick={() => {
                                               window.open(href, "composio_connect", "width=600,height=700,left=200,top=100");
                                             }}
-                                            className="shrink-0 px-4 py-1.5 rounded-lg bg-[var(--text-primary)] text-[var(--bg-deep)] text-xs font-semibold hover:opacity-90 transition-opacity"
+                                            className="shrink-0 px-4 py-1.5 rounded-lg bg-white text-[black] text-xs font-semibold hover:opacity-90 transition-opacity"
                                           >
                                             Connect
                                           </button>
@@ -868,7 +868,7 @@ function AssistantPageInner() {
                                         href={href}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="text-[var(--accent)] hover:underline"
+                                        className="text-white hover:underline"
                                       >
                                         {children}
                                       </a>
@@ -900,10 +900,10 @@ function AssistantPageInner() {
                                     );
                                   },
                                   blockquote: ({ children }) => (
-                                    <blockquote className="border-l-[3px] border-[var(--border)] pl-4 my-3 text-[var(--text-secondary)]">{children}</blockquote>
+                                    <blockquote className="border-l-[3px] border-white/10 pl-4 my-3 text-neutral-400">{children}</blockquote>
                                   ),
                                   hr: () => (
-                                    <hr className="border-[var(--border)] my-4" />
+                                    <hr className="border-white/10 my-4" />
                                   ),
                                   h1: ({ children }) => <h1 className="text-xl font-semibold mt-4 mb-2">{children}</h1>,
                                   h2: ({ children }) => <h2 className="text-lg font-semibold mt-4 mb-2">{children}</h2>,
@@ -914,10 +914,10 @@ function AssistantPageInner() {
                                     </div>
                                   ),
                                   th: ({ children }) => (
-                                    <th className="px-3 py-2 text-left border-b-2 border-[var(--border)] font-semibold text-sm">{children}</th>
+                                    <th className="px-3 py-2 text-left border-b-2 border-white/10 font-semibold text-sm">{children}</th>
                                   ),
                                   td: ({ children }) => (
-                                    <td className="px-3 py-2 border-b border-[var(--border)]">{children}</td>
+                                    <td className="px-3 py-2 border-b border-white/10">{children}</td>
                                   ),
                                 }}
                               >
@@ -938,7 +938,7 @@ function AssistantPageInner() {
                               ) : (
                                 <>
                                   <motion.span
-                                    className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--text-muted)]"
+                                    className="inline-block w-1.5 h-1.5 rounded-full bg-neutral-500"
                                     animate={{
                                       opacity: [0.4, 1, 0.4],
                                       scale: [0.8, 1, 0.8],
@@ -951,7 +951,7 @@ function AssistantPageInner() {
                                     }}
                                   />
                                   <motion.span
-                                    className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--text-muted)]"
+                                    className="inline-block w-1.5 h-1.5 rounded-full bg-neutral-500"
                                     animate={{
                                       opacity: [0.4, 1, 0.4],
                                       scale: [0.8, 1, 0.8],
@@ -964,7 +964,7 @@ function AssistantPageInner() {
                                     }}
                                   />
                                   <motion.span
-                                    className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--text-muted)]"
+                                    className="inline-block w-1.5 h-1.5 rounded-full bg-neutral-500"
                                     animate={{
                                       opacity: [0.4, 1, 0.4],
                                       scale: [0.8, 1, 0.8],
@@ -989,13 +989,13 @@ function AssistantPageInner() {
                               onClick={() =>
                                 handleCopyMessage(msg.id, msg.content)
                               }
-                              className="p-1 rounded-md text-[var(--text-muted)] opacity-0 group-hover:opacity-100 hover:text-[var(--text-primary)] hover:bg-[rgba(255,255,255,0.06)] transition-all"
+                              className="p-1 rounded-md text-neutral-500 opacity-0 group-hover:opacity-100 hover:text-white hover:bg-white/[0.06] transition-all"
                               title="Copy response"
                             >
                               {copiedMessageId === msg.id ? (
-                                <Check size={14} className="text-green-400" />
+                                <Check strokeWidth={1.5} size={14} className="text-green-400" />
                               ) : (
-                                <Copy size={14} />
+                                <Copy strokeWidth={1.5} size={14} />
                               )}
                             </button>
                           </div>
@@ -1010,7 +1010,7 @@ function AssistantPageInner() {
                               return (
                                 <div
                                   key={idx}
-                                  className="flex items-center gap-3 w-full px-4 py-3 rounded-xl bg-[var(--bg-deep)] border border-[var(--border)] hover:border-[var(--accent)]/40 transition-colors"
+                                  className="flex items-center gap-3 w-full px-4 py-3 rounded-xl bg-black border border-white/10 hover:border-white/30/40 transition-colors"
                                 >
                                   {logoUrl ? (
                                     <img
@@ -1019,11 +1019,11 @@ function AssistantPageInner() {
                                       className="w-8 h-8 rounded-lg object-contain"
                                     />
                                   ) : (
-                                    <div className="w-8 h-8 rounded-lg bg-[var(--accent-soft)] flex items-center justify-center text-[var(--accent)] text-xs font-bold">
+                                    <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-white text-xs font-bold">
                                       {action.appName.charAt(0)}
                                     </div>
                                   )}
-                                  <span className="flex-1 text-sm font-medium text-[var(--text-primary)]">
+                                  <span className="flex-1 text-sm font-medium text-white">
                                     Connect to {action.appName}
                                   </span>
                                   <button
@@ -1048,7 +1048,7 @@ function AssistantPageInner() {
                                         }
                                       }, 1000);
                                     }}
-                                    className="shrink-0 px-4 py-1.5 rounded-lg bg-[var(--text-primary)] text-[var(--bg-deep)] text-xs font-semibold hover:opacity-90 transition-opacity"
+                                    className="shrink-0 px-4 py-1.5 rounded-lg bg-white text-[black] text-xs font-semibold hover:opacity-90 transition-opacity"
                                   >
                                     Connect
                                   </button>
@@ -1078,17 +1078,17 @@ function AssistantPageInner() {
 
         {/* Input Area — hidden on empty state since input is in the hero */}
         {messages.length > 0 && (
-          <div className="p-4 sm:p-6 lg:p-8 shrink-0 relative bg-gradient-to-t from-[var(--bg-surface)] to-transparent via-[var(--bg-surface)]">
+          <div className="p-4 sm:p-6 lg:p-8 shrink-0 relative bg-gradient-to-t from-black to-transparent via-black">
             <div className="max-w-3xl mx-auto w-full relative">
               {/* Model Toggle */}
               {/* <div className="flex items-center gap-1 mb-2.5 ml-1">
-              <div className="inline-flex items-center bg-[var(--bg-elevated)] border border-[rgba(255,255,255,0.08)] rounded-full p-0.5">
+              <div className="inline-flex items-center bg-neutral-900 border border-white/[0.08] rounded-full p-0.5">
                 <button
                   type="button"
                   onClick={() => { setSelectedModel("gpt-4o-mini"); localStorage.setItem("aariv_model", "gpt-4o-mini"); }}
                   className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-all duration-200 ${selectedModel.includes("mini")
                     ? "bg-[rgba(255,255,255,0.1)] text-amber-400 shadow-sm"
-                    : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
+                    : "text-neutral-500 hover:text-neutral-400"
                     }`}
                 >
                   <Zap size={12} />
@@ -1099,14 +1099,14 @@ function AssistantPageInner() {
                   onClick={() => { setSelectedModel("gpt-4o"); localStorage.setItem("aariv_model", "gpt-4o"); }}
                   className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-all duration-200 ${!selectedModel.includes("mini")
                     ? "bg-[rgba(255,255,255,0.1)] text-purple-400 shadow-sm"
-                    : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
+                    : "text-neutral-500 hover:text-neutral-400"
                     }`}
                 >
                   <Brain size={12} />
                   Smart
                 </button>
               </div>
-              <span className="text-[10px] text-[var(--text-muted)] ml-2">
+              <span className="text-[10px] text-neutral-500 ml-2">
                 {selectedModel.includes("mini") ? "Quicker responses, lower cost" : "Better reasoning, more accurate"}
               </span>
             </div> */}
@@ -1115,7 +1115,7 @@ function AssistantPageInner() {
                   e.preventDefault();
                   handleSend();
                 }}
-                className="relative flex items-end shadow-lg rounded-2xl overflow-hidden bg-[var(--bg-elevated)] border border-[rgba(255,255,255,0.1)] focus-within:border-[rgba(255,255,255,0.2)] focus-within:ring-1 focus-within:ring-[rgba(255,255,255,0.1)] transition-all"
+                className="relative flex items-end shadow-lg rounded-xl overflow-hidden bg-neutral-900 border border-[rgba(255,255,255,0.1)] focus-within:border-[rgba(255,255,255,0.2)] focus-within:ring-1 focus-within:ring-[rgba(255,255,255,0.1)] transition-all"
               >
                 <textarea
                   ref={inputRef}
@@ -1130,19 +1130,19 @@ function AssistantPageInner() {
                   placeholder="Ask Aariv to do something..."
                   disabled={isLoading}
                   rows={1}
-                  className="w-full max-h-32 min-h-[56px] py-4 pl-5 pr-14 bg-transparent text-[15px] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] resize-none outline-none disabled:opacity-50"
+                  className="w-full max-h-32 min-h-[56px] py-4 pl-5 pr-14 bg-transparent text-[15px] text-white placeholder:text-neutral-500 resize-none outline-none disabled:opacity-50"
                   style={{ height: "auto", overflowY: "auto" }}
                 />
                 <button
                   type="submit"
                   disabled={!inputText.trim() || isLoading}
-                  className="absolute right-2 bottom-2 p-2 rounded-xl bg-white text-black hover:bg-gray-200 transition-colors disabled:opacity-30 disabled:bg-transparent disabled:text-[var(--text-muted)]"
+                  className="absolute right-2 bottom-2 p-2 rounded-xl bg-white text-black hover:bg-gray-200 transition-colors disabled:opacity-30 disabled:bg-transparent disabled:text-neutral-500"
                 >
-                  <Send size={18} className="ml-0.5" />
+                  <Send strokeWidth={1.5} size={18} className="ml-0.5" />
                 </button>
               </form>
               <div className="text-center mt-3">
-                <span className="text-[10px] text-[var(--text-muted)]">
+                <span className="text-[10px] text-neutral-500">
                   Press Enter to send, Shift+Enter for new line
                 </span>
               </div>
@@ -1154,14 +1154,14 @@ function AssistantPageInner() {
       {/* ─── RIGHT PANEL (TOOL EXECUTION LOGS) ─── */}
 
       <div
-        className={`fixed lg:static top-0 right-0 h-full bg-[#111111] z-40 transition-all duration-300 ease-in-out transform flex flex-col border-l border-[rgba(255,255,255,0.05)] ${isLogsOpen
+        className={`fixed lg:static top-0 right-0 h-full bg-[#111111] z-40 transition-all duration-300 ease-in-out transform flex flex-col border-l border-white/5 ${isLogsOpen
             ? "translate-x-0 w-[320px] lg:w-[40%]"
             : "translate-x-full lg:translate-x-0 lg:w-0 lg:overflow-hidden lg:border-none"
           }`}
       >
-        <div className="h-16 flex items-center justify-between px-6 border-b border-[rgba(255,255,255,0.05)] bg-[#1A1A1A]/80 backdrop-blur shrink-0">
+        <div className="h-16 flex items-center justify-between px-6 border-b border-white/5 bg-[#1A1A1A]/80 backdrop-blur shrink-0">
           <div className="flex items-center gap-2">
-            <Terminal size={16} className="text-zinc-400" />
+            <Terminal strokeWidth={1.5} size={16} className="text-zinc-400" />
             <span className="text-xs font-mono font-medium tracking-wider text-zinc-300 uppercase">
               Execution Logs
             </span>
@@ -1170,14 +1170,14 @@ function AssistantPageInner() {
             onClick={() => setIsLogsOpen(false)}
             className="p-1.5 rounded-lg text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 transition-colors lg:hidden"
           >
-            <ChevronRight size={18} />
+            <ChevronRight strokeWidth={1.5} size={18} />
           </button>
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 space-y-3 font-mono text-sm">
           {allLogs.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-zinc-600 text-xs">
-              <Terminal size={24} className="mb-2 opacity-50" />
+              <Terminal strokeWidth={1.5} size={24} className="mb-2 opacity-50" />
               <span>Waiting for tasks...</span>
             </div>
           ) : (
@@ -1193,15 +1193,15 @@ function AssistantPageInner() {
       {/* Delete Confirmation Dialog */}
       {deleteConfirm && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="bg-[var(--bg-elevated)] border border-[var(--border)] rounded-2xl shadow-2xl p-6 max-w-sm w-full mx-4">
-            <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-2">
+          <div className="bg-neutral-900 border border-white/10 rounded-xl shadow-2xl p-6 max-w-sm w-full mx-4">
+            <h3 className="text-lg font-semibold text-white mb-2">
               {deleteConfirm.type === "all"
                 ? "Delete All History?"
                 : deleteConfirm.type === "range"
                   ? `Delete ${deleteConfirm.label}?`
                   : "Delete Conversation?"}
             </h3>
-            <p className="text-sm text-[var(--text-muted)] mb-6">
+            <p className="text-sm text-neutral-500 mb-6">
               {deleteConfirm.type === "all"
                 ? "This will permanently delete all your conversations and their messages. This action cannot be undone."
                 : deleteConfirm.type === "range"
@@ -1211,7 +1211,7 @@ function AssistantPageInner() {
             <div className="flex items-center justify-end gap-3">
               <button
                 onClick={() => setDeleteConfirm(null)}
-                className="px-4 py-2 rounded-lg text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[rgba(255,255,255,0.05)] transition-colors"
+                className="px-4 py-2 rounded-lg text-sm font-medium text-neutral-400 hover:text-white hover:bg-white/5 transition-colors"
               >
                 Cancel
               </button>

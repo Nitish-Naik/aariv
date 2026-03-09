@@ -1,0 +1,17 @@
+Refactor started
+UPDATED: src/app/dashboard/layout.tsx (3 replacements)
+UPDATED: src/app/dashboard/triggers/page.tsx (11 replacements)
+UPDATED: src/app/dashboard/usage/page.tsx (3 replacements)
+NO CHANGES: src/app/dashboard/review/page.tsx
+UPDATED: src/app/dashboard/feed/page.tsx (8 replacements)
+UPDATED: src/app/dashboard/page.tsx (4 replacements)
+UPDATED: src/app/dashboard/assistant/page.tsx (9 replacements)
+UPDATED: src/app/dashboard/integrations/page.tsx (6 replacements)
+UPDATED: src/app/dashboard/settings/page.tsx (4 replacements)
+NO CHANGES: src/components/Sidebar.tsx
+UPDATED: src/components/DataCard.tsx (1 replacements)
+NO CHANGES: src/components/StatusLogCard.tsx
+NO CHANGES: src/components/FeedbackWidget.tsx
+NO CHANGES: src/components/DetailedLogEntry.tsx
+
+Done. Total replacements: 49

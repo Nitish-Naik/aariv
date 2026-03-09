@@ -20,7 +20,7 @@ export default function IntegrationsShowcase() {
                     >
                         <div>
                             <div className="w-12 h-12 rounded-full bg-neutral-900 border border-white/10 flex items-center justify-center mb-8">
-                                <Layers className="text-zinc-400 w-5 h-5" />
+                                <Layers strokeWidth={1.5} className="text-zinc-400 w-5 h-5" />
                             </div>
 
                             <h3 className="text-xl font-semibold text-white mb-3">1000+ Integrations</h3>
@@ -67,7 +67,7 @@ export default function IntegrationsShowcase() {
                         className="bg-black border border-white/10 rounded-xl p-8 lg:p-12 hover:bg-neutral-900 transition-colors"
                     >
                         <div className="w-12 h-12 rounded-full bg-neutral-900 border border-white/10 flex items-center justify-center mb-8">
-                            <MessageCircle className="text-zinc-400 w-5 h-5" />
+                            <MessageCircle strokeWidth={1.5} className="text-zinc-400 w-5 h-5" />
                         </div>
 
                         <h3 className="text-xl font-semibold text-white mb-3">Every Messaging App</h3>

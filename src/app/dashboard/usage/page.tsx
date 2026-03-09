@@ -74,7 +74,7 @@ export default function UsagePage() {
     if (balanceLoading || !user) {
         return (
             <div className="flex-1 flex items-center justify-center p-6 h-full">
-                <div className="animate-spin w-8 h-8 border-2 border-[var(--accent)] border-t-transparent rounded-full" />
+                <div className="animate-spin w-8 h-8 border-2 border-white/30 border-t-transparent rounded-full" />
             </div>
         );
     }
@@ -84,36 +84,36 @@ export default function UsagePage() {
             <div className="max-w-2xl mx-auto px-6 py-12 lg:py-16">
                 {/* Header */}
                 <header className="mb-10">
-                    <h1 className="text-2xl font-serif text-[var(--text-primary)] mb-1">
+                    <h1 className="text-2xl font-serif text-white mb-1">
                         Usage & Billing
                     </h1>
-                    <p className="text-sm text-[var(--text-secondary)]">
+                    <p className="text-sm text-neutral-400">
                         Credits, usage breakdown, and spending history.
                     </p>
                 </header>
 
                 <div className="space-y-4">
                     {/* ─── Credit Balance ─── */}
-                    <section className="bg-[var(--bg-surface)] rounded-2xl p-6">
+                    <section className="bg-black rounded-xl p-6">
                         <div className="flex items-start justify-between mb-5">
                             <div>
-                                <p className="text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider mb-1">
+                                <p className="text-xs font-medium text-neutral-500 uppercase tracking-wider mb-1">
                                     Credit Balance
                                 </p>
-                                <p className="text-3xl font-semibold text-[var(--text-primary)] font-mono">
+                                <p className="text-3xl font-semibold text-white font-mono">
                                     ${balanceValue.toFixed(2)}
                                 </p>
                             </div>
-                            <div className="w-10 h-10 rounded-xl bg-[var(--accent-soft)] flex items-center justify-center">
-                                <Wallet size={18} className="text-[var(--accent)]" />
+                            <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center">
+                                <Wallet strokeWidth={1.5} size={18} className="text-white" />
                             </div>
                         </div>
 
                         {/* Progress bar */}
                         <div className="mb-5">
-                            <div className="h-1.5 w-full bg-[var(--bg-deep)] rounded-full overflow-hidden">
+                            <div className="h-1.5 w-full bg-black rounded-full overflow-hidden">
                                 <div
-                                    className="h-full bg-[var(--accent)] rounded-full transition-all duration-500"
+                                    className="h-full bg-white rounded-full transition-all duration-500"
                                     style={{ width: `${progressPercent}%` }}
                                 />
                             </div>
@@ -122,12 +122,12 @@ export default function UsagePage() {
                         <div className="flex gap-2">
                             <button
                                 onClick={() => setShowAddCredits(true)}
-                                className="px-4 py-2 bg-[var(--accent-soft)] text-[var(--accent)] text-xs font-medium rounded-lg hover:opacity-80 transition-opacity"
+                                className="px-4 py-2 bg-white/5 text-white text-xs font-medium rounded-lg hover:opacity-80 transition-opacity"
                             >
                                 Add Credits
                             </button>
-                            <button className="px-4 py-2 bg-[var(--bg-deep)] text-[var(--text-secondary)] text-xs font-medium rounded-lg hover:text-[var(--text-primary)] transition-colors flex items-center gap-1.5">
-                                <RefreshCw size={12} />
+                            <button className="px-4 py-2 bg-black text-neutral-400 text-xs font-medium rounded-lg hover:text-white transition-colors flex items-center gap-1.5">
+                                <RefreshCw strokeWidth={1.5} size={12} />
                                 {balanceData?.auto_refill_enabled
                                     ? "Manage Auto-Refill"
                                     : "Auto-Refill"}
@@ -136,46 +136,46 @@ export default function UsagePage() {
                     </section>
 
                     {/* ─── Usage Summary ─── */}
-                    <section className="bg-[var(--bg-surface)] rounded-2xl overflow-hidden">
-                        <div className="px-6 py-4 border-b border-[var(--border)]">
+                    <section className="bg-black rounded-xl overflow-hidden">
+                        <div className="px-6 py-4 border-b border-white/10">
                             <div className="flex items-center gap-2">
-                                <Activity size={14} className="text-[var(--text-muted)]" />
-                                <p className="text-sm font-medium text-[var(--text-primary)]">
+                                <Activity strokeWidth={1.5} size={14} className="text-neutral-500" />
+                                <p className="text-sm font-medium text-white">
                                     Usage Summary
                                 </p>
                             </div>
-                            <p className="text-[11px] text-[var(--text-muted)] mt-0.5">
+                            <p className="text-[11px] text-neutral-500 mt-0.5">
                                 {usageData?.period || "Last 30 days"}
                             </p>
                         </div>
 
                         {usageData && Object.keys(usageData.summary).length > 0 ? (
-                            <div className="divide-y divide-[var(--border)]">
+                            <div className="divide-y divide-white/10">
                                 {Object.entries(usageData.summary).map(
                                     ([model, data]: [string, any]) => (
                                         <div key={model} className="px-6 py-4">
                                             <div className="flex items-center justify-between mb-2">
-                                                <p className="text-sm font-medium text-[var(--text-primary)]">
+                                                <p className="text-sm font-medium text-white">
                                                     {model}
                                                 </p>
-                                                <span className="text-sm font-mono text-[var(--accent)]">
+                                                <span className="text-sm font-mono text-white">
                                                     ${data.cost.toFixed(2)}
                                                 </span>
                                             </div>
                                             <div className="flex gap-4">
                                                 <div>
-                                                    <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider">
+                                                    <p className="text-[10px] text-neutral-500 uppercase tracking-wider">
                                                         Input
                                                     </p>
-                                                    <p className="text-xs font-mono text-[var(--text-secondary)]">
+                                                    <p className="text-xs font-mono text-neutral-400">
                                                         {data.input_tokens.toLocaleString()}
                                                     </p>
                                                 </div>
                                                 <div>
-                                                    <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider">
+                                                    <p className="text-[10px] text-neutral-500 uppercase tracking-wider">
                                                         Output
                                                     </p>
-                                                    <p className="text-xs font-mono text-[var(--text-secondary)]">
+                                                    <p className="text-xs font-mono text-neutral-400">
                                                         {data.output_tokens.toLocaleString()}
                                                     </p>
                                                 </div>
@@ -184,12 +184,12 @@ export default function UsagePage() {
                                     )
                                 )}
                                 {/* Total */}
-                                <div className="px-6 py-3 bg-[var(--bg-deep)]">
+                                <div className="px-6 py-3 bg-black">
                                     <div className="flex items-center justify-between">
-                                        <p className="text-xs font-medium text-[var(--text-muted)]">
+                                        <p className="text-xs font-medium text-neutral-500">
                                             Total
                                         </p>
-                                        <p className="text-sm font-mono font-semibold text-[var(--accent)]">
+                                        <p className="text-sm font-mono font-semibold text-white">
                                             ${usageData.total_cost.toFixed(2)}
                                         </p>
                                     </div>
@@ -197,7 +197,7 @@ export default function UsagePage() {
                             </div>
                         ) : (
                             <div className="px-6 py-10 text-center">
-                                <p className="text-sm text-[var(--text-muted)]">
+                                <p className="text-sm text-neutral-500">
                                     {loadingExtras
                                         ? "Loading usage..."
                                         : "No usage recorded yet."}
@@ -207,18 +207,18 @@ export default function UsagePage() {
                     </section>
 
                     {/* ─── Spending History ─── */}
-                    <section className="bg-[var(--bg-surface)] rounded-2xl overflow-hidden">
-                        <div className="px-6 py-4 border-b border-[var(--border)]">
+                    <section className="bg-black rounded-xl overflow-hidden">
+                        <div className="px-6 py-4 border-b border-white/10">
                             <div className="flex items-center gap-2">
-                                <History size={14} className="text-[var(--text-muted)]" />
-                                <p className="text-sm font-medium text-[var(--text-primary)]">
+                                <History strokeWidth={1.5} size={14} className="text-neutral-500" />
+                                <p className="text-sm font-medium text-white">
                                     Spending History
                                 </p>
                             </div>
                         </div>
 
                         {history.length > 0 ? (
-                            <div className="divide-y divide-[var(--border)]">
+                            <div className="divide-y divide-white/10">
                                 {history.map((tx) => {
                                     const dateObj = new Date(tx.date);
                                     const isPositive = tx.amount > 0;
@@ -231,23 +231,23 @@ export default function UsagePage() {
                                             <div
                                                 className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${isPositive
                                                     ? "bg-emerald-500/10"
-                                                    : "bg-[var(--bg-deep)]"
+                                                    : "bg-black"
                                                     }`}
                                             >
                                                 {isPositive ? (
-                                                    <ArrowUpRight size={14} className="text-emerald-400" />
+                                                    <ArrowUpRight strokeWidth={1.5} size={14} className="text-emerald-400" />
                                                 ) : (
-                                                    <ArrowDownRight
+                                                    <ArrowDownRight strokeWidth={1.5}
                                                         size={14}
-                                                        className="text-[var(--text-muted)]"
+                                                        className="text-neutral-500"
                                                     />
                                                 )}
                                             </div>
                                             <div className="flex-1 min-w-0">
-                                                <p className="text-sm text-[var(--text-primary)] truncate">
+                                                <p className="text-sm text-white truncate">
                                                     {tx.description}
                                                 </p>
-                                                <p className="text-[11px] text-[var(--text-muted)]">
+                                                <p className="text-[11px] text-neutral-500">
                                                     {dateObj.toLocaleDateString("en-US", {
                                                         month: "short",
                                                         day: "numeric",
@@ -258,12 +258,12 @@ export default function UsagePage() {
                                             </div>
                                             <div className="text-right shrink-0">
                                                 <p
-                                                    className={`text-sm font-mono font-medium ${isPositive ? "text-emerald-400" : "text-[var(--text-muted)]"
+                                                    className={`text-sm font-mono font-medium ${isPositive ? "text-emerald-400" : "text-neutral-500"
                                                         }`}
                                                 >
                                                     {isPositive ? "+" : ""}${Math.abs(tx.amount).toFixed(isPositive ? 2 : 4)}
                                                 </p>
-                                                <p className="text-[11px] font-mono text-[var(--text-muted)]">
+                                                <p className="text-[11px] font-mono text-neutral-500">
                                                     ${tx.balance.toFixed(2)}
                                                 </p>
                                             </div>
@@ -273,7 +273,7 @@ export default function UsagePage() {
                             </div>
                         ) : (
                             <div className="px-6 py-10 text-center">
-                                <p className="text-sm text-[var(--text-muted)]">
+                                <p className="text-sm text-neutral-500">
                                     {loadingExtras
                                         ? "Loading history..."
                                         : "No transaction history."}
@@ -292,21 +292,21 @@ export default function UsagePage() {
                     aria-modal="true"
                 >
                     <div
-                        className="absolute inset-0 bg-[var(--bg-deep)]/80 backdrop-blur-sm"
+                        className="absolute inset-0 bg-black/80 backdrop-blur-sm"
                         onClick={() => setShowAddCredits(false)}
                     />
-                    <div className="relative bg-[var(--bg-surface)] border border-[var(--border)] rounded-2xl w-full max-w-sm p-7 shadow-2xl">
+                    <div className="relative bg-black border border-white/10 rounded-xl w-full max-w-sm p-7 shadow-2xl">
                         <button
                             onClick={() => setShowAddCredits(false)}
-                            className="absolute top-4 right-4 w-7 h-7 rounded-lg bg-[var(--bg-deep)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+                            className="absolute top-4 right-4 w-7 h-7 rounded-lg bg-black flex items-center justify-center text-neutral-500 hover:text-white transition-colors"
                         >
-                            <X size={14} />
+                            <X strokeWidth={1.5} size={14} />
                         </button>
 
-                        <h2 className="text-lg font-medium text-[var(--text-primary)] mb-0.5">
+                        <h2 className="text-lg font-medium text-white mb-0.5">
                             Add Credits
                         </h2>
-                        <p className="text-xs text-[var(--text-muted)] mb-5">
+                        <p className="text-xs text-neutral-500 mb-5">
                             Choose an amount to add to your balance.
                         </p>
 
@@ -320,8 +320,8 @@ export default function UsagePage() {
                                         setCustomAmount("");
                                     }}
                                     className={`py-2.5 rounded-xl text-sm font-medium transition-all border ${selectedAmount === amt && !customAmount
-                                        ? "bg-[var(--accent-soft)] text-[var(--accent)] border-[var(--accent)]"
-                                        : "bg-[var(--bg-deep)] text-[var(--text-secondary)] border-[var(--border)] hover:border-[var(--text-muted)]"
+                                        ? "bg-white/5 text-white border-white/30"
+                                        : "bg-black text-neutral-400 border-white/10 hover:border-neutral-500"
                                         }`}
                                 >
                                     ${amt}
@@ -331,11 +331,11 @@ export default function UsagePage() {
 
                         {/* Custom */}
                         <div className="mb-5">
-                            <label className="text-xs font-medium text-[var(--text-primary)] mb-1.5 block">
+                            <label className="text-xs font-medium text-white mb-1.5 block">
                                 Custom amount
                             </label>
                             <div className="relative">
-                                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] text-sm">
+                                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-500 text-sm">
                                     $
                                 </span>
                                 <input
@@ -349,7 +349,7 @@ export default function UsagePage() {
                                         setSelectedAmount(null);
                                     }}
                                     placeholder="5.00 - 500.00"
-                                    className="w-full py-2.5 pl-7 pr-4 rounded-xl bg-[var(--bg-deep)] border border-[var(--border)] text-[var(--text-primary)] text-sm placeholder:text-[var(--text-muted)] outline-none focus:border-[var(--accent)] transition-colors"
+                                    className="w-full py-2.5 pl-7 pr-4 rounded-xl bg-black border border-white/10 text-white text-sm placeholder:text-neutral-500 outline-none focus:border-white/30 transition-colors"
                                 />
                             </div>
                             {customAmount && parseFloat(customAmount) < 5 && (
@@ -383,13 +383,13 @@ export default function UsagePage() {
                                         }}
                                         disabled={!isValid || isCreatingCheckout}
                                         className={`w-full py-3 rounded-xl font-medium text-sm flex items-center justify-center gap-2 transition-opacity ${isValid && !isCreatingCheckout
-                                            ? "bg-[var(--accent-soft)] text-[var(--accent)] hover:opacity-80 cursor-pointer"
-                                            : "bg-[var(--bg-deep)] text-[var(--text-muted)] cursor-not-allowed opacity-50"
+                                            ? "bg-white/5 text-white hover:opacity-80 cursor-pointer"
+                                            : "bg-black text-neutral-500 cursor-not-allowed opacity-50"
                                             }`}
                                     >
-                                        <CreditCard size={15} />
+                                        <CreditCard strokeWidth={1.5} size={15} />
                                         {isCreatingCheckout ? "Redirecting..." : "Pay with Dodo"}
-                                        {!isCreatingCheckout && <ExternalLink size={13} />}
+                                        {!isCreatingCheckout && <ExternalLink strokeWidth={1.5} size={13} />}
                                     </button>
                                     {checkoutError && (
                                         <p className="text-[11px] text-red-400 text-center mt-1.5">{checkoutError}</p>
@@ -398,7 +398,7 @@ export default function UsagePage() {
                             );
                         })()}
 
-                        <p className="text-[10px] text-[var(--text-muted)] text-center mt-3">
+                        <p className="text-[10px] text-neutral-500 text-center mt-3">
                             You will be redirected to Dodo Payments to complete your purchase.
                         </p>
                     </div>
