@@ -110,15 +110,31 @@ export default function UsagePage() {
                                 </div>
                             </div>
 
-                            {/* Progress bar */}
-                            <div className="mb-5">
-                                <div className="h-1.5 w-full bg-black rounded-full overflow-hidden">
-                                    <div
-                                        className="h-full bg-white rounded-full transition-all duration-500"
-                                        style={{ width: `${progressPercent}%` }}
-                                    />
-                                </div>
+                        {/* Progress bar */}
+                        <div className="mb-3">
+                            <div className="h-1.5 w-full bg-black rounded-full overflow-hidden">
+                                <div
+                                    className="h-full bg-white rounded-full transition-all duration-500"
+                                    style={{ width: `${progressPercent}%` }}
+                                />
                             </div>
+                        </div>
+
+                        {/* Balance runway estimate */}
+                        {usageData && usageData.total_cost > 0.001 && balanceValue > 0 && (() => {
+                            const dailyRate = usageData.total_cost / 30;
+                            const daysLeft = Math.round(balanceValue / dailyRate);
+                            const label = daysLeft <= 0
+                                ? "< 1 day"
+                                : daysLeft >= 365
+                                    ? "1+ year"
+                                    : `~${daysLeft} day${daysLeft !== 1 ? "s" : ""}`;
+                            return (
+                                <p className="text-[11px] text-neutral-500 mb-4">
+                                    {label} at current usage rate
+                                </p>
+                            );
+                        })()}
 
                             <div className="flex gap-2">
                                 <button
