@@ -3,7 +3,7 @@
 import { useAuth } from "@/context/AuthContext";
 import { CheckCircle2, Loader2 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 
 interface Step {
   label: string;
@@ -43,7 +43,7 @@ const APP_LABELS: Record<string, string> = {
   slack: "Slack",
 };
 
-export default function SetupPage() {
+function SetupContent() {
   const { user, isLoading } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -202,5 +202,19 @@ export default function SetupPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function SetupPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-black">
+          <div className="animate-spin w-8 h-8 border-2 border-white/30 border-t-transparent rounded-full" />
+        </div>
+      }
+    >
+      <SetupContent />
+    </Suspense>
   );
 }

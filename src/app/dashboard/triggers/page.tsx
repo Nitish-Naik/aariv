@@ -1024,8 +1024,15 @@ export default function TriggersPage() {
                                 {trigger.is_enabled ? "Active" : "Paused"}
                               </div>
                               {trigger.is_auto && (
-                                <div className="px-2 py-0.5 rounded text-[10px] font-medium tracking-wider uppercase bg-blue-500/10 text-blue-400">
-                                  Auto
+                                <div className="relative group/auto">
+                                  <div className="px-2 py-0.5 rounded text-[10px] font-medium tracking-wider uppercase bg-blue-500/10 text-blue-400 cursor-default flex items-center gap-1">
+                                    Auto
+                                    <Info strokeWidth={1.5} size={9} />
+                                  </div>
+                                  <div className="absolute bottom-full left-0 mb-2 w-60 p-3 bg-neutral-900 border border-white/10 rounded-xl text-[11px] text-neutral-300 leading-relaxed shadow-xl z-50 opacity-0 group-hover/auto:opacity-100 pointer-events-none transition-opacity duration-150 normal-case tracking-normal font-normal">
+                                    Set up automatically when you connected this app. Runs in the background to keep your briefings up to date.
+                                    <span className="block mt-1.5 text-neutral-500">You can pause or delete it any time.</span>
+                                  </div>
                                 </div>
                               )}
                             </div>
