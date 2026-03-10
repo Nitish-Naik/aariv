@@ -9,6 +9,7 @@ import {
   Calendar,
   Check,
   CheckSquare,
+  ChevronDown,
   Clock,
   Cloud,
   GitPullRequest,
@@ -16,6 +17,8 @@ import {
   Loader2,
   Mail,
   MessageSquare,
+  Square,
+  Trash2,
   X,
   XCircle,
 } from "lucide-react";
@@ -119,6 +122,41 @@ const APP_COLORS: Record<string, string> = {
 
 // ─── Helpers ────────────────────────────────────────────────────────────
 
+function ContextPanel({ ctx }: { ctx: Record<string, unknown> }) {
+  const entries = Object.entries(ctx).filter(
+    ([, v]) => v !== null && v !== undefined && v !== "",
+  );
+  if (entries.length === 0) return null;
+
+  const formatKey = (k: string) =>
+    k.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+
+  const formatValue = (v: unknown): string => {
+    if (typeof v === "boolean") return v ? "Yes" : "No";
+    if (typeof v === "string") return v;
+    if (typeof v === "number") return String(v);
+    if (Array.isArray(v)) return v.join(", ");
+    try { return JSON.stringify(v, null, 2); } catch { return String(v); }
+  };
+
+  return (
+    <div className="mt-3 rounded-xl bg-black/40 border border-white/[0.04] divide-y divide-white/[0.03] overflow-hidden">
+      {entries.map(([key, value]) => (
+        <div key={key} className="flex gap-3 px-4 py-2.5 text-[11px]">
+          <span className="text-neutral-500 font-medium shrink-0 w-[130px] truncate">
+            {formatKey(key)}
+          </span>
+          <span className="text-neutral-400 break-all">
+            {formatValue(value).length > 200
+              ? formatValue(value).slice(0, 197) + "…"
+              : formatValue(value)}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
   const mins = Math.floor(diff / 60000);
@@ -152,6 +190,9 @@ export default function ReviewPage() {
     error?: boolean;
   } | null>(null);
   const [dismissingAll, setDismissingAll] = useState(false);
+  const [expandedItem, setExpandedItem] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [batchDismissing, setBatchDismissing] = useState(false);
 
   // ── Fetch review items ──────────────────────────────────────────────
 
@@ -255,12 +296,37 @@ export default function ReviewPage() {
     }
   };
 
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  const handleBatchDismiss = async (ids: string[]) => {
+    if (!user?.id || ids.length === 0) return;
+    setBatchDismissing(true);
+    try {
+      await Promise.all(
+        ids.map((id) => api.post("/review/act", { userId: user.id, itemId: id, action: "dismiss" }))
+      );
+      setItems((prev) => prev.filter((i) => !ids.includes(i.id)));
+      setCounts((prev) => ({ ...prev, total: Math.max(0, prev.total - ids.length) }));
+      setSelectedIds(new Set());
+    } catch (err: any) {
+      setError(err.message || "Batch dismiss failed");
+    } finally {
+      setBatchDismissing(false);
+    }
+  };
+
   // ── Render ──────────────────────────────────────────────────────────
 
   if (loading) {
     return (
       <div className="bg-black min-h-screen">
-        <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-8 sm:py-12 flex flex-col items-start min-h-full">
+        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 flex flex-col items-start min-h-full">
           {/* Static header always visible */}
           <header className="mb-8 w-full">
             <h1 className="text-3xl font-bold text-white tracking-tight mb-2">
@@ -331,7 +397,7 @@ export default function ReviewPage() {
 
   return (
     <div className="bg-black min-h-screen">
-      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-8 sm:py-12 flex flex-col items-start min-h-full">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 flex flex-col items-start min-h-full">
         {/* Header */}
         <header className="mb-8 w-full">
           <div className="flex items-center justify-between mb-2">
@@ -339,18 +405,34 @@ export default function ReviewPage() {
               Inbox
             </h1>
             {counts.total > 0 && viewFilter === "pending" && (
-              <button
-                onClick={handleDismissAll}
-                disabled={dismissingAll}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-neutral-500 hover:text-white hover:bg-white/[0.03] rounded-lg transition-colors"
-              >
-                {dismissingAll ? (
-                  <Loader2 strokeWidth={1.5} size={12} className="animate-spin" />
-                ) : (
-                  <XCircle strokeWidth={1.5} size={12} />
+              <div className="flex items-center gap-2">
+                {counts.low > 0 && (
+                  <button
+                    onClick={() => handleBatchDismiss(items.filter((i) => i.priority === "low" && i.status === "pending").map((i) => i.id))}
+                    disabled={batchDismissing}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-neutral-500 hover:text-white hover:bg-white/[0.03] rounded-lg transition-colors"
+                  >
+                    {batchDismissing ? (
+                      <Loader2 strokeWidth={1.5} size={12} className="animate-spin" />
+                    ) : (
+                      <Trash2 strokeWidth={1.5} size={12} />
+                    )}
+                    Dismiss low priority
+                  </button>
                 )}
-                Dismiss all
-              </button>
+                <button
+                  onClick={handleDismissAll}
+                  disabled={dismissingAll}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-neutral-500 hover:text-white hover:bg-white/[0.03] rounded-lg transition-colors"
+                >
+                  {dismissingAll ? (
+                    <Loader2 strokeWidth={1.5} size={12} className="animate-spin" />
+                  ) : (
+                    <XCircle strokeWidth={1.5} size={12} />
+                  )}
+                  Dismiss all
+                </button>
+              </div>
             )}
           </div>
           <p className="text-[15px] font-medium text-neutral-500">
@@ -396,7 +478,7 @@ export default function ReviewPage() {
             {(["pending", "resolved", "all"] as ViewFilter[]).map((filter) => (
               <button
                 key={filter}
-                onClick={() => setViewFilter(filter)}
+                onClick={() => { setViewFilter(filter); setSelectedIds(new Set()); }}
                 className={`relative px-4 py-1.5 text-sm font-medium rounded-lg transition-colors focus-visible:outline-none capitalize ${viewFilter === filter
                   ? "text-white"
                   : "text-neutral-500 hover:text-white"
@@ -466,6 +548,43 @@ export default function ReviewPage() {
         ) : (
           /* Items list */
           <div className="space-y-4 w-full">
+            {/* Batch action bar */}
+            <AnimatePresence>
+              {selectedIds.size > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: -8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.18 }}
+                  className="flex items-center justify-between px-4 py-3 rounded-xl bg-neutral-900 border border-white/[0.06] shadow-lg"
+                >
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => setSelectedIds(new Set())}
+                      className="p-1 rounded text-neutral-500 hover:text-white transition-colors"
+                    >
+                      <X strokeWidth={1.5} size={14} />
+                    </button>
+                    <span className="text-sm font-medium text-white">
+                      {selectedIds.size} selected
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => handleBatchDismiss(Array.from(selectedIds))}
+                    disabled={batchDismissing}
+                    className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium bg-white/5 hover:bg-white/[0.08] border border-white/[0.06] text-neutral-300 hover:text-white rounded-xl transition-colors disabled:opacity-50"
+                  >
+                    {batchDismissing ? (
+                      <Loader2 strokeWidth={1.5} size={13} className="animate-spin" />
+                    ) : (
+                      <Trash2 strokeWidth={1.5} size={13} />
+                    )}
+                    Dismiss selected
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
             <AnimatePresence mode="popLayout">
               {items.map((item) => {
                 const priorityStyle =
@@ -491,6 +610,18 @@ export default function ReviewPage() {
                     {/* Top row: source + time + priority */}
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center gap-2.5">
+                        {item.status === "pending" && (
+                          <button
+                            onClick={() => toggleSelect(item.id)}
+                            className="shrink-0 text-neutral-600 hover:text-neutral-300 transition-colors"
+                            aria-label={selectedIds.has(item.id) ? "Deselect" : "Select"}
+                          >
+                            {selectedIds.has(item.id)
+                              ? <CheckSquare strokeWidth={1.5} size={14} className="text-amber-400" />
+                              : <Square strokeWidth={1.5} size={14} />
+                            }
+                          </button>
+                        )}
                         <span
                           className="w-2 h-2 rounded-full shrink-0"
                           style={{ backgroundColor: appColor }}
@@ -518,39 +649,92 @@ export default function ReviewPage() {
                     <h3 className="text-[15px] font-medium text-white mb-1.5 leading-snug">
                       {item.title}
                     </h3>
-                    <p className="text-sm text-neutral-500 mb-5 leading-relaxed">
+                    <p className="text-sm text-neutral-500 leading-relaxed">
                       {item.description}
                     </p>
 
+                    {/* Expandable context details */}
+                    {item.action_context && Object.keys(item.action_context).length > 0 && (
+                      <div className="mt-3 mb-5">
+                        <button
+                          onClick={() => setExpandedItem(expandedItem === item.id ? null : item.id)}
+                          className="flex items-center gap-1.5 text-[11px] text-neutral-600 hover:text-neutral-400 transition-colors"
+                        >
+                          <ChevronDown
+                            strokeWidth={1.5}
+                            size={12}
+                            className={`transition-transform duration-200 ${expandedItem === item.id ? "rotate-180" : ""}`}
+                          />
+                          {expandedItem === item.id ? "Hide details" : "View details"}
+                        </button>
+                        <AnimatePresence>
+                          {expandedItem === item.id && (
+                            <motion.div
+                              initial={{ opacity: 0, height: 0 }}
+                              animate={{ opacity: 1, height: "auto" }}
+                              exit={{ opacity: 0, height: 0 }}
+                              transition={{ duration: 0.2 }}
+                              className="overflow-hidden"
+                            >
+                              <ContextPanel ctx={item.action_context} />
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                    )}
+                    {(!item.action_context || Object.keys(item.action_context).length === 0) && (
+                      <div className="mb-5" />
+                    )}
+
                     {/* AI confidence indicator */}
                     {item.ai_confidence !== null &&
-                      item.ai_confidence !== undefined && (
-                        <div className="flex items-center gap-2 mb-4">
-                          <div className="h-1 w-16 bg-white/5 rounded-full overflow-hidden">
-                            <div
-                              className="h-full rounded-full bg-[rgba(255,255,255,0.2)]"
-                              style={{
-                                width: `${Math.round(item.ai_confidence * 100)}%`,
-                              }}
-                            />
+                      item.ai_confidence !== undefined && (() => {
+                        const pct = Math.round(item.ai_confidence * 100);
+                        const { label, cls } = pct >= 80
+                          ? { label: `${pct}% confident`, cls: "text-emerald-400 bg-emerald-400/10 border-emerald-400/20" }
+                          : pct >= 50
+                            ? { label: `${pct}% confident`, cls: "text-amber-400 bg-amber-400/10 border-amber-400/20" }
+                            : { label: `${pct}% — low confidence`, cls: "text-red-400 bg-red-400/10 border-red-400/20" };
+                        return (
+                          <div className="mb-4">
+                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-medium rounded-full border ${cls}`}>
+                              <div className="w-1 h-1 rounded-full bg-current" />
+                              {label}
+                            </span>
                           </div>
-                          <span className="text-[10px] text-neutral-500 opacity-50">
-                            {Math.round(item.ai_confidence * 100)}% confidence
-                          </span>
-                        </div>
-                      )}
+                        );
+                      })()}
 
-                    {/* Action result toast */}
+                    {/* Post-approve result card */}
                     {result && (
                       <motion.div
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: "auto" }}
-                        className={`mb-4 p-3 rounded-xl text-sm ${result.error
-                          ? "bg-red-50 border border-red-200 text-red-700 dark:bg-[#2C1A1A] dark:border-[#4B2020] dark:text-[#D84A4A]"
-                          : "bg-emerald-50 border border-emerald-200 text-emerald-800 dark:bg-[#1A2C1A] dark:border-[#2A4B2A] dark:text-[#6BD46B]"
-                          }`}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="overflow-hidden mb-4"
                       >
-                        {result.message}
+                        <div className={`p-4 rounded-xl border ${result.error
+                          ? "bg-red-500/5 border-red-500/20"
+                          : "bg-emerald-500/5 border-emerald-500/20"
+                        }`}>
+                          <div className="flex items-start gap-3">
+                            <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${result.error ? "bg-red-500/10" : "bg-emerald-500/10"}`}>
+                              {result.error
+                                ? <AlertTriangle strokeWidth={1.5} size={14} className="text-red-400" />
+                                : <Check strokeWidth={2} size={14} className="text-emerald-400" />
+                              }
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className={`text-xs font-semibold mb-1 ${result.error ? "text-red-400" : "text-emerald-400"}`}>
+                                {result.error ? "Action failed" : "Done"}
+                              </p>
+                              <p className="text-sm text-neutral-300 leading-relaxed">
+                                {result.message}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
                       </motion.div>
                     )}
 

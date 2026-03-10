@@ -694,6 +694,31 @@ function AssistantPageInner() {
           </button>
         </div>
 
+        {/* ─── Run Status Bar ─── */}
+        {isLoading && (
+          <div className="relative shrink-0 z-10">
+            {/* Shimmer sweep bar */}
+            <div className="h-[2px] w-full bg-white/[0.04] overflow-hidden relative">
+              <motion.div
+                className="absolute inset-y-0 w-[40%] bg-gradient-to-r from-transparent via-white/35 to-transparent"
+                animate={{ left: ["-40%", "140%"] }}
+                transition={{ duration: 1.4, ease: "easeInOut", repeat: Infinity }}
+              />
+            </div>
+            {/* Mobile-only activity label (logs panel is desktop-only) */}
+            <div className="lg:hidden px-4 py-1.5 flex items-center gap-2 bg-black border-b border-white/[0.03]">
+              <div className="w-1.5 h-1.5 rounded-full bg-white/30 animate-pulse shrink-0" />
+              <span className="text-[11px] text-neutral-500 truncate">
+                {(() => {
+                  const lastMsg = [...messages].reverse().find(m => m.role === "assistant");
+                  const lastLog = lastMsg?.logs?.[lastMsg.logs.length - 1];
+                  return (lastLog as any)?.label || "Thinking…";
+                })()}
+              </span>
+            </div>
+          </div>
+        )}
+
         {/* Empty State — Centered landing */}
         {messages.length === 0 ? (
           <div className="flex-1 flex flex-col items-center justify-center px-4 sm:px-8">
@@ -741,7 +766,7 @@ function AssistantPageInner() {
                 <button
                   type="submit"
                   disabled={!inputText.trim() || isLoading}
-                  className="absolute right-2 bottom-2 p-2 rounded-xl bg-white text-black hover:bg-gray-200 transition-colors disabled:opacity-30 disabled:bg-transparent disabled:text-neutral-500"
+                  className="absolute right-2 bottom-2 p-2 rounded-xl bg-white text-black hover:bg-neutral-200 transition-colors disabled:opacity-30 disabled:bg-transparent disabled:text-neutral-500"
                 >
                   <Send strokeWidth={1.5} size={18} className="ml-0.5" />
                 </button>
@@ -1136,7 +1161,7 @@ function AssistantPageInner() {
                 <button
                   type="submit"
                   disabled={!inputText.trim() || isLoading}
-                  className="absolute right-2 bottom-2 p-2 rounded-xl bg-white text-black hover:bg-gray-200 transition-colors disabled:opacity-30 disabled:bg-transparent disabled:text-neutral-500"
+                  className="absolute right-2 bottom-2 p-2 rounded-xl bg-white text-black hover:bg-neutral-200 transition-colors disabled:opacity-30 disabled:bg-transparent disabled:text-neutral-500"
                 >
                   <Send strokeWidth={1.5} size={18} className="ml-0.5" />
                 </button>
@@ -1161,14 +1186,14 @@ function AssistantPageInner() {
       >
         <div className="h-16 flex items-center justify-between px-6 border-b border-white/5 bg-[#1A1A1A]/80 backdrop-blur shrink-0">
           <div className="flex items-center gap-2">
-            <Terminal strokeWidth={1.5} size={16} className="text-zinc-400" />
-            <span className="text-xs font-mono font-medium tracking-wider text-zinc-300 uppercase">
+            <Terminal strokeWidth={1.5} size={16} className="text-neutral-400" />
+            <span className="text-xs font-mono font-medium tracking-wider text-neutral-300 uppercase">
               Execution Logs
             </span>
           </div>
           <button
             onClick={() => setIsLogsOpen(false)}
-            className="p-1.5 rounded-lg text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 transition-colors lg:hidden"
+            className="p-1.5 rounded-lg text-neutral-500 hover:text-neutral-300 hover:bg-neutral-800 transition-colors lg:hidden"
           >
             <ChevronRight strokeWidth={1.5} size={18} />
           </button>
@@ -1176,7 +1201,7 @@ function AssistantPageInner() {
 
         <div className="flex-1 overflow-y-auto p-4 space-y-3 font-mono text-sm">
           {allLogs.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full text-zinc-600 text-xs">
+            <div className="flex flex-col items-center justify-center h-full text-neutral-600 text-xs">
               <Terminal strokeWidth={1.5} size={24} className="mb-2 opacity-50" />
               <span>Waiting for tasks...</span>
             </div>

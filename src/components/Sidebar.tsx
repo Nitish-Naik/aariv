@@ -44,6 +44,22 @@ export function Sidebar() {
   const { balanceData } = useBilling();
   const [showSignOutDialog, setShowSignOutDialog] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [pendingCount, setPendingCount] = useState(0);
+
+  // Poll pending review count every 60s
+  useEffect(() => {
+    if (!user?.id) return;
+    const load = () => {
+      import("@/lib/api").then(({ api }) => {
+        api.get(`/review?userId=${user.id}&status=pending`)
+          .then((d) => { if (d?.counts?.total) setPendingCount(d.counts.total); })
+          .catch(() => {});
+      });
+    };
+    load();
+    const t = setInterval(load, 60000);
+    return () => clearInterval(t);
+  }, [user?.id]);
 
   // Close mobile menu on route change
   useEffect(() => {
@@ -65,7 +81,7 @@ export function Sidebar() {
   return (
     <>
       {/* ─── DESKTOP SIDEBAR (hidden on mobile) ─── */}
-      <aside className="hidden md:flex flex-col w-[240px] h-screen border-r border-white/10 bg-black fixed left-0 top-0 z-30">
+      <aside className="hidden md:flex flex-col w-[220px] h-screen border-r border-white/10 bg-black fixed left-0 top-0 z-30">
         {/* Logo */}
         <div className="px-4 py-3 border-b border-white/10 shrink-0">
           <div className="flex items-center gap-2">
@@ -88,6 +104,8 @@ export function Sidebar() {
               pathname === item.href ||
               (item.href !== "/dashboard" && pathname.startsWith(item.href));
             const Icon = item.icon;
+            const isInbox = item.href === "/dashboard/review";
+            const showBadge = isInbox && pendingCount > 0 && !isActive;
 
             return (
               <Link
@@ -98,7 +116,14 @@ export function Sidebar() {
                     : "text-neutral-400 hover:text-white hover:bg-white/5"
                   }`}
               >
-                <Icon size={18} strokeWidth={1.5} />
+                <div className="relative shrink-0">
+                  <Icon size={18} strokeWidth={1.5} />
+                  {showBadge && (
+                    <span className="absolute -top-1.5 -right-1.5 min-w-[14px] h-[14px] rounded-full bg-red-500 text-[9px] font-bold text-white flex items-center justify-center px-0.5 leading-none">
+                      {pendingCount > 9 ? "9+" : pendingCount}
+                    </span>
+                  )}
+                </div>
                 {item.label}
               </Link>
             );
@@ -178,6 +203,8 @@ export function Sidebar() {
             pathname === item.href ||
             (item.href !== "/dashboard" && pathname.startsWith(item.href));
           const Icon = item.icon;
+          const isInbox = item.href === "/dashboard/review";
+          const showBadge = isInbox && pendingCount > 0 && !isActive;
 
           return (
             <Link
@@ -186,7 +213,14 @@ export function Sidebar() {
               className={`flex flex-col items-center gap-0.5 px-3 py-2 rounded-lg min-w-[56px] transition-colors ${isActive ? "text-white" : "text-neutral-500"
                 }`}
             >
-              <Icon size={20} strokeWidth={1.5} />
+              <div className="relative">
+                <Icon size={20} strokeWidth={1.5} />
+                {showBadge && (
+                  <span className="absolute -top-1.5 -right-2 min-w-[15px] h-[15px] rounded-full bg-red-500 text-[9px] font-bold text-white flex items-center justify-center px-0.5 leading-none">
+                    {pendingCount > 9 ? "9+" : pendingCount}
+                  </span>
+                )}
+              </div>
               <span className="text-[10px] font-medium leading-tight">
                 {item.label}
               </span>

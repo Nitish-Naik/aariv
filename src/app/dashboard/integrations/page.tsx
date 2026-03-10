@@ -410,6 +410,7 @@ export default function IntegrationsPage() {
     const color = PLATFORM_COLORS[appSlug] || "#8b95b0";
     const logoSvg = (integration as any).logo || PLATFORM_LOGOS[appSlug];
     const isConnected = integration.status === "connected";
+    const isExpired = !isConnected && ["expired", "inactive", "error", "failed"].includes(integration.status);
     const isConnecting = connecting === integration.appName;
 
     return (
@@ -468,6 +469,19 @@ export default function IntegrationsPage() {
                   Connected
                 </div>
               )
+            ) : isExpired ? (
+              <button
+                onClick={() => handleConnect(integration.appName, false)}
+                disabled={isConnecting}
+                className="px-4 py-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 text-sm font-semibold rounded-xl transition-all duration-300 disabled:opacity-50 border border-amber-500/20"
+                title="This connection has expired. Click to reconnect."
+              >
+                {isConnecting ? (
+                  <Loader2 strokeWidth={1.5} size={14} className="animate-spin" />
+                ) : (
+                  "Reconnect"
+                )}
+              </button>
             ) : (
               <button
                 onClick={() => handleConnect(integration.appName, isConnected)}
@@ -523,7 +537,7 @@ export default function IntegrationsPage() {
 
   return (
     <div className="bg-black min-h-screen">
-      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-8 sm:py-12 text-white">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 text-white">
         {/* Success toast */}
         {toast && (
           <div className="fixed top-4 right-4 z-50 flex items-center gap-2 bg-emerald-500/90 text-white px-5 py-3 rounded-xl shadow-lg text-sm font-medium animate-in slide-in-from-top fade-in duration-300">
@@ -669,17 +683,25 @@ export default function IntegrationsPage() {
         </div>
 
         {loading ? (
-          /* Staggered Skeleton Loaders */
+          /* Staggered Skeleton Loaders — match actual card shape */
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 xl:gap-5">
             {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
               <div
                 key={i}
-                className="rounded-xl p-5 bg-black border border-white/10 min-h-[180px] flex flex-col items-center justify-center animate-pulse"
-                style={{ animationDelay: `${i * 100}ms` }}
+                className="rounded-[1.25rem] h-[260px] bg-[#111319] border border-white/[0.06] animate-pulse"
+                style={{ animationDelay: `${i * 80}ms` }}
               >
-                <div className="w-12 h-12 rounded-xl bg-white/10 mb-4" />
-                <div className="w-24 h-4 rounded bg-white/10 mb-6" />
-                <div className="w-20 h-8 rounded-full bg-white/10/50 mt-auto ml-auto" />
+                <div className="h-full p-5 flex flex-col">
+                  {/* top-right: button stub */}
+                  <div className="flex justify-end">
+                    <div className="h-8 w-20 rounded-xl bg-white/[0.07]" />
+                  </div>
+                  {/* center: logo + name */}
+                  <div className="flex-1 flex flex-col items-center justify-center pb-4 gap-4">
+                    <div className="w-[72px] h-[72px] rounded-xl bg-white/[0.07]" />
+                    <div className="h-5 w-28 rounded-lg bg-white/[0.05]" />
+                  </div>
+                </div>
               </div>
             ))}
           </div>
@@ -703,11 +725,25 @@ export default function IntegrationsPage() {
                 {filteredIntegrations.filter((i) => i.canDisconnect).length ===
                   0 && (
                     <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className="py-10 text-center text-sm text-[#888]"
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="col-span-full py-16 flex flex-col items-center gap-4 text-center"
                     >
-                      No manual connections found.
+                      <div className="w-14 h-14 rounded-2xl bg-neutral-900 border border-white/[0.06] flex items-center justify-center">
+                        <Grid3X3 strokeWidth={1.5} size={22} className="text-neutral-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-neutral-300 mb-1">No apps connected yet</p>
+                        <p className="text-xs text-neutral-600 max-w-xs">
+                          Connect Gmail, Calendar, Slack or GitHub to let Aariv monitor and act on your behalf.
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => setActiveTab("all")}
+                        className="mt-1 px-5 py-2 bg-white hover:bg-neutral-100 text-black text-sm font-semibold rounded-xl transition-all duration-200 shadow-sm"
+                      >
+                        Browse apps
+                      </button>
                     </motion.div>
                   )}
               </div>

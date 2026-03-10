@@ -24,6 +24,7 @@ import {
   X,
   Zap,
 } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
 /* ─── Types ──────────────────────────────────────────────────────── */
@@ -91,7 +92,28 @@ interface TriggerEvent {
   status: string;
   error?: string;
   processing_time_ms?: number;
+  payload?: Record<string, unknown>;
   created_at: string;
+}
+
+function extractPayloadPreview(payload?: Record<string, unknown>): string | null {
+  if (!payload || typeof payload !== "object") return null;
+  const PREVIEW_KEYS = ["subject", "title", "name", "from", "sender", "message", "text", "body", "description", "summary", "content", "label", "action"];
+  for (const key of PREVIEW_KEYS) {
+    const val = (payload as any)[key];
+    if (val && typeof val === "string" && val.trim()) {
+      const trimmed = val.trim();
+      return trimmed.length > 80 ? trimmed.slice(0, 77) + "…" : trimmed;
+    }
+  }
+  // Fallback: first string-valued key
+  for (const [, val] of Object.entries(payload)) {
+    if (val && typeof val === "string" && val.trim().length > 2) {
+      const trimmed = val.trim();
+      return trimmed.length > 80 ? trimmed.slice(0, 77) + "…" : trimmed;
+    }
+  }
+  return null;
 }
 
 /* ─── App-grouped structure ──────────────────────────────────────── */
@@ -389,6 +411,7 @@ export default function TriggersPage() {
   const [creating, setCreating] = useState<string | null>(null);
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [pauseWarningTrigger, setPauseWarningTrigger] = useState<UserTrigger | null>(null);
   const [toast, setToast] = useState<{
     message: string;
     type: "success" | "error";
@@ -573,7 +596,7 @@ export default function TriggersPage() {
   }, [userTriggers, searchQuery]);
   return (
     <div className="bg-black min-h-screen">
-      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-8 sm:py-12">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
         {/* Toast */}
         {toast && (
           <div
@@ -595,6 +618,41 @@ export default function TriggersPage() {
             onClose={() => setConfiguringTrigger(null)}
             isSubmitting={creating === configuringTrigger.slug}
           />
+        )}
+
+        {/* Pause Warning Modal */}
+        {pauseWarningTrigger && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setPauseWarningTrigger(null)} />
+            <div className="relative w-full max-w-sm bg-black border border-amber-500/20 rounded-xl shadow-xl overflow-hidden p-6">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-9 h-9 rounded-xl bg-amber-500/10 flex items-center justify-center shrink-0">
+                  <Pause strokeWidth={1.5} size={16} className="text-amber-400" />
+                </div>
+                <h3 className="text-sm font-semibold text-white">Pause this automation?</h3>
+              </div>
+              <p className="text-xs text-neutral-400 leading-relaxed mb-1">
+                <span className="font-medium text-white">{pauseWarningTrigger.trigger_name || formatTriggerSlug(pauseWarningTrigger.trigger_slug)}</span> runs automatically to keep your daily briefings updated.
+              </p>
+              <p className="text-xs text-amber-400/80 leading-relaxed mb-5">
+                Pausing it will stop new events from appearing in your briefing until you resume.
+              </p>
+              <div className="flex items-center justify-end gap-2">
+                <button
+                  onClick={() => setPauseWarningTrigger(null)}
+                  className="px-4 py-2 text-sm font-medium text-neutral-400 hover:text-white hover:bg-neutral-900 rounded-xl transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => { handleToggle(pauseWarningTrigger); setPauseWarningTrigger(null); }}
+                  className="px-4 py-2 text-sm font-medium bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/20 rounded-xl transition-colors"
+                >
+                  Pause anyway
+                </button>
+              </div>
+            </div>
+          </div>
         )}
 
         {/* Header */}
@@ -624,7 +682,7 @@ export default function TriggersPage() {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
             {[
               { label: "Active", value: stats.active, color: "text-emerald-500" },
-              { label: "Paused", value: stats.paused, color: "text-zinc-400" },
+              { label: "Paused", value: stats.paused, color: "text-neutral-400" },
               {
                 label: "Events",
                 value: stats.totalEvents,
@@ -633,7 +691,7 @@ export default function TriggersPage() {
               {
                 label: "Errors",
                 value: stats.totalErrors,
-                color: stats.totalErrors > 0 ? "text-red-400" : "text-zinc-500",
+                color: stats.totalErrors > 0 ? "text-red-400" : "text-neutral-500",
               },
             ].map((s) => (
               <div
@@ -934,7 +992,7 @@ export default function TriggersPage() {
                                 ? "bg-red-500"
                                 : ev.status === "skipped"
                                   ? "bg-amber-500"
-                                  : "bg-zinc-500"
+                                  : "bg-neutral-500"
                               }`}
                           />
                           <div className="min-w-0">
@@ -1019,7 +1077,7 @@ export default function TriggersPage() {
                                   formatTriggerSlug(trigger.trigger_slug)}
                               </h3>
                               <div
-                                className={`px-2 py-0.5 rounded text-[10px] font-medium tracking-wider uppercase ${trigger.is_enabled ? "bg-emerald-500/10 text-emerald-500" : "bg-zinc-500/10 text-zinc-500"}`}
+                                className={`px-2 py-0.5 rounded text-[10px] font-medium tracking-wider uppercase ${trigger.is_enabled ? "bg-emerald-500/10 text-emerald-500" : "bg-neutral-500/10 text-neutral-500"}`}
                               >
                                 {trigger.is_enabled ? "Active" : "Paused"}
                               </div>
@@ -1082,7 +1140,13 @@ export default function TriggersPage() {
                           <div className="flex sm:flex-col items-center sm:items-end justify-between w-full sm:w-auto gap-3">
                             <div className="flex items-center gap-1 bg-neutral-900 border border-white/10 rounded-lg p-0.5">
                               <button
-                                onClick={() => handleToggle(trigger)}
+                                onClick={() => {
+                                  if (trigger.is_enabled && trigger.is_auto) {
+                                    setPauseWarningTrigger(trigger);
+                                  } else {
+                                    handleToggle(trigger);
+                                  }
+                                }}
                                 disabled={isToggling}
                                 className={`p-1.5 rounded-md transition-colors ${trigger.is_enabled ? "hover:bg-amber-500/10 text-neutral-500 hover:text-amber-500" : "hover:bg-emerald-500/10 text-neutral-500 hover:text-emerald-500"}`}
                                 title={trigger.is_enabled ? "Pause" : "Resume"}
@@ -1115,10 +1179,14 @@ export default function TriggersPage() {
                                 <span>{trigger.event_count || 0}</span>
                               </div>
                               {trigger.error_count > 0 && (
-                                <div className="flex items-center gap-1 text-[11px] text-red-400 bg-red-500/10 px-2 py-1 rounded-md">
+                                <Link
+                                  href={`/dashboard/feed?q=${encodeURIComponent(trigger.trigger_slug)}`}
+                                  className="flex items-center gap-1 text-[11px] text-red-400 bg-red-500/10 hover:bg-red-500/20 px-2 py-1 rounded-md transition-colors"
+                                  title="View errors in Feed"
+                                >
                                   <X strokeWidth={1.5} size={12} />
-                                  <span>{trigger.error_count}</span>
-                                </div>
+                                  <span>{trigger.error_count} error{trigger.error_count !== 1 ? "s" : ""}</span>
+                                </Link>
                               )}
                               <button
                                 onClick={() => {
@@ -1163,45 +1231,49 @@ export default function TriggersPage() {
                               </p>
                             ) : (
                               <div className="space-y-1.5 max-h-48 overflow-y-auto">
-                                {triggerEvents.map((ev) => (
-                                  <div
-                                    key={ev.id}
-                                    className="flex items-center justify-between text-[11px] px-2.5 py-1.5 rounded-md bg-neutral-900"
-                                  >
-                                    <div className="flex items-center gap-2 min-w-0">
-                                      <div
-                                        className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${ev.status === "processed"
-                                          ? "bg-emerald-500"
-                                          : ev.status === "error"
-                                            ? "bg-red-500"
-                                            : ev.status === "skipped"
-                                              ? "bg-amber-500"
-                                              : "bg-zinc-500"
-                                          }`}
-                                      />
-                                      <span className="font-medium text-neutral-400 truncate">
-                                        {ev.status}
-                                      </span>
-                                      {ev.error && (
-                                        <span className="text-red-400 truncate">
-                                          {" "}
-                                          — {ev.error}
+                                {triggerEvents.map((ev) => {
+                                  const preview = extractPayloadPreview(ev.payload);
+                                  return (
+                                    <div
+                                      key={ev.id}
+                                      className="flex flex-col gap-0.5 text-[11px] px-2.5 py-2 rounded-md bg-neutral-900"
+                                    >
+                                      <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2 min-w-0">
+                                          <div
+                                            className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${ev.status === "processed"
+                                              ? "bg-emerald-500"
+                                              : ev.status === "error"
+                                                ? "bg-red-500"
+                                                : ev.status === "skipped"
+                                                  ? "bg-amber-500"
+                                                  : "bg-neutral-500"
+                                              }`}
+                                          />
+                                          <span className="font-medium text-neutral-400">
+                                            {ev.status}
+                                          </span>
+                                        </div>
+                                        <span className="text-neutral-500 tabular-nums ml-2 flex-shrink-0">
+                                          {new Date(ev.created_at).toLocaleString(
+                                            undefined,
+                                            {
+                                              month: "short",
+                                              day: "numeric",
+                                              hour: "2-digit",
+                                              minute: "2-digit",
+                                            },
+                                          )}
                                         </span>
-                                      )}
+                                      </div>
+                                      {ev.error ? (
+                                        <p className="text-red-400 truncate pl-3.5">{ev.error}</p>
+                                      ) : preview ? (
+                                        <p className="text-neutral-500 truncate pl-3.5">{preview}</p>
+                                      ) : null}
                                     </div>
-                                    <span className="text-neutral-500 tabular-nums ml-2 flex-shrink-0">
-                                      {new Date(ev.created_at).toLocaleString(
-                                        undefined,
-                                        {
-                                          month: "short",
-                                          day: "numeric",
-                                          hour: "2-digit",
-                                          minute: "2-digit",
-                                        },
-                                      )}
-                                    </span>
-                                  </div>
-                                ))}
+                                  );
+                                })}
                               </div>
                             )}
                           </div>
