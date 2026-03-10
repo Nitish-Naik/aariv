@@ -10,6 +10,7 @@ import {
   Calendar,
   Check,
   CheckSquare,
+  ChevronDown,
   Clock,
   Cloud,
   GitPullRequest,
@@ -97,6 +98,47 @@ const PRIORITY_STYLES: Record<
 
 // ─── Helpers ────────────────────────────────────────────────────────────
 
+/** Render action_context as a clean key-value list, skipping nulls/empty */
+function ContextPanel({ ctx }: { ctx: Record<string, unknown> }) {
+  const entries = Object.entries(ctx).filter(
+    ([, v]) => v !== null && v !== undefined && v !== "",
+  );
+  if (entries.length === 0) return null;
+
+  const formatKey = (k: string) =>
+    k.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+
+  const formatValue = (v: unknown): string => {
+    if (typeof v === "string") return v;
+    if (typeof v === "number" || typeof v === "boolean") return String(v);
+    if (Array.isArray(v)) return v.join(", ");
+    try {
+      return JSON.stringify(v, null, 2);
+    } catch {
+      return String(v);
+    }
+  };
+
+  return (
+    <div className="mt-4 rounded-xl bg-black/40 border border-white/[0.05] p-4 space-y-2.5">
+      {entries.map(([key, value]) => {
+        const str = formatValue(value);
+        const isLong = str.length > 200;
+        return (
+          <div key={key} className="grid grid-cols-[140px_1fr] gap-3 text-xs">
+            <span className="text-neutral-500 font-medium truncate pt-0.5">
+              {formatKey(key)}
+            </span>
+            <span className="text-neutral-300 leading-relaxed break-words whitespace-pre-wrap line-clamp-4">
+              {isLong ? str.slice(0, 200) + "…" : str}
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
   const mins = Math.floor(diff / 60000);
@@ -130,6 +172,7 @@ export default function ReviewPage() {
     error?: boolean;
   } | null>(null);
   const [dismissingAll, setDismissingAll] = useState(false);
+  const [expandedItem, setExpandedItem] = useState<string | null>(null);
 
   // ── Fetch review items ──────────────────────────────────────────────
 
@@ -496,9 +539,39 @@ export default function ReviewPage() {
                     <h3 className="text-[15px] font-medium text-white mb-1.5 leading-snug">
                       {item.title}
                     </h3>
-                    <p className="text-sm text-neutral-500 mb-5 leading-relaxed">
+                    <p className="text-sm text-neutral-500 leading-relaxed">
                       {item.description}
                     </p>
+
+                    {/* Context expand toggle */}
+                    {item.action_context && Object.keys(item.action_context).length > 0 && (
+                      <div className="mt-3 mb-2">
+                        <button
+                          onClick={() => setExpandedItem(expandedItem === item.id ? null : item.id)}
+                          className="flex items-center gap-1.5 text-xs font-medium text-neutral-500 hover:text-neutral-300 transition-colors"
+                        >
+                          <ChevronDown
+                            strokeWidth={1.5}
+                            size={13}
+                            className={`transition-transform duration-200 ${expandedItem === item.id ? "rotate-180" : ""}`}
+                          />
+                          {expandedItem === item.id ? "Hide details" : "View details"}
+                        </button>
+                        <AnimatePresence>
+                          {expandedItem === item.id && (
+                            <motion.div
+                              initial={{ opacity: 0, height: 0 }}
+                              animate={{ opacity: 1, height: "auto" }}
+                              exit={{ opacity: 0, height: 0 }}
+                              transition={{ duration: 0.2 }}
+                              className="overflow-hidden"
+                            >
+                              <ContextPanel ctx={item.action_context} />
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                    )}
 
                     {/* AI confidence indicator */}
                     {item.ai_confidence !== null &&

@@ -208,6 +208,20 @@ export default function FeedPage() {
     [events, serverStats],
   );
 
+  // Today-scoped stats for the summary strip
+  const todayStats = useMemo(() => {
+    const todayStr = new Date().toDateString();
+    const todayEvts = events.filter(
+      (e) => new Date(e.createdAt).toDateString() === todayStr,
+    );
+    const lastEvent = events.length > 0 ? events[0] : null;
+    return {
+      total: todayEvts.length,
+      failed: todayEvts.filter((e) => e.status === "failed").length,
+      lastEventAt: lastEvent?.createdAt ?? null,
+    };
+  }, [events]);
+
   return (
     <div className="bg-black min-h-screen">
       <div className="max-w-[1048px] mx-auto px-4 sm:px-6 py-8 sm:py-12">
@@ -318,6 +332,27 @@ export default function FeedPage() {
                 <p className={`text-2xl font-serif ${s.color}`}>{s.value}</p>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* ── Today Summary Strip ───────────────────────── */}
+        {!loading && events.length > 0 && (
+          <div className="flex items-center gap-2 text-xs text-neutral-500 mb-6 -mt-4 px-1 flex-wrap">
+            <span className="font-semibold text-neutral-400 tracking-wide">Today</span>
+            <span className="text-neutral-700">·</span>
+            <span>{todayStats.total} event{todayStats.total !== 1 ? "s" : ""}</span>
+            <span className="text-neutral-700">·</span>
+            {todayStats.failed > 0 ? (
+              <span className="text-red-400 font-medium">{todayStats.failed} error{todayStats.failed !== 1 ? "s" : ""}</span>
+            ) : (
+              <span>0 errors</span>
+            )}
+            {todayStats.lastEventAt && (
+              <>
+                <span className="text-neutral-700">·</span>
+                <span>Last: {timeAgo(todayStats.lastEventAt)}</span>
+              </>
+            )}
           </div>
         )}
 

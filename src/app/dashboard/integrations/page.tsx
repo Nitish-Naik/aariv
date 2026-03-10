@@ -117,14 +117,6 @@ function deriveCornerColors(hex: string): [string, string, string, string] {
   ];
 }
 
-/** Get corner colors: use manual override for multi-color brands, otherwise auto-derive */
-function getCornerColors(
-  appSlug: string,
-  brandColor: string,
-): [string, string, string, string] {
-  return PLATFORM_CORNER_COLORS[appSlug] || deriveCornerColors(brandColor);
-}
-
 // Map apps to broad categories for filtering (fallback only for apps without API categories)
 const APP_CATEGORIES_FALLBACK: Record<string, string> = {
   gmail: "communication",
@@ -141,6 +133,82 @@ const APP_CATEGORIES_FALLBACK: Record<string, string> = {
 
 import { PLATFORM_LOGOS } from "@/lib/platform-logos";
 
+// What Aariv can do after connecting each app
+const APP_CONNECT_EXPLANATIONS: Record<string, { title: string; bullets: string[] }> = {
+  gmail: {
+    title: "Gmail is connected",
+    bullets: [
+      "Monitor your inbox for emails matching your rules",
+      "Draft replies and send messages on your behalf",
+      "Summarize long threads and extract action items",
+    ],
+  },
+  googlecalendar: {
+    title: "Google Calendar is connected",
+    bullets: [
+      "Watch for new meetings and schedule changes",
+      "Create events and send invites automatically",
+      "Brief you before upcoming calls",
+    ],
+  },
+  slack: {
+    title: "Slack is connected",
+    bullets: [
+      "Monitor channels and DMs for key mentions",
+      "Send messages and post to channels for you",
+      "Summarize threads you've missed",
+    ],
+  },
+  github: {
+    title: "GitHub is connected",
+    bullets: [
+      "Watch for new issues, pull requests, and reviews",
+      "Create issues and leave comments on PRs",
+      "Summarize changes across your repositories",
+    ],
+  },
+  linear: {
+    title: "Linear is connected",
+    bullets: [
+      "Track issue status changes and assignments",
+      "Create and update tickets from your instructions",
+      "Summarize sprint progress and blockers",
+    ],
+  },
+  notion: {
+    title: "Notion is connected",
+    bullets: [
+      "Read and update pages in your workspace",
+      "Create new notes, databases, and pages",
+      "Search across your entire Notion workspace",
+    ],
+  },
+  discord: {
+    title: "Discord is connected",
+    bullets: [
+      "Monitor server channels for key messages",
+      "Send messages and replies on your behalf",
+      "Summarize activity in your servers",
+    ],
+  },
+  hubspot: {
+    title: "HubSpot is connected",
+    bullets: [
+      "Track contact and deal activity changes",
+      "Create contacts, deals, and log interactions",
+      "Alert you to pipeline changes and open tasks",
+    ],
+  },
+  stripe: {
+    title: "Stripe is connected",
+    bullets: [
+      "Monitor payments, refunds, and disputes",
+      "Look up customer and subscription details",
+      "Alert you to failed charges or unusual activity",
+    ],
+  },
+};
+
 export default function IntegrationsPage() {
   const { user } = useAuth();
   const [integrations, setIntegrations] = useState<Integration[]>([]);
@@ -154,6 +222,7 @@ export default function IntegrationsPage() {
   >([]);
   const [groupByCategory, setGroupByCategory] = useState(false);
   const [confirmDisconnect, setConfirmDisconnect] = useState<{ id: string, name: string } | null>(null);
+  const [postConnectApp, setPostConnectApp] = useState<string | null>(null);
 
   // UI State
   const [activeTab, setActiveTab] = useState<"all" | "connected">("all");
@@ -172,29 +241,19 @@ export default function IntegrationsPage() {
       params.get("status") === "ACTIVE"
     ) {
       const app = params.get("app") || "App";
-      const displayName = app.replace("-", " ");
+      const appSlug = app.toLowerCase().replace(/-/g, "");
       // Fire auto-setup for default triggers (server-side also runs this via callback)
       api
         .post("/triggers/auto-setup", { userId: user!.id, appName: app })
         .catch(() => { });
-      setToast(
-        <span>
-          {displayName} connected!{" "}
-          <Link
-            href="/dashboard/triggers"
-            className="underline underline-offset-2 hover:text-white"
-          >
-            Customize monitoring &rarr;
-          </Link>
-        </span>,
-      );
+      // Show post-connect explanation panel for all apps
+      setPostConnectApp(appSlug);
       // Clean URL
       window.history.replaceState({}, "", "/dashboard/integrations");
-      setTimeout(() => setToast(null), 5000);
     }
   }, [user?.id]);
 
-  const loadIntegrations = async () => {
+  const loadIntegrations = async (): Promise<Integration[]> => {
     try {
       setLoading(true);
       const data = await api.get(`/integrations?userId=${user!.id}`);
@@ -215,8 +274,10 @@ export default function IntegrationsPage() {
           );
         }
       }
+      return loadedIntegrations;
     } catch (e: any) {
       console.error("Failed to load integrations:", e.message);
+      return [];
     } finally {
       setLoading(false);
     }
@@ -255,12 +316,19 @@ export default function IntegrationsPage() {
         );
 
         // Poll for popup close, then refresh integrations
+        const connectedAppName = appName;
         const pollTimer = setInterval(() => {
           if (!popup || popup.closed) {
             clearInterval(pollTimer);
             setConnecting(null);
             // Refresh integrations list after OAuth completes
-            loadIntegrations();
+            loadIntegrations().then((loaded) => {
+              const slug = connectedAppName.toLowerCase().replace(/-/g, "");
+              const isNowConnected = loaded.find(
+                (i) => i.appName.toLowerCase().replace(/-/g, "") === slug && i.status === "connected",
+              );
+              if (isNowConnected) setPostConnectApp(slug);
+            });
           }
         }, 1000);
       } else {
@@ -833,6 +901,102 @@ export default function IntegrationsPage() {
           </>
         )}
       </div>
+
+      {/* Post-connect Explanation Panel */}
+      <AnimatePresence>
+        {postConnectApp && (() => {
+          const appSlug = postConnectApp;
+          const connectedIntegration = integrations.find(
+            (i) => i.appName.toLowerCase().replace(/-/g, "") === appSlug,
+          );
+          const displayName = connectedIntegration?.label || appSlug.charAt(0).toUpperCase() + appSlug.slice(1);
+          const explanation = APP_CONNECT_EXPLANATIONS[appSlug] ?? {
+            title: `${displayName} is connected`,
+            bullets: [
+              "Use it as a tool when you chat with Aariv",
+              "Aariv can read and act on data in this app",
+              "Set up triggers to monitor it for events",
+            ],
+          };
+          const logoSvg = PLATFORM_LOGOS[appSlug];
+          const color = PLATFORM_COLORS[appSlug] || "#8b95b0";
+          return (
+            <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4">
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+                onClick={() => setPostConnectApp(null)}
+              />
+              <motion.div
+                initial={{ opacity: 0, y: 24, scale: 0.97 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 24, scale: 0.97 }}
+                transition={{ type: "spring", bounce: 0.25, duration: 0.45 }}
+                className="relative w-full max-w-md bg-[#111319] border border-white/10 rounded-2xl shadow-2xl overflow-hidden"
+              >
+                {/* Subtle brand glow behind header */}
+                <div
+                  className="absolute top-0 left-0 right-0 h-32 opacity-20 pointer-events-none"
+                  style={{ background: `radial-gradient(ellipse at 50% 0%, ${color} 0%, transparent 70%)` }}
+                />
+
+                <div className="relative p-6">
+                  {/* Header */}
+                  <div className="flex items-center gap-3 mb-5">
+                    {logoSvg ? (
+                      <img src={logoSvg} alt={appSlug} className="w-9 h-9 object-contain shrink-0" />
+                    ) : (
+                      <div className="w-9 h-9 rounded-lg flex items-center justify-center text-white font-bold text-lg shrink-0"
+                        style={{ backgroundColor: color }}>
+                        {appSlug[0].toUpperCase()}
+                      </div>
+                    )}
+                    <div>
+                      <h3 className="text-[17px] font-semibold text-white leading-tight">
+                        {explanation.title}
+                      </h3>
+                      <p className="text-xs text-neutral-500 mt-0.5">
+                        Here's what Aariv can now do for you
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Bullet list */}
+                  <ul className="space-y-3 mb-6">
+                    {explanation.bullets.map((bullet, i) => (
+                      <li key={i} className="flex items-start gap-3">
+                        <span className="mt-0.5 shrink-0 w-5 h-5 rounded-full bg-emerald-500/15 flex items-center justify-center">
+                          <Check strokeWidth={2.5} size={11} className="text-emerald-400" />
+                        </span>
+                        <span className="text-sm text-neutral-300 leading-snug">{bullet}</span>
+                      </li>
+                    ))}
+                  </ul>
+
+                  {/* Actions */}
+                  <div className="flex items-center gap-3">
+                    <Link
+                      href="/dashboard/triggers"
+                      onClick={() => setPostConnectApp(null)}
+                      className="flex-1 text-center px-4 py-2.5 bg-white text-black text-sm font-semibold rounded-xl hover:bg-neutral-100 transition-colors"
+                    >
+                      Set up triggers →
+                    </Link>
+                    <button
+                      onClick={() => setPostConnectApp(null)}
+                      className="px-4 py-2.5 text-sm font-medium text-neutral-400 hover:text-white hover:bg-white/5 rounded-xl transition-colors"
+                    >
+                      Done
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+          );
+        })()}
+      </AnimatePresence>
 
       {/* Disconnect Confirmation Modal */}
       <AnimatePresence>
