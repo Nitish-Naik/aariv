@@ -8,6 +8,7 @@ import {
   Activity,
   AlertCircle,
   CheckSquare,
+  ChevronDown,
   Clock,
   ExternalLink,
   RefreshCw,
@@ -15,7 +16,8 @@ import {
   Zap,
 } from "lucide-react";
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 /* ─── Types ──────────────────────────────────────────────── */
 
@@ -43,6 +45,28 @@ const STATUS_META: Record<string, { color: string; label: string }> = {
 };
 
 /* ─── Helpers ────────────────────────────────────────────── */
+
+function cleanError(error: string): string {
+  if (!error) return "Unknown error";
+  const e = error.toLowerCase();
+  if (e.includes("insufficient_credits") || e.includes("out of credits")) return "Out of credits — add credits to process events";
+  if (e.includes("nonetype") || e.includes("attributeerror")) return "Processing failed — event data was incomplete";
+  if (e.includes("connectionerror") || e.includes("connecttimeout") || e.includes("connection refused")) return "Couldn't reach the app — connection timed out";
+  if (e.includes("httperror") || e.includes("status code")) return "The app returned an error";
+  if (e.includes("jsondecode") || e.includes("json.decoder")) return "Couldn't parse the app response";
+  if (e.includes("keyerror")) return "Missing expected data in event payload";
+  if (e.includes("timeouterror") || (e.includes("timeout") && !e.includes("connect"))) return "Processing timed out";
+  if (e.includes("ratelimit") || e.includes("rate limit") || e.includes("429")) return "Rate limited — will retry automatically";
+  if (e.includes("permission") || e.includes("unauthorized") || e.includes("403")) return "Permission denied — check your connection";
+  // Strip Python exception class prefix (e.g. "ValueError: ...")
+  const colonIdx = error.indexOf(": ");
+  if (colonIdx > 0 && colonIdx < 40 && /^[A-Z]/.test(error)) {
+    const msg = error.slice(colonIdx + 2).trim();
+    if (msg.length > 0 && msg.length < 200) return msg.length > 120 ? msg.slice(0, 117) + "…" : msg;
+  }
+  if (error.length > 120) return error.slice(0, 117) + "…";
+  return error;
+}
 
 function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
@@ -91,13 +115,15 @@ function groupByDate(
 
 export default function FeedPage() {
   const { user } = useAuth();
+  const searchParams = useSearchParams();
   const [events, setEvents] = useState<FeedEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [syncDelta, setSyncDelta] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [appFilter, setAppFilter] = useState<AppFilter>("all");
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(() => searchParams.get("q") || "");
   const [serverStats, setServerStats] = useState<{
     total: number;
     completed: number;
@@ -106,6 +132,8 @@ export default function FeedPage() {
   } | null>(null);
   const [hasMore, setHasMore] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [expandedEvent, setExpandedEvent] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<"all" | "failed">("all");
 
   const loadEvents = useCallback(
     async (silent = false, offset = 0) => {
@@ -140,9 +168,13 @@ export default function FeedPage() {
     [user?.id],
   );
 
+  const countBeforeSyncRef = useRef<number | null>(null);
+
   const syncFromComposio = useCallback(async () => {
     if (!user?.id || syncing) return;
     setSyncing(true);
+    setSyncDelta(null);
+    countBeforeSyncRef.current = events.length;
     try {
       const baseUrl = api.getBaseUrl().replace(/\/api$/, "");
       await fetch(`${baseUrl}/webhook/sync`, {
@@ -150,7 +182,6 @@ export default function FeedPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ user_id: user.id }),
       });
-      // Wait a moment for events to be processed, then refresh
       await new Promise((r) => setTimeout(r, 2000));
       await loadEvents(true);
     } catch (err) {
@@ -158,7 +189,23 @@ export default function FeedPage() {
     } finally {
       setSyncing(false);
     }
-  }, [user?.id, syncing, loadEvents]);
+  }, [user?.id, syncing, loadEvents, events.length]);
+
+  // Compute delta once syncing finishes and events are updated
+  useEffect(() => {
+    if (!syncing && countBeforeSyncRef.current !== null) {
+      const delta = events.length - countBeforeSyncRef.current;
+      countBeforeSyncRef.current = null;
+      if (delta >= 0) setSyncDelta(delta);
+    }
+  }, [syncing, events.length]);
+
+  // Auto-clear delta badge after 8 s
+  useEffect(() => {
+    if (syncDelta === null) return;
+    const t = setTimeout(() => setSyncDelta(null), 8000);
+    return () => clearTimeout(t);
+  }, [syncDelta]);
 
   useEffect(() => {
     loadEvents();
@@ -170,18 +217,25 @@ export default function FeedPage() {
     return () => clearInterval(interval);
   }, [loadEvents]);
 
-  // Derive unique apps for filter
+  // Derive unique apps for filter + per-app counts
   const appOptions = useMemo(() => {
     const apps = new Set(events.map((e) => e.app));
     return Array.from(apps).sort();
   }, [events]);
 
+  const appCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const e of events) counts[e.app] = (counts[e.app] || 0) + 1;
+    return counts;
+  }, [events]);
+
+  const failedCount = useMemo(() => events.filter((e) => e.status === "failed").length, [events]);
+
   // Filtered events
   const filtered = useMemo(() => {
     let result = events;
-    if (appFilter !== "all") {
-      result = result.filter((e) => e.app === appFilter);
-    }
+    if (appFilter !== "all") result = result.filter((e) => e.app === appFilter);
+    if (statusFilter === "failed") result = result.filter((e) => e.status === "failed");
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       result = result.filter(
@@ -192,7 +246,7 @@ export default function FeedPage() {
       );
     }
     return result;
-  }, [events, appFilter, searchQuery]);
+  }, [events, appFilter, statusFilter, searchQuery]);
 
   const grouped = useMemo(() => groupByDate(filtered), [filtered]);
 
@@ -224,7 +278,7 @@ export default function FeedPage() {
 
   return (
     <div className="bg-black min-h-screen">
-      <div className="max-w-[1048px] mx-auto px-4 sm:px-6 py-8 sm:py-12">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
         {/* ── Header ────────────────────────────────────── */}
         <div className="flex items-start justify-between mb-8">
           <div>
@@ -246,7 +300,12 @@ export default function FeedPage() {
                 size={13}
                 className={`text-neutral-500 group-hover:text-white transition-colors ${syncing ? "animate-pulse" : ""}`}
               />
-              {syncing ? "Syncing…" : "Sync"}
+              {syncing ? "Checking…" : "Check for new events"}
+              {!syncing && syncDelta !== null && (
+                <span className={`ml-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-semibold ${syncDelta > 0 ? "bg-emerald-500/20 text-emerald-400" : "bg-neutral-800 text-neutral-500"}`}>
+                  {syncDelta > 0 ? `+${syncDelta}` : "Up to date"}
+                </span>
+              )}
             </button>
             <button
               onClick={() => loadEvents(true)}
@@ -310,7 +369,7 @@ export default function FeedPage() {
                     ? "text-red-400"
                     : "text-white",
                 dot:
-                  stats.failed > 0 ? "bg-red-400 animate-pulse" : "bg-zinc-500",
+                  stats.failed > 0 ? "bg-red-400 animate-pulse" : "bg-neutral-500",
               },
               {
                 label: "Apps",
@@ -359,34 +418,53 @@ export default function FeedPage() {
         {/* ── Filters ───────────────────────────────────── */}
         {!loading && events.length > 0 && (
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-8">
-            {/* App pills */}
+            {/* App pills + status pills */}
             <div className="flex items-center gap-2 flex-wrap">
               <button
-                onClick={() => setAppFilter("all")}
-                className={`shrink-0 px-4 py-1.5 text-xs font-medium rounded-full transition-all duration-300 border ${appFilter === "all"
+                onClick={() => { setAppFilter("all"); setStatusFilter("all"); }}
+                className={`shrink-0 px-4 py-1.5 text-xs font-medium rounded-full transition-all duration-300 border ${
+                  appFilter === "all" && statusFilter === "all"
                     ? "bg-white text-black border-white shadow-sm"
                     : "bg-neutral-900 text-neutral-500 border-white/10 hover:border-white/20 hover:text-white"
                   }`}
               >
                 All
               </button>
+              {failedCount > 0 && (
+                <button
+                  onClick={() => { setAppFilter("all"); setStatusFilter(statusFilter === "failed" ? "all" : "failed"); }}
+                  className={`flex items-center gap-1.5 shrink-0 px-4 py-1.5 text-xs font-medium rounded-full transition-all duration-300 border ${
+                    statusFilter === "failed"
+                      ? "bg-red-500/20 text-red-300 border-red-500/40 shadow-sm"
+                      : "bg-neutral-900 text-neutral-500 border-white/10 hover:border-red-500/30 hover:text-red-400"
+                  }`}
+                >
+                  <div className={`w-1.5 h-1.5 rounded-full bg-red-400 ${statusFilter === "failed" ? "animate-pulse" : ""}`} />
+                  Failed
+                  <span className="ml-0.5 opacity-60 tabular-nums">({failedCount})</span>
+                </button>
+              )}
               {appOptions.map((app) => (
                 <button
                   key={app}
-                  onClick={() => setAppFilter(app)}
-                  className={`group flex items-center gap-1.5 shrink-0 px-4 py-1.5 text-xs font-medium rounded-full transition-all duration-300 border ${appFilter === app
+                  onClick={() => { setAppFilter(app); setStatusFilter("all"); }}
+                  className={`group flex items-center gap-1.5 shrink-0 px-4 py-1.5 text-xs font-medium rounded-full transition-all duration-300 border ${
+                    appFilter === app && statusFilter === "all"
                       ? "bg-white text-black border-white shadow-sm"
                       : "bg-neutral-900 text-neutral-500 border-white/10 hover:border-white/20 hover:text-white"
                     }`}
                 >
                   <div
-                    className={`w-1.5 h-1.5 rounded-full transition-all ${appFilter === app ? "scale-110 shadow-[0_0_8px_currentColor]" : "group-hover:scale-110"}`}
+                    className={`w-1.5 h-1.5 rounded-full transition-all ${appFilter === app && statusFilter === "all" ? "scale-110 shadow-[0_0_8px_currentColor]" : "group-hover:scale-110"}`}
                     style={{
                       backgroundColor: getAppColor(app),
                       color: getAppColor(app),
                     }}
                   />
                   {getAppLabel(app) || app}
+                  <span className={`ml-0.5 tabular-nums ${appFilter === app && statusFilter === "all" ? "opacity-50" : "opacity-40"}`}>
+                    ({appCounts[app] ?? 0})
+                  </span>
                 </button>
               ))}
             </div>
@@ -510,6 +588,7 @@ export default function FeedPage() {
             <button
               onClick={() => {
                 setAppFilter("all");
+                setStatusFilter("all");
                 setSearchQuery("");
               }}
               className="text-xs font-medium text-white hover:text-white transition-colors mt-2 bg-white/10 px-4 py-1.5 rounded-full"
@@ -591,13 +670,64 @@ export default function FeedPage() {
                               )}
 
                               {evt.error && (
-                                <div className="flex items-center gap-1.5 mt-3 text-red-400 bg-red-400/10 px-3 py-2 rounded-lg border border-red-400/20 w-fit">
-                                  <AlertCircle strokeWidth={1.5} size={12} />
+                                <div className="flex items-center gap-1.5 mt-3 text-red-400 bg-red-400/10 px-3 py-2 rounded-lg border border-red-400/20 w-fit max-w-full">
+                                  <AlertCircle strokeWidth={1.5} size={12} className="shrink-0" />
                                   <span className="text-[11px] font-medium">
-                                    {evt.error}
+                                    {cleanError(evt.error)}
                                   </span>
                                 </div>
                               )}
+
+                              {/* Expandable details */}
+                              <button
+                                onClick={() => setExpandedEvent(expandedEvent === evt.id ? null : evt.id)}
+                                className="flex items-center gap-1 mt-3 text-[11px] text-neutral-600 hover:text-neutral-400 transition-colors"
+                              >
+                                <ChevronDown strokeWidth={1.5} size={12} className={`transition-transform duration-200 ${expandedEvent === evt.id ? "rotate-180" : ""}`} />
+                                {expandedEvent === evt.id ? "Hide details" : "Details"}
+                              </button>
+
+                              <AnimatePresence>
+                                {expandedEvent === evt.id && (
+                                  <motion.div
+                                    initial={{ opacity: 0, height: 0 }}
+                                    animate={{ opacity: 1, height: "auto" }}
+                                    exit={{ opacity: 0, height: 0 }}
+                                    transition={{ duration: 0.2 }}
+                                    className="overflow-hidden"
+                                  >
+                                    <div className="mt-3 pt-3 border-t border-white/[0.04] space-y-2.5">
+                                      <div className="grid grid-cols-[100px_1fr] gap-x-3 gap-y-1.5 text-[11px]">
+                                        <span className="text-neutral-600 font-medium">Event ID</span>
+                                        <span className="text-neutral-400 font-mono break-all">{evt.id}</span>
+                                        <span className="text-neutral-600 font-medium">Trigger</span>
+                                        <span className="text-neutral-400 font-mono">{evt.triggerSlug}</span>
+                                        <span className="text-neutral-600 font-medium">Status</span>
+                                        <span className="text-neutral-400">{evt.status}</span>
+                                        {evt.processingTimeMs != null && (
+                                          <>
+                                            <span className="text-neutral-600 font-medium">Process time</span>
+                                            <span className="text-neutral-400">{evt.processingTimeMs}ms</span>
+                                          </>
+                                        )}
+                                        {evt.error && (
+                                          <>
+                                            <span className="text-neutral-600 font-medium">Raw error</span>
+                                            <span className="text-red-400/70 font-mono break-all">{evt.error.length > 300 ? evt.error.slice(0, 297) + "…" : evt.error}</span>
+                                          </>
+                                        )}
+                                      </div>
+                                      <Link
+                                        href="/dashboard/review"
+                                        className="inline-flex items-center gap-1.5 text-[11px] text-neutral-500 hover:text-white transition-colors"
+                                      >
+                                        <ExternalLink strokeWidth={1.5} size={11} />
+                                        See if this needs your review →
+                                      </Link>
+                                    </div>
+                                  </motion.div>
+                                )}
+                              </AnimatePresence>
                             </div>
 
                             {/* Right: time + processing */}

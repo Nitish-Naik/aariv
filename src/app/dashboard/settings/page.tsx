@@ -26,6 +26,7 @@ import {
   Shield,
   Sparkles,
   Sun,
+  Sunrise,
   Trash2,
   Users,
   Wallet,
@@ -37,26 +38,30 @@ import React, { useEffect, useRef, useState } from "react";
 const MODEL_OPTIONS = [
   {
     id: "gpt-5.4",
-    name: "Ultra",
-    detail: "Most capable — best for complex research & professional work",
+    name: "GPT-5.4",
+    tier: "Ultra",
+    detail: "Most capable — best for professional & complex work",
     icon: Brain,
   },
   {
     id: "gpt-5",
-    name: "Powerful",
-    detail: "Advanced reasoning — great for coding & analytical tasks",
+    name: "GPT-5",
+    tier: "Powerful",
+    detail: "Intelligent reasoning — great for coding & agentic tasks",
     icon: Sparkles,
   },
   {
     id: "gpt-4.1",
-    name: "Standard",
-    detail: "Accurate and fast — good for most everyday tasks",
+    name: "GPT-4.1",
+    tier: "Standard",
+    detail: "Smartest non-reasoning model — fast & accurate",
     icon: Cpu,
   },
   {
     id: "gpt-4.1-mini",
-    name: "Fast",
-    detail: "Cost-efficient — ideal for quick queries and simple tasks",
+    name: "GPT-4.1 Mini",
+    tier: "Fast",
+    detail: "Cost-efficient — ideal for everyday tasks",
     icon: Zap,
   },
 ] as const;
@@ -141,6 +146,7 @@ export default function SettingsPage() {
   const [deleteLoading, setDeleteLoad] = useState(false);
   const [showSignOut, setShowSignOut] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [showClearHist, setShowClearHist] = useState(false);
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
   const toastRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -176,10 +182,19 @@ export default function SettingsPage() {
   const [refillAmount, setRefillAmount] = useState(10.0);
   const [savingRefill, setSavingRefill] = useState(false);
 
+  // Briefing time preference
+  const [briefingMode, setBriefingMode] = useState<"smart" | "fixed">("smart");
+  const [briefingTime, setBriefingTime] = useState("08:00");
+  const [savingBriefing, setSavingBriefing] = useState(false);
+
   useEffect(() => {
     const saved = localStorage.getItem("aariv_model") || "gpt-4.1-mini";
     setModel(saved);
     setPendingModel(saved);
+    const bMode = (localStorage.getItem("aariv_briefing_mode") || "smart") as "smart" | "fixed";
+    const bTime = localStorage.getItem("aariv_briefing_time") || "08:00";
+    setBriefingMode(bMode);
+    setBriefingTime(bTime);
   }, []);
 
   useEffect(() => {
@@ -265,6 +280,20 @@ export default function SettingsPage() {
     setTimeout(() => { flash("Model preference saved"); setSavingModel(false); }, 300);
   }
 
+  async function saveBriefing() {
+    setSavingBriefing(true);
+    localStorage.setItem("aariv_briefing_mode", briefingMode);
+    localStorage.setItem("aariv_briefing_time", briefingTime);
+    try {
+      await api.put(`/settings/briefing`, {
+        mode: briefingMode,
+        time: briefingMode === "fixed" ? briefingTime : null,
+      });
+    } catch { /* persisted locally even if API call fails */ }
+    flash("Briefing preference saved");
+    setSavingBriefing(false);
+  }
+
   async function saveRetention(days: number | null) {
     if (!user?.id) return;
     setRetSaving(true);
@@ -342,7 +371,8 @@ export default function SettingsPage() {
   const initials = (user?.name ?? user?.email ?? "?").charAt(0).toUpperCase();
   const balanceFmt = balance === null ? "—" : `$${Math.max(0, balance).toFixed(2)}`;
   const estimatedMessages = balance !== null ? Math.max(0, Math.floor(balance / 0.01)) : null;
-  const activeModelName = MODEL_OPTIONS.find((m) => m.id === model)?.name || "GPT-4o Mini";
+  const activeModel = MODEL_OPTIONS.find((m) => m.id === model);
+  const activeModelName = activeModel ? `${activeModel.tier} (${activeModel.name})` : "Fast";
   const retentionLabel = retention === null ? "forever" : `${retention} days`;
   const modelChanged = pendingModel !== model;
   const checkoutAmount = customAmount ? parseFloat(customAmount) : selectedAmount;
@@ -365,14 +395,51 @@ export default function SettingsPage() {
       <ConfirmDialog open={showSignOut} title="Sign out?" description="You'll be returned to the login screen."
         confirmLabel="Sign Out" cancelLabel="Cancel" variant="danger"
         onConfirm={() => { setShowSignOut(false); signOut(); }} onCancel={() => setShowSignOut(false)} />
-      <ConfirmDialog open={showDelete} title="Delete account?"
-        description="Permanently removes your account, conversations, and integrations. There's no undo."
-        confirmLabel="Delete Everything" cancelLabel="Keep Account" variant="danger"
-        onConfirm={async () => {
-          setDeleteLoad(true);
-          try { await api.delete("/auth/account"); await signOut(); }
-          catch (e: any) { setDeleteLoad(false); setShowDelete(false); flash(e.message || "Failed to delete.", false); }
-        }} onCancel={() => setShowDelete(false)} />
+      {showDelete && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" role="dialog" aria-modal="true">
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => { setShowDelete(false); setDeleteConfirmText(""); }} />
+          <div className="relative bg-neutral-900 border border-red-900/50 rounded-xl w-full max-w-sm p-7 shadow-2xl">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-9 h-9 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center shrink-0">
+                <Trash2 strokeWidth={1.5} size={16} className="text-red-400" />
+              </div>
+              <h2 className="text-base font-semibold text-white">Delete your account?</h2>
+            </div>
+            <p className="text-sm text-neutral-400 leading-relaxed mb-5">
+              This permanently removes your account, all conversations, and every connected integration. <span className="text-red-400 font-medium">There is no undo.</span>
+            </p>
+            <label className="text-xs font-medium text-neutral-500 mb-1.5 block">
+              Type <span className="font-mono text-red-400 font-bold">DELETE</span> to confirm
+            </label>
+            <input
+              type="text"
+              value={deleteConfirmText}
+              onChange={(e) => setDeleteConfirmText(e.target.value)}
+              placeholder="DELETE"
+              className="w-full py-2.5 px-4 rounded-xl bg-black border border-white/10 text-white text-sm outline-none focus:border-red-500/50 transition-colors placeholder:text-neutral-600 mb-5 font-mono"
+            />
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => { setShowDelete(false); setDeleteConfirmText(""); }}
+                className="flex-1 py-2.5 rounded-xl text-sm font-medium bg-neutral-900 text-neutral-400 hover:text-white border border-white/10 hover:border-white/20 transition-colors"
+              >
+                Keep Account
+              </button>
+              <button
+                onClick={async () => {
+                  setDeleteLoad(true);
+                  try { await api.delete("/auth/account"); await signOut(); }
+                  catch (e: any) { setDeleteLoad(false); setShowDelete(false); setDeleteConfirmText(""); flash(e.message || "Failed to delete.", false); }
+                }}
+                disabled={deleteConfirmText !== "DELETE" || deleteLoading}
+                className="flex-1 py-2.5 rounded-xl text-sm font-medium bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 hover:border-red-500/40 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {deleteLoading ? "Deleting…" : "Delete Everything"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <ConfirmDialog open={showClearHist} title="Clear all history?"
         description="This permanently deletes all your chat conversations."
         confirmLabel="Clear History" cancelLabel="Cancel" variant="danger"
@@ -539,101 +606,164 @@ export default function SettingsPage() {
 
         <div className="flex flex-col">
 
-          {/* ── Profile ── */}
-          <SectionCard label="PROFILE" icon={Pencil} title="Account Profile" subtitle="Your display name and connected account.">
-            <div className="flex items-center justify-between gap-4 px-6 py-5 border-b border-white/10">
-              <div className="flex items-center gap-4 min-w-0">
-                <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0 overflow-hidden"
-                  style={{ background: "white", color: "black" }}>
-                  {user?.avatar ? <img src={user.avatar} className="w-full h-full object-cover" alt="" /> : initials}
-                </div>
-                {editingName ? (
-                  <input autoFocus value={displayName} onChange={(e) => setDisplayName(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === "Enter") saveProfile(); if (e.key === "Escape") setEditingName(false); }}
-                    className="text-sm bg-black border border-white/20 rounded-md px-3 py-2 outline-none text-white w-56 focus:border-white/40 transition-colors" />
-                ) : (
-                  <span className="text-sm font-medium text-white truncate">{user?.name || "User"}</span>
-                )}
+        {/* ── Profile ── */}
+        <SectionCard label="PROFILE" icon={Pencil} title="Account Profile" subtitle="Your display name and connected account.">
+          <div className="flex items-center justify-between gap-4 px-5 py-4 border-b border-white/10">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 overflow-hidden"
+                style={{ background: "white", color: "black" }}>
+                {user?.avatar ? <img src={user.avatar} className="w-full h-full object-cover" alt="" /> : initials}
               </div>
               {editingName ? (
-                <div className="flex items-center gap-2 shrink-0">
-                  <button onClick={saveProfile} disabled={savingProf}
-                    className="px-3 py-1.5 rounded-lg bg-white text-[black] text-xs font-semibold disabled:opacity-50">
-                    {savingProf ? "…" : "Save"}
-                  </button>
-                  <button onClick={() => { setDisplayName(user?.name || ""); setEditingName(false); }}
-                    className="px-3 py-1.5 rounded-lg bg-neutral-900 text-neutral-500 text-xs font-medium">
-                    Cancel
-                  </button>
-                </div>
+                <input autoFocus value={displayName} onChange={(e) => setDisplayName(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") saveProfile(); if (e.key === "Escape") setEditingName(false); }}
+                  className="text-sm bg-black border border-white/20 rounded-lg px-3 py-1.5 outline-none text-white w-48" />
               ) : (
-                <button onClick={() => setEditingName(true)}
-                  className="p-1.5 rounded-lg text-neutral-500 hover:text-white hover:bg-neutral-900 transition-colors shrink-0">
-                  <Pencil strokeWidth={1.5} size={12} />
-                </button>
+                <span className="text-sm text-white truncate">{user?.name || "User"}</span>
               )}
             </div>
-            <div className="flex items-center justify-between gap-4 px-6 py-5">
-              <div>
-                <p className="text-xs text-neutral-500 mb-1 font-medium">Email</p>
-                <p className="text-sm text-neutral-300">{user?.email}</p>
+            {editingName ? (
+              <div className="flex items-center gap-2 shrink-0">
+                <button onClick={saveProfile} disabled={savingProf}
+                  className="px-3 py-1.5 rounded-lg bg-white text-[black] text-xs font-semibold disabled:opacity-50">
+                  {savingProf ? "…" : "Save"}
+                </button>
+                <button onClick={() => { setDisplayName(user?.name || ""); setEditingName(false); }}
+                  className="px-3 py-1.5 rounded-lg bg-neutral-900 text-neutral-500 text-xs font-medium">
+                  Cancel
+                </button>
               </div>
-              <span className="text-[11px] px-2.5 py-1 rounded-full border border-white/10 bg-neutral-900 text-neutral-400 shrink-0 font-medium">
-                Google OAuth
-              </span>
-            </div>
-          </SectionCard>
-
-          {/* ── Timezone ── */}
-          <SectionCard label="PREFERENCES" icon={Globe} title="Timezone"
-            subtitle="Auto-detected from your browser. Used for briefing schedule and calendar times.">
-            <div className="flex items-center gap-3 px-5 py-4">
-              <Globe strokeWidth={1.5} size={13} className="text-neutral-500 shrink-0" />
-              <div>
-                <p className="text-sm font-medium text-white">{timezone ? formatTimezoneLabel(timezone) : "Detecting…"}</p>
-                <p className="text-xs text-neutral-500 mt-0.5">Automatically updated on each login.</p>
-              </div>
-            </div>
-          </SectionCard>
-
-          {/* ── AI Model ── */}
-          <SectionCard label="MODEL ENGINE" icon={Brain} title="Intelligence Engine"
-            subtitle="The AI model powering your conversations. Applies to all new sessions.">
-            <div className="p-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {MODEL_OPTIONS.map((m) => {
-                  const isPending = pendingModel === m.id;
-                  return (
-                    <button key={m.id} onClick={() => setPendingModel(m.id)}
-                      className={`relative flex flex-col gap-3 p-5 rounded-lg border text-left transition-all ${isPending ? "border-amber-500/50 bg-amber-500/[0.04]" : "border-white/10 bg-black hover:border-white/20"
-                        }`}>
-                      {isPending && (
-                        <div className="absolute top-4 right-4 w-[18px] h-[18px] rounded-full bg-amber-500 flex items-center justify-center shadow-md">
-                          <Check size={12} className="text-black" strokeWidth={3} />
-                        </div>
-                      )}
-                      <div className={`w-9 h-9 rounded-md flex items-center justify-center shrink-0 transition-colors ${isPending ? "bg-amber-500/10 border border-amber-500/20" : "bg-neutral-900 border border-white/10"
-                        }`}>
-                        <m.icon size={16} className={isPending ? "text-amber-400" : "text-neutral-500"} />
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold text-white pr-6">{m.name}</p>
-                        <p className={`text-xs mt-0.5 leading-relaxed ${isPending ? "text-amber-400/80" : "text-neutral-500"}`}>{m.detail}</p>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-            <div className="flex items-center justify-between px-6 py-4 border-t border-white/10 bg-neutral-900/30">
-              <p className="text-sm text-neutral-500">Changes apply to new conversations only</p>
-              <button onClick={saveModel} disabled={savingModel || !modelChanged}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${modelChanged ? "bg-white text-black hover:bg-neutral-200" : "bg-neutral-800 text-neutral-500 cursor-not-allowed"
-                  }`}>
-                {savingModel ? "Saving…" : "Save Preference"}
+            ) : (
+              <button onClick={() => setEditingName(true)}
+                className="p-1.5 rounded-lg text-neutral-500 hover:text-white hover:bg-neutral-900 transition-colors shrink-0">
+                <Pencil strokeWidth={1.5} size={12} />
               </button>
+            )}
+          </div>
+          <div className="flex items-center justify-between gap-4 px-5 py-4">
+            <div>
+              <p className="text-xs text-neutral-500 mb-0.5">Email</p>
+              <p className="text-sm text-neutral-400">{user?.email}</p>
             </div>
-          </SectionCard>
+            <span className="text-[10px] px-2 py-0.5 rounded-full border border-white/10 bg-neutral-900 text-neutral-500 shrink-0">
+              Google OAuth
+            </span>
+          </div>
+        </SectionCard>
+
+        {/* ── AI Model ── */}
+        <SectionCard label="MODEL ENGINE" icon={Brain} title="Intelligence Engine"
+          subtitle="The AI model powering your conversations. Applies to all new sessions.">
+          <div className="p-4">
+            <div className="grid grid-cols-2 gap-3">
+              {MODEL_OPTIONS.map((m) => {
+                const isPending = pendingModel === m.id;
+                return (
+                  <button key={m.id} onClick={() => setPendingModel(m.id)}
+                    className={`relative flex flex-col gap-2.5 p-4 rounded-xl border text-left transition-all ${isPending ? "border-amber-500/50 bg-amber-500/[0.06]" : "border-white/10 bg-black hover:border-white/20"
+                      }`}>
+                    {isPending && (
+                      <div className="absolute top-3 right-3 w-5 h-5 rounded-full bg-amber-500 flex items-center justify-center">
+                        <Check size={11} className="text-black" strokeWidth={2.5} />
+                      </div>
+                    )}
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-colors ${isPending ? "bg-amber-500/15 border border-amber-500/30" : "bg-neutral-900 border border-white/10"
+                      }`}>
+                      <m.icon size={14} className={isPending ? "text-amber-400" : "text-neutral-500"} />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-white pr-6">{m.tier}</p>
+                      <p className={`text-[10px] font-mono mt-0.5 ${isPending ? "text-amber-400/60" : "text-neutral-600"}`}>{m.name}</p>
+                      <p className={`text-xs mt-1 leading-relaxed ${isPending ? "text-amber-400/80" : "text-neutral-500"}`}>{m.detail}</p>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          <div className="flex items-center justify-between px-5 py-3.5 border-t border-white/10 bg-black">
+            <p className="text-xs text-neutral-500">Changes apply to new conversations only</p>
+            <button onClick={saveModel} disabled={savingModel || !modelChanged}
+              className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${modelChanged ? "bg-amber-500 text-black hover:bg-amber-400" : "bg-neutral-900 text-neutral-500 cursor-not-allowed"
+                }`}>
+              {savingModel ? "Saving…" : "Save Preference"}
+            </button>
+          </div>
+        </SectionCard>
+
+        {/* ── Briefing Schedule ── */}
+        <SectionCard label="MORNING BRIEFING" icon={Sunrise} title="Briefing Schedule"
+          subtitle="When Aariv delivers your daily digest of important events.">
+          <div className="p-4 space-y-4">
+            {/* Mode toggle */}
+            <div className="grid grid-cols-2 gap-2">
+              {(["smart", "fixed"] as const).map((mode) => (
+                <button
+                  key={mode}
+                  onClick={() => setBriefingMode(mode)}
+                  className={`flex flex-col gap-1.5 p-3.5 rounded-xl border text-left transition-all ${
+                    briefingMode === mode
+                      ? "border-amber-500/50 bg-amber-500/[0.06]"
+                      : "border-white/10 bg-black hover:border-white/20"
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <p className={`text-sm font-semibold ${briefingMode === mode ? "text-white" : "text-neutral-400"}`}>
+                      {mode === "smart" ? "Smart" : "Fixed Time"}
+                    </p>
+                    {briefingMode === mode && (
+                      <div className="w-4 h-4 rounded-full bg-amber-500 flex items-center justify-center">
+                        <Check size={9} className="text-black" strokeWidth={3} />
+                      </div>
+                    )}
+                  </div>
+                  <p className={`text-xs leading-relaxed ${briefingMode === mode ? "text-amber-400/70" : "text-neutral-500"}`}>
+                    {mode === "smart"
+                      ? "Learns when you're usually active and delivers at the right moment"
+                      : "Delivers at a specific time you choose every day"}
+                  </p>
+                </button>
+              ))}
+            </div>
+
+            {/* Fixed time picker */}
+            {briefingMode === "fixed" && (
+              <div>
+                <label className="text-xs font-medium text-neutral-500 mb-1.5 block">Delivery time</label>
+                <input
+                  type="time"
+                  value={briefingTime}
+                  onChange={(e) => setBriefingTime(e.target.value)}
+                  className="w-full py-2.5 px-4 rounded-xl bg-black border border-white/10 text-white text-sm outline-none focus:border-amber-500/50 transition-colors [color-scheme:dark]"
+                />
+                <p className="text-[11px] text-neutral-500 mt-1.5">
+                  Briefing will be sent at <span className="text-neutral-300 font-medium">{briefingTime}</span> in your local timezone
+                </p>
+              </div>
+            )}
+
+            {briefingMode === "smart" && (
+              <div className="flex items-start gap-2.5 px-3.5 py-3 rounded-xl bg-neutral-900 border border-white/[0.06]">
+                <Sunrise strokeWidth={1.5} size={13} className="text-amber-400/70 mt-0.5 shrink-0" />
+                <p className="text-xs text-neutral-500 leading-relaxed">
+                  Aariv tracks when you typically read your briefing and adjusts delivery timing automatically over time.
+                </p>
+              </div>
+            )}
+          </div>
+          <div className="flex items-center justify-between px-5 py-3.5 border-t border-white/10 bg-black">
+            <p className="text-xs text-neutral-500">
+              {briefingMode === "smart" ? "Pattern adapts after a few days" : "Applies from tomorrow"}
+            </p>
+            <button
+              onClick={saveBriefing}
+              disabled={savingBriefing}
+              className="px-4 py-2 rounded-xl text-sm font-semibold bg-amber-500 text-black hover:bg-amber-400 transition-all disabled:opacity-50"
+            >
+              {savingBriefing ? "Saving…" : "Save Preference"}
+            </button>
+          </div>
+        </SectionCard>
 
           {/* ── History & Privacy ── */}
           <SectionCard label="HISTORY & PRIVACY" icon={Shield} title="Conversation History"
@@ -914,28 +1044,28 @@ export default function SettingsPage() {
                 </div>
               </div>
 
-              <div className="rounded-xl border border-red-200 bg-red-50 dark:border-red-900/40 dark:bg-red-950/20 overflow-hidden">
-                <div className="flex items-center gap-3.5 px-5 py-4 border-b border-red-200 dark:border-red-900/30">
-                  <div className="w-9 h-9 rounded-xl bg-red-100 border border-red-200 dark:bg-red-500/10 dark:border-red-500/20 flex items-center justify-center shrink-0">
-                    <Trash2 strokeWidth={1.5} size={15} className="text-red-600 dark:text-red-400" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-red-600 dark:text-red-400">Danger Zone</p>
-                    <p className="text-xs text-red-600/70 dark:text-red-400/60 mt-0.5">Irreversible actions. Proceed with absolute caution.</p>
-                  </div>
+            <div className="rounded-xl border border-red-200 bg-red-50 dark:border-red-900/40 dark:bg-red-950/20 overflow-hidden">
+              <div className="flex items-center gap-3.5 px-5 py-4 border-b border-red-200 dark:border-red-900/30">
+                <div className="w-9 h-9 rounded-xl bg-red-100 border border-red-200 dark:bg-red-500/10 dark:border-red-500/20 flex items-center justify-center shrink-0">
+                  <Trash2 strokeWidth={1.5} size={15} className="text-red-600 dark:text-red-400" />
                 </div>
-                <div className="flex items-center justify-between gap-6 px-5 py-4">
-                  <p className="text-sm text-red-600/80 dark:text-red-400/70">
-                    Permanently removes your account, all messages, and connected integrations. Cannot be undone.
-                  </p>
-                  <button onClick={() => setShowDelete(true)} disabled={deleteLoading}
-                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-red-300 bg-red-100 text-sm font-medium text-red-600 hover:bg-red-200 hover:border-red-400 dark:border-red-700/60 dark:bg-red-950/40 dark:text-red-400 dark:hover:bg-red-950/60 dark:hover:border-red-600 transition-colors shrink-0 whitespace-nowrap disabled:opacity-40">
-                    <Trash2 strokeWidth={1.5} size={13} /> {deleteLoading ? "Deleting…" : "Delete Account"}
-                  </button>
+                <div>
+                  <p className="text-sm font-semibold text-red-600 dark:text-red-400">Danger Zone</p>
+                  <p className="text-xs text-red-600/70 dark:text-red-400/60 mt-0.5">Irreversible actions. Proceed with absolute caution.</p>
                 </div>
+              </div>
+              <div className="flex items-center justify-between gap-6 px-5 py-4">
+                <p className="text-sm text-red-600/80 dark:text-red-400/70">
+                  Permanently removes your account, all messages, and connected integrations. Cannot be undone.
+                </p>
+                <button onClick={() => { setShowDelete(true); setDeleteConfirmText(""); }} disabled={deleteLoading}
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-red-300 bg-red-100 text-sm font-medium text-red-600 hover:bg-red-200 hover:border-red-400 dark:border-red-700/60 dark:bg-red-950/40 dark:text-red-400 dark:hover:bg-red-950/60 dark:hover:border-red-600 transition-colors shrink-0 whitespace-nowrap disabled:opacity-40">
+                  <Trash2 strokeWidth={1.5} size={13} /> {deleteLoading ? "Deleting…" : "Delete Account"}
+                </button>
               </div>
             </div>
           </div>
+        </div>
 
           <div className="pb-8" />
         </div>

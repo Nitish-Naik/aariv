@@ -280,7 +280,7 @@ function OnboardingState({ firstName }: { firstName: string }) {
   const router = useRouter();
 
   return (
-    <div className="max-w-[1048px] mx-auto px-4 sm:px-6 py-12 md:py-20 flex flex-col items-center">
+    <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-20 flex flex-col items-center">
       {/* Header */}
       <div className="text-center mb-12 max-w-2xl">
         <div className="w-16 h-16 bg-gradient-to-br from-neutral-900 to-[black] border border-white/10 rounded-xl flex items-center justify-center mx-auto mb-6 shadow-xl">
@@ -422,7 +422,7 @@ function CalmState({
   const insight = briefing?.insight;
 
   return (
-    <div className="max-w-[1048px] mx-auto px-4 sm:px-6 py-10">
+    <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-10">
       {/* Hero */}
       <div className="flex flex-col items-center text-center mb-10">
         <div className="mb-6 text-neutral-500">
@@ -571,7 +571,7 @@ function ActiveState({
   };
 
   return (
-    <div className="max-w-[1048px] mx-auto px-4 sm:px-6 py-6 sm:py-10">
+    <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
       {/* Header */}
       <div className="flex items-start justify-between mb-2">
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
@@ -818,7 +818,7 @@ export default function DashboardHome() {
 
   if (loading) {
     return (
-      <div className="max-w-[1048px] mx-auto px-4 sm:px-6 py-10">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-10">
         <div className="flex flex-col items-center text-center mb-10">
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white mb-3">
             {getGreeting()}, {firstName}
@@ -873,7 +873,7 @@ export default function DashboardHome() {
   if (error && !briefing) {
     const isCredits = error === "INSUFFICIENT_CREDITS";
     return (
-      <div className="max-w-[1048px] mx-auto px-4 sm:px-6 py-10 flex flex-col items-center justify-center min-h-[80vh]">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-10 flex flex-col items-center justify-center min-h-[80vh]">
         {isCredits ? (
           <div className="flex flex-col items-center gap-4 p-8 rounded-xl bg-neutral-900 border border-white/10 max-w-md w-full">
             <div className="w-12 h-12 rounded-full bg-amber-500/10 flex items-center justify-center">
