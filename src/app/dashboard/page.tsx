@@ -18,7 +18,8 @@ import {
   Plug,
   Sparkles,
   Target,
-  X
+  X,
+  Zap,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -740,9 +741,8 @@ export default function DashboardHome() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasConnections, setHasConnections] = useState<boolean | null>(null);
-  const [slackConnected, setSlackConnected] = useState(true); // assume true until we know
-  const [showSlackNudge, setShowSlackNudge] = useState(false);
-  const step3Tracked = useRef(false);
+  const [showNudge, setShowNudge] = useState(false);
+  const [connectedApps, setConnectedApps] = useState<string[]>([]);
 
   const fetchBriefing = useCallback(
     async (silent = false) => {
@@ -767,6 +767,8 @@ export default function DashboardHome() {
           }
           setLogoMap(map);
         }
+
+        setConnectedApps(connectedApps.map((a) => a.toLowerCase()));
 
         if (connectedApps.length === 0) {
           setHasConnections(false);
@@ -813,6 +815,37 @@ export default function DashboardHome() {
   useEffect(() => {
     fetchBriefing();
   }, [fetchBriefing]);
+
+  // Track onboarding step 3: first briefing seen (FVM)
+  useEffect(() => {
+    if (!user?.id || !briefing) return;
+    const key = `aariv_fvm_tracked_${user.id}`;
+    if (localStorage.getItem(key)) return;
+    localStorage.setItem(key, "1");
+    api.put("/auth/onboarding-step", { userId: user.id, step: 3 }).catch(() => {});
+  }, [user?.id, briefing]);
+
+  // Show soft nudge to connect more apps after first briefing
+  useEffect(() => {
+    if (!user?.id || !briefing || connectedApps.length === 0) return;
+    const nudgeKey = `aariv_nudge_dismissed_${user.id}`;
+    if (localStorage.getItem(nudgeKey)) return;
+    // Suggest connecting Slack if not connected, or Calendar, etc.
+    const hasSlack = connectedApps.includes("slack");
+    const hasCalendar = connectedApps.includes("googlecalendar");
+    if (!hasSlack || !hasCalendar) {
+      setShowNudge(true);
+    }
+  }, [user?.id, briefing, connectedApps]);
+
+  const dismissNudge = () => {
+    setShowNudge(false);
+    if (user?.id) {
+      localStorage.setItem(`aariv_nudge_dismissed_${user.id}`, "1");
+      // Track onboarding step 4: nudge dismissed
+      api.put("/auth/onboarding-step", { userId: user.id, step: 4 }).catch(() => {});
+    }
+  };
 
   const firstName = user?.name?.split(" ")[0] || "there";
 
@@ -907,48 +940,39 @@ export default function DashboardHome() {
     );
   }
 
-  const slackNudge = showSlackNudge ? (
-    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-full max-w-sm px-4">
-      <div className="flex items-center justify-between gap-3 bg-neutral-900 border border-white/10 rounded-2xl px-4 py-3 shadow-xl">
-        <div className="flex items-center gap-3 min-w-0">
-          <span
-            className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
-            style={{ backgroundColor: "#E01E5A" }}
-          >
-            <MessageSquare strokeWidth={1.5} size={14} className="text-white" />
-          </span>
-          <div className="min-w-0">
-            <p className="text-xs font-semibold text-white leading-snug">
-              Want a fuller brief?
-            </p>
-            <p className="text-[11px] text-neutral-500 leading-snug truncate">
-              Connect Slack to include your team messages.
-            </p>
-          </div>
+  const nudgeBanner = showNudge ? (
+    <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="mt-4 flex items-center gap-4 bg-black border border-white/10 rounded-xl px-5 py-4">
+        <div className="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center shrink-0">
+          {!connectedApps.includes("slack") ? (
+            <MessageSquare strokeWidth={1.5} size={16} className="text-[#E01E5A]" />
+          ) : (
+            <Calendar strokeWidth={1.5} size={16} className="text-[#4285F4]" />
+          )}
         </div>
-        <div className="flex items-center gap-1 shrink-0">
-          <button
-            onClick={() => {
-              router.push("/dashboard/integrations?connect=slack");
-              setShowSlackNudge(false);
-              if (user?.id) localStorage.setItem(SLACK_NUDGE_KEY(user.id), "1");
-            }}
-            className="text-[11px] font-semibold text-white bg-white/10 hover:bg-white/20 px-2.5 py-1.5 rounded-lg transition-colors whitespace-nowrap"
-          >
-            Connect
-          </button>
-          <button
-            onClick={() => {
-              setShowSlackNudge(false);
-              if (user?.id) localStorage.setItem(SLACK_NUDGE_KEY(user.id), "1");
-              api.patch("/auth/onboarding-step", { step: 4 }).catch(() => { });
-            }}
-            className="p-1.5 text-neutral-600 hover:text-neutral-400 transition-colors"
-            aria-label="Dismiss"
-          >
-            <X strokeWidth={1.5} size={13} />
-          </button>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium text-white">
+            Want a fuller brief?
+          </p>
+          <p className="text-xs text-neutral-500 mt-0.5">
+            {!connectedApps.includes("slack")
+              ? "Connect Slack to include your team messages."
+              : "Connect Google Calendar to include your meetings."}
+          </p>
         </div>
+        <Link
+          href={`/dashboard/integrations?connect=${!connectedApps.includes("slack") ? "slack" : "googlecalendar"}`}
+          className="shrink-0 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-xs font-medium text-white hover:bg-white/[0.08] transition-colors"
+        >
+          {!connectedApps.includes("slack") ? "Connect Slack" : "Connect Calendar"}
+        </Link>
+        <button
+          onClick={dismissNudge}
+          className="shrink-0 p-1.5 rounded-lg text-neutral-500 hover:text-white hover:bg-white/5 transition-colors"
+          title="Dismiss"
+        >
+          <X strokeWidth={1.5} size={14} />
+        </button>
       </div>
     </div>
   ) : null;
@@ -963,7 +987,7 @@ export default function DashboardHome() {
           onRefresh={() => fetchBriefing(true)}
           refreshing={refreshing}
         />
-        {slackNudge}
+        {nudgeBanner}
       </>
     );
   }
@@ -978,7 +1002,7 @@ export default function DashboardHome() {
         onRefresh={() => fetchBriefing(true)}
         refreshing={refreshing}
       />
-      {slackNudge}
+      {nudgeBanner}
     </>
   );
 }

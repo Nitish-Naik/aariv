@@ -57,7 +57,7 @@ function cleanError(error: string): string {
   if (e.includes("keyerror")) return "Missing expected data in event payload";
   if (e.includes("timeouterror") || (e.includes("timeout") && !e.includes("connect"))) return "Processing timed out";
   if (e.includes("ratelimit") || e.includes("rate limit") || e.includes("429")) return "Rate limited — will retry automatically";
-  if (e.includes("permission") || e.includes("unauthorized") || e.includes("403")) return "Permission denied — check your connection";
+  if (e.includes("permission") || e.includes("unauthorized") || e.includes("403") || e.includes("token expired") || e.includes("authenticationerror") || e.includes("invalid_grant")) return "AUTH_ERROR";
   // Strip Python exception class prefix (e.g. "ValueError: ...")
   const colonIdx = error.indexOf(": ");
   if (colonIdx > 0 && colonIdx < 40 && /^[A-Z]/.test(error)) {
@@ -262,17 +262,16 @@ export default function FeedPage() {
     [events, serverStats],
   );
 
-  // Today-scoped stats for the summary strip
+  // Today stats + last activity timestamp
   const todayStats = useMemo(() => {
-    const todayStr = new Date().toDateString();
-    const todayEvts = events.filter(
-      (e) => new Date(e.createdAt).toDateString() === todayStr,
-    );
-    const lastEvent = events.length > 0 ? events[0] : null;
+    const today = new Date().toDateString();
+    const todayEvents = events.filter((e) => new Date(e.createdAt).toDateString() === today);
+    const lastEvent = events.length > 0 ? events[0] : null; // events are sorted newest first
     return {
-      total: todayEvts.length,
-      failed: todayEvts.filter((e) => e.status === "failed").length,
-      lastEventAt: lastEvent?.createdAt ?? null,
+      events: todayEvents.length,
+      errors: todayEvents.filter((e) => e.status === "failed").length,
+      apps: new Set(todayEvents.map((e) => e.app)).size,
+      lastActivity: lastEvent ? timeAgo(lastEvent.createdAt) : null,
     };
   }, [events]);
 
@@ -344,6 +343,24 @@ export default function FeedPage() {
             Manage triggers
           </Link>
         </div>
+
+        {/* ── Today Strip ──────────────────────────────── */}
+        {!loading && events.length > 0 && (
+          <div className="flex items-center gap-3 flex-wrap mb-4 px-1 text-[12px] text-neutral-500">
+            <span className="font-medium text-neutral-400">Today:</span>
+            <span>{todayStats.events} event{todayStats.events !== 1 ? "s" : ""}</span>
+            <span className="text-white/10">·</span>
+            <span className={todayStats.errors > 0 ? "text-red-400" : ""}>{todayStats.errors} error{todayStats.errors !== 1 ? "s" : ""}</span>
+            <span className="text-white/10">·</span>
+            <span>{todayStats.apps} app{todayStats.apps !== 1 ? "s" : ""} active</span>
+            {todayStats.lastActivity && (
+              <>
+                <span className="text-white/10">·</span>
+                <span>Last: {todayStats.lastActivity}</span>
+              </>
+            )}
+          </div>
+        )}
 
         {/* ── Stats Strip ───────────────────────────────── */}
         {!loading && events.length > 0 && (
@@ -669,14 +686,26 @@ export default function FeedPage() {
                                 </p>
                               )}
 
-                              {evt.error && (
-                                <div className="flex items-center gap-1.5 mt-3 text-red-400 bg-red-400/10 px-3 py-2 rounded-lg border border-red-400/20 w-fit max-w-full">
-                                  <AlertCircle strokeWidth={1.5} size={12} className="shrink-0" />
-                                  <span className="text-[11px] font-medium">
-                                    {cleanError(evt.error)}
-                                  </span>
-                                </div>
-                              )}
+                              {evt.error && (() => {
+                                const cleaned = cleanError(evt.error);
+                                const isAuth = cleaned === "AUTH_ERROR";
+                                return (
+                                  <div className="flex items-center gap-1.5 mt-3 text-red-400 bg-red-400/10 px-3 py-2 rounded-lg border border-red-400/20 w-fit max-w-full">
+                                    <AlertCircle strokeWidth={1.5} size={12} className="shrink-0" />
+                                    <span className="text-[11px] font-medium">
+                                      {isAuth ? `Your ${appLabel} connection expired.` : cleaned}
+                                    </span>
+                                    {isAuth && (
+                                      <Link
+                                        href={`/dashboard/integrations?connect=${evt.app}`}
+                                        className="text-[11px] font-semibold text-red-300 hover:text-white underline underline-offset-2 ml-1"
+                                      >
+                                        Reconnect
+                                      </Link>
+                                    )}
+                                  </div>
+                                );
+                              })()}
 
                               {/* Expandable details */}
                               <button
