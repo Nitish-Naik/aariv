@@ -22,6 +22,7 @@ import {
   Plug,
   Sparkles,
   Target,
+  X,
   Zap,
 } from "lucide-react";
 import Link from "next/link";
@@ -775,6 +776,7 @@ function ActiveState({
 
 export default function DashboardHome() {
   const { user } = useAuth();
+  const router = useRouter();
   const [briefing, setBriefing] = useState<Briefing | null>(null);
   const [logoMap, setLogoMap] = useState<Record<string, string>>({});
   const [reviewCounts, setReviewCounts] = useState<ReviewCounts>({
@@ -787,6 +789,8 @@ export default function DashboardHome() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasConnections, setHasConnections] = useState<boolean | null>(null);
+  const [showNudge, setShowNudge] = useState(false);
+  const [connectedApps, setConnectedApps] = useState<string[]>([]);
 
   const fetchBriefing = useCallback(
     async (silent = false) => {
@@ -811,6 +815,8 @@ export default function DashboardHome() {
           }
           setLogoMap(map);
         }
+
+        setConnectedApps(connectedApps.map((a) => a.toLowerCase()));
 
         if (connectedApps.length === 0) {
           setHasConnections(false);
@@ -839,6 +845,37 @@ export default function DashboardHome() {
   useEffect(() => {
     fetchBriefing();
   }, [fetchBriefing]);
+
+  // Track onboarding step 3: first briefing seen (FVM)
+  useEffect(() => {
+    if (!user?.id || !briefing) return;
+    const key = `aariv_fvm_tracked_${user.id}`;
+    if (localStorage.getItem(key)) return;
+    localStorage.setItem(key, "1");
+    api.put("/auth/onboarding-step", { userId: user.id, step: 3 }).catch(() => {});
+  }, [user?.id, briefing]);
+
+  // Show soft nudge to connect more apps after first briefing
+  useEffect(() => {
+    if (!user?.id || !briefing || connectedApps.length === 0) return;
+    const nudgeKey = `aariv_nudge_dismissed_${user.id}`;
+    if (localStorage.getItem(nudgeKey)) return;
+    // Suggest connecting Slack if not connected, or Calendar, etc.
+    const hasSlack = connectedApps.includes("slack");
+    const hasCalendar = connectedApps.includes("googlecalendar");
+    if (!hasSlack || !hasCalendar) {
+      setShowNudge(true);
+    }
+  }, [user?.id, briefing, connectedApps]);
+
+  const dismissNudge = () => {
+    setShowNudge(false);
+    if (user?.id) {
+      localStorage.setItem(`aariv_nudge_dismissed_${user.id}`, "1");
+      // Track onboarding step 4: nudge dismissed
+      api.put("/auth/onboarding-step", { userId: user.id, step: 4 }).catch(() => {});
+    }
+  };
 
   const firstName = user?.name?.split(" ")[0] || "there";
 
@@ -933,26 +970,69 @@ export default function DashboardHome() {
     );
   }
 
+  const nudgeBanner = showNudge ? (
+    <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="mt-4 flex items-center gap-4 bg-black border border-white/10 rounded-xl px-5 py-4">
+        <div className="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center shrink-0">
+          {!connectedApps.includes("slack") ? (
+            <MessageSquare strokeWidth={1.5} size={16} className="text-[#E01E5A]" />
+          ) : (
+            <Calendar strokeWidth={1.5} size={16} className="text-[#4285F4]" />
+          )}
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium text-white">
+            Want a fuller brief?
+          </p>
+          <p className="text-xs text-neutral-500 mt-0.5">
+            {!connectedApps.includes("slack")
+              ? "Connect Slack to include your team messages."
+              : "Connect Google Calendar to include your meetings."}
+          </p>
+        </div>
+        <Link
+          href={`/dashboard/integrations?connect=${!connectedApps.includes("slack") ? "slack" : "googlecalendar"}`}
+          className="shrink-0 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-xs font-medium text-white hover:bg-white/[0.08] transition-colors"
+        >
+          {!connectedApps.includes("slack") ? "Connect Slack" : "Connect Calendar"}
+        </Link>
+        <button
+          onClick={dismissNudge}
+          className="shrink-0 p-1.5 rounded-lg text-neutral-500 hover:text-white hover:bg-white/5 transition-colors"
+          title="Dismiss"
+        >
+          <X strokeWidth={1.5} size={14} />
+        </button>
+      </div>
+    </div>
+  ) : null;
+
   if (!briefing || briefing.is_calm) {
     return (
-      <CalmState
-        firstName={firstName}
-        briefing={briefing}
-        reviewCounts={reviewCounts}
-        onRefresh={() => fetchBriefing(true)}
-        refreshing={refreshing}
-      />
+      <>
+        <CalmState
+          firstName={firstName}
+          briefing={briefing}
+          reviewCounts={reviewCounts}
+          onRefresh={() => fetchBriefing(true)}
+          refreshing={refreshing}
+        />
+        {nudgeBanner}
+      </>
     );
   }
 
   return (
-    <ActiveState
-      firstName={firstName}
-      briefing={briefing}
-      logoMap={logoMap}
-      reviewCounts={reviewCounts}
-      onRefresh={() => fetchBriefing(true)}
-      refreshing={refreshing}
-    />
+    <>
+      <ActiveState
+        firstName={firstName}
+        briefing={briefing}
+        logoMap={logoMap}
+        reviewCounts={reviewCounts}
+        onRefresh={() => fetchBriefing(true)}
+        refreshing={refreshing}
+      />
+      {nudgeBanner}
+    </>
   );
 }

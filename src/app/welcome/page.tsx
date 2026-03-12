@@ -56,6 +56,8 @@ export default function WelcomePage() {
       return;
     }
     localStorage.setItem(key, "1");
+    // Track onboarding step 1: welcome screen seen
+    api.put("/auth/onboarding-step", { userId: user.id, step: 1 }).catch(() => {});
   }, [user, router]);
 
   const handleConnect = async (appSlug: string) => {
