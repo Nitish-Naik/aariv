@@ -465,9 +465,9 @@ export default function TriggersPage() {
     try {
       setLoading(true);
       const [trigsRes, appsRes, statsRes] = await Promise.all([
-        api.get(`/triggers?userId=${user!.id}`),
-        api.get(`/triggers/trigger-apps?userId=${user!.id}`),
-        api.get(`/triggers/stats?userId=${user!.id}`).catch(() => null),
+        api.get(`/triggers`),
+        api.get(`/triggers/trigger-apps`),
+        api.get(`/triggers/stats`).catch(() => null),
       ]);
       setUserTriggers(trigsRes.triggers || []);
       setIntegrations(appsRes.apps || []);
@@ -489,7 +489,7 @@ export default function TriggersPage() {
       setSelectedToolkit(appName);
       setLoadingTriggers(true);
       const data = await api.get(
-        `/triggers/available?appName=${encodeURIComponent(appName)}&userId=${user!.id}`,
+        `/triggers/available?appName=${encodeURIComponent(appName)}`,
       );
       setAvailableTriggers(data.triggers || []);
     } catch (e) {
@@ -596,7 +596,7 @@ export default function TriggersPage() {
       setExpandedTriggerId(triggerId);
       setLoadingEvents(true);
       const data = await api.get(
-        `/triggers/events?userId=${user!.id}&triggerId=${triggerId}&limit=10`,
+        `/triggers/events?triggerId=${triggerId}&limit=10`,
       );
       setTriggerEvents(data.events || []);
     } catch (e) {
@@ -610,7 +610,7 @@ export default function TriggersPage() {
     if (!user?.id) return;
     try {
       setLoadingActivity(true);
-      const data = await api.get(`/triggers/events?userId=${user.id}&limit=30`);
+      const data = await api.get(`/triggers/events?limit=30`);
       setActivityEvents(data.events || []);
     } catch (e) {
       setActivityEvents([]);

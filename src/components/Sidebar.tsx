@@ -51,7 +51,7 @@ export function Sidebar() {
     if (!user?.id) return;
     const load = () => {
       import("@/lib/api").then(({ api }) => {
-        api.get(`/review?userId=${user.id}&status=pending`)
+        api.get(`/review?status=pending`)
           .then((d) => { if (d?.counts?.total) setPendingCount(d.counts.total); })
           .catch(() => {});
       });

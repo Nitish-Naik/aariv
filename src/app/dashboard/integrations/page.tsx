@@ -256,7 +256,7 @@ export default function IntegrationsPage() {
   const loadIntegrations = async (): Promise<Integration[]> => {
     try {
       setLoading(true);
-      const data = await api.get(`/integrations?userId=${user!.id}`);
+      const data = await api.get(`/integrations`);
       const loadedIntegrations: Integration[] = data.integrations || [];
       setIntegrations(loadedIntegrations);
 

@@ -29,6 +29,32 @@ import remarkGfm from "remark-gfm";
 
 import { DetailedLogEntry } from "@/components";
 
+// Detect completed actions in the agent's final response text
+const ACTION_PATTERNS: { re: RegExp; label: string }[] = [
+  { re: /\b(sent|send|emailed)\b.{0,40}\b(email|message)\b/i, label: "Email sent" },
+  { re: /\b(created|scheduled|added)\b.{0,40}\b(meeting|event|calendar)\b/i, label: "Meeting created" },
+  { re: /\b(sent|posted|messaged)\b.{0,40}\bslack\b/i, label: "Slack message sent" },
+  { re: /\bslack\b.{0,40}\b(sent|posted|messaged)\b/i, label: "Slack message sent" },
+  { re: /\b(created|filed|opened)\b.{0,40}\b(issue|ticket|pr|pull request)\b/i, label: "Issue created" },
+  { re: /\b(created|added|made)\b.{0,40}\b(task|to.?do)\b/i, label: "Task created" },
+  { re: /\b(created|wrote|added)\b.{0,40}\b(note|page|document|doc)\b/i, label: "Note created" },
+  { re: /\b(deleted|removed|archived)\b.{0,40}\b(email|message|file|event)\b/i, label: "Item deleted" },
+  { re: /\b(updated|edited|modified)\b.{0,40}\b(event|task|issue|page)\b/i, label: "Item updated" },
+  { re: /\b(replied|responded)\b.{0,40}\b(email|message|thread)\b/i, label: "Reply sent" },
+];
+
+function parseCompletions(response: string): string[] {
+  const found: string[] = [];
+  const seen = new Set<string>();
+  for (const { re, label } of ACTION_PATTERNS) {
+    if (re.test(response) && !seen.has(label)) {
+      seen.add(label);
+      found.push(label);
+    }
+  }
+  return found;
+}
+
 function AssistantPageInner() {
   const { user } = useAuth();
   const searchParams = useSearchParams();
@@ -62,6 +88,12 @@ function AssistantPageInner() {
   const logsEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const dragCounter = useRef(0);
+  const streamAbortRef = useRef<AbortController | null>(null);
+
+  // Cancel any in-flight stream when the component unmounts
+  useEffect(() => {
+    return () => { streamAbortRef.current?.abort(); };
+  }, []);
 
   // Auto-scroll to bottom of chat
   useEffect(() => {
@@ -339,6 +371,11 @@ function AssistantPageInner() {
     setInputText("");
     setIsLoading(true);
 
+    // Abort any previous in-flight stream, then create a new controller
+    streamAbortRef.current?.abort();
+    const abortController = new AbortController();
+    streamAbortRef.current = abortController;
+
     try {
       const response = await api.stream("/chat", {
         userId: user.id,
@@ -347,7 +384,7 @@ function AssistantPageInner() {
         ...(activeConversationId
           ? { conversationId: activeConversationId }
           : {}),
-      });
+      }, abortController.signal);
 
       if (!response.body) throw new Error("No response body from server");
 
@@ -372,7 +409,9 @@ function AssistantPageInner() {
                 prev.map((msg) => {
                   if (msg.id !== aiMessageId) return msg;
 
-                  if (event.type === "log") {
+                  if (event.type === "token") {
+                    return { ...msg, content: (msg.content || "") + event.data };
+                  } else if (event.type === "log") {
                     const newLogs = [...(msg.logs || [])];
                     const existingIdx = newLogs.findIndex(
                       (l) => l.label === event.data.label,
@@ -430,6 +469,7 @@ function AssistantPageInner() {
                           ? event.data.auth_actions
                           : msg.auth_actions,
                       logs: finalLogs,
+                      completions: parseCompletions(event.data.response || ""),
                     };
                   } else if (event.type === "insufficient_credits") {
                     return {
@@ -448,18 +488,21 @@ function AssistantPageInner() {
         }
       }
     } catch (e: any) {
-      setMessages((prev) =>
-        prev.map((msg) =>
-          msg.id === aiMessageId
-            ? {
-              ...msg,
-              content:
-                "Sorry, I encountered an error: " +
-                (e.message || "Unknown error"),
-            }
-            : msg,
-        ),
-      );
+      // Ignore AbortError — user navigated away or sent a new message
+      if (e?.name !== "AbortError") {
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === aiMessageId
+              ? {
+                ...msg,
+                content:
+                  "Sorry, I encountered an error: " +
+                  (e.message || "Unknown error"),
+              }
+              : msg,
+          ),
+        );
+      }
     } finally {
       setIsLoading(false);
       inputRef.current?.focus();
@@ -949,6 +992,19 @@ function AssistantPageInner() {
                                 {msg.content}
                               </ReactMarkdown>
                             </div>
+                            {msg.completions && msg.completions.length > 0 && (
+                              <div className="flex flex-wrap gap-1.5 mt-3">
+                                {msg.completions.map((label) => (
+                                  <span
+                                    key={label}
+                                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-green-500/10 text-green-400 border border-green-500/20"
+                                  >
+                                    <Check strokeWidth={2.5} size={10} />
+                                    {label}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
                           </>
                         ) : (
                           isThinking && (

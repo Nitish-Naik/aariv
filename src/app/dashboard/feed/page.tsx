@@ -146,7 +146,7 @@ export default function FeedPage() {
       }
       try {
         const data = await api.get(
-          `/dashboard/feed?userId=${user.id}&limit=100&offset=${offset}`,
+          `/dashboard/feed?limit=100&offset=${offset}`,
         );
         if (offset === 0) {
           setEvents(data.events || []);

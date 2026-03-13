@@ -122,6 +122,7 @@ export interface ChatMessage {
   is_proactive?: boolean;
   auth_actions?: AuthAction[];
   data_cards?: DataCardGroup[];
+  completions?: string[];
 }
 
 export interface Conversation {

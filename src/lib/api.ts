@@ -183,24 +183,22 @@ export const api = {
     }
   },
 
-  stream: async (endpoint: string, body: any) => {
+  stream: async (endpoint: string, body: any, signal?: AbortSignal) => {
     const headers = await getAuthHeaders();
     return fetch(`${API_URL}${endpoint}`, {
       method: "POST",
       headers,
       body: JSON.stringify(body),
+      signal,
     });
   },
 
-  getConnections: async (userId: string) => {
+  getConnections: async () => {
     const headers = await getAuthHeaders();
-    const response = await fetch(
-      `${API_URL}/chat/connections?userId=${userId}`,
-      {
-        method: "GET",
-        headers,
-      },
-    );
+    const response = await fetch(`${API_URL}/chat/connections`, {
+      method: "GET",
+      headers,
+    });
     return handleResponse(response);
   },
 };

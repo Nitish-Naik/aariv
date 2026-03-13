@@ -66,6 +66,30 @@ const MODEL_OPTIONS = [
   },
 ] as const;
 
+const COMMON_TIMEZONES = [
+  "UTC",
+  "America/New_York",
+  "America/Chicago",
+  "America/Denver",
+  "America/Los_Angeles",
+  "America/Sao_Paulo",
+  "America/Toronto",
+  "Europe/London",
+  "Europe/Paris",
+  "Europe/Berlin",
+  "Europe/Moscow",
+  "Africa/Cairo",
+  "Africa/Lagos",
+  "Asia/Kolkata",
+  "Asia/Dubai",
+  "Asia/Singapore",
+  "Asia/Shanghai",
+  "Asia/Tokyo",
+  "Asia/Seoul",
+  "Australia/Sydney",
+  "Pacific/Auckland",
+] as const;
+
 const RETENTION_OPTIONS = [
   { label: "7 days", value: 7, description: "Minimal storage. Aariv won't remember chats from last week." },
   { label: "30 days", value: 30, description: "Recommended. Good balance of memory and privacy." },
@@ -173,8 +197,9 @@ export default function SettingsPage() {
   const [referralLoading, setReferralLoading] = useState(false);
   const [codeCopied, setCodeCopied] = useState(false);
 
-  // Timezone (display only — auto-detected on login)
+  // Timezone — auto-detected on load, user-editable
   const [timezone, setTimezone] = useState<string>("");
+  const [savingTz, setSavingTz] = useState(false);
 
   // Auto-refill
   const [autoRefill, setAutoRefill] = useState(false);
@@ -187,15 +212,43 @@ export default function SettingsPage() {
   const [briefingTime, setBriefingTime] = useState("08:00");
   const [savingBriefing, setSavingBriefing] = useState(false);
 
+  // Spend alert threshold
+  const [spendAlertThreshold, setSpendAlertThreshold] = useState("");
+  const [savingSpendAlert, setSavingSpendAlert] = useState(false);
+
   useEffect(() => {
-    const saved = localStorage.getItem("aariv_model") || "gpt-4.1-mini";
-    setModel(saved);
-    setPendingModel(saved);
+    // Seed from localStorage immediately (no flicker)
+    const savedModel = localStorage.getItem("aariv_model") || "gpt-4.1-mini";
+    setModel(savedModel);
+    setPendingModel(savedModel);
     const bMode = (localStorage.getItem("aariv_briefing_mode") || "smart") as "smart" | "fixed";
     const bTime = localStorage.getItem("aariv_briefing_time") || "08:00";
     setBriefingMode(bMode);
     setBriefingTime(bTime);
   }, []);
+
+  // Override with persisted DB values once user is available
+  useEffect(() => {
+    if (!user?.id) return;
+    api.get("/auth/me").then((d) => {
+      if (!d) return;
+      if (d.preferred_model) {
+        setModel(d.preferred_model);
+        setPendingModel(d.preferred_model);
+        localStorage.setItem("aariv_model", d.preferred_model);
+      }
+      if (d.briefing_mode) {
+        setBriefingMode(d.briefing_mode as "smart" | "fixed");
+        localStorage.setItem("aariv_briefing_mode", d.briefing_mode);
+      }
+      if (d.briefing_time) {
+        setBriefingTime(d.briefing_time);
+        localStorage.setItem("aariv_briefing_time", d.briefing_time);
+      }
+      if (d.timezone) setTimezone(d.timezone);
+      if (d.spend_alert_threshold != null) setSpendAlertThreshold(String(d.spend_alert_threshold));
+    }).catch(() => { });
+  }, [user?.id]);
 
   useEffect(() => {
     if (user?.name) setDisplayName(user.name);
@@ -272,12 +325,16 @@ export default function SettingsPage() {
     }
   }
 
-  function saveModel() {
+  async function saveModel() {
     setSavingModel(true);
     setModel(pendingModel);
     localStorage.setItem("aariv_model", pendingModel);
     window.dispatchEvent(new CustomEvent("aariv-model-change", { detail: pendingModel }));
-    setTimeout(() => { flash("Model preference saved"); setSavingModel(false); }, 300);
+    try {
+      await api.patch("/auth/model", { model: pendingModel });
+    } catch { /* localStorage already updated — non-fatal */ }
+    flash("Model preference saved");
+    setSavingModel(false);
   }
 
   async function saveBriefing() {
@@ -292,6 +349,19 @@ export default function SettingsPage() {
     } catch { /* persisted locally even if API call fails */ }
     flash("Briefing preference saved");
     setSavingBriefing(false);
+  }
+
+  async function saveTimezone(tz: string) {
+    setSavingTz(true);
+    setTimezone(tz);
+    try {
+      await api.patch("/auth/timezone", { timezone: tz });
+      flash("Timezone updated");
+    } catch {
+      flash("Failed to save timezone", false);
+    } finally {
+      setSavingTz(false);
+    }
   }
 
   async function saveRetention(days: number | null) {
@@ -336,6 +406,24 @@ export default function SettingsPage() {
       flash("Failed to save auto-refill", false);
     } finally {
       setSavingRefill(false);
+    }
+  }
+
+  async function saveSpendAlert() {
+    if (!user?.id) return;
+    const threshold = parseFloat(spendAlertThreshold);
+    if (spendAlertThreshold !== "" && (isNaN(threshold) || threshold < 0)) {
+      flash("Enter a valid amount (e.g. 10)", false);
+      return;
+    }
+    setSavingSpendAlert(true);
+    try {
+      await api.patch("/auth/spend-alert", { threshold: spendAlertThreshold === "" ? 0 : threshold });
+      flash("Spend alert saved");
+    } catch {
+      flash("Failed to save spend alert", false);
+    } finally {
+      setSavingSpendAlert(false);
     }
   }
 
@@ -765,6 +853,31 @@ export default function SettingsPage() {
           </div>
         </SectionCard>
 
+          {/* ── Timezone ── */}
+          <SectionCard label="TIMEZONE" icon={Globe} title="Your Timezone"
+            subtitle="Used for briefing schedules, calendar times, and activity logs.">
+            <div className="p-5">
+              <label className="text-xs font-medium text-neutral-500 mb-2 block">Select your timezone</label>
+              <select
+                value={timezone}
+                onChange={(e) => saveTimezone(e.target.value)}
+                disabled={savingTz}
+                className="w-full py-2.5 px-4 rounded-xl bg-black border border-white/10 text-white text-sm outline-none focus:border-white/20 transition-colors disabled:opacity-50 [color-scheme:dark]"
+              >
+                {COMMON_TIMEZONES.map((tz) => (
+                  <option key={tz} value={tz}>{formatTimezoneLabel(tz)}</option>
+                ))}
+                {/* Show current if not in list */}
+                {timezone && !COMMON_TIMEZONES.includes(timezone as any) && (
+                  <option value={timezone}>{formatTimezoneLabel(timezone)}</option>
+                )}
+              </select>
+              <p className="text-[11px] text-neutral-500 mt-2">
+                Auto-detected as <span className="text-neutral-300">{Intl.DateTimeFormat().resolvedOptions().timeZone}</span>
+              </p>
+            </div>
+          </SectionCard>
+
           {/* ── History & Privacy ── */}
           <SectionCard label="HISTORY & PRIVACY" icon={Shield} title="Conversation History"
             subtitle="How long Aariv remembers your chats. Runs a nightly cleanup.">
@@ -889,6 +1002,38 @@ export default function SettingsPage() {
                   {savingRefill ? "Saving…" : "Save (disabled)"}
                 </button>
               )}
+            </div>
+
+            {/* Spend alert */}
+            <div className="px-5 py-4 border-t border-white/10">
+              <div className="flex items-center gap-2 mb-1">
+                <Bell strokeWidth={1.5} size={13} className="text-neutral-500" />
+                <p className="text-sm font-medium text-white">Monthly spend alert</p>
+              </div>
+              <p className="text-xs text-neutral-500 mb-4">
+                Get an email when your monthly spend exceeds this amount. Leave blank to disable.
+              </p>
+              <div className="flex items-center gap-3">
+                <div className="relative flex-1">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500 text-sm">$</span>
+                  <input
+                    type="number"
+                    min={0}
+                    step={1}
+                    placeholder="e.g. 10"
+                    value={spendAlertThreshold}
+                    onChange={(e) => setSpendAlertThreshold(e.target.value)}
+                    className="w-full py-2.5 pl-7 pr-3 rounded-xl bg-black border border-white/10 text-white text-sm outline-none focus:border-white/20 transition-colors"
+                  />
+                </div>
+                <button
+                  onClick={saveSpendAlert}
+                  disabled={savingSpendAlert}
+                  className="px-4 py-2.5 rounded-xl bg-amber-500 text-black text-sm font-semibold hover:bg-amber-400 transition-colors disabled:opacity-50 shrink-0"
+                >
+                  {savingSpendAlert ? "Saving…" : "Save"}
+                </button>
+              </div>
             </div>
           </SectionCard>
 

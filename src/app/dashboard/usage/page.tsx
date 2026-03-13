@@ -123,8 +123,7 @@ export default function UsagePage() {
         if (!user?.id) return;
         setSavingRefill(true);
         try {
-            await api.post("/billing/auto-refill", {
-                userId: user.id,
+            await api.post(`/billing/setup-auto-refill/${user.id}`, {
                 enabled: refillEnabled,
                 threshold: parseFloat(refillThreshold),
                 amount: parseFloat(refillAmount),

@@ -724,7 +724,6 @@ function ActiveState({
 
 /* ─── Main Page ──────────────────────────────────────────── */
 
-const SLACK_NUDGE_KEY = (userId: string) => `aariv_slack_nudge_dismissed_${userId}`;
 
 export default function DashboardHome() {
   const { user } = useAuth();
@@ -754,7 +753,7 @@ export default function DashboardHome() {
       try {
         // 1. Check connected apps
         const intData = await api
-          .get(`/integrations?userId=${user.id}`)
+          .get(`/integrations`)
           .catch(() => null);
 
         const connectedApps: string[] = [];
@@ -780,8 +779,8 @@ export default function DashboardHome() {
 
         // 2. Fetch briefing + review in parallel
         const [data, reviewData] = await Promise.all([
-          api.get(`/dashboard/briefing?userId=${user.id}`),
-          api.get(`/review?userId=${user.id}&status=pending`).catch(() => null),
+          api.get(`/dashboard/briefing`),
+          api.get(`/review?status=pending`).catch(() => null),
         ]);
         setBriefing(data);
         if (reviewData?.counts) setReviewCounts(reviewData.counts);
@@ -807,15 +806,6 @@ export default function DashboardHome() {
     fetchBriefing();
   }, [fetchBriefing]);
 
-  // Track onboarding step 3: first briefing seen (FVM)
-  useEffect(() => {
-    if (!user?.id || !briefing) return;
-    const key = `aariv_fvm_tracked_${user.id}`;
-    if (localStorage.getItem(key)) return;
-    localStorage.setItem(key, "1");
-    api.put("/auth/onboarding-step", { userId: user.id, step: 3 }).catch(() => {});
-  }, [user?.id, briefing]);
-
   // Show soft nudge to connect more apps after first briefing
   useEffect(() => {
     if (!user?.id || !briefing || connectedApps.length === 0) return;
@@ -834,7 +824,7 @@ export default function DashboardHome() {
     if (user?.id) {
       localStorage.setItem(`aariv_nudge_dismissed_${user.id}`, "1");
       // Track onboarding step 4: nudge dismissed
-      api.put("/auth/onboarding-step", { userId: user.id, step: 4 }).catch(() => {});
+      api.patch("/auth/onboarding-step", { step: 4 }).catch(() => {});
     }
   };
 

@@ -100,9 +100,92 @@ const PRIORITY_STYLES: Record<
 
 // ─── Helpers ────────────────────────────────────────────────────────────
 
+interface EventPayload {
+  event_type?: string;
+  created_at?: string;
+  data?: Record<string, unknown>;
+}
+
+function EventPayloadPanel({ payload }: { payload: EventPayload }) {
+  const data = payload.data || {};
+  const type = payload.event_type || "";
+
+  if (type.includes("GMAIL") || data.subject || data.from) {
+    return (
+      <div className="mt-3 rounded-xl bg-black/40 border border-white/[0.04] overflow-hidden">
+        {!!data.from && (
+          <div className="flex gap-3 px-4 py-2.5 text-[11px] border-b border-white/[0.03]">
+            <span className="text-neutral-500 font-medium shrink-0 w-[72px]">From</span>
+            <span className="text-neutral-300 break-all">{String(data.from)}</span>
+          </div>
+        )}
+        {!!data.subject && (
+          <div className="flex gap-3 px-4 py-2.5 text-[11px] border-b border-white/[0.03]">
+            <span className="text-neutral-500 font-medium shrink-0 w-[72px]">Subject</span>
+            <span className="text-neutral-300 font-medium break-all">{String(data.subject)}</span>
+          </div>
+        )}
+        {!!(data.snippet || data.body) && (
+          <div className="px-4 py-3 text-[11px]">
+            <p className="text-neutral-400 leading-relaxed whitespace-pre-wrap">
+              {String(data.snippet || data.body).slice(0, 600)}
+              {String(data.snippet || data.body).length > 600 ? "…" : ""}
+            </p>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  if (type.includes("SLACK") || data.channel_name || data.text) {
+    return (
+      <div className="mt-3 rounded-xl bg-black/40 border border-white/[0.04] overflow-hidden">
+        {!!data.channel_name && (
+          <div className="flex gap-3 px-4 py-2.5 text-[11px] border-b border-white/[0.03]">
+            <span className="text-neutral-500 font-medium shrink-0 w-[72px]">Channel</span>
+            <span className="text-neutral-300">#{String(data.channel_name)}</span>
+          </div>
+        )}
+        {!!data.text && (
+          <div className="px-4 py-3 text-[11px]">
+            <p className="text-neutral-400 leading-relaxed whitespace-pre-wrap">
+              {String(data.text).slice(0, 600)}
+              {String(data.text).length > 600 ? "…" : ""}
+            </p>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Generic fallback
+  const entries = Object.entries(data).filter(([, v]) => v !== null && v !== undefined && v !== "");
+  if (entries.length === 0) return null;
+  const formatKey = (k: string) => k.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  const fmtVal = (v: unknown): string => {
+    if (typeof v === "boolean") return v ? "Yes" : "No";
+    if (typeof v === "string") return v;
+    if (typeof v === "number") return String(v);
+    if (Array.isArray(v)) return v.join(", ");
+    try { return JSON.stringify(v, null, 2); } catch { return String(v); }
+  };
+  return (
+    <div className="mt-3 rounded-xl bg-black/40 border border-white/[0.04] divide-y divide-white/[0.03] overflow-hidden">
+      {entries.map(([key, value]) => (
+        <div key={key} className="flex gap-3 px-4 py-2.5 text-[11px]">
+          <span className="text-neutral-500 font-medium shrink-0 w-[130px] truncate">{formatKey(key)}</span>
+          <span className="text-neutral-400 break-all">
+            {fmtVal(value).length > 200 ? fmtVal(value).slice(0, 197) + "…" : fmtVal(value)}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function ContextPanel({ ctx }: { ctx: Record<string, unknown> }) {
   const entries = Object.entries(ctx).filter(
-    ([, v]) => v !== null && v !== undefined && v !== "",
+    ([k, v]) => v !== null && v !== undefined && v !== "" && k !== "source",
   );
   if (entries.length === 0) return null;
 
@@ -118,13 +201,13 @@ function ContextPanel({ ctx }: { ctx: Record<string, unknown> }) {
   };
 
   return (
-    <div className="mt-3 rounded-xl bg-black/40 border border-white/[0.04] divide-y divide-white/[0.03] overflow-hidden">
+    <div className="mt-2 rounded-xl bg-black/20 border border-white/[0.03] divide-y divide-white/[0.02] overflow-hidden">
       {entries.map(([key, value]) => (
-        <div key={key} className="flex gap-3 px-4 py-2.5 text-[11px]">
-          <span className="text-neutral-500 font-medium shrink-0 w-[130px] truncate">
+        <div key={key} className="flex gap-3 px-4 py-2 text-[11px]">
+          <span className="text-neutral-600 font-medium shrink-0 w-[130px] truncate">
             {formatKey(key)}
           </span>
-          <span className="text-neutral-400 break-all">
+          <span className="text-neutral-500 break-all">
             {formatValue(value).length > 200
               ? formatValue(value).slice(0, 197) + "…"
               : formatValue(value)}
@@ -169,6 +252,8 @@ export default function ReviewPage() {
   } | null>(null);
   const [dismissingAll, setDismissingAll] = useState(false);
   const [expandedItem, setExpandedItem] = useState<string | null>(null);
+  const [eventPayloads, setEventPayloads] = useState<Record<string, EventPayload>>({});
+  const [loadingPayload, setLoadingPayload] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [batchDismissing, setBatchDismissing] = useState(false);
 
@@ -179,7 +264,7 @@ export default function ReviewPage() {
     try {
       setError(null);
       const data = await api.get(
-        `/review?userId=${user.id}&status=${viewFilter}`,
+        `/review?status=${viewFilter}`,
       );
       setItems(data.items || []);
       setCounts(data.counts || { total: 0, high: 0, medium: 0, low: 0 });
@@ -264,7 +349,7 @@ export default function ReviewPage() {
     if (!user?.id || dismissingAll) return;
     setDismissingAll(true);
     try {
-      await api.post(`/review/dismiss-all?userId=${user.id}`, {});
+      await api.post(`/review/dismiss-all`, {});
       setItems([]);
       setCounts({ total: 0, high: 0, medium: 0, low: 0 });
     } catch (err: any) {
@@ -280,6 +365,25 @@ export default function ReviewPage() {
       next.has(id) ? next.delete(id) : next.add(id);
       return next;
     });
+  };
+
+  const toggleExpand = async (itemId: string) => {
+    if (expandedItem === itemId) {
+      setExpandedItem(null);
+      return;
+    }
+    setExpandedItem(itemId);
+    if (!eventPayloads[itemId]) {
+      setLoadingPayload(itemId);
+      try {
+        const data = await api.get(`/review/${itemId}/context`);
+        setEventPayloads((prev) => ({ ...prev, [itemId]: data }));
+      } catch {
+        // non-fatal — context panel degrades gracefully
+      } finally {
+        setLoadingPayload(null);
+      }
+    }
   };
 
   const handleBatchDismiss = async (ids: string[]) => {
@@ -632,37 +736,42 @@ export default function ReviewPage() {
                     </p>
 
                     {/* Expandable context details */}
-                    {item.action_context && Object.keys(item.action_context).length > 0 && (
-                      <div className="mt-3 mb-5">
-                        <button
-                          onClick={() => setExpandedItem(expandedItem === item.id ? null : item.id)}
-                          className="flex items-center gap-1.5 text-[11px] text-neutral-600 hover:text-neutral-400 transition-colors"
-                        >
+                    <div className="mt-3 mb-5">
+                      <button
+                        onClick={() => toggleExpand(item.id)}
+                        className="flex items-center gap-1.5 text-[11px] text-neutral-600 hover:text-neutral-400 transition-colors"
+                      >
+                        {loadingPayload === item.id ? (
+                          <Loader2 strokeWidth={1.5} size={12} className="animate-spin" />
+                        ) : (
                           <ChevronDown
                             strokeWidth={1.5}
                             size={12}
                             className={`transition-transform duration-200 ${expandedItem === item.id ? "rotate-180" : ""}`}
                           />
-                          {expandedItem === item.id ? "Hide details" : "View details"}
-                        </button>
-                        <AnimatePresence>
-                          {expandedItem === item.id && (
-                            <motion.div
-                              initial={{ opacity: 0, height: 0 }}
-                              animate={{ opacity: 1, height: "auto" }}
-                              exit={{ opacity: 0, height: 0 }}
-                              transition={{ duration: 0.2 }}
-                              className="overflow-hidden"
-                            >
-                              <ContextPanel ctx={item.action_context} />
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </div>
-                    )}
-                    {(!item.action_context || Object.keys(item.action_context).length === 0) && (
-                      <div className="mb-5" />
-                    )}
+                        )}
+                        {expandedItem === item.id ? "Hide details" : "View details"}
+                      </button>
+                      <AnimatePresence>
+                        {expandedItem === item.id && (
+                          <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: "auto" }}
+                            exit={{ opacity: 0, height: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="overflow-hidden"
+                          >
+                            {eventPayloads[item.id]?.data && Object.keys(eventPayloads[item.id].data!).length > 0 ? (
+                              <EventPayloadPanel payload={eventPayloads[item.id]} />
+                            ) : (
+                              item.action_context && Object.keys(item.action_context).length > 0 && (
+                                <ContextPanel ctx={item.action_context} />
+                              )
+                            )}
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
 
                     {/* AI confidence indicator */}
                     {item.ai_confidence !== null &&
