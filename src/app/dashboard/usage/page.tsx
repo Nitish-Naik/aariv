@@ -178,47 +178,47 @@ export default function UsagePage() {
                                 </div>
                             </div>
 
-                        {/* Progress bar */}
-                        <div className="mb-3">
-                            <div className="h-1.5 w-full bg-black rounded-full overflow-hidden">
-                                <div
-                                    className="h-full bg-white rounded-full transition-all duration-500"
-                                    style={{ width: `${progressPercent}%` }}
-                                />
+                            {/* Progress bar */}
+                            <div className="mb-3">
+                                <div className="h-1.5 w-full bg-black rounded-full overflow-hidden">
+                                    <div
+                                        className="h-full bg-white rounded-full transition-all duration-500"
+                                        style={{ width: `${progressPercent}%` }}
+                                    />
+                                </div>
                             </div>
-                        </div>
 
-                        {/* Balance runway estimate */}
-                        {usageData && usageData.total_cost > 0.001 && balanceValue > 0 && (() => {
-                            const dailyRate = usageData.total_cost / 30;
-                            const daysLeft = Math.round(balanceValue / dailyRate);
-                            const label = daysLeft <= 0 ? "< 1 day" : daysLeft >= 365 ? "1+ year" : `~${daysLeft} day${daysLeft !== 1 ? "s" : ""}`;
-                            return (
-                                <p className="text-[11px] text-neutral-500 mb-4">
-                                    {label} at current usage rate
-                                </p>
-                            );
-                        })()}
+                            {/* Balance runway estimate */}
+                            {usageData && usageData.total_cost > 0.001 && balanceValue > 0 && (() => {
+                                const dailyRate = usageData.total_cost / 30;
+                                const daysLeft = Math.round(balanceValue / dailyRate);
+                                const label = daysLeft <= 0 ? "< 1 day" : daysLeft >= 365 ? "1+ year" : `~${daysLeft} day${daysLeft !== 1 ? "s" : ""}`;
+                                return (
+                                    <p className="text-[11px] text-neutral-500 mb-4">
+                                        {label} at current usage rate
+                                    </p>
+                                );
+                            })()}
 
-                        <div className="flex gap-2">
-                            <button
-                                onClick={() => setShowAddCredits(true)}
-                                className="px-4 py-2 bg-white/5 text-white text-xs font-medium rounded-lg hover:opacity-80 transition-opacity"
-                            >
-                                Add Credits
-                            </button>
-                            <button
-                                onClick={() => setShowAutoRefill(true)}
-                                className="px-4 py-2 bg-black text-neutral-400 text-xs font-medium rounded-lg hover:text-white transition-colors flex items-center gap-1.5 border border-white/[0.06]"
-                            >
-                                <RefreshCw strokeWidth={1.5} size={12} />
-                                {balanceData?.auto_refill_enabled ? "Auto-Refill: On" : "Auto-Refill"}
-                                {balanceData?.auto_refill_enabled && (
-                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 ml-0.5" />
-                                )}
-                            </button>
-                        </div>
-                    </section>
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={() => setShowAddCredits(true)}
+                                    className="px-4 py-2 bg-white/5 text-white text-xs font-medium rounded-lg hover:opacity-80 transition-opacity"
+                                >
+                                    Add Credits
+                                </button>
+                                <button
+                                    onClick={() => setShowAutoRefill(true)}
+                                    className="px-4 py-2 bg-black text-neutral-400 text-xs font-medium rounded-lg hover:text-white transition-colors flex items-center gap-1.5 border border-white/[0.06]"
+                                >
+                                    <RefreshCw strokeWidth={1.5} size={12} />
+                                    {balanceData?.auto_refill_enabled ? "Auto-Refill: On" : "Auto-Refill"}
+                                    {balanceData?.auto_refill_enabled && (
+                                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 ml-0.5" />
+                                    )}
+                                </button>
+                            </div>
+                        </section>
 
                         {/* ─── Usage Summary ─── */}
                         <section className="bg-black border border-white/10 shadow-sm rounded-lg overflow-hidden flex-1">
@@ -234,301 +234,302 @@ export default function UsagePage() {
                                 </p>
                             </div>
 
-                        {usageData && Object.keys(usageData.summary).length > 0 ? (
-                            <div className="divide-y divide-white/10">
-                                {Object.entries(usageData.summary).map(([model, data]: [string, any]) => {
-                                    const { label, hint } = getModelLabel(model);
-                                    const callsEst = estimateCalls(data.input_tokens, data.output_tokens);
-                                    return (
-                                        <div key={model} className="px-6 py-4">
-                                            <div className="flex items-start justify-between gap-3">
-                                                <div className="min-w-0">
-                                                    <div className="flex items-center gap-2 mb-0.5">
-                                                        <p className="text-sm font-medium text-white">{label}</p>
-                                                        <span className="text-[10px] text-neutral-600 font-mono bg-neutral-900 px-1.5 py-0.5 rounded">{callsEst}</span>
+                            {usageData && Object.keys(usageData.summary).length > 0 ? (
+                                <div className="divide-y divide-white/10">
+                                    {Object.entries(usageData.summary).map(([model, data]: [string, any]) => {
+                                        const { label, hint } = getModelLabel(model);
+                                        const callsEst = estimateCalls(data.input_tokens, data.output_tokens);
+                                        return (
+                                            <div key={model} className="px-6 py-4">
+                                                <div className="flex items-start justify-between gap-3">
+                                                    <div className="min-w-0">
+                                                        <div className="flex items-center gap-2 mb-0.5">
+                                                            <p className="text-sm font-medium text-white">{label}</p>
+                                                            <span className="text-[10px] text-neutral-600 font-mono bg-neutral-900 px-1.5 py-0.5 rounded">{callsEst}</span>
+                                                        </div>
+                                                        {hint && <p className="text-[11px] text-neutral-500">{hint}</p>}
                                                     </div>
-                                                    {hint && <p className="text-[11px] text-neutral-500">{hint}</p>}
+                                                    <span className="text-sm font-mono text-white shrink-0">
+                                                        ${data.cost.toFixed(4)}
+                                                    </span>
                                                 </div>
-                                                <span className="text-sm font-mono text-white shrink-0">
-                                                    ${data.cost.toFixed(4)}
-                                                </span>
                                             </div>
-                                        </div>
-                                    );
-                                })}
-                                {/* Total */}
-                                <div className="px-6 py-3 bg-black">
-                                    <div className="flex items-center justify-between">
-                                        <p className="text-xs font-medium text-neutral-500">Total this period</p>
-                                        <p className="text-sm font-mono font-semibold text-white">
-                                            ${usageData.total_cost.toFixed(4)}
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                        ) : (
-                            <div className="px-6 py-10 text-center">
-                                <p className="text-sm text-neutral-500">
-                                    {loadingExtras ? "Loading usage..." : "No usage recorded yet."}
-                                </p>
-                            </div>
-                        )}
-                    </section>
-
-                    {/* ─── Spending History ─── */}
-                    <section className="bg-black rounded-xl overflow-hidden">
-                        <div className="px-6 py-4 border-b border-white/10">
-                            <div className="flex items-center gap-2">
-                                <History strokeWidth={1.5} size={14} className="text-neutral-500" />
-                                <p className="text-sm font-medium text-white">Spending History</p>
-                            </div>
-                        </div>
-
-                        {history.length > 0 ? (
-                            <div>
-                                {groupedHistory.map(({ dateLabel, rows, total }) => (
-                                    <div key={dateLabel}>
-                                        {/* Day header */}
-                                        <div className="flex items-center justify-between px-6 py-2 border-b border-white/[0.04] bg-neutral-950">
-                                            <p className="text-[11px] font-medium text-neutral-500">{dateLabel}</p>
-                                            <p className={`text-[11px] font-mono ${total >= 0 ? "text-emerald-400" : "text-neutral-500"}`}>
-                                                {total >= 0 ? "+" : ""}${Math.abs(total).toFixed(total >= 0 ? 2 : 4)}
+                                        );
+                                    })}
+                                    {/* Total */}
+                                    <div className="px-6 py-3 bg-black">
+                                        <div className="flex items-center justify-between">
+                                            <p className="text-xs font-medium text-neutral-500">Total this period</p>
+                                            <p className="text-sm font-mono font-semibold text-white">
+                                                ${usageData.total_cost.toFixed(4)}
                                             </p>
                                         </div>
-                                        {/* Rows for this day */}
-                                        <div className="divide-y divide-white/[0.04]">
-                                            {rows.map((tx) => {
-                                                const isPositive = tx.amount > 0;
-                                                return (
-                                                    <div key={tx.id} className="px-6 py-3 flex items-center gap-3">
-                                                        <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${isPositive ? "bg-emerald-500/10" : "bg-black"}`}>
-                                                            {isPositive ? (
-                                                                <ArrowUpRight strokeWidth={1.5} size={13} className="text-emerald-400" />
-                                                            ) : (
-                                                                <ArrowDownRight strokeWidth={1.5} size={13} className="text-neutral-600" />
-                                                            )}
-                                                        </div>
-                                                        <div className="flex-1 min-w-0">
-                                                            <p className="text-xs text-white truncate">{tx.description}</p>
-                                                            <p className="text-[10px] text-neutral-600">
-                                                                {new Date(tx.date).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
-                                                            </p>
-                                                        </div>
-                                                        <div className="text-right shrink-0">
-                                                            <p className={`text-xs font-mono font-medium ${isPositive ? "text-emerald-400" : "text-neutral-500"}`}>
-                                                                {isPositive ? "+" : ""}${Math.abs(tx.amount).toFixed(isPositive ? 2 : 4)}
-                                                            </p>
-                                                            <p className="text-[10px] font-mono text-neutral-600">
-                                                                ${tx.balance.toFixed(2)}
-                                                            </p>
-                                                        </div>
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
                                     </div>
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="px-6 py-10 text-center">
-                                <p className="text-sm text-neutral-500">
-                                    {loadingExtras ? "Loading history..." : "No transaction history."}
-                                </p>
-                            </div>
-                        )}
-                    </section>
-                </div>
-            </div>
-
-            {/* ─── Auto-Refill Modal ─── */}
-            {showAutoRefill && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" role="dialog" aria-modal="true">
-                    <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setShowAutoRefill(false)} />
-                    <div className="relative bg-black border border-white/10 rounded-xl w-full max-w-sm p-7 shadow-2xl">
-                        <button
-                            onClick={() => setShowAutoRefill(false)}
-                            className="absolute top-4 right-4 w-7 h-7 rounded-lg bg-black flex items-center justify-center text-neutral-500 hover:text-white transition-colors"
-                        >
-                            <X strokeWidth={1.5} size={14} />
-                        </button>
-
-                        <div className="flex items-center gap-2.5 mb-1">
-                            <Zap strokeWidth={1.5} size={16} className="text-white" />
-                            <h2 className="text-lg font-medium text-white">Auto-Refill</h2>
-                        </div>
-                        <p className="text-xs text-neutral-500 mb-6 leading-relaxed">
-                            Automatically add credits when your balance falls below a threshold so Aariv never stops mid-task.
-                        </p>
-
-                        {/* Enable toggle */}
-                        <div className="flex items-center justify-between mb-6 py-3 border-y border-white/[0.06]">
-                            <div>
-                                <p className="text-sm font-medium text-white">Enable auto-refill</p>
-                                <p className="text-[11px] text-neutral-500 mt-0.5">Charge my card automatically</p>
-                            </div>
-                            <button
-                                onClick={() => setRefillEnabled((v) => !v)}
-                                className={`relative w-11 h-6 rounded-full transition-colors duration-200 ${refillEnabled ? "bg-white" : "bg-neutral-800"}`}
-                            >
-                                <span className={`absolute top-1 left-1 w-4 h-4 rounded-full transition-transform duration-200 ${refillEnabled ? "bg-black translate-x-5" : "bg-neutral-500"}`} />
-                            </button>
-                        </div>
-
-                        {/* Threshold */}
-                        <div className={`space-y-4 transition-opacity duration-200 ${refillEnabled ? "opacity-100" : "opacity-40 pointer-events-none"}`}>
-                            <div>
-                                <label className="text-xs font-medium text-white mb-1.5 block">
-                                    Refill when balance drops below
-                                </label>
-                                <div className="relative">
-                                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-500 text-sm">$</span>
-                                    <input
-                                        type="number"
-                                        min={1}
-                                        step={0.5}
-                                        value={refillThreshold}
-                                        onChange={(e) => setRefillThreshold(e.target.value)}
-                                        className="w-full py-2.5 pl-7 pr-4 rounded-xl bg-black border border-white/10 text-white text-sm outline-none focus:border-white/30 transition-colors"
-                                    />
                                 </div>
-                                <p className="text-[11px] text-neutral-600 mt-1">Trigger when your balance goes under this amount</p>
+                            ) : (
+                                <div className="px-6 py-10 text-center">
+                                    <p className="text-sm text-neutral-500">
+                                        {loadingExtras ? "Loading usage..." : "No usage recorded yet."}
+                                    </p>
+                                </div>
+                            )}
+                        </section>
+
+                        {/* ─── Spending History ─── */}
+                        <section className="bg-black rounded-xl overflow-hidden">
+                            <div className="px-6 py-4 border-b border-white/10">
+                                <div className="flex items-center gap-2">
+                                    <History strokeWidth={1.5} size={14} className="text-neutral-500" />
+                                    <p className="text-sm font-medium text-white">Spending History</p>
+                                </div>
                             </div>
 
-                            <div>
-                                <label className="text-xs font-medium text-white mb-1.5 block">
-                                    Amount to add
-                                </label>
-                                <div className="grid grid-cols-4 gap-1.5 mb-2">
-                                    {[5, 10, 25, 50].map((amt) => (
-                                        <button
-                                            key={amt}
-                                            onClick={() => setRefillAmount(String(amt))}
-                                            className={`py-2 rounded-lg text-xs font-medium transition-all border ${refillAmount === String(amt) ? "bg-white/5 text-white border-white/30" : "bg-black text-neutral-500 border-white/10 hover:border-neutral-600"}`}
-                                        >
-                                            ${amt}
-                                        </button>
+                            {history.length > 0 ? (
+                                <div>
+                                    {groupedHistory.map(({ dateLabel, rows, total }) => (
+                                        <div key={dateLabel}>
+                                            {/* Day header */}
+                                            <div className="flex items-center justify-between px-6 py-2 border-b border-white/[0.04] bg-neutral-950">
+                                                <p className="text-[11px] font-medium text-neutral-500">{dateLabel}</p>
+                                                <p className={`text-[11px] font-mono ${total >= 0 ? "text-emerald-400" : "text-neutral-500"}`}>
+                                                    {total >= 0 ? "+" : ""}${Math.abs(total).toFixed(total >= 0 ? 2 : 4)}
+                                                </p>
+                                            </div>
+                                            {/* Rows for this day */}
+                                            <div className="divide-y divide-white/[0.04]">
+                                                {rows.map((tx) => {
+                                                    const isPositive = tx.amount > 0;
+                                                    return (
+                                                        <div key={tx.id} className="px-6 py-3 flex items-center gap-3">
+                                                            <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${isPositive ? "bg-emerald-500/10" : "bg-black"}`}>
+                                                                {isPositive ? (
+                                                                    <ArrowUpRight strokeWidth={1.5} size={13} className="text-emerald-400" />
+                                                                ) : (
+                                                                    <ArrowDownRight strokeWidth={1.5} size={13} className="text-neutral-600" />
+                                                                )}
+                                                            </div>
+                                                            <div className="flex-1 min-w-0">
+                                                                <p className="text-xs text-white truncate">{tx.description}</p>
+                                                                <p className="text-[10px] text-neutral-600">
+                                                                    {new Date(tx.date).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
+                                                                </p>
+                                                            </div>
+                                                            <div className="text-right shrink-0">
+                                                                <p className={`text-xs font-mono font-medium ${isPositive ? "text-emerald-400" : "text-neutral-500"}`}>
+                                                                    {isPositive ? "+" : ""}${Math.abs(tx.amount).toFixed(isPositive ? 2 : 4)}
+                                                                </p>
+                                                                <p className="text-[10px] font-mono text-neutral-600">
+                                                                    ${tx.balance.toFixed(2)}
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
                                     ))}
                                 </div>
+                            ) : (
+                                <div className="px-6 py-10 text-center">
+                                    <p className="text-sm text-neutral-500">
+                                        {loadingExtras ? "Loading history..." : "No transaction history."}
+                                    </p>
+                                </div>
+                            )}
+                        </section>
+                    </div>
+                </div>
+
+                {/* ─── Auto-Refill Modal ─── */}
+                {showAutoRefill && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" role="dialog" aria-modal="true">
+                        <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setShowAutoRefill(false)} />
+                        <div className="relative bg-black border border-white/10 rounded-xl w-full max-w-sm p-7 shadow-2xl">
+                            <button
+                                onClick={() => setShowAutoRefill(false)}
+                                className="absolute top-4 right-4 w-7 h-7 rounded-lg bg-black flex items-center justify-center text-neutral-500 hover:text-white transition-colors"
+                            >
+                                <X strokeWidth={1.5} size={14} />
+                            </button>
+
+                            <div className="flex items-center gap-2.5 mb-1">
+                                <Zap strokeWidth={1.5} size={16} className="text-white" />
+                                <h2 className="text-lg font-medium text-white">Auto-Refill</h2>
+                            </div>
+                            <p className="text-xs text-neutral-500 mb-6 leading-relaxed">
+                                Automatically add credits when your balance falls below a threshold so Aariv never stops mid-task.
+                            </p>
+
+                            {/* Enable toggle */}
+                            <div className="flex items-center justify-between mb-6 py-3 border-y border-white/[0.06]">
+                                <div>
+                                    <p className="text-sm font-medium text-white">Enable auto-refill</p>
+                                    <p className="text-[11px] text-neutral-500 mt-0.5">Charge my card automatically</p>
+                                </div>
+                                <button
+                                    onClick={() => setRefillEnabled((v) => !v)}
+                                    className={`relative w-11 h-6 rounded-full transition-colors duration-200 ${refillEnabled ? "bg-white" : "bg-neutral-800"}`}
+                                >
+                                    <span className={`absolute top-1 left-1 w-4 h-4 rounded-full transition-transform duration-200 ${refillEnabled ? "bg-black translate-x-5" : "bg-neutral-500"}`} />
+                                </button>
+                            </div>
+
+                            {/* Threshold */}
+                            <div className={`space-y-4 transition-opacity duration-200 ${refillEnabled ? "opacity-100" : "opacity-40 pointer-events-none"}`}>
+                                <div>
+                                    <label className="text-xs font-medium text-white mb-1.5 block">
+                                        Refill when balance drops below
+                                    </label>
+                                    <div className="relative">
+                                        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-500 text-sm">$</span>
+                                        <input
+                                            type="number"
+                                            min={1}
+                                            step={0.5}
+                                            value={refillThreshold}
+                                            onChange={(e) => setRefillThreshold(e.target.value)}
+                                            className="w-full py-2.5 pl-7 pr-4 rounded-xl bg-black border border-white/10 text-white text-sm outline-none focus:border-white/30 transition-colors"
+                                        />
+                                    </div>
+                                    <p className="text-[11px] text-neutral-600 mt-1">Trigger when your balance goes under this amount</p>
+                                </div>
+
+                                <div>
+                                    <label className="text-xs font-medium text-white mb-1.5 block">
+                                        Amount to add
+                                    </label>
+                                    <div className="grid grid-cols-4 gap-1.5 mb-2">
+                                        {[5, 10, 25, 50].map((amt) => (
+                                            <button
+                                                key={amt}
+                                                onClick={() => setRefillAmount(String(amt))}
+                                                className={`py-2 rounded-lg text-xs font-medium transition-all border ${refillAmount === String(amt) ? "bg-white/5 text-white border-white/30" : "bg-black text-neutral-500 border-white/10 hover:border-neutral-600"}`}
+                                            >
+                                                ${amt}
+                                            </button>
+                                        ))}
+                                    </div>
+                                    <div className="relative">
+                                        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-500 text-sm">$</span>
+                                        <input
+                                            type="number"
+                                            min={5}
+                                            step={1}
+                                            value={refillAmount}
+                                            onChange={(e) => setRefillAmount(e.target.value)}
+                                            className="w-full py-2.5 pl-7 pr-4 rounded-xl bg-black border border-white/10 text-white text-sm outline-none focus:border-white/30 transition-colors"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button
+                                onClick={handleSaveRefill}
+                                disabled={savingRefill || refillSaved}
+                                className="mt-6 w-full py-2.5 rounded-xl text-sm font-medium flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 text-white transition-colors disabled:opacity-50"
+                            >
+                                {refillSaved ? (
+                                    <><Check strokeWidth={1.5} size={14} className="text-emerald-400" /> Saved</>
+                                ) : savingRefill ? "Saving…" : "Save settings"}
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {/* ─── Add Credits Modal ─── */}
+                {showAddCredits && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" role="dialog" aria-modal="true">
+                        <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setShowAddCredits(false)} />
+                        <div className="relative bg-black border border-white/10 rounded-xl w-full max-w-sm p-7 shadow-2xl">
+                            <button
+                                onClick={() => setShowAddCredits(false)}
+                                className="absolute top-4 right-4 w-7 h-7 rounded-lg bg-black flex items-center justify-center text-neutral-500 hover:text-white transition-colors"
+                            >
+                                <X strokeWidth={1.5} size={14} />
+                            </button>
+
+                            <h2 className="text-lg font-medium text-white mb-0.5">Add Credits</h2>
+                            <p className="text-xs text-neutral-500 mb-5">Choose an amount to add to your balance.</p>
+
+                            {/* Preset */}
+                            <div className="grid grid-cols-2 gap-2 mb-5">
+                                {[10, 25, 50, 100].map((amt) => (
+                                    <button
+                                        key={amt}
+                                        onClick={() => { setSelectedAmount(amt); setCustomAmount(""); }}
+                                        className={`py-2.5 rounded-xl text-sm font-medium transition-all border ${selectedAmount === amt && !customAmount ? "bg-white/5 text-white border-white/30" : "bg-black text-neutral-400 border-white/10 hover:border-neutral-500"}`}
+                                    >
+                                        ${amt}
+                                    </button>
+                                ))}
+                            </div>
+
+                            {/* Custom */}
+                            <div className="mb-5">
+                                <label className="text-xs font-medium text-white mb-1.5 block">Custom amount</label>
                                 <div className="relative">
                                     <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-500 text-sm">$</span>
                                     <input
                                         type="number"
                                         min={5}
-                                        step={1}
-                                        value={refillAmount}
-                                        onChange={(e) => setRefillAmount(e.target.value)}
-                                        className="w-full py-2.5 pl-7 pr-4 rounded-xl bg-black border border-white/10 text-white text-sm outline-none focus:border-white/30 transition-colors"
+                                        max={500}
+                                        step={0.01}
+                                        value={customAmount}
+                                        onChange={(e) => { setCustomAmount(e.target.value); setSelectedAmount(null); }}
+                                        placeholder="5.00 - 500.00"
+                                        className="w-full py-2.5 pl-7 pr-4 rounded-xl bg-black border border-white/10 text-white text-sm placeholder:text-neutral-500 outline-none focus:border-white/30 transition-colors"
                                     />
                                 </div>
+                                {customAmount && parseFloat(customAmount) < 5 && (
+                                    <p className="text-[11px] text-red-400 mt-1.5">Minimum $5.00</p>
+                                )}
                             </div>
-                        </div>
 
-                        <button
-                            onClick={handleSaveRefill}
-                            disabled={savingRefill || refillSaved}
-                            className="mt-6 w-full py-2.5 rounded-xl text-sm font-medium flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 text-white transition-colors disabled:opacity-50"
-                        >
-                            {refillSaved ? (
-                                <><Check strokeWidth={1.5} size={14} className="text-emerald-400" /> Saved</>
-                            ) : savingRefill ? "Saving…" : "Save settings"}
-                        </button>
-                    </div>
-                </div>
-            )}
-
-            {/* ─── Add Credits Modal ─── */}
-            {showAddCredits && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" role="dialog" aria-modal="true">
-                    <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setShowAddCredits(false)} />
-                    <div className="relative bg-black border border-white/10 rounded-xl w-full max-w-sm p-7 shadow-2xl">
-                        <button
-                            onClick={() => setShowAddCredits(false)}
-                            className="absolute top-4 right-4 w-7 h-7 rounded-lg bg-black flex items-center justify-center text-neutral-500 hover:text-white transition-colors"
-                        >
-                            <X strokeWidth={1.5} size={14} />
-                        </button>
-
-                        <h2 className="text-lg font-medium text-white mb-0.5">Add Credits</h2>
-                        <p className="text-xs text-neutral-500 mb-5">Choose an amount to add to your balance.</p>
-
-                        {/* Preset */}
-                        <div className="grid grid-cols-2 gap-2 mb-5">
-                            {[10, 25, 50, 100].map((amt) => (
-                                <button
-                                    key={amt}
-                                    onClick={() => { setSelectedAmount(amt); setCustomAmount(""); }}
-                                    className={`py-2.5 rounded-xl text-sm font-medium transition-all border ${selectedAmount === amt && !customAmount ? "bg-white/5 text-white border-white/30" : "bg-black text-neutral-400 border-white/10 hover:border-neutral-500"}`}
-                                >
-                                    ${amt}
-                                </button>
-                            ))}
-                        </div>
-
-                        {/* Custom */}
-                        <div className="mb-5">
-                            <label className="text-xs font-medium text-white mb-1.5 block">Custom amount</label>
-                            <div className="relative">
-                                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-500 text-sm">$</span>
-                                <input
-                                    type="number"
-                                    min={5}
-                                    max={500}
-                                    step={0.01}
-                                    value={customAmount}
-                                    onChange={(e) => { setCustomAmount(e.target.value); setSelectedAmount(null); }}
-                                    placeholder="5.00 - 500.00"
-                                    className="w-full py-2.5 pl-7 pr-4 rounded-xl bg-black border border-white/10 text-white text-sm placeholder:text-neutral-500 outline-none focus:border-white/30 transition-colors"
-                                />
-                            </div>
-                            {customAmount && parseFloat(customAmount) < 5 && (
-                                <p className="text-[11px] text-red-400 mt-1.5">Minimum $5.00</p>
-                            )}
-                        </div>
-
-                        {/* Pay */}
-                        {(() => {
-                            const amount = customAmount ? parseFloat(customAmount) : selectedAmount;
-                            const isValid = amount !== null && amount !== undefined && amount >= 5 && amount <= 500;
-                            return (
-                                <>
-                                    <button
-                                        onClick={async () => {
-                                            if (!isValid || isCreatingCheckout) return;
-                                            setCheckoutError(null);
-                                            setIsCreatingCheckout(true);
-                                            try {
-                                                const data = await api.post("/billing/create-checkout", { amount });
-                                                if (data?.checkout_url) {
-                                                    window.location.href = data.checkout_url;
-                                                } else {
-                                                    setCheckoutError("No checkout URL returned. Please try again.");
+                            {/* Pay */}
+                            {(() => {
+                                const amount = customAmount ? parseFloat(customAmount) : selectedAmount;
+                                const isValid = amount !== null && amount !== undefined && amount >= 5 && amount <= 500;
+                                return (
+                                    <>
+                                        <button
+                                            onClick={async () => {
+                                                if (!isValid || isCreatingCheckout) return;
+                                                setCheckoutError(null);
+                                                setIsCreatingCheckout(true);
+                                                try {
+                                                    const data = await api.post("/billing/create-checkout", { amount });
+                                                    if (data?.checkout_url) {
+                                                        window.location.href = data.checkout_url;
+                                                    } else {
+                                                        setCheckoutError("No checkout URL returned. Please try again.");
+                                                    }
+                                                } catch (e: any) {
+                                                    setCheckoutError(e?.message || "Failed to start checkout. Please try again.");
+                                                } finally {
+                                                    setIsCreatingCheckout(false);
                                                 }
-                                            } catch (e: any) {
-                                                setCheckoutError(e?.message || "Failed to start checkout. Please try again.");
-                                            } finally {
-                                                setIsCreatingCheckout(false);
-                                            }
-                                        }}
-                                        disabled={!isValid || isCreatingCheckout}
-                                        className={`w-full py-3 rounded-xl font-medium text-sm flex items-center justify-center gap-2 transition-opacity ${isValid && !isCreatingCheckout ? "bg-white/5 text-white hover:opacity-80 cursor-pointer" : "bg-black text-neutral-500 cursor-not-allowed opacity-50"}`}
-                                    >
-                                        <CreditCard strokeWidth={1.5} size={15} />
-                                        {isCreatingCheckout ? "Redirecting..." : "Pay with Dodo"}
-                                        {!isCreatingCheckout && <ExternalLink strokeWidth={1.5} size={13} />}
-                                    </button>
-                                    {checkoutError && (
-                                        <p className="text-[11px] text-red-400 text-center mt-1.5">{checkoutError}</p>
-                                    )}
-                                </>
-                            );
-                        })()}
+                                            }}
+                                            disabled={!isValid || isCreatingCheckout}
+                                            className={`w-full py-3 rounded-xl font-medium text-sm flex items-center justify-center gap-2 transition-opacity ${isValid && !isCreatingCheckout ? "bg-white/5 text-white hover:opacity-80 cursor-pointer" : "bg-black text-neutral-500 cursor-not-allowed opacity-50"}`}
+                                        >
+                                            <CreditCard strokeWidth={1.5} size={15} />
+                                            {isCreatingCheckout ? "Redirecting..." : "Pay with Dodo"}
+                                            {!isCreatingCheckout && <ExternalLink strokeWidth={1.5} size={13} />}
+                                        </button>
+                                        {checkoutError && (
+                                            <p className="text-[11px] text-red-400 text-center mt-1.5">{checkoutError}</p>
+                                        )}
+                                    </>
+                                );
+                            })()}
 
-                        <p className="text-[10px] text-neutral-500 text-center mt-3">
-                            You will be redirected to Dodo Payments to complete your purchase.
-                        </p>
+                            <p className="text-[10px] text-neutral-500 text-center mt-3">
+                                You will be redirected to Dodo Payments to complete your purchase.
+                            </p>
+                        </div>
                     </div>
-                </div>
-            )}
+                )}
+            </div>
         </div>
     );
 }
