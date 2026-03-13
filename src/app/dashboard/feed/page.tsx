@@ -416,17 +416,17 @@ export default function FeedPage() {
           <div className="flex items-center gap-2 text-xs text-neutral-500 mb-6 -mt-4 px-1 flex-wrap">
             <span className="font-semibold text-neutral-400 tracking-wide">Today</span>
             <span className="text-neutral-700">·</span>
-            <span>{todayStats.total} event{todayStats.total !== 1 ? "s" : ""}</span>
+            <span>{todayStats.events} event{todayStats.events !== 1 ? "s" : ""}</span>
             <span className="text-neutral-700">·</span>
-            {todayStats.failed > 0 ? (
-              <span className="text-red-400 font-medium">{todayStats.failed} error{todayStats.failed !== 1 ? "s" : ""}</span>
+            {todayStats.errors > 0 ? (
+              <span className="text-red-400 font-medium">{todayStats.errors} error{todayStats.errors !== 1 ? "s" : ""}</span>
             ) : (
               <span>0 errors</span>
             )}
-            {todayStats.lastEventAt && (
+            {todayStats.lastActivity && (
               <>
                 <span className="text-neutral-700">·</span>
-                <span>Last: {timeAgo(todayStats.lastEventAt)}</span>
+                <span>Last: {todayStats.lastActivity}</span>
               </>
             )}
           </div>
@@ -439,8 +439,7 @@ export default function FeedPage() {
             <div className="flex items-center gap-2 flex-wrap">
               <button
                 onClick={() => { setAppFilter("all"); setStatusFilter("all"); }}
-                className={`shrink-0 px-4 py-1.5 text-xs font-medium rounded-full transition-all duration-300 border ${
-                  appFilter === "all" && statusFilter === "all"
+                className={`shrink-0 px-4 py-1.5 text-xs font-medium rounded-full transition-all duration-300 border ${appFilter === "all" && statusFilter === "all"
                     ? "bg-white text-black border-white shadow-sm"
                     : "bg-neutral-900 text-neutral-500 border-white/10 hover:border-white/20 hover:text-white"
                   }`}
@@ -450,11 +449,10 @@ export default function FeedPage() {
               {failedCount > 0 && (
                 <button
                   onClick={() => { setAppFilter("all"); setStatusFilter(statusFilter === "failed" ? "all" : "failed"); }}
-                  className={`flex items-center gap-1.5 shrink-0 px-4 py-1.5 text-xs font-medium rounded-full transition-all duration-300 border ${
-                    statusFilter === "failed"
+                  className={`flex items-center gap-1.5 shrink-0 px-4 py-1.5 text-xs font-medium rounded-full transition-all duration-300 border ${statusFilter === "failed"
                       ? "bg-red-500/20 text-red-300 border-red-500/40 shadow-sm"
                       : "bg-neutral-900 text-neutral-500 border-white/10 hover:border-red-500/30 hover:text-red-400"
-                  }`}
+                    }`}
                 >
                   <div className={`w-1.5 h-1.5 rounded-full bg-red-400 ${statusFilter === "failed" ? "animate-pulse" : ""}`} />
                   Failed
@@ -465,8 +463,7 @@ export default function FeedPage() {
                 <button
                   key={app}
                   onClick={() => { setAppFilter(app); setStatusFilter("all"); }}
-                  className={`group flex items-center gap-1.5 shrink-0 px-4 py-1.5 text-xs font-medium rounded-full transition-all duration-300 border ${
-                    appFilter === app && statusFilter === "all"
+                  className={`group flex items-center gap-1.5 shrink-0 px-4 py-1.5 text-xs font-medium rounded-full transition-all duration-300 border ${appFilter === app && statusFilter === "all"
                       ? "bg-white text-black border-white shadow-sm"
                       : "bg-neutral-900 text-neutral-500 border-white/10 hover:border-white/20 hover:text-white"
                     }`}

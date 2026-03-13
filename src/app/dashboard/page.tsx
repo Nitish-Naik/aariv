@@ -743,6 +743,7 @@ export default function DashboardHome() {
   const [hasConnections, setHasConnections] = useState<boolean | null>(null);
   const [showNudge, setShowNudge] = useState(false);
   const [connectedApps, setConnectedApps] = useState<string[]>([]);
+  const step3Tracked = useRef(false);
 
   const fetchBriefing = useCallback(
     async (silent = false) => {
@@ -776,11 +777,6 @@ export default function DashboardHome() {
         }
         setHasConnections(true);
 
-        // Check if Slack is connected (for soft nudge)
-        const slackIsConnected = connectedApps.some(
-          (a) => a.toLowerCase().includes("slack"),
-        );
-        setSlackConnected(slackIsConnected);
 
         // 2. Fetch briefing + review in parallel
         const [data, reviewData] = await Promise.all([
@@ -796,11 +792,6 @@ export default function DashboardHome() {
           api.patch("/auth/onboarding-step", { step: 3 }).catch(() => { });
         }
 
-        // Show Slack nudge if not connected and not dismissed
-        if (!slackIsConnected && user?.id) {
-          const dismissed = localStorage.getItem(SLACK_NUDGE_KEY(user.id));
-          if (!dismissed) setShowSlackNudge(true);
-        }
       } catch (err: any) {
         console.error("Failed to fetch briefing:", err);
         setError(err.message || "Couldn't load your briefing.");
