@@ -635,25 +635,24 @@ export default function TriggersPage() {
     });
   }, [userTriggers, searchQuery]);
   return (
-    <div className="bg-black min-h-screen">
-      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-        {/* Toast */}
-        {toast && (
-          <div
-            className={`fixed top-4 right-4 z-50 flex items-center gap-2 px-5 py-3 rounded-xl shadow-lg text-sm font-medium animate-in slide-in-from-top fade-in duration-300 ${
-              toast.type === "success"
-                ? "bg-emerald-500/90 text-white"
-                : "bg-red-500/90 text-white"
-            }`}
-          >
-            {toast.type === "success" ? (
-              <Check strokeWidth={1.5} size={16} />
-            ) : (
-              <Zap strokeWidth={1.5} size={16} />
-            )}
-            {toast.message}
-          </div>
-        )}
+    <div className="flex flex-col min-h-screen">
+      {/* Toast */}
+      {toast && (
+        <div
+          className={`fixed top-4 right-4 z-50 flex items-center gap-2 px-5 py-3 rounded-xl shadow-lg text-sm font-medium animate-in slide-in-from-top fade-in duration-300 ${
+            toast.type === "success"
+              ? "bg-emerald-500/90 text-white"
+              : "bg-red-500/90 text-white"
+          }`}
+        >
+          {toast.type === "success" ? (
+            <Check strokeWidth={1.5} size={16} />
+          ) : (
+            <Zap strokeWidth={1.5} size={16} />
+          )}
+          {toast.message}
+        </div>
+      )}
 
         {/* Config Modal */}
         {configuringTrigger && (
@@ -717,93 +716,62 @@ export default function TriggersPage() {
           </div>
         )}
 
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight text-white">
-              Triggers
-            </h1>
-            <p className="text-sm text-neutral-500 mt-1">
-              Automations that watch for events across your connected apps
-            </p>
-          </div>
-
-          {!loading && integrations.length > 0 && (
-            <button
-              onClick={() => setShowCreatePanel(!showCreatePanel)}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-white text-white text-sm font-medium hover:opacity-90 transition-opacity"
-            >
-              <Plus strokeWidth={1.5} size={16} />
-              New
-            </button>
-          )}
+      {/* Page header */}
+      <div className="px-6 py-4 border-b border-white/[0.06] flex items-center justify-between shrink-0">
+        <div>
+          <h1 className="text-sm font-semibold text-white">Automations</h1>
+          <p className="text-xs text-neutral-500 mt-0.5">
+            Triggers that watch for events across your connected apps
+          </p>
         </div>
-
-        {/* Stats Cards */}
-        {stats && stats.total > 0 && !loading && (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-            {[
-              {
-                label: "Active",
-                value: stats.active,
-                color: "text-emerald-500",
-              },
-              {
-                label: "Paused",
-                value: stats.paused,
-                color: "text-neutral-400",
-              },
-              {
-                label: "Events",
-                value: stats.totalEvents,
-                color: "text-white",
-              },
-              {
-                label: "Errors",
-                value: stats.totalErrors,
-                color:
-                  stats.totalErrors > 0 ? "text-red-400" : "text-neutral-500",
-              },
-            ].map((s) => (
-              <div
-                key={s.label}
-                className="bg-black border border-white/10 rounded-xl px-4 py-3"
-              >
-                <p className="text-[11px] font-medium text-neutral-500 uppercase tracking-wider mb-1">
-                  {s.label}
-                </p>
-                <p className={`text-xl font-semibold ${s.color}`}>{s.value}</p>
-              </div>
-            ))}
-          </div>
+        {!loading && integrations.length > 0 && (
+          <button
+            onClick={() => setShowCreatePanel(!showCreatePanel)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-white text-black text-xs font-semibold hover:opacity-90 transition-opacity"
+          >
+            <Plus strokeWidth={1.5} size={14} />
+            New
+          </button>
         )}
+      </div>
 
-        {/* View Tabs */}
-        {!loading && userTriggers.length > 0 && (
-          <div className="inline-flex p-1 space-x-1 rounded-xl bg-neutral-900 backdrop-blur-sm border border-white/10 shadow-sm mb-6">
-            {(["triggers", "activity"] as const).map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setViewTab(tab)}
-                className={`relative px-4 py-1.5 text-sm font-medium rounded-lg transition-colors focus-visible:outline-none capitalize ${
-                  viewTab === tab
-                    ? "text-white"
-                    : "text-neutral-500 hover:text-white"
-                }`}
-              >
-                {viewTab === tab && (
-                  <motion.div
-                    layoutId="triggersTabIndicator"
-                    className="absolute inset-0 rounded-lg shadow-sm bg-white/10"
-                    style={{ zIndex: -1 }}
-                    transition={{ type: "spring", bounce: 0.2, duration: 0.5 }}
-                  />
-                )}
-                {tab === "triggers" ? "Triggers" : "Activity Log"}
-              </button>
-            ))}
-          </div>
-        )}
+      {/* View tabs */}
+      {!loading && userTriggers.length > 0 && (
+        <div className="px-6 border-b border-white/[0.06] flex items-center gap-1">
+          {(["triggers", "activity"] as const).map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setViewTab(tab)}
+              className={`px-3 py-3 text-xs font-medium transition-colors border-b-2 -mb-px ${
+                viewTab === tab
+                  ? "text-white border-white"
+                  : "text-neutral-500 hover:text-neutral-300 border-transparent"
+              }`}
+            >
+              {tab === "triggers" ? "Triggers" : "Activity Log"}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Stats strip */}
+      {stats && stats.total > 0 && !loading && (
+        <div className="grid grid-cols-2 md:grid-cols-4 border-b border-white/[0.06]">
+          {[
+            { label: "Active", value: stats.active, color: "text-emerald-400" },
+            { label: "Paused", value: stats.paused, color: "text-neutral-400" },
+            { label: "Events", value: stats.totalEvents, color: "text-white" },
+            { label: "Errors", value: stats.totalErrors, color: stats.totalErrors > 0 ? "text-red-400" : "text-neutral-500" },
+          ].map((s, i) => (
+            <div key={s.label} className={`px-6 py-4 ${i < 3 ? "border-r border-white/[0.06]" : ""}`}>
+              <p className="text-[10px] font-semibold text-neutral-600 uppercase tracking-widest mb-1">{s.label}</p>
+              <p className={`text-xl font-semibold ${s.color}`}>{s.value}</p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="flex-1 px-6 py-6">
 
         {/* Loading — skeleton cards */}
         {loading ? (

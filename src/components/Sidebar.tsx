@@ -5,11 +5,11 @@ import { useAuth } from "@/context/AuthContext";
 import { useBilling } from "@/context/useBilling";
 import {
   Activity,
+  ChevronDown,
   Home,
   Link2,
   ListChecks,
   LogOut,
-  Menu,
   MessageSquare,
   Settings,
   X,
@@ -19,34 +19,80 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
-const navItems = [
-  { href: "/dashboard", label: "Home", icon: Home },
-  { href: "/dashboard/assistant", label: "Assistant", icon: MessageSquare },
+const mainNav = [
+  { href: "/dashboard", label: "Overview", icon: Home, exact: true },
   { href: "/dashboard/review", label: "Inbox", icon: ListChecks },
-  { href: "/dashboard/feed", label: "Feed", icon: Activity },
-  { href: "/dashboard/integrations", label: "Integrations", icon: Link2 },
+  { href: "/dashboard/assistant", label: "Assistant", icon: MessageSquare },
   { href: "/dashboard/triggers", label: "Automations", icon: Zap },
+  { href: "/dashboard/integrations", label: "Integrations", icon: Link2 },
+];
+
+const monitoringNav = [
+  { href: "/dashboard/feed", label: "Activity", icon: Activity },
+];
+
+const bottomNav = [
   { href: "/dashboard/settings", label: "Settings", icon: Settings },
 ];
 
-// Bottom bar: key pages for mobile quick access
-const bottomBarItems = [
-  navItems[0], // Home
-  navItems[1], // Assistant
-  navItems[2], // Inbox
-  navItems[3], // Feed
-  navItems[6], // Settings
+const mobileNav = [
+  { href: "/dashboard", label: "Home", icon: Home, exact: true },
+  { href: "/dashboard/assistant", label: "Chat", icon: MessageSquare },
+  { href: "/dashboard/review", label: "Inbox", icon: ListChecks },
+  { href: "/dashboard/feed", label: "Activity", icon: Activity },
+  { href: "/dashboard/settings", label: "Settings", icon: Settings },
 ];
 
-export function Sidebar() {
+function NavItem({
+  href,
+  label,
+  icon: Icon,
+  exact,
+  badge,
+}: {
+  href: string;
+  label: string;
+  icon: React.ElementType;
+  exact?: boolean;
+  badge?: number;
+}) {
   const pathname = usePathname();
+  const isActive = exact
+    ? pathname === href
+    : pathname === href || pathname.startsWith(href + "/");
+
+  return (
+    <Link
+      href={href}
+      className={`group flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-sm transition-colors ${
+        isActive
+          ? "bg-white/[0.06] text-white"
+          : "text-neutral-500 hover:text-white hover:bg-white/[0.04]"
+      }`}
+    >
+      <Icon
+        size={16}
+        strokeWidth={1.75}
+        className={isActive ? "text-white" : "text-neutral-500 group-hover:text-white transition-colors"}
+      />
+      <span className="flex-1 font-medium">{label}</span>
+      {badge !== undefined && badge > 0 && (
+        <span className="min-w-[18px] h-[18px] rounded-full bg-white/10 text-[10px] font-semibold text-white flex items-center justify-center px-1 leading-none">
+          {badge > 99 ? "99+" : badge}
+        </span>
+      )}
+    </Link>
+  );
+}
+
+export function Sidebar() {
   const { user, signOut } = useAuth();
   const { balanceData } = useBilling();
   const [showSignOutDialog, setShowSignOutDialog] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
+  const pathname = usePathname();
 
-  // Poll pending review count every 60s
   useEffect(() => {
     if (!user?.id) return;
     const load = () => {
@@ -61,275 +107,234 @@ export function Sidebar() {
     return () => clearInterval(t);
   }, [user?.id]);
 
-  // Close mobile menu on route change
   useEffect(() => {
     setMobileMenuOpen(false);
   }, [pathname]);
 
-  // Prevent body scroll when mobile menu is open
   useEffect(() => {
-    if (mobileMenuOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
-    return () => {
-      document.body.style.overflow = "";
-    };
+    document.body.style.overflow = mobileMenuOpen ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; };
   }, [mobileMenuOpen]);
+
+  const initials = user?.name
+    ? user.name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()
+    : "CP";
 
   return (
     <>
-      {/* ─── DESKTOP SIDEBAR (hidden on mobile) ─── */}
-      <aside className="hidden md:flex flex-col w-[220px] h-screen border-r border-white/10 bg-black fixed left-0 top-0 z-30">
-        {/* Logo */}
-        <div className="px-4 py-3 border-b border-white/10 shrink-0">
-          <div className="flex items-center gap-2">
-            <img src="/icons/icon-192.svg" alt="CalmPilot" className="w-5 h-5 rounded-md shrink-0" />
-            <div>
-              <h1 className="text-sm font-serif font-semibold tracking-wide text-white leading-tight">
-                CalmPilot
-              </h1>
-              <p className="text-[10px] text-neutral-500 leading-tight">
-                a quieter way to get work done
-              </p>
+      {/* ─── DESKTOP SIDEBAR ─── */}
+      <aside className="hidden md:flex flex-col w-[240px] h-screen bg-[#080808] border-r border-white/[0.06] fixed left-0 top-0 z-30">
+
+        {/* Workspace header */}
+        <div className="px-3 py-3 border-b border-white/[0.06] shrink-0">
+          <button className="w-full flex items-center gap-2.5 px-2 py-1.5 rounded-md hover:bg-white/[0.04] transition-colors group">
+            <div className="w-6 h-6 rounded-md bg-white flex items-center justify-center shrink-0">
+              <img
+                src="/icons/icon-192.svg"
+                alt="CalmPilot"
+                className="w-4 h-4"
+              />
             </div>
-          </div>
+            <span className="flex-1 text-left text-sm font-semibold text-white truncate">
+              CalmPilot
+            </span>
+            <ChevronDown
+              size={14}
+              className="text-neutral-600 group-hover:text-neutral-400 transition-colors shrink-0"
+            />
+          </button>
         </div>
 
-        {/* Nav */}
-        <nav className="flex-1 px-3 py-3 space-y-0.5">
-          {navItems.map((item) => {
-            const isActive =
-              pathname === item.href ||
-              (item.href !== "/dashboard" && pathname.startsWith(item.href));
-            const Icon = item.icon;
-            const isInbox = item.href === "/dashboard/review";
-            const showBadge = isInbox && pendingCount > 0 && !isActive;
+        {/* Main nav */}
+        <nav className="flex-1 overflow-y-auto px-3 py-3 space-y-0.5">
+          {mainNav.map((item) => (
+            <NavItem
+              key={item.href}
+              {...item}
+              badge={item.href === "/dashboard/review" ? pendingCount : undefined}
+            />
+          ))}
 
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${isActive
-                    ? "bg-white/5 text-white"
-                    : "text-neutral-400 hover:text-white hover:bg-white/5"
-                  }`}
-              >
-                <div className="relative shrink-0">
-                  <Icon size={18} strokeWidth={1.5} />
-                  {showBadge && (
-                    <span className="absolute -top-1.5 -right-1.5 min-w-[14px] h-[14px] rounded-full bg-red-500 text-[9px] font-bold text-white flex items-center justify-center px-0.5 leading-none">
-                      {pendingCount > 9 ? "9+" : pendingCount}
-                    </span>
-                  )}
-                </div>
-                {item.label}
-              </Link>
-            );
-          })}
+          {/* Monitoring group */}
+          <div className="pt-4 pb-1">
+            <p className="px-2.5 text-[10px] font-semibold text-neutral-600 uppercase tracking-widest mb-1">
+              Monitoring
+            </p>
+            {monitoringNav.map((item) => (
+              <NavItem key={item.href} {...item} />
+            ))}
+          </div>
         </nav>
 
         {/* Bottom section */}
-        <div className="px-3 py-4 border-t border-white/10 space-y-2">
+        <div className="border-t border-white/[0.06] px-3 py-3 space-y-0.5">
+          {bottomNav.map((item) => (
+            <NavItem key={item.href} {...item} />
+          ))}
+
+          {/* Credits row */}
+          {balanceData && (
+            <Link
+              href="/dashboard/usage"
+              className="flex items-center justify-between px-2.5 py-1.5 rounded-md text-sm text-neutral-500 hover:text-white hover:bg-white/[0.04] transition-colors"
+            >
+              <span className="font-medium">Credits</span>
+              <span
+                className={`text-xs font-semibold tabular-nums ${
+                  balanceData.balance <= 0
+                    ? "text-red-400"
+                    : balanceData.balance < 1
+                    ? "text-amber-400"
+                    : "text-white"
+                }`}
+              >
+                ${Math.max(0, balanceData.balance).toFixed(2)}
+              </span>
+            </Link>
+          )}
+
+          {/* User row */}
           {user && (
-            <div className="flex items-center gap-3 px-3 py-2 rounded-lg">
+            <button
+              onClick={() => setShowSignOutDialog(true)}
+              className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-md hover:bg-white/[0.04] transition-colors group"
+            >
               {user.avatar ? (
                 <img
                   src={user.avatar}
                   alt=""
-                  className="w-7 h-7 rounded-full"
+                  className="w-6 h-6 rounded-full shrink-0"
                 />
               ) : (
-                <div className="w-7 h-7 rounded-full bg-primary-500 flex items-center justify-center text-xs text-white font-medium">
-                  {user.name.charAt(0).toUpperCase()}
+                <div className="w-6 h-6 rounded-full bg-neutral-700 flex items-center justify-center text-[10px] font-semibold text-white shrink-0">
+                  {initials}
                 </div>
               )}
-              <div className="flex-1 min-w-0">
-                <p className="text-sm text-white truncate">
-                  {user.name}
-                </p>
-                <p className="text-xs text-neutral-500 truncate">
-                  {/* {user.email} */}
-                </p>
-              </div>
-            </div>
+              <span className="flex-1 text-left text-sm text-neutral-400 group-hover:text-white truncate transition-colors">
+                {user.name}
+              </span>
+              <LogOut
+                size={14}
+                className="text-neutral-600 group-hover:text-red-400 transition-colors shrink-0"
+              />
+            </button>
           )}
-
-          {user && balanceData && (
-            <Link
-              href=""
-              className="flex items-center justify-between px-3 py-2 rounded-lg text-sm bg-white/5 hover:bg-white/5 border border-white/10 transition-colors"
-            >
-              <div className="flex items-center gap-2">
-                <div className="w-1.5 h-1.5 rounded-full bg-white"></div>
-                <span className="font-medium text-white">Credits</span>
-              </div>
-              <span className="font-bold text-white">${Math.max(0, balanceData.balance).toFixed(2)}</span>
-            </Link>
-          )}
-
-          <button
-            onClick={() => setShowSignOutDialog(true)}
-            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-red-500 hover:bg-red-500/10 w-full transition-colors"
-          >
-            <LogOut size={18} strokeWidth={1.5} />
-            Sign Out
-          </button>
         </div>
       </aside>
 
-      {/* ─── MOBILE TOP BAR (visible on mobile only) ─── */}
-      <header className="md:hidden fixed top-0 left-0 right-0 z-40 flex items-center justify-between px-4 py-3 bg-black border-b border-white/10 safe-top">
+      {/* ─── MOBILE TOP BAR ─── */}
+      <header className="md:hidden fixed top-0 left-0 right-0 z-40 flex items-center justify-between px-4 h-12 bg-black border-b border-white/[0.06] safe-top">
         <div className="flex items-center gap-2">
-          <img src="/icons/icon-192.svg" alt="CalmPilot" className="w-6 h-6 rounded-md shrink-0" />
-          <h1 className="text-base font-serif font-semibold tracking-wide text-white">
-            CalmPilot
-          </h1>
+          <div className="w-5 h-5 rounded-md bg-white flex items-center justify-center shrink-0">
+            <img src="/icons/icon-192.svg" alt="" className="w-3.5 h-3.5" />
+          </div>
+          <span className="text-sm font-semibold text-white">CalmPilot</span>
         </div>
         <button
           onClick={() => setMobileMenuOpen(true)}
-          className="p-2 rounded-lg hover:bg-white/5 transition-colors"
+          className="flex items-center gap-2 text-neutral-500 hover:text-white transition-colors"
           aria-label="Open menu"
         >
-          <Menu strokeWidth={1.5} size={20} className="text-white" />
+          {user?.avatar ? (
+            <img src={user.avatar} alt="" className="w-7 h-7 rounded-full" />
+          ) : (
+            <div className="w-7 h-7 rounded-full bg-neutral-800 border border-white/10 flex items-center justify-center text-[11px] font-semibold text-white">
+              {initials}
+            </div>
+          )}
         </button>
       </header>
 
       {/* ─── MOBILE BOTTOM TAB BAR ─── */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 flex items-center justify-around bg-black border-t border-white/10 safe-bottom px-1 py-1">
-        {bottomBarItems.map((item) => {
-          const isActive =
-            pathname === item.href ||
-            (item.href !== "/dashboard" && pathname.startsWith(item.href));
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 grid grid-cols-5 bg-black border-t border-white/[0.06] safe-bottom">
+        {mobileNav.map((item) => {
+          const isActive = item.exact
+            ? pathname === item.href
+            : pathname === item.href || pathname.startsWith(item.href + "/");
           const Icon = item.icon;
           const isInbox = item.href === "/dashboard/review";
-          const showBadge = isInbox && pendingCount > 0 && !isActive;
 
           return (
             <Link
               key={item.href}
               href={item.href}
-              className={`flex flex-col items-center gap-0.5 px-3 py-2 rounded-lg min-w-[56px] transition-colors ${isActive ? "text-white" : "text-neutral-500"
-                }`}
+              className={`flex flex-col items-center gap-1 py-2.5 transition-colors ${
+                isActive ? "text-white" : "text-neutral-600"
+              }`}
             >
               <div className="relative">
-                <Icon size={20} strokeWidth={1.5} />
-                {showBadge && (
-                  <span className="absolute -top-1.5 -right-2 min-w-[15px] h-[15px] rounded-full bg-red-500 text-[9px] font-bold text-white flex items-center justify-center px-0.5 leading-none">
+                <Icon size={18} strokeWidth={1.75} />
+                {isInbox && pendingCount > 0 && !isActive && (
+                  <span className="absolute -top-1.5 -right-2 min-w-[14px] h-[14px] rounded-full bg-white text-[8px] font-bold text-black flex items-center justify-center px-0.5 leading-none">
                     {pendingCount > 9 ? "9+" : pendingCount}
                   </span>
                 )}
               </div>
-              <span className="text-[10px] font-medium leading-tight">
-                {item.label}
-              </span>
+              <span className="text-[10px] font-medium leading-none">{item.label}</span>
             </Link>
           );
         })}
       </nav>
 
-      {/* ─── MOBILE SLIDE-OUT MENU (full settings/profile) ─── */}
+      {/* ─── MOBILE SLIDE-OUT DRAWER ─── */}
       {mobileMenuOpen && (
         <div className="md:hidden fixed inset-0 z-50">
-          {/* Backdrop */}
           <div
-            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
             onClick={() => setMobileMenuOpen(false)}
           />
-
-          {/* Drawer */}
-          <div className="absolute right-0 top-0 bottom-0 w-[280px] bg-black border-l border-white/10 flex flex-col animate-slide-in-right">
-            {/* Close button */}
-            <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
-              <span className="text-sm font-semibold text-white">
-                Menu
-              </span>
+          <div className="absolute right-0 top-0 bottom-0 w-[260px] bg-[#080808] border-l border-white/[0.06] flex flex-col animate-slide-in-right">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06]">
+              <span className="text-sm font-semibold text-white">Menu</span>
               <button
                 onClick={() => setMobileMenuOpen(false)}
-                className="p-1.5 rounded-lg hover:bg-white/5 transition-colors"
-                aria-label="Close menu"
+                className="p-1 rounded-md hover:bg-white/[0.06] transition-colors"
               >
-                <X strokeWidth={1.5} size={18} className="text-neutral-400" />
+                <X size={16} strokeWidth={1.75} className="text-neutral-500" />
               </button>
             </div>
 
-            {/* User info */}
             {user && (
-              <div className="px-5 py-4 border-b border-white/10">
-                <div className="flex items-center gap-3">
-                  {user.avatar ? (
-                    <img
-                      src={user.avatar}
-                      alt=""
-                      className="w-10 h-10 rounded-full"
-                    />
-                  ) : (
-                    <div className="w-10 h-10 rounded-full bg-primary-500 flex items-center justify-center text-sm text-white font-medium">
-                      {user.name.charAt(0).toUpperCase()}
-                    </div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-white truncate">
-                      {user.name}
-                    </p>
-                    <p className="text-xs text-neutral-500 truncate">
-                      {user.email}
-                    </p>
+              <div className="px-4 py-3 border-b border-white/[0.06] flex items-center gap-3">
+                {user.avatar ? (
+                  <img src={user.avatar} alt="" className="w-8 h-8 rounded-full" />
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-neutral-700 flex items-center justify-center text-xs font-semibold text-white">
+                    {initials}
                   </div>
+                )}
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-white truncate">{user.name}</p>
+                  <p className="text-xs text-neutral-500 truncate">{user.email}</p>
                 </div>
               </div>
             )}
 
-            {/* All nav items */}
-            <nav className="flex-1 px-3 py-3 space-y-1 overflow-y-auto">
-              {navItems.map((item) => {
-                const isActive =
-                  pathname === item.href ||
-                  (item.href !== "/dashboard" &&
-                    pathname.startsWith(item.href));
-                const Icon = item.icon;
-
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${isActive
-                        ? "bg-white/5 text-white"
-                        : "text-neutral-400 hover:text-white hover:bg-white/5"
-                      }`}
-                  >
-                    <Icon size={18} strokeWidth={1.5} />
-                    {item.label}
-                  </Link>
-                );
-              })}
+            <nav className="flex-1 px-3 py-3 space-y-0.5 overflow-y-auto">
+              {[...mainNav, ...monitoringNav, ...bottomNav].map((item) => (
+                <NavItem key={item.href} {...item} />
+              ))}
             </nav>
 
-            {/* Bottom actions */}
-            <div className="px-3 py-4 border-t border-white/10 space-y-1">
-              {user && balanceData && (
+            <div className="border-t border-white/[0.06] px-3 py-3 space-y-0.5">
+              {balanceData && (
                 <Link
                   href="/dashboard/usage"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center justify-between px-3 py-2 rounded-lg text-sm bg-white/5 border border-white/10 transition-colors"
+                  className="flex items-center justify-between px-2.5 py-1.5 rounded-md text-sm text-neutral-500 hover:text-white hover:bg-white/[0.04] transition-colors"
                 >
-                  <div className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-white"></div>
-                    <span className="font-medium text-white">Credits</span>
-                  </div>
-                  <span className="font-bold text-white">${Math.max(0, balanceData.balance).toFixed(2)}</span>
+                  <span>Credits</span>
+                  <span className="font-semibold text-white">
+                    ${Math.max(0, balanceData.balance).toFixed(2)}
+                  </span>
                 </Link>
               )}
               <button
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  setShowSignOutDialog(true);
-                }}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-error hover:bg-red-500/10 w-full transition-colors"
+                onClick={() => { setMobileMenuOpen(false); setShowSignOutDialog(true); }}
+                className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-sm text-red-500 hover:bg-red-500/10 transition-colors"
               >
-                <LogOut size={18} strokeWidth={1.5} />
-                Sign Out
+                <LogOut size={15} strokeWidth={1.75} />
+                Sign out
               </button>
             </div>
           </div>
@@ -339,14 +344,11 @@ export function Sidebar() {
       <ConfirmDialog
         open={showSignOutDialog}
         title="Sign out?"
-        description="You'll need to sign in again to access your dashboard and connected services."
+        description="You'll need to sign in again to access your dashboard."
         confirmLabel="Sign Out"
         cancelLabel="Cancel"
         variant="danger"
-        onConfirm={() => {
-          setShowSignOutDialog(false);
-          signOut();
-        }}
+        onConfirm={() => { setShowSignOutDialog(false); signOut(); }}
         onCancel={() => setShowSignOutDialog(false)}
       />
     </>

@@ -172,7 +172,7 @@ export function FeedbackWidget() {
                                 <button
                                     onClick={handleSubmit}
                                     disabled={!message.trim() || !category || isSubmitting}
-                                    className="w-full mt-3 py-3 rounded-xl bg-[#595959] dark:bg-white hover:bg-[#4d4d4d] dark:hover:bg-white text-white font-semibold text-[15px] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                                    className="w-full mt-3 py-3 rounded-xl bg-[#595959] dark:bg-white hover:bg-[#4d4d4d] dark:hover:bg-neutral-100 text-white dark:text-black font-semibold text-[15px] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                                 >
                                     {isSubmitting ? "Submitting..." : "Submit Feedback"}
                                 </button>

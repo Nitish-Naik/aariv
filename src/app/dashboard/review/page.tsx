@@ -407,117 +407,40 @@ export default function ReviewPage() {
 
   if (loading) {
     return (
-      <div className="bg-black min-h-screen">
-        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 flex flex-col items-start min-h-full">
-          {/* Static header always visible */}
-          <header className="mb-8 w-full">
-            <h1 className="text-3xl font-bold text-white tracking-tight mb-2">
-              Inbox
-            </h1>
-            <p className="text-[15px] font-medium text-neutral-500">
-              Loading review items…
-            </p>
-
-            {/* Filter tabs */}
-            <div className="inline-flex p-1 space-x-1 rounded-xl bg-neutral-900 backdrop-blur-sm border border-white/10 shadow-sm mt-5">
-              {(["pending", "resolved", "all"] as ViewFilter[]).map((filter) => (
-                <button
-                  key={filter}
-                  onClick={() => setViewFilter(filter)}
-                  className={`relative px-4 py-1.5 text-sm font-medium rounded-lg transition-colors focus-visible:outline-none capitalize ${viewFilter === filter
-                    ? "text-white"
-                    : "text-neutral-500 hover:text-white"
-                    }`}
-                >
-                  {viewFilter === filter && (
-                    <motion.div
-                      layoutId="reviewTabIndicator"
-                      className="absolute inset-0 rounded-lg shadow-sm bg-white/10"
-                      style={{ zIndex: -1 }}
-                      transition={{ type: "spring", bounce: 0.2, duration: 0.5 }}
-                    />
-                  )}
-                  {filter}
-                </button>
-              ))}
-            </div>
-
-            <div className="mt-4">
-              <Link
-                href="/dashboard/feed"
-                className="inline-flex items-center gap-1.5 text-xs font-medium text-neutral-500 hover:text-white transition-colors"
-              >
-                <Activity strokeWidth={1.5} size={12} />
-                View all events in feed &rarr;
-              </Link>
-            </div>
-          </header>
-
-          {/* Skeleton cards for dynamic content */}
-          <div className="space-y-4 w-full">
-            {[1, 2, 3].map((i) => (
-              <div
-                key={i}
-                className="bg-neutral-900 border border-white/[0.02] rounded-xl p-6"
-              >
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-2 h-2 rounded-full bg-white/[0.06] animate-pulse" />
-                    <div className="h-3 w-16 rounded bg-white/[0.04] animate-pulse" />
-                  </div>
-                  <div className="h-5 w-20 rounded-full bg-white/[0.04] animate-pulse" />
-                </div>
-                <div className="h-4 w-3/5 rounded bg-white/[0.04] animate-pulse mb-2" />
-                <div className="h-3 w-4/5 rounded bg-white/[0.03] animate-pulse" />
+      <div className="flex flex-col min-h-screen">
+        <div className="px-6 py-4 border-b border-white/[0.06] shrink-0">
+          <div className="h-3.5 w-12 rounded bg-white/[0.06] animate-pulse" />
+          <div className="h-2.5 w-32 rounded bg-white/[0.04] animate-pulse mt-1.5" />
+        </div>
+        <div className="px-6 border-b border-white/[0.06] flex items-center gap-1 h-10">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-2.5 w-14 rounded bg-white/[0.04] animate-pulse mx-1" />
+          ))}
+        </div>
+        <div>
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="border-b border-white/[0.06] px-6 py-4">
+              <div className="flex items-center gap-2.5 mb-2">
+                <div className="w-1.5 h-1.5 rounded-full bg-white/[0.06] animate-pulse" />
+                <div className="h-2.5 w-14 rounded bg-white/[0.04] animate-pulse" />
+                <div className="h-2.5 w-10 rounded bg-white/[0.03] animate-pulse" />
               </div>
-            ))}
-          </div>
+              <div className="h-3.5 w-2/5 rounded bg-white/[0.06] animate-pulse mb-1.5" />
+              <div className="h-2.5 w-3/5 rounded bg-white/[0.04] animate-pulse" />
+            </div>
+          ))}
         </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-black min-h-screen">
-      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 flex flex-col items-start min-h-full">
-        {/* Header */}
-        <header className="mb-8 w-full">
-          <div className="flex items-center justify-between mb-2">
-            <h1 className="text-3xl font-bold text-white tracking-tight">
-              Inbox
-            </h1>
-            {counts.total > 0 && viewFilter === "pending" && (
-              <div className="flex items-center gap-2">
-                {counts.low > 0 && (
-                  <button
-                    onClick={() => handleBatchDismiss(items.filter((i) => i.priority === "low" && i.status === "pending").map((i) => i.id))}
-                    disabled={batchDismissing}
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-neutral-500 hover:text-white hover:bg-white/[0.03] rounded-lg transition-colors"
-                  >
-                    {batchDismissing ? (
-                      <Loader2 strokeWidth={1.5} size={12} className="animate-spin" />
-                    ) : (
-                      <Trash2 strokeWidth={1.5} size={12} />
-                    )}
-                    Dismiss low priority
-                  </button>
-                )}
-                <button
-                  onClick={handleDismissAll}
-                  disabled={dismissingAll}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-neutral-500 hover:text-white hover:bg-white/[0.03] rounded-lg transition-colors"
-                >
-                  {dismissingAll ? (
-                    <Loader2 strokeWidth={1.5} size={12} className="animate-spin" />
-                  ) : (
-                    <XCircle strokeWidth={1.5} size={12} />
-                  )}
-                  Dismiss all
-                </button>
-              </div>
-            )}
-          </div>
-          <p className="text-[15px] font-medium text-neutral-500">
+    <div className="flex flex-col min-h-screen">
+      {/* Page header */}
+      <div className="px-6 py-4 border-b border-white/[0.06] flex items-center justify-between shrink-0">
+        <div>
+          <h1 className="text-sm font-semibold text-white">Inbox</h1>
+          <p className="text-xs text-neutral-500 mt-0.5">
             {viewFilter === "pending"
               ? counts.total === 0
                 ? "Nothing needs your judgment"
@@ -526,70 +449,56 @@ export default function ReviewPage() {
                 ? "Previously resolved items"
                 : "All review items"}
           </p>
-
-          {/* Priority badges */}
-          {viewFilter === "pending" && counts.total > 0 && (
-            <div className="flex items-center gap-3 mt-4">
-              {counts.high > 0 && (
-                <span
-                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-semibold tracking-wide rounded-full ${PRIORITY_STYLES.high.bg} border ${PRIORITY_STYLES.high.border} ${PRIORITY_STYLES.high.text}`}
-                >
-                  <AlertTriangle strokeWidth={1.5} size={10} />
-                  {counts.high} urgent
-                </span>
-              )}
-              {counts.medium > 0 && (
-                <span
-                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-semibold tracking-wide rounded-full ${PRIORITY_STYLES.medium.bg} border ${PRIORITY_STYLES.medium.border} ${PRIORITY_STYLES.medium.text}`}
-                >
-                  {counts.medium} to review
-                </span>
-              )}
-              {counts.low > 0 && (
-                <span
-                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-semibold tracking-wide rounded-full ${PRIORITY_STYLES.low.bg} border ${PRIORITY_STYLES.low.border} ${PRIORITY_STYLES.low.text}`}
-                >
-                  {counts.low} low
-                </span>
-              )}
-            </div>
-          )}
-
-          {/* Filter tabs */}
-          <div className="inline-flex p-1 space-x-1 rounded-xl bg-neutral-900 backdrop-blur-sm border border-white/10 shadow-sm mt-5">
-            {(["pending", "resolved", "all"] as ViewFilter[]).map((filter) => (
+        </div>
+        {counts.total > 0 && viewFilter === "pending" && (
+          <div className="flex items-center gap-2">
+            {counts.low > 0 && (
               <button
-                key={filter}
-                onClick={() => { setViewFilter(filter); setSelectedIds(new Set()); }}
-                className={`relative px-4 py-1.5 text-sm font-medium rounded-lg transition-colors focus-visible:outline-none capitalize ${viewFilter === filter
-                  ? "text-white"
-                  : "text-neutral-500 hover:text-white"
-                  }`}
+                onClick={() => handleBatchDismiss(items.filter((i) => i.priority === "low" && i.status === "pending").map((i) => i.id))}
+                disabled={batchDismissing}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-neutral-500 hover:text-white hover:bg-white/[0.03] rounded-md transition-colors"
               >
-                {viewFilter === filter && (
-                  <motion.div
-                    layoutId="reviewTabIndicator"
-                    className="absolute inset-0 rounded-lg shadow-sm bg-white/10"
-                    style={{ zIndex: -1 }}
-                    transition={{ type: "spring", bounce: 0.2, duration: 0.5 }}
-                  />
-                )}
-                {filter}
+                {batchDismissing ? <Loader2 strokeWidth={1.5} size={12} className="animate-spin" /> : <Trash2 strokeWidth={1.5} size={12} />}
+                Dismiss low
               </button>
-            ))}
-          </div>
-
-          {/* Contextual link to Feed */}
-          <div className="mt-4">
-            <Link
-              href="/dashboard/feed"
-              className="inline-flex items-center gap-1.5 text-xs font-medium text-neutral-500 hover:text-white transition-colors"
+            )}
+            <button
+              onClick={handleDismissAll}
+              disabled={dismissingAll}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-neutral-500 hover:text-white hover:bg-white/[0.03] rounded-md transition-colors"
             >
-              <Activity strokeWidth={1.5} size={12} />
-              View all events in feed &rarr;
-            </Link>
+              {dismissingAll ? <Loader2 strokeWidth={1.5} size={12} className="animate-spin" /> : <XCircle strokeWidth={1.5} size={12} />}
+              Dismiss all
+            </button>
           </div>
-        </header>
+        )}
+      </div>
+
+      {/* Filter tabs */}
+      <div className="px-6 border-b border-white/[0.06] flex items-center gap-1">
+        {(["pending", "resolved", "all"] as ViewFilter[]).map((filter) => (
+          <button
+            key={filter}
+            onClick={() => { setViewFilter(filter); setSelectedIds(new Set()); }}
+            className={`px-3 py-3 text-xs font-medium transition-colors capitalize border-b-2 -mb-px ${
+              viewFilter === filter
+                ? "text-white border-white"
+                : "text-neutral-500 hover:text-neutral-300 border-transparent"
+            }`}
+          >
+            {filter}
+          </button>
+        ))}
+        <Link
+          href="/dashboard/feed"
+          className="ml-auto flex items-center gap-1.5 text-xs font-medium text-neutral-500 hover:text-white transition-colors py-3"
+        >
+          <Activity strokeWidth={1.5} size={12} />
+          Feed
+        </Link>
+      </div>
+
+      <div className="flex-1 px-6 py-4">
 
         {/* Error */}
         {error && (
@@ -609,27 +518,27 @@ export default function ReviewPage() {
         {/* Empty state */}
         {items.length === 0 && !error ? (
           <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex flex-col items-center justify-center w-full mt-24 text-center"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="flex flex-col items-center justify-center w-full mt-20 text-center"
           >
-            <Cloud strokeWidth={1.5} size={48} className="text-neutral-500 mb-6 stroke-[1.5]" />
-            <h2 className="text-lg font-semibold text-white mb-2 tracking-tight">
+            <Cloud strokeWidth={1.5} size={28} className="text-neutral-700 mb-4" />
+            <p className="text-sm font-semibold text-white mb-1">
               {viewFilter === "pending"
-                ? "Nothing needs your judgment"
+                ? "All clear"
                 : viewFilter === "resolved"
-                  ? "No resolved items yet"
-                  : "No review items"}
-            </h2>
-            <p className="text-[15px] font-medium text-neutral-500">
+                  ? "No resolved items"
+                  : "No items"}
+            </p>
+            <p className="text-xs text-neutral-600">
               {viewFilter === "pending"
-                ? "I've processed everything. You're clear."
+                ? "Nothing needs your attention right now."
                 : "Items will appear here as triggers fire."}
             </p>
           </motion.div>
         ) : (
           /* Items list */
-          <div className="space-y-4 w-full">
+          <div className="w-full -mx-6" style={{ width: "calc(100% + 3rem)" }}>
             {/* Batch action bar */}
             <AnimatePresence>
               {selectedIds.size > 0 && (
@@ -638,28 +547,28 @@ export default function ReviewPage() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -8 }}
                   transition={{ duration: 0.18 }}
-                  className="flex items-center justify-between px-4 py-3 rounded-xl bg-neutral-900 border border-white/[0.06] shadow-lg"
+                  className="flex items-center justify-between px-6 py-2.5 border-b border-white/[0.06] bg-white/[0.02]"
                 >
                   <div className="flex items-center gap-3">
                     <button
                       onClick={() => setSelectedIds(new Set())}
-                      className="p-1 rounded text-neutral-500 hover:text-white transition-colors"
+                      className="text-neutral-600 hover:text-white transition-colors"
                     >
-                      <X strokeWidth={1.5} size={14} />
+                      <X strokeWidth={1.5} size={13} />
                     </button>
-                    <span className="text-sm font-medium text-white">
+                    <span className="text-xs font-medium text-neutral-400">
                       {selectedIds.size} selected
                     </span>
                   </div>
                   <button
                     onClick={() => handleBatchDismiss(Array.from(selectedIds))}
                     disabled={batchDismissing}
-                    className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium bg-white/5 hover:bg-white/[0.08] border border-white/[0.06] text-neutral-300 hover:text-white rounded-xl transition-colors disabled:opacity-50"
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-neutral-500 hover:text-white hover:bg-white/[0.04] rounded-md transition-colors disabled:opacity-50"
                   >
                     {batchDismissing ? (
-                      <Loader2 strokeWidth={1.5} size={13} className="animate-spin" />
+                      <Loader2 strokeWidth={1.5} size={12} className="animate-spin" />
                     ) : (
-                      <Trash2 strokeWidth={1.5} size={13} />
+                      <Trash2 strokeWidth={1.5} size={12} />
                     )}
                     Dismiss selected
                   </button>
@@ -669,8 +578,6 @@ export default function ReviewPage() {
 
             <AnimatePresence mode="popLayout">
               {items.map((item) => {
-                const priorityStyle =
-                  PRIORITY_STYLES[item.priority] || PRIORITY_STYLES.medium;
                 const isActing = actingOn === item.id;
                 const result =
                   actionResult?.id === item.id ? actionResult : null;
@@ -680,73 +587,71 @@ export default function ReviewPage() {
                   <motion.div
                     key={item.id}
                     layout
-                    initial={{ opacity: 0, y: 16 }}
-                    animate={{ opacity: 1, y: 0 }}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
                     exit={{
                       opacity: 0,
-                      x: -60,
-                      transition: { duration: 0.25 },
+                      x: -40,
+                      transition: { duration: 0.2 },
                     }}
-                    className="bg-neutral-900 border border-white/[0.02] rounded-xl p-6 shadow-sm transition-all hover:bg-white/[0.03] w-full"
+                    className="border-b border-white/[0.06] px-6 py-4 hover:bg-white/[0.02] transition-colors"
                   >
-                    {/* Top row: source + time + priority */}
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center gap-2.5">
-                        {item.status === "pending" && (
-                          <button
-                            onClick={() => toggleSelect(item.id)}
-                            className="shrink-0 text-neutral-600 hover:text-neutral-300 transition-colors"
-                            aria-label={selectedIds.has(item.id) ? "Deselect" : "Select"}
-                          >
-                            {selectedIds.has(item.id)
-                              ? <CheckSquare strokeWidth={1.5} size={14} className="text-amber-400" />
-                              : <Square strokeWidth={1.5} size={14} />
-                            }
-                          </button>
-                        )}
-                        <span
-                          className="w-2 h-2 rounded-full shrink-0"
-                          style={{ backgroundColor: appColor }}
-                        />
-                        <span className="text-xs font-semibold tracking-wider text-neutral-500 uppercase">
-                          {item.source_app}
-                        </span>
-                        <span className="text-xs text-neutral-500 opacity-50">
-                          {timeAgo(item.created_at)}
-                        </span>
-                        {item.category && CATEGORY_ICONS[item.category] && (
-                          <span className="text-neutral-500 opacity-40">
-                            {CATEGORY_ICONS[item.category]}
-                          </span>
-                        )}
-                      </div>
+                    {/* Top row: source + time + urgent tag */}
+                    <div className="flex items-center gap-2.5 mb-2">
+                      {item.status === "pending" && (
+                        <button
+                          onClick={() => toggleSelect(item.id)}
+                          className="shrink-0 text-neutral-700 hover:text-neutral-400 transition-colors"
+                          aria-label={selectedIds.has(item.id) ? "Deselect" : "Select"}
+                        >
+                          {selectedIds.has(item.id)
+                            ? <CheckSquare strokeWidth={1.5} size={13} className="text-white" />
+                            : <Square strokeWidth={1.5} size={13} />
+                          }
+                        </button>
+                      )}
                       <span
-                        className={`px-3 py-1 ${priorityStyle.bg} border ${priorityStyle.border} ${priorityStyle.text} text-[11px] font-semibold tracking-wide rounded-full shadow-sm`}
-                      >
-                        {priorityStyle.label}
+                        className="w-1.5 h-1.5 rounded-full shrink-0"
+                        style={{ backgroundColor: appColor }}
+                      />
+                      <span className="text-[11px] font-semibold tracking-widest text-neutral-500 uppercase">
+                        {item.source_app}
                       </span>
+                      {item.category && CATEGORY_ICONS[item.category] && (
+                        <span className="text-neutral-700">
+                          {CATEGORY_ICONS[item.category]}
+                        </span>
+                      )}
+                      <span className="text-[11px] text-neutral-600">
+                        {timeAgo(item.created_at)}
+                      </span>
+                      {item.priority === "high" && (
+                        <span className="ml-auto text-[10px] font-semibold uppercase tracking-widest text-amber-500/80">
+                          Urgent
+                        </span>
+                      )}
                     </div>
 
                     {/* Title + description */}
-                    <h3 className="text-[15px] font-medium text-white mb-1.5 leading-snug">
+                    <h3 className="text-sm font-semibold text-white mb-1 leading-snug">
                       {item.title}
                     </h3>
-                    <p className="text-sm text-neutral-500 leading-relaxed">
+                    <p className="text-xs text-neutral-500 leading-relaxed">
                       {item.description}
                     </p>
 
                     {/* Expandable context details */}
-                    <div className="mt-3 mb-5">
+                    <div className="mt-2.5 mb-3">
                       <button
                         onClick={() => toggleExpand(item.id)}
                         className="flex items-center gap-1.5 text-[11px] text-neutral-600 hover:text-neutral-400 transition-colors"
                       >
                         {loadingPayload === item.id ? (
-                          <Loader2 strokeWidth={1.5} size={12} className="animate-spin" />
+                          <Loader2 strokeWidth={1.5} size={11} className="animate-spin" />
                         ) : (
                           <ChevronDown
                             strokeWidth={1.5}
-                            size={12}
+                            size={11}
                             className={`transition-transform duration-200 ${expandedItem === item.id ? "rotate-180" : ""}`}
                           />
                         )}
@@ -773,109 +678,84 @@ export default function ReviewPage() {
                       </AnimatePresence>
                     </div>
 
-                    {/* AI confidence indicator */}
-                    {item.ai_confidence !== null &&
-                      item.ai_confidence !== undefined && (() => {
-                        const pct = Math.round(item.ai_confidence * 100);
-                        const { label, cls } = pct >= 80
-                          ? { label: `${pct}% confident`, cls: "text-emerald-400 bg-emerald-400/10 border-emerald-400/20" }
-                          : pct >= 50
-                            ? { label: `${pct}% confident`, cls: "text-amber-400 bg-amber-400/10 border-amber-400/20" }
-                            : { label: `${pct}% — low confidence`, cls: "text-red-400 bg-red-400/10 border-red-400/20" };
-                        return (
-                          <div className="mb-4">
-                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-medium rounded-full border ${cls}`}>
-                              <div className="w-1 h-1 rounded-full bg-current" />
-                              {label}
-                            </span>
-                          </div>
-                        );
-                      })()}
+                    {/* AI confidence — inline text, no pill */}
+                    {item.ai_confidence !== null && item.ai_confidence !== undefined && (() => {
+                      const pct = Math.round(item.ai_confidence * 100);
+                      const color = pct >= 80 ? "text-neutral-500" : pct >= 50 ? "text-amber-500/60" : "text-red-500/60";
+                      return (
+                        <p className={`text-[11px] mb-3 ${color}`}>
+                          {pct}% confidence
+                        </p>
+                      );
+                    })()}
 
-                    {/* Post-approve result card */}
+                    {/* Post-approve result */}
                     {result && (
                       <motion.div
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: "auto" }}
                         exit={{ opacity: 0, height: 0 }}
                         transition={{ duration: 0.2 }}
-                        className="overflow-hidden mb-4"
+                        className="overflow-hidden mb-3"
                       >
-                        <div className={`p-4 rounded-xl border ${result.error
-                          ? "bg-red-500/5 border-red-500/20"
-                          : "bg-emerald-500/5 border-emerald-500/20"
+                        <div className={`flex items-start gap-2.5 px-3 py-2.5 rounded-md border text-xs ${result.error
+                          ? "bg-red-500/5 border-red-500/20 text-red-400"
+                          : "bg-emerald-500/5 border-emerald-500/20 text-emerald-400"
                         }`}>
-                          <div className="flex items-start gap-3">
-                            <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${result.error ? "bg-red-500/10" : "bg-emerald-500/10"}`}>
-                              {result.error
-                                ? <AlertTriangle strokeWidth={1.5} size={14} className="text-red-400" />
-                                : <Check strokeWidth={2} size={14} className="text-emerald-400" />
-                              }
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className={`text-xs font-semibold mb-1 ${result.error ? "text-red-400" : "text-emerald-400"}`}>
-                                {result.error ? "Action failed" : "Done"}
-                              </p>
-                              <p className="text-sm text-neutral-300 leading-relaxed">
-                                {result.message}
-                              </p>
-                            </div>
-                          </div>
+                          {result.error
+                            ? <AlertTriangle strokeWidth={1.5} size={13} className="shrink-0 mt-px" />
+                            : <Check strokeWidth={2} size={13} className="shrink-0 mt-px" />
+                          }
+                          <p className="leading-relaxed text-neutral-300">{result.message}</p>
                         </div>
                       </motion.div>
                     )}
 
-                    {/* Action buttons (only for pending items) */}
+                    {/* Action buttons */}
                     {item.status === "pending" && (
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-1.5 mt-3">
                         <button
                           onClick={() => handleAction(item.id, "approve")}
                           disabled={isActing}
-                          className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/[0.08] border border-white/5 text-white text-sm font-medium rounded-xl transition-colors shadow-sm disabled:opacity-50"
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-white text-black text-xs font-semibold hover:bg-neutral-100 transition-colors disabled:opacity-50"
                         >
                           {isActing ? (
-                            <Loader2 strokeWidth={1.5} size={14} className="animate-spin" />
+                            <Loader2 strokeWidth={1.5} size={12} className="animate-spin" />
                           ) : (
-                            <Check strokeWidth={1.5} size={14} />
+                            <Check strokeWidth={2} size={12} />
                           )}
                           Yes, do it
                         </button>
                         <button
                           onClick={() => handleAction(item.id, "dismiss")}
                           disabled={isActing}
-                          className="flex items-center gap-2 px-4 py-2 bg-transparent hover:bg-white/[0.03] text-neutral-500 hover:text-white text-sm font-medium rounded-xl transition-colors disabled:opacity-50"
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium text-neutral-500 hover:text-white hover:bg-white/[0.04] transition-colors disabled:opacity-50"
                         >
-                          <X strokeWidth={1.5} size={14} />
+                          <X strokeWidth={1.5} size={12} />
                           Dismiss
                         </button>
 
                         {/* Snooze toggle */}
                         <div className="relative">
                           <button
-                            onClick={() =>
-                              setSnoozeOpen(
-                                snoozeOpen === item.id ? null : item.id,
-                              )
-                            }
+                            onClick={() => setSnoozeOpen(snoozeOpen === item.id ? null : item.id)}
                             disabled={isActing}
-                            className="flex items-center gap-1.5 px-3 py-2 bg-transparent hover:bg-white/[0.03] text-neutral-500 hover:text-white text-sm font-medium rounded-xl transition-colors disabled:opacity-50"
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium text-neutral-500 hover:text-white hover:bg-white/[0.04] transition-colors disabled:opacity-50"
                           >
-                            <Clock strokeWidth={1.5} size={14} />
+                            <Clock strokeWidth={1.5} size={12} />
                             Snooze
                           </button>
                           {snoozeOpen === item.id && (
                             <motion.div
                               initial={{ opacity: 0, y: 4 }}
                               animate={{ opacity: 1, y: 0 }}
-                              className="absolute bottom-full left-0 mb-2 bg-neutral-900 border border-white/[0.06] rounded-xl shadow-lg overflow-hidden z-10"
+                              className="absolute bottom-full left-0 mb-1.5 bg-[#0c0c0c] border border-white/[0.08] rounded-lg shadow-xl overflow-hidden z-10"
                             >
                               {SNOOZE_OPTIONS.map((opt) => (
                                 <button
                                   key={opt.minutes}
-                                  onClick={() =>
-                                    handleAction(item.id, "snooze", opt.minutes)
-                                  }
-                                  className="block w-full text-left px-4 py-2.5 text-sm text-neutral-500 hover:text-white hover:bg-white/[0.04] transition-colors whitespace-nowrap"
+                                  onClick={() => handleAction(item.id, "snooze", opt.minutes)}
+                                  className="block w-full text-left px-4 py-2 text-xs text-neutral-500 hover:text-white hover:bg-white/[0.04] transition-colors whitespace-nowrap"
                                 >
                                   {opt.label}
                                 </button>
@@ -886,27 +766,17 @@ export default function ReviewPage() {
                       </div>
                     )}
 
-                    {/* Resolved status badge */}
-                    {(item.status === "approved" ||
-                      item.status === "dismissed") && (
-                        <div className="flex items-center gap-2 mt-1">
-                          <span
-                            className={`text-xs font-medium px-2.5 py-1 rounded-full ${item.status === "approved"
-                              ? "bg-emerald-100 text-emerald-700 dark:bg-[#1A2C1A] dark:text-[#6BD46B]"
-                              : "bg-neutral-900 text-neutral-500"
-                              }`}
-                          >
-                            {item.status === "approved"
-                              ? "Approved"
-                              : "Dismissed"}
-                          </span>
-                          {item.resolved_at && (
-                            <span className="text-[11px] text-neutral-500 opacity-50">
-                              {timeAgo(item.resolved_at)}
-                            </span>
-                          )}
-                        </div>
-                      )}
+                    {/* Resolved status */}
+                    {(item.status === "approved" || item.status === "dismissed") && (
+                      <div className="flex items-center gap-2 mt-2">
+                        <span className={`text-[11px] font-medium ${item.status === "approved" ? "text-emerald-500" : "text-neutral-600"}`}>
+                          {item.status === "approved" ? "Approved" : "Dismissed"}
+                        </span>
+                        {item.resolved_at && (
+                          <span className="text-[11px] text-neutral-700">· {timeAgo(item.resolved_at)}</span>
+                        )}
+                      </div>
+                    )}
                   </motion.div>
                 );
               })}

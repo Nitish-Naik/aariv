@@ -499,17 +499,8 @@ export default function IntegrationsPage() {
         transition={{ duration: 0.2, ease: "easeOut" }}
         className="group relative rounded-[1.25rem] p-[1.5px] hover:-translate-y-1 transition-all duration-500 ease-out h-[260px]"
       >
-        {/* Glow layer that bleeds outside the card (drop shadow effect) */}
-        <div className={`absolute inset-0 rounded-[1.25rem] z-0 blur-2xl transition-opacity duration-500 pointer-events-none flex items-center justify-center ${isConnected ? "opacity-30" : "opacity-0 group-hover:opacity-60"}`}>
-          {logoSvg ? (
-            <img src={logoSvg} alt="" className="w-[120%] h-[120%] object-cover saturate-[1.5]" />
-          ) : (
-            <div className="w-full h-full" style={{ backgroundColor: color }} />
-          )}
-        </div>
-
         {/* Border layer (Cut off by overflow-hidden, shines through the 1.5px padding) */}
-        <div className={`absolute inset-0 rounded-[1.25rem] z-0 overflow-hidden transition-all duration-500 pointer-events-none flex items-center justify-center ${isConnected ? "opacity-80 border border-white/10" : "opacity-10 group-hover:opacity-100 bg-white/5 border border-white/5 group-hover:border-transparent"}`}>
+        <div className="absolute inset-0 rounded-[1.25rem] z-0 overflow-hidden transition-all duration-500 pointer-events-none flex items-center justify-center opacity-0 group-hover:opacity-100 bg-white/5 border border-white/5 group-hover:border-transparent">
           {logoSvg ? (
             <img src={logoSvg} alt="" className="w-[150%] h-[150%] object-cover blur-[16px] saturate-[1.5]" />
           ) : (
@@ -612,76 +603,61 @@ export default function IntegrationsPage() {
   };
 
   return (
-    <div className="bg-black min-h-screen">
-      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 text-white">
-        {/* Success toast */}
-        {toast && (
-          <div className="fixed top-4 right-4 z-50 flex items-center gap-2 bg-emerald-500/90 text-white px-5 py-3 rounded-xl shadow-lg text-sm font-medium animate-in slide-in-from-top fade-in duration-300">
-            <Check strokeWidth={1.5} size={16} />
-            {toast}
+    <div className="flex flex-col min-h-screen">
+      {/* Success toast */}
+      {toast && (
+        <div className="fixed top-4 right-4 z-50 flex items-center gap-2 bg-emerald-500/90 text-white px-5 py-3 rounded-xl shadow-lg text-sm font-medium animate-in slide-in-from-top fade-in duration-300">
+          <Check strokeWidth={1.5} size={16} />
+          {toast}
+        </div>
+      )}
+
+      {/* Error toast */}
+      {errorToast && (
+        <div className="fixed top-4 right-4 z-50 flex items-center gap-2 bg-red-500/90 text-white px-5 py-3 rounded-xl shadow-lg text-sm font-medium animate-in slide-in-from-top fade-in duration-300">
+          <AlertCircle strokeWidth={1.5} size={16} />
+          {errorToast}
+        </div>
+      )}
+
+      {/* Page header */}
+      <div className="px-6 py-4 border-b border-white/[0.06] flex items-center justify-between shrink-0">
+        <div>
+          <h1 className="text-sm font-semibold text-white">Integrations</h1>
+          <p className="text-xs text-neutral-500 mt-0.5">Connect your apps to unlock automations</p>
+        </div>
+        <div className="relative group">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <Search strokeWidth={1.5} size={14} className="text-neutral-500 group-focus-within:text-neutral-400 transition-colors" />
           </div>
-        )}
+          <input
+            type="text"
+            placeholder="Search integrations..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-56 pl-8 pr-3 py-1.5 text-xs rounded-md outline-none bg-white/[0.04] border border-white/[0.06] text-white placeholder-neutral-600 focus:border-white/20 transition-colors"
+          />
+        </div>
+      </div>
 
-        {/* Error toast */}
-        {errorToast && (
-          <div className="fixed top-4 right-4 z-50 flex items-center gap-2 bg-red-500/90 text-white px-5 py-3 rounded-xl shadow-lg text-sm font-medium animate-in slide-in-from-top fade-in duration-300">
-            <AlertCircle strokeWidth={1.5} size={16} />
-            {errorToast}
-          </div>
-        )}
+      {/* Tabs */}
+      <div className="px-6 border-b border-white/[0.06] flex items-center gap-1">
+        {(["all", "connected"] as const).map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={`px-3 py-3 text-xs font-medium transition-colors capitalize border-b-2 -mb-px ${
+              activeTab === tab
+                ? "text-white border-white"
+                : "text-neutral-500 hover:text-neutral-300 border-transparent"
+            }`}
+          >
+            {tab === "all" ? "All" : "Connected"}
+          </button>
+        ))}
+      </div>
 
-        {/* Header Section */}
-        <div className="mb-10">
-          <h1 className="text-3xl font-bold tracking-tight mb-6">Toolkits</h1>
-
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            {/* Segmented Control */}
-            <div className="inline-flex p-1 space-x-1 rounded-xl bg-neutral-900 backdrop-blur-sm border border-white/10 shadow-sm">
-              {(["all", "connected"] as const).map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  className={`relative px-4 py-1.5 text-sm font-medium rounded-lg transition-colors focus-visible:outline-none ${activeTab === tab
-                    ? "text-white"
-                    : "text-neutral-500 hover:text-white"
-                    }`}
-                >
-                  {activeTab === tab && (
-                    <motion.div
-                      layoutId="activeTabBadge"
-                      className="absolute inset-0 rounded-lg shadow-sm bg-white/10"
-                      style={{ zIndex: -1 }}
-                      transition={{
-                        type: "spring",
-                        bounce: 0.2,
-                        duration: 0.5,
-                      }}
-                    />
-                  )}
-                  <span className="capitalize">
-                    {tab === "all" ? "All" : "Connected"}
-                  </span>
-                </button>
-              ))}
-            </div>
-
-            {/* Search Input */}
-            <div className="relative w-full sm:w-80 group">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Search strokeWidth={1.5}
-                  size={16}
-                  className="transition-colors text-neutral-500 group-focus-within:text-neutral-400"
-                />
-              </div>
-              <input
-                type="text"
-                placeholder="Search across toolkits..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 text-sm rounded-xl outline-none transition-all duration-200 bg-black border border-white/10 text-white placeholder-neutral-600 focus:border-white/20 focus:ring-1 focus:ring-white/20"
-              />
-            </div>
-          </div>
+      <div className="flex-1 px-6 py-6 text-white">
 
           {/* Categories Filter (Only show if 'all' tab is selected) */}
           <AnimatePresence>
@@ -756,7 +732,6 @@ export default function IntegrationsPage() {
               </motion.div>
             )}
           </AnimatePresence>
-        </div>
 
         {loading ? (
           /* Staggered Skeleton Loaders — match actual card shape */
@@ -785,7 +760,7 @@ export default function IntegrationsPage() {
           <>
             {/* Start Here — top 4 apps, only on the flat "All" view */}
             {activeTab === "all" && !searchQuery && activeCategory === "all" && startHereApps.length > 0 && (
-              <div className="mb-10">
+              <div className="mb-10 mt-8">
                 <div className="flex items-center gap-3 mb-5">
                   <h2 className="text-[15px] font-medium uppercase tracking-widest text-neutral-500">
                     Start here

@@ -1,191 +1,229 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useRef, useState } from "react";
+import { Clock, Lock, ShieldCheck, Zap } from "lucide-react";
+import Image from "next/image";
 
-function SpotlightCard({
-    children,
-    className = "",
-    variants
-}: {
-    children: React.ReactNode,
-    className?: string,
-    variants?: any
-}) {
-    const divRef = useRef<HTMLElement>(null);
-    const [isFocused, setIsFocused] = useState(false);
-    const [position, setPosition] = useState({ x: 0, y: 0 });
-    const [opacity, setOpacity] = useState(0);
+const row1 = [
+    { src: "/images/google-gmail-svgrepo-com.svg", name: "Gmail" },
+    { src: "/images/slack-svgrepo-com.svg", name: "Slack" },
+    { src: "/images/notion-svgrepo-com.svg", name: "Notion" },
+    { src: "/images/github-142-svgrepo-com.svg", name: "GitHub" },
+    { src: "/images/stripe-v2-svgrepo-com.svg", name: "Stripe" },
+    { src: "/images/linear-svgrepo-com.svg", name: "Linear" },
+    { src: "/images/google-calendar-svgrepo-com.svg", name: "Calendar" },
+    { src: "/images/hubspot-svgrepo-com.svg", name: "HubSpot" },
+];
 
-    const handleMouseMove = (e: React.MouseEvent<HTMLElement>) => {
-        if (!divRef.current || isFocused) return;
-        const rect = divRef.current.getBoundingClientRect();
-        setPosition({ x: e.clientX - rect.left, y: e.clientY - rect.top });
-    };
+const row2 = [
+    { src: "/images/airtable-svgrepo-com.svg", name: "Airtable" },
+    { src: "/images/asana-svgrepo-com.svg", name: "Asana" },
+    { src: "/images/atlassian-svgrepo-com.svg", name: "Jira" },
+    { src: "/images/discord-icon-svgrepo-com.svg", name: "Discord" },
+    { src: "/images/todoist-svgrepo-com.svg", name: "Todoist" },
+    { src: "/images/trello-svgrepo-com.svg", name: "Trello" },
+    { src: "/images/google-drive-svgrepo-com.svg", name: "Drive" },
+    { src: "/images/notion-svgrepo-com.svg", name: "Notion" },
+];
 
+function LogoMarquee() {
     return (
-        <motion.article
-            ref={divRef as any}
-            variants={variants}
-            onMouseMove={handleMouseMove}
-            onFocus={() => { setIsFocused(true); setOpacity(1); }}
-            onBlur={() => { setIsFocused(false); setOpacity(0); }}
-            onMouseEnter={() => setOpacity(1)}
-            onMouseLeave={() => setOpacity(0)}
-            className={`relative overflow-hidden rounded-xl bg-black border border-white/10 p-8 transition-colors hover:bg-neutral-900 ${className}`}
-        >
-            {/* Hover Spotlight */}
-            <div
-                className="pointer-events-none absolute -inset-px transition duration-300 z-0"
-                style={{
-                    opacity,
-                    background: `radial-gradient(600px circle at ${position.x}px ${position.y}px, rgba(99, 102, 241, 0.1), transparent 40%)`,
-                }}
-            />
-            {/* Top Border Glow */}
-            <div
-                className="pointer-events-none absolute top-0 left-0 right-0 h-px transition duration-300 z-0"
-                style={{
-                    opacity,
-                    background: `radial-gradient(300px circle at ${position.x}px 0px, rgba(99, 102, 241, 0.4), transparent 100%)`,
-                }}
-            />
+        <div className="mt-6 overflow-hidden relative" style={{
+            maskImage: "linear-gradient(to right, transparent, black 15%, black 85%, transparent)",
+            WebkitMaskImage: "linear-gradient(to right, transparent, black 15%, black 85%, transparent)",
+        }}>
+            <style>{`
+                @keyframes marquee-left {
+                    0% { transform: translateX(0); }
+                    100% { transform: translateX(-50%); }
+                }
+                @keyframes marquee-right {
+                    0% { transform: translateX(-50%); }
+                    100% { transform: translateX(0); }
+                }
+                .marquee-left { animation: marquee-left 18s linear infinite; }
+                .marquee-right { animation: marquee-right 18s linear infinite; }
+                .marquee-left:hover, .marquee-right:hover { animation-play-state: paused; }
+            `}</style>
 
-            <div className="relative z-10 flex flex-col h-full">
-                {children}
+            {/* Row 1 — scrolls left */}
+            <div className="flex gap-2 mb-2 marquee-left w-max">
+                {[...row1, ...row1].map((app, i) => (
+                    <div
+                        key={i}
+                        title={app.name}
+                        className="w-10 h-10 rounded-xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center shrink-0"
+                    >
+                        <Image src={app.src} alt={app.name} width={20} height={20} className="opacity-75" />
+                    </div>
+                ))}
             </div>
-        </motion.article>
+
+            {/* Row 2 — scrolls right */}
+            <div className="flex gap-2 marquee-right w-max">
+                {[...row2, ...row2].map((app, i) => (
+                    <div
+                        key={i}
+                        title={app.name}
+                        className="w-10 h-10 rounded-xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center shrink-0"
+                    >
+                        <Image src={app.src} alt={app.name} width={20} height={20} className="opacity-75" />
+                    </div>
+                ))}
+            </div>
+        </div>
     );
 }
 
+const pillars = [
+    {
+        icon: <Zap className="w-5 h-5 text-indigo-400" strokeWidth={1.5} />,
+        eyebrow: "500+ integrations",
+        headline: "Connects to everything you already use.",
+        body: "Gmail, Slack, Notion, GitHub, Stripe, Linear and 500+ more — all wired through a single OAuth flow. No API keys. No setup sprawl. Just connect and describe what you want done.",
+        visual: <LogoMarquee />,
+        accent: "from-indigo-500/10 to-transparent",
+        border: "hover:border-indigo-500/20",
+        span: "lg:col-span-2",
+    },
+    {
+        icon: <Clock className="w-5 h-5 text-emerald-400" strokeWidth={1.5} />,
+        eyebrow: "24/7 autonomous",
+        headline: "Your 3am colleague.",
+        body: "CalmPilot runs on a schedule. Triggers fire when events happen. You wake up to a morning briefing — inbox triaged, Slack summarized, PRs reviewed — all done while you slept.",
+        visual: (
+            <div className="mt-6 rounded-xl bg-white/[0.03] border border-white/[0.06] px-4 py-3 space-y-2.5">
+                {[
+                    "Drafted replies to 7 customer emails",
+                    "Summarized #product in Slack (34 msgs)",
+                    "Reviewed 2 open PRs · left comments",
+                ].map((item, i) => (
+                    <div key={i} className="flex items-center gap-2.5 text-[13px] text-zinc-400">
+                        <div className="w-4 h-4 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center shrink-0">
+                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                        </div>
+                        {item}
+                    </div>
+                ))}
+                <div className="pt-1 text-[11px] text-zinc-600 flex items-center gap-1.5">
+                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    Completed overnight · 6:42 AM
+                </div>
+            </div>
+        ),
+        accent: "from-emerald-500/10 to-transparent",
+        border: "hover:border-emerald-500/20",
+        span: "lg:col-span-1",
+    },
+    {
+        icon: <ShieldCheck className="w-5 h-5 text-amber-400" strokeWidth={1.5} />,
+        eyebrow: "Human-in-the-loop",
+        headline: "AI acts. You approve.",
+        body: "Sensitive actions — mass emails, database writes, bulk deletes — pause for your review. CalmPilot surfaces them in a queue. You decide. Then it executes.",
+        visual: (
+            <div className="mt-6 rounded-xl bg-amber-500/[0.05] border border-amber-500/15 px-4 py-3 space-y-1.5">
+                <p className="text-[11px] text-amber-400 font-semibold uppercase tracking-wider">Needs your review</p>
+                <p className="text-[13px] text-zinc-300">Send follow-up to 84 leads in HubSpot</p>
+                <div className="flex gap-2 pt-1.5">
+                    <div className="px-3 py-1.5 rounded-lg bg-white text-zinc-950 text-xs font-semibold cursor-default select-none">Approve</div>
+                    <div className="px-3 py-1.5 rounded-lg bg-white/[0.06] border border-white/10 text-zinc-400 text-xs cursor-default select-none">Dismiss</div>
+                </div>
+            </div>
+        ),
+        accent: "from-amber-500/10 to-transparent",
+        border: "hover:border-amber-500/20",
+        span: "lg:col-span-1",
+    },
+    {
+        icon: <Lock className="w-5 h-5 text-violet-400" strokeWidth={1.5} />,
+        eyebrow: "Security-first",
+        headline: "OAuth only. No passwords. Ever.",
+        body: "Your credentials never touch our servers. Grant access with one click, revoke it just as fast. Every action runs in an isolated sandbox — your machine stays completely unbothered.",
+        visual: (
+            <div className="mt-6 grid grid-cols-2 gap-2">
+                {[
+                    "OAuth-only auth",
+                    "No passwords stored",
+                    "Sandboxed execution",
+                    "Revoke any time",
+                ].map((label) => (
+                    <div key={label} className="flex items-center gap-2 text-[12px] text-zinc-400">
+                        <div className="w-4 h-4 rounded-full bg-violet-500/10 border border-violet-500/20 flex items-center justify-center shrink-0">
+                            <svg className="w-2.5 h-2.5 text-violet-400" viewBox="0 0 10 10" fill="none">
+                                <path d="M2 5l2.5 2.5 3.5-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                        </div>
+                        {label}
+                    </div>
+                ))}
+            </div>
+        ),
+        accent: "from-violet-500/10 to-transparent",
+        border: "hover:border-violet-500/20",
+        span: "lg:col-span-2",
+    },
+];
+
 export default function FeaturesGrid() {
-    const features = [
-        {
-            title: "Every app you already use.",
-            description: "Gmail, Slack, GitHub, Notion, Linear, Figma, Jira and 1000+ more — all connected through a single secure OAuth flow. No setup sprawl.",
-            className: "md:col-span-2",
-            icon: (
-                <svg className="w-6 h-6 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                </svg>
-            )
-        },
-        {
-            title: "No passwords. Ever.",
-            description: "Pure OAuth — grant access in one click, revoke it just as fast. Your credentials never touch our servers.",
-            className: "md:col-span-1",
-            icon: (
-                <svg className="w-6 h-6 text-stone-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                </svg>
-            )
-        },
-        {
-            title: "Your 3am teammate.",
-            description: "Tasks run on a schedule. Wake up to a triaged inbox, summarized Slack threads, and reviewed PRs — handled while you slept.",
-            className: "md:col-span-1",
-            icon: (
-                <svg className="w-6 h-6 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-            )
-        },
-        {
-            title: "Always your call.",
-            description: "CalmPilot pauses before anything irreversible — mass emails, dropped tables, bulk deletes. You approve, it acts. You're always the final checkpoint.",
-            className: "md:col-span-2",
-            icon: (
-                <svg className="w-6 h-6 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0zm-3 9a9 9 0 100-18 9 9 0 000 18z M12 6v2 M12 16v2 M6 12H4 M20 12h-2" />
-                </svg>
-            )
-        },
-        {
-            title: "Runs in the cloud.",
-            description: "Execution happens in isolated, sandboxed environments. Your machine stays unbothered. No installs, no local processes, no resource drain.",
-            className: "md:col-span-2",
-            icon: (
-                <svg className="w-6 h-6 text-stone-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                </svg>
-            )
-        },
-        {
-            title: "Ready in 60 seconds.",
-            description: "No API keys. No config files. No cloning repos. Sign in, connect your apps, describe your workflow — done.",
-            className: "md:col-span-1",
-            icon: (
-                <svg className="w-6 h-6 text-stone-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
-            )
-        }
-    ];
-
-    const containerVariants = {
-        hidden: { opacity: 0 },
-        show: {
-            opacity: 1,
-            transition: { staggerChildren: 0.1 }
-        }
-    };
-
-    const itemVariants: import("framer-motion").Variants = {
-        hidden: { opacity: 0, y: 30 },
-        show: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] } }
-    };
-
     return (
-        <section className="py-32 bg-black relative overflow-hidden">
-            {/* Background elements to blend with hero */}
-            <div aria-hidden="true" className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-black to-transparent z-10 pointer-events-none" />
+        <section className="py-28 bg-black relative overflow-hidden">
+            <div aria-hidden="true" className="absolute top-0 left-0 w-full h-24 bg-gradient-to-b from-black to-transparent z-10 pointer-events-none" />
 
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-20">
-                <div className="text-center max-w-2xl mx-auto mb-20 space-y-4">
-                    <motion.h2
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        className="text-3xl md:text-4xl font-semibold tracking-tight text-white font-sans"
-                    >
-                        Built for <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-emerald-400">quiet competence.</span>
-                    </motion.h2>
+            <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative z-20">
+
+                <div className="text-center max-w-xl mx-auto mb-20">
                     <motion.p
-                        initial={{ opacity: 0, y: 20 }}
+                        initial={{ opacity: 0, y: 12 }}
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
-                        transition={{ delay: 0.1 }}
-                        className="text-zinc-400 text-lg font-light leading-relaxed"
+                        className="text-xs text-zinc-500 uppercase tracking-widest mb-3 font-medium"
                     >
-                        CalmPilot combines bleeding-edge AI execution with absolute user control.
+                        Built different
                     </motion.p>
+                    <motion.h2
+                        initial={{ opacity: 0, y: 16 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ delay: 0.05 }}
+                        className="text-3xl md:text-4xl font-bold text-white tracking-tight"
+                    >
+                        Stop doing work{" "}
+                        <span className="text-zinc-500">that shouldn't need you.</span>
+                    </motion.h2>
                 </div>
 
-                <motion.div
-                    variants={containerVariants}
-                    initial="hidden"
-                    whileInView="show"
-                    viewport={{ once: true, margin: "-100px" }}
-                    className="grid grid-cols-1 md:grid-cols-3 gap-6"
-                >
-                    {features.map((feature, idx) => (
-                        <SpotlightCard
-                            key={idx}
-                            variants={itemVariants}
-                            className={feature.className}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+                    {pillars.map((p, i) => (
+                        <motion.div
+                            key={i}
+                            initial={{ opacity: 0, y: 24 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true, margin: "-60px" }}
+                            transition={{ delay: i * 0.08, duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+                            className={`${p.span} group relative rounded-2xl bg-zinc-950 border border-white/[0.07] ${p.border} transition-colors duration-300 p-7 overflow-hidden`}
                         >
-                            <div className="w-12 h-12 rounded-2xl bg-white/[0.03] border border-white/10 flex items-center justify-center mb-8 shadow-[0_0_15px_rgba(255,255,255,0.02)]">
-                                {feature.icon}
+                            <div className={`absolute top-0 left-0 right-0 h-32 bg-gradient-to-b ${p.accent} pointer-events-none`} />
+
+                            <div className="relative z-10">
+                                <div className="flex items-center gap-2.5 mb-5">
+                                    <div className="w-8 h-8 rounded-lg bg-white/[0.04] border border-white/[0.08] flex items-center justify-center">
+                                        {p.icon}
+                                    </div>
+                                    <span className="text-[11px] text-zinc-500 font-medium uppercase tracking-widest">{p.eyebrow}</span>
+                                </div>
+
+                                <h3 className="text-xl font-semibold text-white tracking-tight mb-3">
+                                    {p.headline}
+                                </h3>
+                                <p className="text-zinc-400 text-[14px] leading-relaxed">
+                                    {p.body}
+                                </p>
+
+                                {p.visual}
                             </div>
-                            <h3 className="text-xl font-medium text-white mb-3 tracking-tight font-sans">
-                                {feature.title}
-                            </h3>
-                            <p className="text-zinc-400 font-light leading-relaxed mt-auto">
-                                {feature.description}
-                            </p>
-                        </SpotlightCard>
+                        </motion.div>
                     ))}
-                </motion.div>
+                </div>
             </div>
         </section>
     );

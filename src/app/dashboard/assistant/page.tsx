@@ -1234,7 +1234,7 @@ function AssistantPageInner() {
 
       {/* ─── RIGHT PANEL (TOOL EXECUTION LOGS) ─── */}
 
-      <div
+      {/* <div
         className={`fixed lg:static top-0 right-0 h-full bg-[#111111] z-40 transition-all duration-300 ease-in-out transform flex flex-col border-l border-white/5 ${isLogsOpen
             ? "translate-x-0 w-[320px] lg:w-[40%]"
             : "translate-x-full lg:translate-x-0 lg:w-0 lg:overflow-hidden lg:border-none"
@@ -1266,7 +1266,7 @@ function AssistantPageInner() {
           )}
           <div ref={logsEndRef} />
         </div>
-      </div>
+      </div> */}
 
 
 

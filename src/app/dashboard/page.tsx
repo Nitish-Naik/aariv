@@ -9,13 +9,12 @@ import {
   Calendar,
   CheckCircle2,
   Clock,
-  Cloud,
   CreditCard,
-  Eye,
   Loader2,
   Mail,
   MessageSquare,
   Plug,
+  RefreshCw,
   Sparkles,
   Target,
   X,
@@ -70,22 +69,20 @@ const getGreeting = () => {
   const hour = new Date().getHours();
   if (hour < 12) return "Good morning";
   if (hour < 18) return "Good afternoon";
-  return "Rest easy";
+  return "Good evening";
 };
 
 const formatDate = () => {
-  const d = new Date();
-  return d.toLocaleDateString("en-US", {
+  return new Date().toLocaleDateString("en-US", {
     weekday: "long",
-    month: "short",
+    month: "long",
     day: "numeric",
   });
 };
 
 const formatTime = (iso: string) => {
   try {
-    const d = new Date(iso);
-    return d.toLocaleTimeString("en-US", {
+    return new Date(iso).toLocaleTimeString("en-US", {
       hour: "numeric",
       minute: "2-digit",
       hour12: true,
@@ -95,50 +92,81 @@ const formatTime = (iso: string) => {
   }
 };
 
-const formatFullDateTime = () => {
-  const d = new Date();
-  const date = d.toLocaleDateString("en-US", {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-  });
-  const time = d.toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: true,
-  });
-  return `${date} · ${time}`;
-};
+/* ─── Page Header (shared across states) ─────────────────── */
+
+function PageHeader({
+  title,
+  subtitle,
+  onRefresh,
+  refreshing,
+}: {
+  title: string;
+  subtitle?: string;
+  onRefresh?: () => void;
+  refreshing?: boolean;
+}) {
+  return (
+    <div className="px-6 py-4 border-b border-white/[0.06] flex items-center justify-between shrink-0">
+      <div>
+        <h1 className="text-sm font-semibold text-white">{title}</h1>
+        {subtitle && (
+          <p className="text-xs text-neutral-500 mt-0.5">{subtitle}</p>
+        )}
+      </div>
+      {onRefresh && (
+        <button
+          onClick={onRefresh}
+          disabled={refreshing}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-white/[0.04] border border-white/[0.06] hover:bg-white/[0.07] transition-colors text-neutral-400 hover:text-white disabled:opacity-40 text-xs font-medium"
+        >
+          <RefreshCw size={12} className={refreshing ? "animate-spin" : ""} />
+          Refresh
+        </button>
+      )}
+    </div>
+  );
+}
 
 /* ─── Stat Card ──────────────────────────────────────────── */
 
 function StatCard({
   label,
   value,
-  icon,
+  icon: Icon,
+  href,
 }: {
   label: string;
   value: string | number;
-  icon: React.ReactNode;
+  icon: React.ElementType;
+  href?: string;
 }) {
-  return (
-    <div className="bg-black border border-white/10 rounded-xl px-4 py-3 flex flex-col gap-1 min-w-0">
-      <div className="flex items-center gap-2 text-neutral-500">
-        {icon}
-        <span className="text-[11px] font-medium uppercase tracking-wider truncate">
+  const inner = (
+    <div className="border-r border-white/[0.06] last:border-r-0 px-5 py-4 flex flex-col gap-1.5 min-w-0">
+      <div className="flex items-center gap-1.5">
+        <Icon size={13} strokeWidth={1.75} className="text-neutral-600" />
+        <span className="text-[11px] font-medium text-neutral-500 uppercase tracking-wider truncate">
           {label}
         </span>
       </div>
-      <span className="text-xl font-semibold text-white">
+      <span className="text-2xl font-semibold text-white tabular-nums leading-none">
         {value}
       </span>
     </div>
   );
+
+  if (href) {
+    return (
+      <Link href={href} className="hover:bg-white/[0.02] transition-colors">
+        {inner}
+      </Link>
+    );
+  }
+  return <div>{inner}</div>;
 }
 
-/* ─── Proposal Card ──────────────────────────────────────── */
+/* ─── Proposal Row ───────────────────────────────────────── */
 
-function ProposalCard({
+function ProposalRow({
   proposal,
   logoUrl,
   onAction,
@@ -152,54 +180,52 @@ function ProposalCard({
   const isHigh = proposal.priority === "high";
 
   return (
-    <div
-      className={`bg-black border rounded-xl p-4 space-y-3 ${isHigh ? "border-amber-500/30" : "border-white/10"
-        }`}
-    >
-      {/* Tag */}
-      {isHigh && (
-        <span className="inline-block text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-500">
-          Needs Attention
+    <div className="flex items-start gap-4 px-5 py-4 border-b border-white/[0.05] last:border-0 hover:bg-white/[0.02] transition-colors group">
+      {/* App icon */}
+      {logoUrl ? (
+        <img
+          src={logoUrl}
+          alt={proposal.app}
+          className="w-7 h-7 rounded-lg object-contain shrink-0 mt-0.5"
+        />
+      ) : (
+        <span
+          className="flex items-center justify-center w-7 h-7 rounded-lg text-white shrink-0 mt-0.5"
+          style={{ background: color }}
+        >
+          {icon}
         </span>
       )}
 
-      {/* Header */}
-      <div className="flex items-start gap-3">
-        {logoUrl ? (
-          <img
-            src={logoUrl}
-            alt={proposal.app}
-            className="w-7 h-7 rounded-lg object-contain shrink-0 mt-0.5"
-          />
-        ) : (
-          <span
-            className="flex items-center justify-center w-7 h-7 rounded-lg text-white shrink-0 mt-0.5"
-            style={{ background: color }}
-          >
-            {icon}
-          </span>
-        )}
-        <div className="min-w-0">
-          <h4 className="text-sm font-semibold text-white leading-snug">
+      {/* Content */}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 mb-0.5">
+          <p className="text-sm font-medium text-white leading-snug truncate">
             {proposal.title}
-          </h4>
-          <p className="text-xs text-neutral-400 mt-1 leading-relaxed">
-            {proposal.description}
           </p>
+          {isHigh && (
+            <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-500 border border-amber-500/20">
+              Urgent
+            </span>
+          )}
         </div>
+        <p className="text-xs text-neutral-500 leading-relaxed line-clamp-1">
+          {proposal.description}
+        </p>
       </div>
 
       {/* Actions */}
       {proposal.actions.length > 0 && (
-        <div className="flex items-center gap-2 pt-1">
+        <div className="flex items-center gap-2 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
           {proposal.actions.map((action, i) => (
             <button
               key={i}
               onClick={() => onAction?.(proposal, action)}
-              className={`text-xs font-medium px-3 py-1.5 rounded-lg transition-colors ${i === 0
-                ? "bg-white text-white hover:opacity-90"
-                : "bg-white/5 text-white hover:opacity-80"
-                }`}
+              className={`text-xs font-medium px-3 py-1.5 rounded-md transition-colors ${
+                i === 0
+                  ? "bg-white text-black hover:bg-neutral-200"
+                  : "bg-white/[0.05] text-white hover:bg-white/10 border border-white/[0.08]"
+              }`}
             >
               {action}
             </button>
@@ -210,43 +236,35 @@ function ProposalCard({
   );
 }
 
-/* ─── Timeline Event ─────────────────────────────────────── */
+/* ─── Calendar Row ───────────────────────────────────────── */
 
-function TimelineEvent({
+function CalendarRow({
   event,
-  isLast,
 }: {
   event: CalendarEvent;
-  isLast: boolean;
 }) {
-  const time = formatTime(event.startTime);
   const isPast = new Date(event.startTime) < new Date();
+  const time = formatTime(event.startTime);
 
   return (
-    <div className="flex gap-3 relative">
-      {/* Timeline line */}
-      <div className="flex flex-col items-center">
-        <div
-          className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${isPast ? "bg-neutral-500" : "bg-white"
-            }`}
-        />
-        {!isLast && <div className="w-px flex-1 bg-white/10 mt-1" />}
-      </div>
-
-      {/* Content */}
-      <div className={`pb-4 min-w-0 ${isPast ? "opacity-50" : ""}`}>
-        <span className="text-[11px] font-medium text-neutral-500 uppercase tracking-wider">
-          {time}
-        </span>
-        <p className="text-sm text-white font-medium mt-0.5 leading-snug">
-          {event.title}
-        </p>
-      </div>
+    <div
+      className={`flex items-center gap-4 px-5 py-3 border-b border-white/[0.05] last:border-0 ${
+        isPast ? "opacity-40" : ""
+      }`}
+    >
+      <span className="text-[11px] font-medium text-neutral-500 tabular-nums w-16 shrink-0">
+        {time}
+      </span>
+      <div
+        className="w-1 h-1 rounded-full shrink-0"
+        style={{ backgroundColor: event.color || "#ffffff" }}
+      />
+      <p className="text-sm text-white font-medium truncate">{event.title}</p>
     </div>
   );
 }
 
-/* ─── Onboarding State (first-time users, no apps connected) ─ */
+/* ─── Recommended apps for onboarding ─────────────────────── */
 
 const RECOMMENDED_APPS = [
   {
@@ -254,146 +272,102 @@ const RECOMMENDED_APPS = [
     name: "Gmail",
     description: "Read, draft, and manage your emails automatically.",
     color: "#EA4335",
-    icon: <Mail strokeWidth={1.5} size={20} />,
+    icon: <Mail strokeWidth={1.75} size={16} />,
     free: true,
   },
   {
     slug: "googlecalendar",
     name: "Google Calendar",
-    description:
-      "Track meetings, schedule events, and stay on top of your day.",
+    description: "Track meetings, schedule events, and stay on top of your day.",
     color: "#4285F4",
-    icon: <Calendar strokeWidth={1.5} size={20} />,
+    icon: <Calendar strokeWidth={1.75} size={16} />,
     free: true,
   },
   {
     slug: "slack",
     name: "Slack",
-    description:
-      "Monitor channels, respond to messages, and manage notifications.",
+    description: "Monitor channels, respond to messages, and manage notifications.",
     color: "#E01E5A",
-    icon: <MessageSquare strokeWidth={1.5} size={20} />,
+    icon: <MessageSquare strokeWidth={1.75} size={16} />,
     free: false,
   },
 ];
+
+/* ─── Onboarding State ───────────────────────────────────── */
 
 function OnboardingState({ firstName }: { firstName: string }) {
   const router = useRouter();
 
   return (
-    <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-20 flex flex-col items-center">
-      {/* Header */}
-      <div className="text-center mb-12 max-w-2xl">
-        <div className="w-16 h-16 bg-gradient-to-br from-neutral-900 to-[black] border border-white/10 rounded-xl flex items-center justify-center mx-auto mb-6 shadow-xl">
-          <Sparkles strokeWidth={1.5} className="text-white" size={28} />
-        </div>
-        <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-white mb-4 leading-tight">
-          Welcome, {firstName}!
-        </h1>
-        <p className="text-sm text-neutral-400 max-w-md leading-relaxed">
-          Connect your first app so CalmPilot can start managing your day —
-          reading emails, checking your calendar, and surfacing what needs your
-          attention.
-        </p>
-      </div>
+    <div className="flex flex-col h-full">
+      <PageHeader title="Overview" subtitle={formatDate()} />
 
-      {/* Recommended Apps */}
-      <div className="mb-8 max-w-xl w-full">
-        <h2 className="text-xs font-medium uppercase tracking-widest text-neutral-500 mb-4">
-          Get started with
-        </h2>
-        <div className="space-y-3">
+      <div className="flex-1 flex flex-col items-center justify-center px-6 py-16 max-w-lg mx-auto w-full">
+        {/* Welcome */}
+        <div className="text-center mb-10">
+          <div className="w-12 h-12 rounded-xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center mx-auto mb-5">
+            <Sparkles strokeWidth={1.75} size={20} className="text-white" />
+          </div>
+          <h2 className="text-lg font-semibold text-white mb-2">
+            Welcome, {firstName}
+          </h2>
+          <p className="text-sm text-neutral-500 leading-relaxed">
+            Connect your first app so CalmPilot can start managing your day.
+          </p>
+        </div>
+
+        {/* App list */}
+        <div className="w-full border border-white/[0.06] rounded-lg overflow-hidden mb-4">
           {RECOMMENDED_APPS.map((app) => (
             <button
               key={app.slug}
-              onClick={() =>
-                router.push(`/dashboard/integrations?connect=${app.slug}`)
-              }
-              className="w-full flex items-center gap-4 bg-black border border-white/10 rounded-xl px-4 py-4 hover:border-white/30 transition-colors text-left group"
+              onClick={() => router.push(`/dashboard/integrations?connect=${app.slug}`)}
+              className="w-full flex items-center gap-4 px-4 py-3.5 border-b border-white/[0.05] last:border-0 hover:bg-white/[0.03] transition-colors text-left group"
             >
-              <div
-                className="w-10 h-10 rounded-xl flex items-center justify-center text-white shrink-0"
+              <span
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-white shrink-0"
                 style={{ backgroundColor: app.color }}
               >
                 {app.icon}
-              </div>
+              </span>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-semibold text-white">
-                    {app.name}
-                  </span>
+                  <span className="text-sm font-medium text-white">{app.name}</span>
                   {app.free && (
                     <span className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500">
                       Free
                     </span>
                   )}
                 </div>
-                <p className="text-xs text-neutral-400 mt-0.5 leading-relaxed">
+                <p className="text-xs text-neutral-500 mt-0.5 truncate">
                   {app.description}
                 </p>
               </div>
-              <ArrowRight strokeWidth={1.5}
-                size={16}
-                className="text-neutral-500 group-hover:text-white transition-colors shrink-0"
+              <ArrowRight
+                size={14}
+                strokeWidth={1.75}
+                className="text-neutral-600 group-hover:text-white transition-colors shrink-0"
               />
             </button>
           ))}
         </div>
-      </div>
 
-      {/* Browse All + Skip */}
-      <div className="flex flex-col sm:flex-row items-center gap-3 max-w-xl w-full">
-        <button
-          onClick={() => router.push("/dashboard/integrations")}
-          className="w-full sm:flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-white text-white text-sm font-medium hover:opacity-90 transition-opacity"
-        >
-          <Plug strokeWidth={1.5} size={15} />
-          Browse all apps
-        </button>
-        <button
-          onClick={() => router.push("/dashboard/assistant")}
-          className="w-full sm:flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-black border border-white/10 text-sm font-medium text-white hover:border-white/30 transition-colors"
-        >
-          <Sparkles strokeWidth={1.5} size={15} className="text-white" />
-          Skip — chat with Aariv
-        </button>
-      </div>
-
-      {/* How it works */}
-      <div className="mt-10 bg-black border border-white/10 rounded-xl p-5 max-w-xl w-full">
-        <h3 className="text-xs font-medium uppercase tracking-widest text-neutral-500 mb-4">
-          How it works
-        </h3>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {[
-            {
-              step: "1",
-              title: "Connect apps",
-              desc: "Link Gmail, Calendar, Slack, or any other tool you use.",
-            },
-            {
-              step: "2",
-              title: "CalmPilot watches",
-              desc: "It monitors your apps and organizes what matters.",
-            },
-            {
-              step: "3",
-              title: "You decide",
-              desc: "Review proposals and let CalmPilot act — or handle it yourself.",
-            },
-          ].map((item) => (
-            <div key={item.step} className="text-center sm:text-left">
-              <div className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-white/10 text-white text-xs font-bold mb-2">
-                {item.step}
-              </div>
-              <h4 className="text-sm font-semibold text-white mb-1">
-                {item.title}
-              </h4>
-              <p className="text-xs text-neutral-400 leading-relaxed">
-                {item.desc}
-              </p>
-            </div>
-          ))}
+        {/* Actions */}
+        <div className="flex gap-3 w-full">
+          <button
+            onClick={() => router.push("/dashboard/integrations")}
+            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-md bg-white text-black text-sm font-medium hover:bg-neutral-100 transition-colors"
+          >
+            <Plug strokeWidth={1.75} size={14} />
+            Browse all apps
+          </button>
+          <button
+            onClick={() => router.push("/dashboard/assistant")}
+            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-md border border-white/[0.1] text-sm font-medium text-white hover:bg-white/[0.04] transition-colors"
+          >
+            <Sparkles strokeWidth={1.75} size={14} />
+            Skip to chat
+          </button>
         </div>
       </div>
     </div>
@@ -416,129 +390,99 @@ function CalmState({
   refreshing?: boolean;
 }) {
   const router = useRouter();
-  const subtitle =
-    briefing?.subtitle ||
-    "Nothing needs your attention right now. Your day is unfolding exactly as it should.";
   const calendarEvents = briefing?.events ?? [];
   const insight = briefing?.insight;
 
   return (
-    <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-10">
-      {/* Hero */}
-      <div className="flex flex-col items-center text-center mb-10">
-        <div className="mb-6 text-neutral-500">
-          <Cloud size={48} strokeWidth={1.2} />
+    <div className="flex flex-col h-full">
+      <PageHeader
+        title="Overview"
+        subtitle={formatDate()}
+        onRefresh={onRefresh}
+        refreshing={refreshing}
+      />
+
+      {/* Stats row */}
+      <div className="grid grid-cols-2 md:grid-cols-4 border-b border-white/[0.06]">
+        <StatCard label="Meetings" value={briefing?.counts.meetings ?? 0} icon={Calendar} />
+        <StatCard label="Focus Hours" value={`${briefing?.counts.focus_hours ?? 0}h`} icon={Clock} />
+        <StatCard label="Emails" value={briefing?.counts.emails ?? 0} icon={Mail} href="/dashboard/review" />
+        <StatCard label="Pending" value={reviewCounts.total} icon={CheckCircle2} href="/dashboard/review" />
+      </div>
+
+      {/* All caught up */}
+      <div className="flex-1 flex flex-col items-center justify-center px-6 py-16 text-center">
+        <div className="w-10 h-10 rounded-full bg-white/[0.04] border border-white/[0.06] flex items-center justify-center mb-4">
+          <CheckCircle2 strokeWidth={1.75} size={18} className="text-neutral-500" />
         </div>
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white mb-3">
+        <h2 className="text-sm font-semibold text-white mb-1">
           {getGreeting()}, {firstName}
-        </h1>
-        <p className="text-sm text-neutral-400 max-w-sm leading-relaxed mb-8">
-          {subtitle}
+        </h2>
+        <p className="text-xs text-neutral-500 max-w-xs leading-relaxed mb-8">
+          {briefing?.subtitle || "Nothing needs your attention right now. Your day is running smoothly."}
         </p>
 
-        {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row gap-3 w-full max-w-md">
+        {/* Quick actions */}
+        <div className="flex flex-wrap gap-2 justify-center">
           <button
             onClick={() => router.push("/dashboard/assistant")}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-black border border-white/10 text-sm font-medium text-white hover:border-white/30 transition-colors"
+            className="flex items-center gap-2 px-3.5 py-2 rounded-md border border-white/[0.1] text-xs font-medium text-white hover:bg-white/[0.04] transition-colors"
           >
-            <Sparkles strokeWidth={1.5} size={15} className="text-white" />
-            Ask Aariv something
+            <Sparkles strokeWidth={1.75} size={13} />
+            Ask Aariv
           </button>
           <button
             onClick={() => router.push("/dashboard/triggers")}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-black border border-white/10 text-sm font-medium text-white hover:border-white/30 transition-colors"
+            className="flex items-center gap-2 px-3.5 py-2 rounded-md border border-white/[0.1] text-xs font-medium text-white hover:bg-white/[0.04] transition-colors"
           >
-            <Eye strokeWidth={1.5} size={15} className="text-white" />
-            Manage triggers
+            <Zap strokeWidth={1.75} size={13} />
+            Automations
           </button>
-          <button
-            onClick={() => router.push("/dashboard/review")}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-black border border-white/10 text-sm font-medium text-white hover:border-white/30 transition-colors"
+          {reviewCounts.total > 0 && (
+            <Link
+              href="/dashboard/review"
+              className="flex items-center gap-2 px-3.5 py-2 rounded-md border border-white/[0.1] text-xs font-medium text-white hover:bg-white/[0.04] transition-colors"
+            >
+              <CheckCircle2 strokeWidth={1.75} size={13} />
+              {reviewCounts.total} to review
+              {reviewCounts.high > 0 && (
+                <span className="px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-500 text-[10px] font-semibold">
+                  {reviewCounts.high} urgent
+                </span>
+              )}
+            </Link>
+          )}
+          <Link
+            href="/dashboard/feed"
+            className="flex items-center gap-2 px-3.5 py-2 rounded-md border border-white/[0.1] text-xs font-medium text-neutral-500 hover:text-white hover:bg-white/[0.04] transition-colors"
           >
-            <CheckCircle2 strokeWidth={1.5} size={15} className="text-white" />
-            Review items
-          </button>
+            <Activity strokeWidth={1.75} size={13} />
+            View activity
+          </Link>
         </div>
-      </div>
 
-      {/* Calendar events — calm day can still have meetings */}
-      {calendarEvents.length > 0 && (
-        <div className="mb-6 max-w-xl w-full">
-          <h2 className="text-xs font-medium uppercase tracking-widest text-neutral-500 mb-3">
-            What&apos;s ahead today
-          </h2>
-          <div className="bg-black border border-white/10 rounded-xl p-4">
-            {calendarEvents.map((event, i) => (
-              <TimelineEvent
-                key={event.id || i}
-                event={event}
-                isLast={i === calendarEvents.length - 1}
-              />
+        {/* Upcoming events */}
+        {calendarEvents.length > 0 && (
+          <div className="mt-10 w-full max-w-sm border border-white/[0.06] rounded-lg overflow-hidden text-left">
+            <div className="px-4 py-2.5 border-b border-white/[0.06]">
+              <p className="text-[11px] font-semibold text-neutral-500 uppercase tracking-widest">
+                Today&apos;s schedule
+              </p>
+            </div>
+            {calendarEvents.map((event) => (
+              <CalendarRow key={event.id} event={event} />
             ))}
           </div>
-        </div>
-      )}
-
-      {/* Quick Links */}
-      <div className="flex items-center gap-3 mb-6 flex-wrap max-w-xl w-full">
-        {reviewCounts.total > 0 && (
-          <Link
-            href="/dashboard/review"
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-black border border-white/10 hover:border-white/30 transition-colors group"
-          >
-            <CheckCircle2 strokeWidth={1.5} size={15} className="text-white" />
-            <span className="text-sm font-medium text-white">
-              {reviewCounts.total} item{reviewCounts.total !== 1 ? "s" : ""} to
-              review
-            </span>
-            {reviewCounts.high > 0 && (
-              <span className="text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-500">
-                {reviewCounts.high} urgent
-              </span>
-            )}
-            <ArrowRight strokeWidth={1.5}
-              size={13}
-              className="text-neutral-500 group-hover:text-white transition-colors"
-            />
-          </Link>
         )}
-        <Link
-          href="/dashboard/feed"
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-black border border-white/10 hover:border-white/20 transition-colors group"
-        >
-          <Activity strokeWidth={1.5} size={15} className="text-neutral-500" />
-          <span className="text-sm text-neutral-400 group-hover:text-white transition-colors">
-            View feed
-          </span>
-        </Link>
-        {onRefresh && (
-          <button
-            onClick={onRefresh}
-            disabled={refreshing}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-black border border-white/10 hover:border-white/20 transition-colors text-neutral-500 hover:text-neutral-400 disabled:opacity-40 ml-auto"
-            title="Refresh briefing"
-          >
-            <Loader2 strokeWidth={1.5} size={13} className={refreshing ? "animate-spin" : ""} />
-            <span className="text-xs">Refresh</span>
-          </button>
+
+        {/* Insight */}
+        {insight && (
+          <div className="mt-6 flex items-start gap-3 border border-white/[0.06] rounded-lg px-4 py-3 max-w-sm w-full text-left">
+            <Sparkles strokeWidth={1.75} size={14} className="text-neutral-500 shrink-0 mt-0.5" />
+            <p className="text-xs text-neutral-500 leading-relaxed">{insight}</p>
+          </div>
         )}
       </div>
-
-      {/* Aariv insight */}
-      {insight && (
-        <div className="mt-8 flex items-center gap-3 bg-black border border-white/10 rounded-xl px-4 py-3 max-w-xl w-full">
-          <Sparkles strokeWidth={1.5} size={16} className="text-white shrink-0" />
-          <p className="text-sm text-neutral-400 leading-relaxed">
-            {insight}
-          </p>
-        </div>
-      )}
-
-      {/* Date/time footer */}
-      <p className="mt-10 text-xs text-neutral-500 text-center">
-        {formatFullDateTime()}
-      </p>
     </div>
   );
 }
@@ -563,7 +507,6 @@ function ActiveState({
   const router = useRouter();
   const { counts, proposals, events, insight } = briefing;
 
-  /** Route proposal action to the assistant with pre-filled context */
   const handleProposalAction = (proposal: Proposal, action: string) => {
     const prompt = encodeURIComponent(
       `${action}: ${proposal.title} — ${proposal.description}`,
@@ -572,68 +515,46 @@ function ActiveState({
   };
 
   return (
-    <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
-      {/* Header */}
-      <div className="flex items-start justify-between mb-2">
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
-          {getGreeting()}, {firstName}
-        </h1>
-        <div className="flex items-center gap-3 mt-1">
-          <span className="text-sm text-neutral-500 hidden sm:block">
-            {formatDate()}
-          </span>
-          {onRefresh && (
-            <button
-              onClick={onRefresh}
-              disabled={refreshing}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-black border border-white/10 hover:border-white/20 transition-colors text-neutral-500 hover:text-neutral-400 disabled:opacity-40 text-xs"
-              title="Refresh briefing"
-            >
-              <Loader2 strokeWidth={1.5} size={12} className={refreshing ? "animate-spin" : ""} />
-              Refresh
-            </button>
-          )}
-        </div>
-      </div>
-      <p className="text-sm text-neutral-400 mb-8">
-        {briefing.subtitle}
-      </p>
+    <div className="flex flex-col">
+      <PageHeader
+        title="Overview"
+        subtitle={`${getGreeting()}, ${firstName} · ${formatDate()}`}
+        onRefresh={onRefresh}
+        refreshing={refreshing}
+      />
 
-      {/* Stats Row */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
-        <StatCard
-          label="Meetings"
-          value={counts.meetings}
-          icon={<Calendar strokeWidth={1.5} size={13} />}
-        />
-        <StatCard
-          label="Focus Hours"
-          value={`${counts.focus_hours}h`}
-          icon={<Clock strokeWidth={1.5} size={13} />}
-        />
-        <StatCard
-          label="Emails to Review"
-          value={counts.emails}
-          icon={<Mail strokeWidth={1.5} size={13} />}
-        />
-        <StatCard
-          label="Needs Judgment"
-          value={counts.needs_judgment}
-          icon={<Target strokeWidth={1.5} size={13} />}
-        />
+      {/* Stats row */}
+      <div className="grid grid-cols-2 md:grid-cols-4 border-b border-white/[0.06]">
+        <StatCard label="Meetings" value={counts.meetings} icon={Calendar} />
+        <StatCard label="Focus Hours" value={`${counts.focus_hours}h`} icon={Clock} />
+        <StatCard label="Emails" value={counts.emails} icon={Mail} href="/dashboard/review" />
+        <StatCard label="Needs Judgment" value={counts.needs_judgment} icon={Target} href="/dashboard/review" />
       </div>
 
-      {/* Two-column layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+      {/* Main grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-0 divide-x divide-white/[0.05] min-h-0">
+
         {/* Left: Proposals */}
-        <div className="lg:col-span-3 space-y-4">
-          <h2 className="text-xs font-medium uppercase tracking-widest text-neutral-500 mb-1">
-            Aariv&apos;s proposals
-          </h2>
+        <div className="lg:col-span-3 flex flex-col">
+          <div className="px-5 py-3 border-b border-white/[0.06] flex items-center justify-between">
+            <p className="text-[11px] font-semibold text-neutral-500 uppercase tracking-widest">
+              Proposals
+            </p>
+            {reviewCounts.total > 0 && (
+              <Link
+                href="/dashboard/review"
+                className="text-xs text-neutral-500 hover:text-white transition-colors flex items-center gap-1"
+              >
+                View inbox
+                <ArrowRight size={11} strokeWidth={1.75} />
+              </Link>
+            )}
+          </div>
+
           {proposals.length > 0 ? (
-            <div className="space-y-3">
+            <div className="divide-y divide-white/[0.05]">
               {proposals.map((p, i) => (
-                <ProposalCard
+                <ProposalRow
                   key={i}
                   proposal={p}
                   logoUrl={logoMap[p.app?.toLowerCase()]}
@@ -642,88 +563,84 @@ function ActiveState({
               ))}
             </div>
           ) : (
-            <div className="bg-black border border-white/10 rounded-xl p-6 text-center">
-              <p className="text-sm text-neutral-400">
-                No proposals right now. You&apos;re all caught up.
-              </p>
+            <div className="flex flex-col items-center justify-center flex-1 py-16 px-6 text-center">
+              <CheckCircle2 strokeWidth={1.75} size={20} className="text-neutral-700 mb-3" />
+              <p className="text-sm text-neutral-500">No proposals right now.</p>
+            </div>
+          )}
+
+          {/* Insight */}
+          {insight && (
+            <div className="px-5 py-3 border-t border-white/[0.06] flex items-start gap-3">
+              <Sparkles strokeWidth={1.75} size={13} className="text-neutral-600 shrink-0 mt-0.5" />
+              <p className="text-xs text-neutral-500 leading-relaxed">{insight}</p>
             </div>
           )}
         </div>
 
-        {/* Right: Calendar Timeline */}
-        <div className="lg:col-span-2">
-          <h2 className="text-xs font-medium uppercase tracking-widest text-neutral-500 mb-3">
-            What&apos;s ahead
-          </h2>
+        {/* Right: Calendar */}
+        <div className="lg:col-span-2 flex flex-col">
+          <div className="px-5 py-3 border-b border-white/[0.06]">
+            <p className="text-[11px] font-semibold text-neutral-500 uppercase tracking-widest">
+              Today&apos;s schedule
+            </p>
+          </div>
+
           {events.length > 0 ? (
-            <div className="bg-black border border-white/10 rounded-xl p-4">
-              {events.map((event, i) => (
-                <TimelineEvent
-                  key={event.id || i}
-                  event={event}
-                  isLast={i === events.length - 1}
-                />
+            <div className="divide-y divide-white/[0.05]">
+              {events.map((event) => (
+                <CalendarRow key={event.id} event={event} />
               ))}
             </div>
           ) : (
-            <div className="bg-black border border-white/10 rounded-xl p-6 text-center">
-              <p className="text-sm text-neutral-400">
-                No events scheduled
-              </p>
+            <div className="flex flex-col items-center justify-center flex-1 py-12 px-6 text-center">
+              <Calendar strokeWidth={1.75} size={20} className="text-neutral-700 mb-3" />
+              <p className="text-sm text-neutral-500">No events today</p>
             </div>
           )}
         </div>
       </div>
+    </div>
+  );
+}
 
-      {/* ── Quick Links Bar ──────────────────────────── */}
-      <div className="mt-8 flex items-center gap-3">
-        {reviewCounts.total > 0 && (
-          <Link
-            href="/dashboard/review"
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-black border border-white/10 hover:border-white/30 transition-colors group"
-          >
-            <CheckCircle2 strokeWidth={1.5} size={15} className="text-white" />
-            <span className="text-sm font-medium text-white">
-              {reviewCounts.total} item{reviewCounts.total !== 1 ? "s" : ""} to
-              review
-            </span>
-            {reviewCounts.high > 0 && (
-              <span className="text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-500">
-                {reviewCounts.high} urgent
-              </span>
-            )}
-            <ArrowRight strokeWidth={1.5}
-              size={13}
-              className="text-neutral-500 group-hover:text-white transition-colors"
-            />
-          </Link>
-        )}
-        <Link
-          href="/dashboard/feed"
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-black border border-white/10 hover:border-white/20 transition-colors group"
-        >
-          <Activity strokeWidth={1.5} size={15} className="text-neutral-500" />
-          <span className="text-sm text-neutral-400 group-hover:text-white transition-colors">
-            View feed
-          </span>
-        </Link>
+/* ─── Loading skeleton ───────────────────────────────────── */
+
+function LoadingSkeleton({ firstName }: { firstName?: string }) {
+  return (
+    <div className="flex flex-col">
+      {/* Header */}
+      <div className="px-6 py-4 border-b border-white/[0.06] flex items-center justify-between shrink-0">
+        <div>
+          <h1 className="text-sm font-semibold text-white">Overview</h1>
+          <p className="text-xs text-neutral-500 mt-0.5">{formatDate()}</p>
+        </div>
       </div>
 
-      {/* Bottom Insight Bar */}
-      {insight && (
-        <div className="mt-8 flex items-center gap-3 bg-black border border-white/10 rounded-xl px-4 py-3">
-          <Sparkles strokeWidth={1.5} size={16} className="text-white shrink-0" />
-          <p className="text-sm text-neutral-400 leading-relaxed">
-            {insight}
-          </p>
-        </div>
-      )}
+      {/* Stats row skeleton */}
+      <div className="grid grid-cols-2 md:grid-cols-4 border-b border-white/[0.06]">
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className="border-r border-white/[0.06] last:border-r-0 px-5 py-4 space-y-2">
+            <div className="h-2.5 w-16 rounded bg-white/[0.06] animate-pulse" />
+            <div className="h-7 w-10 rounded bg-white/[0.06] animate-pulse" />
+          </div>
+        ))}
+      </div>
+
+      {/* Greeting center */}
+      <div className="flex-1 flex flex-col items-center justify-center px-6 py-20 text-center">
+        <p className="text-sm font-semibold text-white mb-1">
+          Rest easy{firstName ? `, ${firstName}` : ""}
+        </p>
+        <p className="text-xs text-neutral-500">
+          Your digital proxy is handling it.
+        </p>
+      </div>
     </div>
   );
 }
 
 /* ─── Main Page ──────────────────────────────────────────── */
-
 
 export default function DashboardHome() {
   const { user } = useAuth();
@@ -751,33 +668,25 @@ export default function DashboardHome() {
       else setLoading(true);
       setError(null);
       try {
-        // 1. Check connected apps
-        const intData = await api
-          .get(`/integrations`)
-          .catch(() => null);
-
-        const connectedApps: string[] = [];
+        const intData = await api.get(`/integrations`).catch(() => null);
+        const apps: string[] = [];
         if (intData?.integrations) {
           const map: Record<string, string> = {};
           for (const int of intData.integrations) {
-            if (int.logo && int.appName)
-              map[int.appName.toLowerCase()] = int.logo;
+            if (int.logo && int.appName) map[int.appName.toLowerCase()] = int.logo;
             if (int.status === "connected" && int.canDisconnect !== false)
-              connectedApps.push(int.appName);
+              apps.push(int.appName);
           }
           setLogoMap(map);
         }
+        setConnectedApps(apps.map((a) => a.toLowerCase()));
 
-        setConnectedApps(connectedApps.map((a) => a.toLowerCase()));
-
-        if (connectedApps.length === 0) {
+        if (apps.length === 0) {
           setHasConnections(false);
           return;
         }
         setHasConnections(true);
 
-
-        // 2. Fetch briefing + review in parallel
         const [data, reviewData] = await Promise.all([
           api.get(`/dashboard/briefing`),
           api.get(`/review?status=pending`).catch(() => null),
@@ -785,14 +694,11 @@ export default function DashboardHome() {
         setBriefing(data);
         if (reviewData?.counts) setReviewCounts(reviewData.counts);
 
-        // Track step 3 (FVM) — once per session
         if (!step3Tracked.current) {
           step3Tracked.current = true;
-          api.patch("/auth/onboarding-step", { step: 3 }).catch(() => { });
+          api.patch("/auth/onboarding-step", { step: 3 }).catch(() => {});
         }
-
       } catch (err: any) {
-        console.error("Failed to fetch briefing:", err);
         setError(err.message || "Couldn't load your briefing.");
       } finally {
         setLoading(false);
@@ -806,113 +712,65 @@ export default function DashboardHome() {
     fetchBriefing();
   }, [fetchBriefing]);
 
-  // Show soft nudge to connect more apps after first briefing
   useEffect(() => {
     if (!user?.id || !briefing || connectedApps.length === 0) return;
     const nudgeKey = `aariv_nudge_dismissed_${user.id}`;
     if (localStorage.getItem(nudgeKey)) return;
-    // Suggest connecting Slack if not connected, or Calendar, etc.
     const hasSlack = connectedApps.includes("slack");
     const hasCalendar = connectedApps.includes("googlecalendar");
-    if (!hasSlack || !hasCalendar) {
-      setShowNudge(true);
-    }
+    if (!hasSlack || !hasCalendar) setShowNudge(true);
   }, [user?.id, briefing, connectedApps]);
 
   const dismissNudge = () => {
     setShowNudge(false);
     if (user?.id) {
       localStorage.setItem(`aariv_nudge_dismissed_${user.id}`, "1");
-      // Track onboarding step 4: nudge dismissed
       api.patch("/auth/onboarding-step", { step: 4 }).catch(() => {});
     }
   };
 
   const firstName = user?.name?.split(" ")[0] || "there";
 
-  if (loading) {
-    return (
-      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <div className="flex flex-col items-center text-center mb-10">
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white mb-3">
-            {getGreeting()}, {firstName}
-          </h1>
-          <p className="text-sm text-neutral-400">
-            Preparing your day…
-          </p>
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
-          {[1, 2, 3, 4].map((i) => (
-            <div
-              key={i}
-              className="bg-black border border-white/10 rounded-xl px-4 py-5"
-            >
-              <div className="h-3 w-16 rounded bg-neutral-900 animate-pulse mb-3" />
-              <div className="h-6 w-10 rounded bg-neutral-900 animate-pulse" />
-            </div>
-          ))}
-        </div>
-        <div className="space-y-3">
-          {[1, 2, 3].map((i) => (
-            <div
-              key={i}
-              className="bg-black border border-white/10 rounded-xl p-5"
-            >
-              <div className="flex items-start gap-3">
-                <div className="w-7 h-7 rounded-lg bg-neutral-900 animate-pulse shrink-0" />
-                <div className="flex-1 space-y-2 pt-0.5">
-                  <div className="h-4 w-2/5 rounded bg-neutral-900 animate-pulse" />
-                  <div className="h-3 w-3/5 rounded bg-neutral-900 animate-pulse" />
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
+  if (loading) return <LoadingSkeleton firstName={firstName} />;
 
   if (hasConnections === false) {
-    // If welcome screen hasn't been seen yet, redirect there for full-screen onboarding
     const welcomeKey = `aariv_welcome_seen_${user?.id}`;
     if (typeof window !== "undefined" && !localStorage.getItem(welcomeKey)) {
       router.replace("/welcome");
       return null;
     }
-    // Already seen welcome — show inline onboarding state
     return <OnboardingState firstName={firstName} />;
   }
 
-  // Explicit error state — don't silently hide it
   if (error && !briefing) {
     const isCredits = error === "INSUFFICIENT_CREDITS";
     return (
-      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-10 flex flex-col items-center justify-center min-h-[80vh]">
+      <div className="flex flex-col items-center justify-center min-h-[60vh] px-6">
         {isCredits ? (
-          <div className="flex flex-col items-center gap-4 p-8 rounded-xl bg-neutral-900 border border-white/10 max-w-md w-full">
-            <div className="w-12 h-12 rounded-full bg-amber-500/10 flex items-center justify-center">
-              <CreditCard strokeWidth={1.5} size={22} className="text-amber-400" />
+          <div className="text-center space-y-4 max-w-xs">
+            <div className="w-12 h-12 rounded-full bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mx-auto">
+              <CreditCard strokeWidth={1.75} size={20} className="text-amber-400" />
             </div>
-            <div className="text-center">
-              <h3 className="text-base font-semibold text-white mb-1">Out of credits</h3>
-              <p className="text-sm text-neutral-500">Add credits to continue using Aariv.</p>
+            <div>
+              <h3 className="text-sm font-semibold text-white mb-1">Out of credits</h3>
+              <p className="text-xs text-neutral-500">Add credits to continue using Aariv.</p>
             </div>
             <a
-              href="/dashboard/settings"
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white text-white text-sm font-medium hover:opacity-90 transition-opacity"
+              href="/dashboard/usage"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-white text-black text-xs font-medium hover:bg-neutral-100 transition-colors"
             >
-              <CreditCard strokeWidth={1.5} size={14} />
+              <CreditCard strokeWidth={1.75} size={13} />
               Add Credits
             </a>
           </div>
         ) : (
-          <div className="flex flex-col items-center gap-3">
-            <p className="text-sm text-neutral-400">{error}</p>
+          <div className="text-center space-y-3">
+            <p className="text-sm text-neutral-500">{error}</p>
             <button
               onClick={() => fetchBriefing()}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white text-white text-sm font-medium hover:opacity-90 transition-opacity"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-white text-black text-xs font-medium hover:bg-neutral-100 transition-colors"
             >
-              <Loader2 strokeWidth={1.5} size={14} />
+              <Loader2 strokeWidth={1.75} size={13} />
               Try again
             </button>
           </div>
@@ -921,40 +779,29 @@ export default function DashboardHome() {
     );
   }
 
+  /* Nudge banner */
   const nudgeBanner = showNudge ? (
-    <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
-      <div className="mt-4 flex items-center gap-4 bg-black border border-white/10 rounded-xl px-5 py-4">
-        <div className="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center shrink-0">
-          {!connectedApps.includes("slack") ? (
-            <MessageSquare strokeWidth={1.5} size={16} className="text-[#E01E5A]" />
-          ) : (
-            <Calendar strokeWidth={1.5} size={16} className="text-[#4285F4]" />
-          )}
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-white">
-            Want a fuller brief?
-          </p>
-          <p className="text-xs text-neutral-500 mt-0.5">
-            {!connectedApps.includes("slack")
-              ? "Connect Slack to include your team messages."
-              : "Connect Google Calendar to include your meetings."}
-          </p>
-        </div>
-        <Link
-          href={`/dashboard/integrations?connect=${!connectedApps.includes("slack") ? "slack" : "googlecalendar"}`}
-          className="shrink-0 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-xs font-medium text-white hover:bg-white/[0.08] transition-colors"
-        >
-          {!connectedApps.includes("slack") ? "Connect Slack" : "Connect Calendar"}
-        </Link>
-        <button
-          onClick={dismissNudge}
-          className="shrink-0 p-1.5 rounded-lg text-neutral-500 hover:text-white hover:bg-white/5 transition-colors"
-          title="Dismiss"
-        >
-          <X strokeWidth={1.5} size={14} />
-        </button>
+    <div className="px-5 py-3 border-t border-white/[0.06] flex items-center gap-4">
+      <div className="flex-1 min-w-0">
+        <p className="text-xs font-medium text-white">Want a fuller brief?</p>
+        <p className="text-xs text-neutral-500 mt-0.5">
+          {!connectedApps.includes("slack")
+            ? "Connect Slack to include your team messages."
+            : "Connect Google Calendar to include your meetings."}
+        </p>
       </div>
+      <Link
+        href={`/dashboard/integrations?connect=${!connectedApps.includes("slack") ? "slack" : "googlecalendar"}`}
+        className="shrink-0 px-3 py-1.5 rounded-md border border-white/[0.1] text-xs font-medium text-white hover:bg-white/[0.04] transition-colors"
+      >
+        Connect
+      </Link>
+      <button
+        onClick={dismissNudge}
+        className="shrink-0 text-neutral-600 hover:text-white transition-colors"
+      >
+        <X strokeWidth={1.75} size={14} />
+      </button>
     </div>
   ) : null;
 

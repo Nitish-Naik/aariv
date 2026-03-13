@@ -276,70 +276,50 @@ export default function FeedPage() {
   }, [events]);
 
   return (
-    <div className="bg-black min-h-screen">
-      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-        {/* ── Header ────────────────────────────────────── */}
-        <div className="flex items-start justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight text-white">
-              Feed
-            </h1>
-            <p className="text-sm text-neutral-500 mt-1.5">
-              Everything your triggers captured, in one timeline
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={syncFromComposio}
-              disabled={syncing}
-              className="group flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-black border border-white/5 text-xs font-medium text-neutral-400 hover:text-white hover:border-white/10 transition-all disabled:opacity-50"
-              title="Pull latest events from Composio"
-            >
-              <Zap strokeWidth={1.5}
-                size={13}
-                className={`text-neutral-500 group-hover:text-white transition-colors ${syncing ? "animate-pulse" : ""}`}
-              />
-              {syncing ? "Checking…" : "Check for new events"}
-              {!syncing && syncDelta !== null && (
-                <span className={`ml-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-semibold ${syncDelta > 0 ? "bg-emerald-500/20 text-emerald-400" : "bg-neutral-800 text-neutral-500"}`}>
-                  {syncDelta > 0 ? `+${syncDelta}` : "Up to date"}
-                </span>
-              )}
-            </button>
-            <button
-              onClick={() => loadEvents(true)}
-              disabled={refreshing}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-black border border-white/5 text-xs font-medium text-neutral-400 hover:text-white hover:border-white/10 transition-all disabled:opacity-50"
-            >
-              <RefreshCw strokeWidth={1.5}
-                size={13}
-                className={`text-neutral-500 ${refreshing ? "animate-spin" : ""}`}
-              />
-              Refresh
-            </button>
-          </div>
+    <div className="flex flex-col min-h-screen">
+      {/* Page header */}
+      <div className="px-6 py-4 border-b border-white/[0.06] flex items-center justify-between shrink-0">
+        <div>
+          <h1 className="text-sm font-semibold text-white">Activity</h1>
+          <p className="text-xs text-neutral-500 mt-0.5">
+            Everything your triggers captured, in one timeline
+          </p>
         </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={syncFromComposio}
+            disabled={syncing}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-white/[0.04] border border-white/[0.06] text-xs font-medium text-neutral-400 hover:text-white transition-colors disabled:opacity-50"
+          >
+            <Zap strokeWidth={1.5} size={13} className={syncing ? "animate-pulse" : ""} />
+            {syncing ? "Checking…" : "Sync"}
+            {!syncing && syncDelta !== null && (
+              <span className={`ml-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-semibold ${syncDelta > 0 ? "bg-emerald-500/20 text-emerald-400" : "bg-white/[0.06] text-neutral-500"}`}>
+                {syncDelta > 0 ? `+${syncDelta}` : "✓"}
+              </span>
+            )}
+          </button>
+          <button
+            onClick={() => loadEvents(true)}
+            disabled={refreshing}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-white/[0.04] border border-white/[0.06] text-xs font-medium text-neutral-400 hover:text-white transition-colors disabled:opacity-50"
+          >
+            <RefreshCw strokeWidth={1.5} size={13} className={refreshing ? "animate-spin" : ""} />
+            Refresh
+          </button>
+        </div>
+      </div>
 
-        {/* ── Contextual Links ──────────────────────────── */}
-        <div className="flex items-center gap-4 mb-8 bg-black p-2 rounded-xl border border-white/[0.03] opacity-90 backdrop-blur-sm">
-          <Link
-            href="/dashboard/review"
-            className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-medium text-white hover:bg-current/5 transition-colors"
-          >
-            <div className="bg-current/10 p-1.5 rounded-lg">
-              <CheckSquare strokeWidth={1.5} size={13} />
-            </div>
-            Items needing your decision
-            <ExternalLink strokeWidth={1.5} size={10} className="ml-1 opacity-50" />
+      <div className="flex-1 px-6 py-6">
+        {/* Contextual links */}
+        <div className="flex items-center gap-4 mb-6 text-xs text-neutral-500">
+          <Link href="/dashboard/review" className="flex items-center gap-1.5 hover:text-white transition-colors">
+            <CheckSquare strokeWidth={1.5} size={12} />
+            Review items
           </Link>
-          <div className="w-px h-6 bg-white/10 opacity-50" />
-          <Link
-            href="/dashboard/triggers"
-            className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-medium text-neutral-400 hover:text-white hover:bg-white/[0.04] transition-colors"
-          >
-            <div className="bg-white/[0.04] p-1.5 rounded-lg group-hover:bg-white/10 transition-colors">
-              <Zap strokeWidth={1.5} size={13} />
-            </div>
+          <span className="text-neutral-800">·</span>
+          <Link href="/dashboard/triggers" className="flex items-center gap-1.5 hover:text-white transition-colors">
+            <Zap strokeWidth={1.5} size={12} />
             Manage triggers
           </Link>
         </div>
@@ -362,50 +342,18 @@ export default function FeedPage() {
           </div>
         )}
 
-        {/* ── Stats Strip ───────────────────────────────── */}
+        {/* ── Stats strip ───────────────────────────────── */}
         {!loading && events.length > 0 && (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 border border-white/[0.06] rounded-lg mb-6">
             {[
-              {
-                label: "Events",
-                value: stats.total,
-                color: "text-white",
-                dot: "bg-white/20",
-              },
-              {
-                label: "Processed",
-                value: stats.completed,
-                color: "text-white",
-                dot: "bg-emerald-400",
-              },
-              {
-                label: "Errors",
-                value: stats.failed,
-                color:
-                  stats.failed > 0
-                    ? "text-red-400"
-                    : "text-white",
-                dot:
-                  stats.failed > 0 ? "bg-red-400 animate-pulse" : "bg-neutral-500",
-              },
-              {
-                label: "Apps",
-                value: stats.apps,
-                color: "text-white",
-                dot: "bg-blue-400",
-              },
-            ].map((s) => (
-              <div
-                key={s.label}
-                className="bg-neutral-900 border border-white/[0.03] rounded-xl px-5 py-4 flex flex-col items-center justify-center text-center shadow-sm"
-              >
-                <div className="flex items-center gap-1.5 mb-2">
-                  <div className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
-                  <p className="text-[11px] font-medium text-neutral-500 tracking-wide">
-                    {s.label}
-                  </p>
-                </div>
-                <p className={`text-2xl font-serif ${s.color}`}>{s.value}</p>
+              { label: "Events", value: stats.total, color: "text-white" },
+              { label: "Processed", value: stats.completed, color: "text-emerald-400" },
+              { label: "Errors", value: stats.failed, color: stats.failed > 0 ? "text-red-400" : "text-white" },
+              { label: "Apps", value: stats.apps, color: "text-white" },
+            ].map((s, i) => (
+              <div key={s.label} className={`px-5 py-4 ${i < 3 ? "border-r border-white/[0.06]" : ""}`}>
+                <p className="text-[10px] font-semibold text-neutral-600 uppercase tracking-widest mb-1">{s.label}</p>
+                <p className={`text-xl font-semibold ${s.color}`}>{s.value}</p>
               </div>
             ))}
           </div>
