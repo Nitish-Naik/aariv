@@ -1,5 +1,6 @@
 "use client";
 
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { useAuth } from "@/context/AuthContext";
 import { api } from "@/lib/api";
 import { AnimatePresence, motion } from "framer-motion";
@@ -1009,53 +1010,16 @@ export default function IntegrationsPage() {
         })()}
       </AnimatePresence>
 
-      {/* Disconnect Confirmation Modal */}
-      <AnimatePresence>
-        {confirmDisconnect && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-              onClick={() => setConfirmDisconnect(null)}
-            />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              className="relative w-full max-w-sm bg-black border border-white/10 rounded-xl shadow-xl overflow-hidden p-6"
-            >
-              <div className="flex items-center gap-3 text-red-400 mb-4">
-                <AlertCircle strokeWidth={1.5} size={24} />
-                <h3 className="text-lg font-semibold text-white">
-                  Disconnect {confirmDisconnect.name.replace("-", " ").replace(/\b\w/g, c => c.toUpperCase())}?
-                </h3>
-              </div>
-              <p className="text-sm text-neutral-500 leading-relaxed mb-6">
-                Are you sure you want to disconnect this toolkit? Any active triggers or automations relying on this connection will stop working immediately.
-              </p>
-              <div className="flex items-center justify-end gap-3 mt-2">
-                <button
-                  onClick={() => setConfirmDisconnect(null)}
-                  className="px-4 py-2 text-sm font-medium text-neutral-400 hover:text-white hover:bg-neutral-900 rounded-xl transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => {
-                    handleDisconnect(confirmDisconnect.id, confirmDisconnect.name);
-                    setConfirmDisconnect(null);
-                  }}
-                  className="px-4 py-2 text-sm font-medium bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 rounded-xl transition-colors flex items-center gap-2"
-                >
-                  Disconnect
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+      <ConfirmDialog
+        open={!!confirmDisconnect}
+        title={`Disconnect ${confirmDisconnect?.name.replace("-", " ").replace(/\b\w/g, c => c.toUpperCase()) ?? ""}?`}
+        description="Any active triggers or automations relying on this connection will stop working immediately."
+        confirmLabel="Disconnect"
+        cancelLabel="Cancel"
+        variant="danger"
+        onConfirm={() => { if (confirmDisconnect) handleDisconnect(confirmDisconnect.id, confirmDisconnect.name); setConfirmDisconnect(null); }}
+        onCancel={() => setConfirmDisconnect(null)}
+      />
     </div>
   );
 }

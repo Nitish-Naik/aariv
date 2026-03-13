@@ -4,6 +4,7 @@ import { FeedbackWidget } from "@/components/FeedbackWidget";
 import { Sidebar } from "@/components/Sidebar";
 import { useAuth } from "@/context/AuthContext";
 import { BillingProvider, useBilling } from "@/context/useBilling";
+import { LogoProvider } from "@/context/LogoContext";
 import { api } from "@/lib/api";
 import { AlertTriangle, XCircle } from "lucide-react";
 import Link from "next/link";
@@ -85,14 +86,16 @@ export default function DashboardLayout({
 
   return (
     <BillingProvider>
-      <div className="flex min-h-screen bg-black">
-        <Sidebar />
-        <main className="flex-1 md:ml-[240px] ml-0 pt-[48px] md:pt-0 pb-[60px] md:pb-0 overflow-y-auto w-full min-w-0">
-          <CreditsBanner />
-          {children}
-        </main>
-        <FeedbackWidget />
-      </div>
+      <LogoProvider>
+        <div className="flex min-h-screen bg-black">
+          <Sidebar />
+          <main className="flex-1 md:ml-[240px] ml-0 pt-[48px] md:pt-0 pb-[60px] md:pb-0 overflow-y-auto w-full min-w-0">
+            <CreditsBanner />
+            {children}
+          </main>
+          <FeedbackWidget />
+        </div>
+      </LogoProvider>
     </BillingProvider>
   );
 }

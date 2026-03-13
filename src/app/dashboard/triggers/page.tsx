@@ -1,5 +1,6 @@
 "use client";
 
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { Sheet } from "@/components/ui/Sheet";
 import { useAuth } from "@/context/AuthContext";
 import { api } from "@/lib/api";
@@ -448,6 +449,7 @@ export default function TriggersPage() {
   const [creating, setCreating] = useState<string | null>(null);
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [pauseWarningTrigger, setPauseWarningTrigger] =
     useState<UserTrigger | null>(null);
   const [toast, setToast] = useState<{
@@ -1230,7 +1232,7 @@ export default function TriggersPage() {
                               </button>
                               <div className="w-px h-4 bg-white/10" />
                               <button
-                                onClick={() => handleDelete(trigger.id)}
+                                onClick={() => setConfirmDeleteId(trigger.id)}
                                 disabled={isDeleting}
                                 className="p-1.5 rounded-md hover:bg-red-500/10 transition-colors text-neutral-500 hover:text-red-500"
                                 title="Delete"
@@ -1466,5 +1468,16 @@ export default function TriggersPage() {
         )}
       </div>
     </div>
+
+    <ConfirmDialog
+      open={!!confirmDeleteId}
+      title="Delete trigger?"
+      description="This trigger will be permanently removed and any active automations relying on it will stop working immediately."
+      confirmLabel="Delete"
+      cancelLabel="Cancel"
+      variant="danger"
+      onConfirm={() => { if (confirmDeleteId) handleDelete(confirmDeleteId); setConfirmDeleteId(null); }}
+      onCancel={() => setConfirmDeleteId(null)}
+    />
   );
 }

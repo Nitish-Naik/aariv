@@ -1,6 +1,7 @@
 "use client";
 
 import { useAuth } from "@/context/AuthContext";
+import { useLogo } from "@/context/LogoContext";
 import { api } from "@/lib/api";
 import { getAppColor, getAppIcon } from "@/lib/appMeta";
 import {
@@ -181,21 +182,21 @@ function ProposalRow({
 
   return (
     <div className="flex items-start gap-4 px-5 py-4 border-b border-white/[0.05] last:border-0 hover:bg-white/[0.02] transition-colors group">
-      {/* App icon */}
-      {logoUrl ? (
-        <img
-          src={logoUrl}
-          alt={proposal.app}
-          className="w-7 h-7 rounded-lg object-contain shrink-0 mt-0.5"
-        />
-      ) : (
-        <span
-          className="flex items-center justify-center w-7 h-7 rounded-lg text-white shrink-0 mt-0.5"
-          style={{ background: color }}
-        >
+      {/* App icon — colored fallback always rendered, logo fades in on load */}
+      <div className="w-7 h-7 rounded-lg shrink-0 mt-0.5 relative overflow-hidden" style={{ background: color }}>
+        <span className="absolute inset-0 flex items-center justify-center text-white">
           {icon}
         </span>
-      )}
+        {logoUrl && (
+          <img
+            src={logoUrl}
+            alt={proposal.app}
+            className="absolute inset-0 w-full h-full object-contain p-1 bg-[#111319] opacity-0 transition-opacity duration-200"
+            onLoad={(e) => { e.currentTarget.style.opacity = "1"; }}
+            onError={(e) => { e.currentTarget.style.display = "none"; }}
+          />
+        )}
+      </div>
 
       {/* Content */}
       <div className="flex-1 min-w-0">
@@ -297,6 +298,7 @@ const RECOMMENDED_APPS = [
 
 function OnboardingState({ firstName }: { firstName: string }) {
   const router = useRouter();
+  const { getLogo } = useLogo();
 
   return (
     <div className="flex flex-col h-full">
@@ -324,12 +326,23 @@ function OnboardingState({ firstName }: { firstName: string }) {
               onClick={() => router.push(`/dashboard/integrations?connect=${app.slug}`)}
               className="w-full flex items-center gap-4 px-4 py-3.5 border-b border-white/[0.05] last:border-0 hover:bg-white/[0.03] transition-colors text-left group"
             >
-              <span
-                className="w-8 h-8 rounded-lg flex items-center justify-center text-white shrink-0"
+              <div
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-white shrink-0 relative overflow-hidden"
                 style={{ backgroundColor: app.color }}
               >
-                {app.icon}
-              </span>
+                <span className="absolute inset-0 flex items-center justify-center">
+                  {app.icon}
+                </span>
+                {getLogo(app.slug) && (
+                  <img
+                    src={getLogo(app.slug)}
+                    alt={app.name}
+                    className="absolute inset-0 w-full h-full object-contain p-1.5 bg-[#111319] opacity-0 transition-opacity duration-200"
+                    onLoad={(e) => { e.currentTarget.style.opacity = "1"; }}
+                    onError={(e) => { e.currentTarget.style.display = "none"; }}
+                  />
+                )}
+              </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-medium text-white">{app.name}</span>

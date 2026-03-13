@@ -5,7 +5,6 @@ import { useAuth } from "@/context/AuthContext";
 import { useBilling } from "@/context/useBilling";
 import {
   Activity,
-  ChevronDown,
   Home,
   Link2,
   ListChecks,
@@ -127,7 +126,7 @@ export function Sidebar() {
 
         {/* Workspace header */}
         <div className="px-3 py-3 border-b border-white/[0.06] shrink-0">
-          <button className="w-full flex items-center gap-2.5 px-2 py-1.5 rounded-md hover:bg-white/[0.04] transition-colors group">
+          <div className="flex items-center gap-2.5 px-2 py-1.5">
             <div className="w-6 h-6 rounded-md bg-white flex items-center justify-center shrink-0">
               <img
                 src="/icons/icon-192.svg"
@@ -135,14 +134,10 @@ export function Sidebar() {
                 className="w-4 h-4"
               />
             </div>
-            <span className="flex-1 text-left text-sm font-semibold text-white truncate">
+            <span className="text-sm font-semibold text-white truncate">
               CalmPilot
             </span>
-            <ChevronDown
-              size={14}
-              className="text-neutral-600 group-hover:text-neutral-400 transition-colors shrink-0"
-            />
-          </button>
+          </div>
         </div>
 
         {/* Main nav */}

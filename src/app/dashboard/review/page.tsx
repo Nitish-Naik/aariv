@@ -1,6 +1,7 @@
 "use client";
 
 import { useAuth } from "@/context/AuthContext";
+import { useLogo } from "@/context/LogoContext";
 import { api } from "@/lib/api";
 import { getAppColor } from "@/lib/appMeta";
 import { AnimatePresence, motion } from "framer-motion";
@@ -55,6 +56,23 @@ interface ReviewCounts {
 }
 
 type ViewFilter = "pending" | "all" | "resolved";
+
+// ─── Logo helper ────────────────────────────────────────────────────────
+
+/** Small app dot — shows logo when loaded, colored dot as fallback */
+function AppDot({ logo, alt, color }: { logo?: string; alt: string; color: string }) {
+  const [failed, setFailed] = useState(false);
+  if (!logo || failed) return <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: color }} />;
+  return (
+    <img
+      src={logo}
+      alt={alt}
+      className="w-3.5 h-3.5 rounded-sm object-contain shrink-0 opacity-0 transition-opacity duration-150"
+      onLoad={(e) => { e.currentTarget.style.opacity = "1"; }}
+      onError={() => setFailed(true)}
+    />
+  );
+}
 
 // ─── Constants ──────────────────────────────────────────────────────────
 
@@ -233,6 +251,7 @@ function timeAgo(iso: string): string {
 
 export default function ReviewPage() {
   const { user } = useAuth();
+  const { getLogo } = useLogo();
   const [items, setItems] = useState<ReviewItem[]>([]);
   const [counts, setCounts] = useState<ReviewCounts>({
     total: 0,
@@ -582,6 +601,7 @@ export default function ReviewPage() {
                 const result =
                   actionResult?.id === item.id ? actionResult : null;
                 const appColor = getAppColor(item.source_app);
+                const appLogo = getLogo(item.source_app);
 
                 return (
                   <motion.div
@@ -610,10 +630,7 @@ export default function ReviewPage() {
                           }
                         </button>
                       )}
-                      <span
-                        className="w-1.5 h-1.5 rounded-full shrink-0"
-                        style={{ backgroundColor: appColor }}
-                      />
+                      <AppDot logo={appLogo} alt={item.source_app} color={appColor} />
                       <span className="text-[11px] font-semibold tracking-widest text-neutral-500 uppercase">
                         {item.source_app}
                       </span>

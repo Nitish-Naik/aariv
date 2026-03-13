@@ -1,6 +1,7 @@
 "use client";
 
 import { DataCard, PulsingAvatar } from "@/components";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { useAuth } from "@/context/AuthContext";
 import { api } from "@/lib/api";
 import { getAppLogo } from "@/lib/platform-logos";
@@ -20,7 +21,8 @@ import {
   Send,
   Shield,
   Terminal,
-  Trash2
+  Trash2,
+  X,
 } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
@@ -381,6 +383,11 @@ function AssistantPageInner() {
         userId: user.id,
         message: messageText,
         model: selectedModel,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        currentDate: new Date().toLocaleDateString("en-US", {
+          weekday: "long", year: "numeric", month: "long", day: "numeric",
+          timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        }),
         ...(activeConversationId
           ? { conversationId: activeConversationId }
           : {}),
@@ -1008,56 +1015,55 @@ function AssistantPageInner() {
                           </>
                         ) : (
                           isThinking && (
-                            <div className="flex items-center gap-2 py-1.5 px-2">
-                              {msg.logs && msg.logs.length > 0 ? (
-                                <span className="text-[13px] font-medium font-mono animate-pulse bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 dark:from-blue-400 dark:via-purple-400 dark:to-pink-400 bg-clip-text text-transparent">
-                                  {msg.logs[msg.logs.length - 1].label
-                                    .replace(/composio_?/i, "")
-                                    .replace(/composio\s*/i, "")}
-                                  ...
-                                </span>
+                            <div className="py-0.5 space-y-2.5 min-w-[160px]">
+                              {(!msg.logs || msg.logs.length === 0) ? (
+                                /* No steps yet — subtle three dots */
+                                <div className="flex items-center gap-1.5 px-1 py-0.5">
+                                  {[0, 0.2, 0.4].map((delay) => (
+                                    <motion.span
+                                      key={delay}
+                                      className="inline-block w-1.5 h-1.5 rounded-full bg-neutral-500"
+                                      animate={{ opacity: [0.3, 1, 0.3], scale: [0.8, 1, 0.8] }}
+                                      transition={{ repeat: Infinity, duration: 1.4, ease: "easeInOut", delay }}
+                                    />
+                                  ))}
+                                </div>
                               ) : (
-                                <>
-                                  <motion.span
-                                    className="inline-block w-1.5 h-1.5 rounded-full bg-neutral-500"
-                                    animate={{
-                                      opacity: [0.4, 1, 0.4],
-                                      scale: [0.8, 1, 0.8],
-                                    }}
-                                    transition={{
-                                      repeat: Infinity,
-                                      duration: 1.4,
-                                      ease: "easeInOut",
-                                      delay: 0,
-                                    }}
-                                  />
-                                  <motion.span
-                                    className="inline-block w-1.5 h-1.5 rounded-full bg-neutral-500"
-                                    animate={{
-                                      opacity: [0.4, 1, 0.4],
-                                      scale: [0.8, 1, 0.8],
-                                    }}
-                                    transition={{
-                                      repeat: Infinity,
-                                      duration: 1.4,
-                                      ease: "easeInOut",
-                                      delay: 0.2,
-                                    }}
-                                  />
-                                  <motion.span
-                                    className="inline-block w-1.5 h-1.5 rounded-full bg-neutral-500"
-                                    animate={{
-                                      opacity: [0.4, 1, 0.4],
-                                      scale: [0.8, 1, 0.8],
-                                    }}
-                                    transition={{
-                                      repeat: Infinity,
-                                      duration: 1.4,
-                                      ease: "easeInOut",
-                                      delay: 0.4,
-                                    }}
-                                  />
-                                </>
+                                /* Step-by-step progress list */
+                                <div className="space-y-2">
+                                  {msg.logs.map((log, i) => {
+                                    const isRunning = log.status === "running";
+                                    const isDone = log.status === "completed" || log.status === "success";
+                                    const isFailed = log.status === "failed" || log.status === "error";
+                                    const label = log.label
+                                      .replace(/composio_?/gi, "")
+                                      .replace(/composio\s*/gi, "")
+                                      .replace(/_/g, " ")
+                                      .trim();
+                                    return (
+                                      <motion.div
+                                        key={i}
+                                        initial={{ opacity: 0, y: 4 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ duration: 0.2 }}
+                                        className="flex items-center gap-2.5"
+                                      >
+                                        {isRunning ? (
+                                          <div className="w-3 h-3 rounded-full border border-neutral-600 border-t-white/70 animate-spin shrink-0" />
+                                        ) : isDone ? (
+                                          <Check strokeWidth={2.5} size={12} className="text-emerald-400 shrink-0" />
+                                        ) : isFailed ? (
+                                          <X strokeWidth={2.5} size={12} className="text-red-400 shrink-0" />
+                                        ) : (
+                                          <div className="w-1.5 h-1.5 rounded-full bg-neutral-600 shrink-0 ml-[3px]" />
+                                        )}
+                                        <span className={`text-[12.5px] font-medium capitalize ${isRunning ? "text-white/80" : "text-neutral-500"}`}>
+                                          {label}
+                                        </span>
+                                      </motion.div>
+                                    );
+                                  })}
+                                </div>
                               )}
                             </div>
                           )
@@ -1271,52 +1277,36 @@ function AssistantPageInner() {
 
 
 
-      {/* Delete Confirmation Dialog */}
-      {deleteConfirm && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="bg-neutral-900 border border-white/10 rounded-xl shadow-2xl p-6 max-w-sm w-full mx-4">
-            <h3 className="text-lg font-semibold text-white mb-2">
-              {deleteConfirm.type === "all"
-                ? "Delete All History?"
-                : deleteConfirm.type === "range"
-                  ? `Delete ${deleteConfirm.label}?`
-                  : "Delete Conversation?"}
-            </h3>
-            <p className="text-sm text-neutral-500 mb-6">
-              {deleteConfirm.type === "all"
-                ? "This will permanently delete all your conversations and their messages. This action cannot be undone."
-                : deleteConfirm.type === "range"
-                  ? `This will permanently delete all conversations from the ${deleteConfirm.label?.toLowerCase()}. This action cannot be undone.`
-                  : "This will permanently delete this conversation and all its messages. This action cannot be undone."}
-            </p>
-            <div className="flex items-center justify-end gap-3">
-              <button
-                onClick={() => setDeleteConfirm(null)}
-                className="px-4 py-2 rounded-lg text-sm font-medium text-neutral-400 hover:text-white hover:bg-white/5 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => {
-                  if (deleteConfirm.type === "all") {
-                    handleDeleteAllConversations();
-                  } else if (
-                    deleteConfirm.type === "range" &&
-                    deleteConfirm.days
-                  ) {
-                    handleDeleteAllConversations(deleteConfirm.days);
-                  } else if (deleteConfirm.conversationId) {
-                    handleDeleteConversation(deleteConfirm.conversationId);
-                  }
-                }}
-                className="px-4 py-2 rounded-lg text-sm font-medium bg-red-500 text-white hover:bg-red-600 transition-colors"
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmDialog
+        open={!!deleteConfirm}
+        title={
+          deleteConfirm?.type === "all"
+            ? "Delete all history?"
+            : deleteConfirm?.type === "range"
+              ? `Delete ${deleteConfirm.label}?`
+              : "Delete conversation?"
+        }
+        description={
+          deleteConfirm?.type === "all"
+            ? "This will permanently delete all your conversations and messages. This cannot be undone."
+            : deleteConfirm?.type === "range"
+              ? `This will permanently delete all conversations from the ${deleteConfirm.label?.toLowerCase()}. This cannot be undone.`
+              : "This will permanently delete this conversation and all its messages. This cannot be undone."
+        }
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        variant="danger"
+        onConfirm={() => {
+          if (deleteConfirm?.type === "all") {
+            handleDeleteAllConversations();
+          } else if (deleteConfirm?.type === "range" && deleteConfirm.days) {
+            handleDeleteAllConversations(deleteConfirm.days);
+          } else if (deleteConfirm?.conversationId) {
+            handleDeleteConversation(deleteConfirm.conversationId);
+          }
+        }}
+        onCancel={() => setDeleteConfirm(null)}
+      />
     </div>
   );
 }

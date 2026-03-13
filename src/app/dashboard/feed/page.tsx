@@ -1,6 +1,7 @@
 "use client";
 
 import { useAuth } from "@/context/AuthContext";
+import { useLogo } from "@/context/LogoContext";
 import { api } from "@/lib/api";
 import { formatTriggerSlug, getAppColor, getAppIcon, getAppLabel } from "@/lib/appMeta";
 import { AnimatePresence, motion } from "framer-motion";
@@ -17,7 +18,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 /* ─── Types ──────────────────────────────────────────────── */
 
@@ -111,10 +112,48 @@ function groupByDate(
   }));
 }
 
+/* ─── Logo helpers ───────────────────────────────────────── */
+
+/** Large (40×40) app icon — shows colored fallback, fades in logo on load */
+function FeedAppIcon({ logo, label, color, icon }: { logo?: string; label: string; color: string; icon: React.ReactNode }) {
+  return (
+    <div className="w-10 h-10 rounded-xl shrink-0 shadow-sm relative overflow-hidden" style={{ backgroundColor: color }}>
+      <div className="absolute inset-0 flex items-center justify-center text-white">
+        {icon}
+      </div>
+      {logo && (
+        <img
+          src={logo}
+          alt={label}
+          className="absolute inset-0 w-full h-full object-contain p-2 bg-[#111319] opacity-0 transition-opacity duration-200"
+          onLoad={(e) => { e.currentTarget.style.opacity = "1"; }}
+          onError={(e) => { e.currentTarget.style.display = "none"; }}
+        />
+      )}
+    </div>
+  );
+}
+
+/** Small pill logo — falls back to colored dot on error */
+function PillLogo({ logo, alt, color }: { logo?: string; alt: string; color: string }) {
+  const [failed, setFailed] = React.useState(false);
+  if (!logo || failed) return <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: color }} />;
+  return (
+    <img
+      src={logo}
+      alt={alt}
+      className="w-3 h-3 object-contain shrink-0 opacity-0 transition-opacity duration-150"
+      onLoad={(e) => { e.currentTarget.style.opacity = "1"; }}
+      onError={() => setFailed(true)}
+    />
+  );
+}
+
 /* ─── Page ───────────────────────────────────────────────── */
 
 export default function FeedPage() {
   const { user } = useAuth();
+  const { getLogo } = useLogo();
   const searchParams = useSearchParams();
   const [events, setEvents] = useState<FeedEvent[]>([]);
   const [loading, setLoading] = useState(true);
@@ -416,13 +455,7 @@ export default function FeedPage() {
                       : "bg-neutral-900 text-neutral-500 border-white/10 hover:border-white/20 hover:text-white"
                     }`}
                 >
-                  <div
-                    className={`w-1.5 h-1.5 rounded-full transition-all ${appFilter === app && statusFilter === "all" ? "scale-110 shadow-[0_0_8px_currentColor]" : "group-hover:scale-110"}`}
-                    style={{
-                      backgroundColor: getAppColor(app),
-                      color: getAppColor(app),
-                    }}
-                  />
+                  <PillLogo logo={getLogo(app)} alt={app} color={getAppColor(app)} />
                   {getAppLabel(app) || app}
                   <span className={`ml-0.5 tabular-nums ${appFilter === app && statusFilter === "all" ? "opacity-50" : "opacity-40"}`}>
                     ({appCounts[app] ?? 0})
@@ -583,6 +616,7 @@ export default function FeedPage() {
                       const icon = getAppIcon(evt.app);
                       const color = getAppColor(evt.app);
                       const appLabel = getAppLabel(evt.app) || evt.app;
+                      const appLogo = getLogo(evt.app);
                       const statusMeta =
                         STATUS_META[evt.status] || STATUS_META.received;
                       const eventLabel = formatTriggerSlug(evt.triggerSlug);
@@ -598,13 +632,7 @@ export default function FeedPage() {
                         >
                           <div className="flex items-start gap-4">
                             {/* App icon */}
-                            <div
-                              className="w-10 h-10 rounded-xl flex items-center justify-center text-white shrink-0 shadow-sm relative overflow-hidden"
-                              style={{ backgroundColor: color }}
-                            >
-                              <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                              {icon}
-                            </div>
+                            <FeedAppIcon logo={appLogo} label={appLabel} color={color} icon={icon} />
 
                             {/* Content */}
                             <div className="flex-1 min-w-0 pt-0.5">
