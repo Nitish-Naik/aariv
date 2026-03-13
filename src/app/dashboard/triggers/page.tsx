@@ -36,6 +36,7 @@ interface TriggerConfigProperty {
   type?: string;
   default?: unknown;
   enum?: string[];
+  placeholder?: string;
 }
 
 interface TriggerConfigSchema {
@@ -117,7 +118,7 @@ function extractPayloadPreview(
     "action",
   ];
   for (const key of PREVIEW_KEYS) {
-    const val = (payload as any)[key];
+    const val = payload[key];
     if (val && typeof val === "string" && val.trim()) {
       const trimmed = val.trim();
       return trimmed.length > 80 ? trimmed.slice(0, 77) + "…" : trimmed;
@@ -365,7 +366,7 @@ function ConfigFormModal({
                       <input
                         value={val}
                         onChange={(e) => handleChange(key, e.target.value)}
-                        placeholder={(prop as any).placeholder || ""}
+                        placeholder={prop.placeholder || ""}
                         className="w-full rounded-md border px-3 py-2 bg-neutral-900 text-sm"
                       />
                     )}
@@ -474,8 +475,8 @@ export default function TriggersPage() {
       setUserTriggers(trigsRes.triggers || []);
       setIntegrations(appsRes.apps || []);
       if (statsRes) setStats(statsRes);
-    } catch (e) {
-      console.error("Failed to load triggers", e);
+    } catch {
+      // Non-fatal: user will see empty state
     } finally {
       setLoading(false);
     }
@@ -494,8 +495,7 @@ export default function TriggersPage() {
         `/triggers/available?appName=${encodeURIComponent(appName)}`,
       );
       setAvailableTriggers(data.triggers || []);
-    } catch (e) {
-      console.error(e);
+    } catch {
       showToast("Failed to load triggers for this app", "error");
     } finally {
       setLoadingTriggers(false);
@@ -637,6 +637,7 @@ export default function TriggersPage() {
     });
   }, [userTriggers, searchQuery]);
   return (
+    <>
     <div className="flex flex-col min-h-screen">
       {/* Toast */}
       {toast && (
@@ -1479,5 +1480,6 @@ export default function TriggersPage() {
       onConfirm={() => { if (confirmDeleteId) handleDelete(confirmDeleteId); setConfirmDeleteId(null); }}
       onCancel={() => setConfirmDeleteId(null)}
     />
+    </>
   );
 }

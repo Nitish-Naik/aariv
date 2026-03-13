@@ -192,6 +192,8 @@ function ProposalRow({
             src={logoUrl}
             alt={proposal.app}
             className="absolute inset-0 w-full h-full object-contain p-1 bg-[#111319] opacity-0 transition-opacity duration-200"
+            loading="lazy"
+            decoding="async"
             onLoad={(e) => { e.currentTarget.style.opacity = "1"; }}
             onError={(e) => { e.currentTarget.style.display = "none"; }}
           />
@@ -338,6 +340,8 @@ function OnboardingState({ firstName }: { firstName: string }) {
                     src={getLogo(app.slug)}
                     alt={app.name}
                     className="absolute inset-0 w-full h-full object-contain p-1.5 bg-[#111319] opacity-0 transition-opacity duration-200"
+                    loading="lazy"
+                    decoding="async"
                     onLoad={(e) => { e.currentTarget.style.opacity = "1"; }}
                     onError={(e) => { e.currentTarget.style.display = "none"; }}
                   />
@@ -442,7 +446,7 @@ function CalmState({
             className="flex items-center gap-2 px-3.5 py-2 rounded-md border border-white/[0.1] text-xs font-medium text-white hover:bg-white/[0.04] transition-colors"
           >
             <Sparkles strokeWidth={1.75} size={13} />
-            Ask Aariv
+            Ask CalmPilot
           </button>
           <button
             onClick={() => router.push("/dashboard/triggers")}
@@ -566,9 +570,9 @@ function ActiveState({
 
           {proposals.length > 0 ? (
             <div className="divide-y divide-white/[0.05]">
-              {proposals.map((p, i) => (
+              {proposals.map((p) => (
                 <ProposalRow
-                  key={i}
+                  key={`${p.app}-${p.title}`}
                   proposal={p}
                   logoUrl={logoMap[p.app?.toLowerCase()]}
                   onAction={handleProposalAction}
@@ -657,7 +661,6 @@ function LoadingSkeleton({ firstName }: { firstName?: string }) {
 
 export default function DashboardHome() {
   const { user } = useAuth();
-  const router = useRouter();
   const [briefing, setBriefing] = useState<Briefing | null>(null);
   const [logoMap, setLogoMap] = useState<Record<string, string>>({});
   const [reviewCounts, setReviewCounts] = useState<ReviewCounts>({
@@ -747,11 +750,6 @@ export default function DashboardHome() {
   if (loading) return <LoadingSkeleton firstName={firstName} />;
 
   if (hasConnections === false) {
-    const welcomeKey = `aariv_welcome_seen_${user?.id}`;
-    if (typeof window !== "undefined" && !localStorage.getItem(welcomeKey)) {
-      router.replace("/welcome");
-      return null;
-    }
     return <OnboardingState firstName={firstName} />;
   }
 
@@ -766,7 +764,7 @@ export default function DashboardHome() {
             </div>
             <div>
               <h3 className="text-sm font-semibold text-white mb-1">Out of credits</h3>
-              <p className="text-xs text-neutral-500">Add credits to continue using Aariv.</p>
+              <p className="text-xs text-neutral-500">Add credits to continue using CalmPilot.</p>
             </div>
             <a
               href="/dashboard/usage"

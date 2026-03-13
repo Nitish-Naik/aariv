@@ -89,8 +89,8 @@ export default function UsagePage() {
     useEffect(() => {
         if (balanceData) {
             setRefillEnabled(balanceData.auto_refill_enabled ?? false);
-            if ((balanceData as any).auto_refill_threshold) setRefillThreshold(String((balanceData as any).auto_refill_threshold));
-            if ((balanceData as any).auto_refill_amount) setRefillAmount(String((balanceData as any).auto_refill_amount));
+            if (balanceData.auto_refill_threshold) setRefillThreshold(String(balanceData.auto_refill_threshold));
+            if (balanceData.auto_refill_amount) setRefillAmount(String(balanceData.auto_refill_amount));
         }
     }, [balanceData]);
 
@@ -104,8 +104,8 @@ export default function UsagePage() {
                     ]);
                     if (usageRes) setUsageData(usageRes);
                     if (historyRes) setHistory(historyRes);
-                } catch (e) {
-                    console.error("Failed to load usage data", e);
+                } catch {
+                    // Non-fatal — usage details unavailable
                 } finally {
                     setLoadingExtras(false);
                 }
@@ -131,8 +131,8 @@ export default function UsagePage() {
             setRefillSaved(true);
             refetch();
             setTimeout(() => { setRefillSaved(false); setShowAutoRefill(false); }, 1500);
-        } catch (e) {
-            console.error("Failed to save auto-refill settings", e);
+        } catch {
+            // Non-fatal — show error state or let user retry
         } finally {
             setSavingRefill(false);
         }
@@ -356,7 +356,7 @@ export default function UsagePage() {
                                 <h2 className="text-lg font-medium text-white">Auto-Refill</h2>
                             </div>
                             <p className="text-xs text-neutral-500 mb-6 leading-relaxed">
-                                Automatically add credits when your balance falls below a threshold so Aariv never stops mid-task.
+                                Automatically add credits when your balance falls below a threshold so CalmPilot never stops mid-task.
                             </p>
 
                             {/* Enable toggle */}

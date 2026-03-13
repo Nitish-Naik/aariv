@@ -65,8 +65,8 @@ export function FeedbackWidget() {
                 setIsOpen(false);
                 resetForm();
             }, 1500);
-        } catch (e) {
-            console.error("Failed to submit feedback", e);
+        } catch {
+            // Non-fatal — feedback submission failed silently
         } finally {
             setIsSubmitting(false);
         }

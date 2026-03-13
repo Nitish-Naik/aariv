@@ -5,7 +5,7 @@ import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { useAuth } from "@/context/AuthContext";
 import { api } from "@/lib/api";
 import { getAppLogo } from "@/lib/platform-logos";
-import type { ChatMessage } from "@/lib/types";
+import type { ChatMessage, Conversation } from "@/lib/types";
 import { motion } from "framer-motion";
 import {
   Check,
@@ -62,7 +62,7 @@ function AssistantPageInner() {
   const searchParams = useSearchParams();
   const promptAutoSentRef = useRef(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [conversations, setConversations] = useState<any[]>([]);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeConversationId, setActiveConversationId] = useState<
     string | null
   >(null);
@@ -136,8 +136,8 @@ function AssistantPageInner() {
         if (res?.suggestions) {
           setSuggestions(res.suggestions);
         }
-      } catch (e) {
-        console.error("Failed to fetch suggestions", e);
+      } catch {
+        // Non-fatal — suggestions are optional
       }
     };
     fetchSuggestions();
@@ -152,8 +152,8 @@ function AssistantPageInner() {
         if (data?.retention_days !== undefined) {
           setRetentionDays(data.retention_days);
         }
-      } catch (e) {
-        console.error("Failed to fetch retention", e);
+      } catch {
+        // Non-fatal — retention defaults to null (keep forever)
       }
     };
     fetchRetention();
@@ -176,8 +176,8 @@ function AssistantPageInner() {
         setConversations(data);
         // Always start with a fresh new chat — previous chats available in sidebar
         setMessages([]);
-      } catch (e) {
-        console.error("Failed to fetch conversations", e);
+      } catch {
+        // Non-fatal — start with empty conversation list
       }
     };
     fetchHistory();
@@ -199,8 +199,8 @@ function AssistantPageInner() {
           }));
           setMessages(mapped);
         }
-      } catch (e) {
-        console.error("Failed to fetch messages", e);
+      } catch {
+        // Non-fatal — conversation will show empty
       }
     };
     fetchMessages();
@@ -219,8 +219,8 @@ function AssistantPageInner() {
       if (activeConversationId === conversationId) {
         handleNewChat();
       }
-    } catch (e) {
-      console.error("Failed to delete conversation", e);
+    } catch {
+      // Non-fatal — conversation remains in list
     } finally {
       setDeleteConfirm(null);
     }
@@ -244,8 +244,8 @@ function AssistantPageInner() {
         setConversations([]);
         handleNewChat();
       }
-    } catch (e) {
-      console.error("Failed to delete conversations", e);
+    } catch {
+      // Non-fatal
     } finally {
       setDeleteConfirm(null);
       setIsDeleteMenuOpen(false);
@@ -267,8 +267,8 @@ function AssistantPageInner() {
       ) {
         handleNewChat();
       }
-    } catch (e) {
-      console.error("Failed to update retention", e);
+    } catch {
+      // Non-fatal — retention setting unchanged
     } finally {
       setRetentionSaving(false);
     }
@@ -282,7 +282,7 @@ function AssistantPageInner() {
         setCopiedMessageId(messageId);
         setTimeout(() => setCopiedMessageId(null), 2000);
       } catch {
-        console.error("Failed to copy");
+        // Clipboard API unavailable
       }
     },
     [],
@@ -457,11 +457,14 @@ function AssistantPageInner() {
                           messageText.length > 40
                             ? messageText.slice(0, 40) + "..."
                             : messageText;
+                        const now = new Date();
                         return [
                           {
                             id: newId,
                             title,
-                            updated_at: new Date().toISOString(),
+                            user_id: user?.id ?? "",
+                            created_at: now,
+                            updated_at: now,
                           },
                           ...prev,
                         ];
@@ -482,7 +485,7 @@ function AssistantPageInner() {
                     return {
                       ...msg,
                       content:
-                        "You've run out of credits. Please add credits in **Settings** to continue using Aariv.\n\n[Go to Settings →](/dashboard/settings)",
+                        "You've run out of credits. Please add credits in **Settings** to continue using CalmPilot.\n\n[Go to Settings →](/dashboard/settings)",
                     };
                   } else if (event.type === "error") {
                     return { ...msg, content: `Error: ${event.data}` };
@@ -762,7 +765,7 @@ function AssistantPageInner() {
                 {(() => {
                   const lastMsg = [...messages].reverse().find(m => m.role === "assistant");
                   const lastLog = lastMsg?.logs?.[lastMsg.logs.length - 1];
-                  return (lastLog as any)?.label || "Thinking…";
+                  return lastLog?.label || "Thinking…";
                 })()}
               </span>
             </div>
@@ -786,7 +789,7 @@ function AssistantPageInner() {
                 Chat with 500+ Apps
               </h1>
               <p className="text-sm text-neutral-500 -mt-2">
-                Connect your favorite tools and let Aariv automate your work.
+                Connect your favorite tools and let CalmPilot automate your work.
               </p>
 
               {/* Centered input */}
@@ -1214,7 +1217,7 @@ function AssistantPageInner() {
                       handleSend();
                     }
                   }}
-                  placeholder="Ask Aariv to do something..."
+                  placeholder="Ask CalmPilot to do something..."
                   disabled={isLoading}
                   rows={1}
                   className="w-full max-h-32 min-h-[56px] py-4 pl-5 pr-14 bg-transparent text-[15px] text-white placeholder:text-neutral-500 resize-none outline-none disabled:opacity-50"

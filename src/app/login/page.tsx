@@ -10,9 +10,10 @@ function LoginContent() {
   const searchParams = useSearchParams();
 
   // Capture referral code from ?ref=CODE and persist in localStorage
+  // Only store alphanumeric codes up to 20 chars to prevent injection
   useEffect(() => {
     const ref = searchParams.get("ref");
-    if (ref) {
+    if (ref && /^[A-Z0-9]{1,20}$/i.test(ref)) {
       localStorage.setItem("aariv_referral_code", ref.toUpperCase());
     }
   }, [searchParams]);
@@ -38,7 +39,7 @@ function LoginContent() {
         {/* Wordmark */}
         <div className="flex flex-col items-center gap-3">
           <div className="w-9 h-9 rounded-lg bg-white flex items-center justify-center">
-            <img src="/icons/icon-192.svg" alt="" className="w-5 h-5" />
+            <img src="/icons/icon-192.svg" alt="CalmPilot logo" className="w-5 h-5" />
           </div>
           <div className="text-center">
             <h1 className="text-sm font-semibold text-white">CalmPilot</h1>
@@ -50,7 +51,7 @@ function LoginContent() {
         <div className="w-full bg-[#080808] border border-white/[0.06] rounded-xl p-6 flex flex-col gap-5">
           <div className="text-center">
             <h2 className="text-sm font-semibold text-white">Sign in to continue</h2>
-            <p className="text-xs text-neutral-500 mt-1">Connect your apps and let Aariv handle the rest.</p>
+            <p className="text-xs text-neutral-500 mt-1">Connect your apps and let CalmPilot handle the rest.</p>
           </div>
 
           <button

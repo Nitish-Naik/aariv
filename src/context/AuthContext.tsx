@@ -91,23 +91,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         avatar: mappedUser.avatar,
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       });
-      console.log("✅ Backend sync successful");
 
       // Apply referral code if one was stored from the login page
       const refCode = localStorage.getItem("aariv_referral_code");
       if (refCode) {
         try {
           await api.post("/referral/apply", { code: refCode });
-          console.log("✅ Referral code applied:", refCode);
-        } catch (refErr: any) {
+        } catch {
           // Silently ignore — user may have already applied or code invalid
-          console.log("Referral apply skipped:", refErr.message);
         } finally {
           localStorage.removeItem("aariv_referral_code");
         }
       }
-    } catch (e: any) {
-      console.warn("❌ Backend sync failed:", e.message);
+    } catch {
+      // Backend sync failure is non-fatal — user can still use the app
     }
   }
 

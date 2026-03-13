@@ -195,9 +195,8 @@ export default function FeedPage() {
         setHasMore(data.hasMore || false);
         if (data.stats) setServerStats(data.stats);
         setError(null);
-      } catch (err: any) {
-        console.error("Failed to load feed:", err);
-        if (!silent) setError(err.message || "Failed to load feed");
+      } catch (err: unknown) {
+        if (!silent) setError(err instanceof Error ? err.message : "Failed to load feed");
       } finally {
         setLoading(false);
         setRefreshing(false);
@@ -223,8 +222,8 @@ export default function FeedPage() {
       });
       await new Promise((r) => setTimeout(r, 2000));
       await loadEvents(true);
-    } catch (err) {
-      console.error("Sync failed:", err);
+    } catch {
+      // Sync failure is non-fatal; user can retry
     } finally {
       setSyncing(false);
     }

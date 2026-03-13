@@ -91,9 +91,9 @@ const COMMON_TIMEZONES = [
 ] as const;
 
 const RETENTION_OPTIONS = [
-  { label: "7 days", value: 7, description: "Minimal storage. Aariv won't remember chats from last week." },
+  { label: "7 days", value: 7, description: "Minimal storage. CalmPilot won't remember chats from last week." },
   { label: "30 days", value: 30, description: "Recommended. Good balance of memory and privacy." },
-  { label: "90 days", value: 90, description: "Aariv has longer context across sessions." },
+  { label: "90 days", value: 90, description: "CalmPilot has longer context across sessions." },
   { label: "Keep forever", value: null, description: "Keep everything. You can manually delete at any time." },
 ] as const;
 
@@ -783,7 +783,7 @@ export default function SettingsPage() {
 
         {/* ── Briefing Schedule ── */}
         <SectionCard label="MORNING BRIEFING" icon={Sunrise} title="Briefing Schedule"
-          subtitle="When Aariv delivers your daily digest of important events.">
+          subtitle="When CalmPilot delivers your daily digest of important events.">
           <div className="p-4 space-y-4">
             {/* Mode toggle */}
             <div className="grid grid-cols-2 gap-2">
@@ -836,7 +836,7 @@ export default function SettingsPage() {
               <div className="flex items-start gap-2.5 px-3.5 py-3 rounded-xl bg-neutral-900 border border-white/[0.06]">
                 <Sunrise strokeWidth={1.5} size={13} className="text-amber-400/70 mt-0.5 shrink-0" />
                 <p className="text-xs text-neutral-500 leading-relaxed">
-                  Aariv tracks when you typically read your briefing and adjusts delivery timing automatically over time.
+                  CalmPilot tracks when you typically read your briefing and adjusts delivery timing automatically over time.
                 </p>
               </div>
             )}
@@ -870,7 +870,7 @@ export default function SettingsPage() {
                   <option key={tz} value={tz}>{formatTimezoneLabel(tz)}</option>
                 ))}
                 {/* Show current if not in list */}
-                {timezone && !COMMON_TIMEZONES.includes(timezone as any) && (
+                {timezone && !(COMMON_TIMEZONES as readonly string[]).includes(timezone) && (
                   <option value={timezone}>{formatTimezoneLabel(timezone)}</option>
                 )}
               </select>
@@ -882,7 +882,7 @@ export default function SettingsPage() {
 
           {/* ── History & Privacy ── */}
           <SectionCard label="HISTORY & PRIVACY" icon={Shield} title="Conversation History"
-            subtitle="How long Aariv remembers your chats. Runs a nightly cleanup.">
+            subtitle="How long CalmPilot remembers your chats. Runs a nightly cleanup.">
             <div className="p-6">
               <div className="space-y-3">
                 {RETENTION_OPTIONS.map((opt) => {
@@ -1138,7 +1138,7 @@ export default function SettingsPage() {
 
           {/* ── Notifications (stub) ── */}
           <SectionCard label="NOTIFICATIONS" icon={Bell} title="Notifications"
-            subtitle="Control when and how Aariv alerts you.">
+            subtitle="Control when and how CalmPilot alerts you.">
             <div className="px-5 py-4 space-y-3">
               {[
                 "Email me when high-priority items need review",

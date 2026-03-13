@@ -4,7 +4,7 @@ import { useAuth } from "@/context/AuthContext";
 import { api } from "@/lib/api";
 import { ArrowRight, Calendar, Loader2, Mail, MessageSquare } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const WELCOME_KEY = (userId: string) => `aariv_welcome_seen_${userId}`;
 
@@ -38,6 +38,14 @@ export default function WelcomePage() {
   const [connecting, setConnecting] = useState<string | null>(null);
   const [connected, setConnected] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const pollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Cleanup polling interval on unmount
+  useEffect(() => {
+    return () => {
+      if (pollTimerRef.current) clearInterval(pollTimerRef.current);
+    };
+  }, []);
 
   // Auth guard
   useEffect(() => {
@@ -83,12 +91,13 @@ export default function WelcomePage() {
         "width=600,height=700,left=200,top=100",
       );
 
-      const pollTimer = setInterval(() => {
+      if (pollTimerRef.current) clearInterval(pollTimerRef.current);
+      pollTimerRef.current = setInterval(() => {
         if (!popup || popup.closed) {
-          clearInterval(pollTimer);
+          if (pollTimerRef.current) clearInterval(pollTimerRef.current);
+          pollTimerRef.current = null;
           setConnecting(null);
           setConnected(appSlug);
-          // Go to setup progress screen, then onto dashboard
           setTimeout(() => router.replace(`/setup?app=${appSlug}`), 400);
         }
       }, 1000);
@@ -129,7 +138,7 @@ export default function WelcomePage() {
             Welcome, {firstName}.
           </h1>
           <p className="text-neutral-400 text-sm leading-relaxed max-w-xs mx-auto">
-            Aariv watches your apps 24/7 so you don&apos;t have to. Connect one app to get started.
+            CalmPilot watches your apps 24/7 so you don&apos;t have to. Connect one app to get started.
           </p>
         </div>
 

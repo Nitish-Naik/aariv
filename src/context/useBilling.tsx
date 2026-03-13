@@ -39,7 +39,6 @@ export function BillingProvider({ children }: { children: ReactNode }) {
             const data = await api.get(`/billing/balance/${user.id}`);
             setBalanceData(data);
         } catch (err) {
-            console.error(err);
             setError(err instanceof Error ? err.message : "Failed to load balance");
         } finally {
             setIsLoading(false);
@@ -66,16 +65,16 @@ export function BillingProvider({ children }: { children: ReactNode }) {
                     filter: `user_id=eq.${user.id}`,
                 },
                 (payload) => {
-                    const row = payload.new as any;
+                    const row = payload.new as Record<string, unknown>;
                     setBalanceData((prev) =>
                         prev
                             ? {
                                 ...prev,
-                                balance: parseFloat(row.balance),
-                                total_spent: parseFloat(row.total_spent),
-                                auto_refill_enabled: row.auto_refill_enabled,
-                                auto_refill_threshold: parseFloat(row.auto_refill_threshold ?? 1),
-                                auto_refill_amount: parseFloat(row.auto_refill_amount ?? 10),
+                                balance: parseFloat(String(row.balance ?? 0)),
+                                total_spent: parseFloat(String(row.total_spent ?? 0)),
+                                auto_refill_enabled: Boolean(row.auto_refill_enabled),
+                                auto_refill_threshold: parseFloat(String(row.auto_refill_threshold ?? 1)),
+                                auto_refill_amount: parseFloat(String(row.auto_refill_amount ?? 10)),
                             }
                             : prev
                     );

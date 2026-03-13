@@ -127,7 +127,7 @@ function SetupContent() {
           ) : (
             <>
               <h1 className="text-2xl font-bold text-white tracking-tight mb-2">
-                Setting up Aariv
+                Setting up CalmPilot
               </h1>
               <p className="text-neutral-500 text-sm">
                 Pulling in your {appLabel} data — just a moment.

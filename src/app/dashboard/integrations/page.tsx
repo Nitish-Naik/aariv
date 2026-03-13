@@ -13,7 +13,7 @@ import {
   Search,
 } from "lucide-react";
 import Link from "next/link";
-import { type ReactNode, useEffect, useMemo, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 
 interface CategoryInfo {
   id: string;
@@ -212,6 +212,7 @@ const APP_CONNECT_EXPLANATIONS: Record<string, { title: string; bullets: string[
 
 export default function IntegrationsPage() {
   const { user } = useAuth();
+  const pollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [integrations, setIntegrations] = useState<Integration[]>([]);
   const [loading, setLoading] = useState(true);
   const [connecting, setConnecting] = useState<string | null>(null);
@@ -229,6 +230,13 @@ export default function IntegrationsPage() {
   const [activeTab, setActiveTab] = useState<"all" | "connected">("all");
   const [activeCategory, setActiveCategory] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
+
+  // Cleanup popup polling interval on unmount
+  useEffect(() => {
+    return () => {
+      if (pollTimerRef.current) clearInterval(pollTimerRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -276,8 +284,7 @@ export default function IntegrationsPage() {
         }
       }
       return loadedIntegrations;
-    } catch (e: any) {
-      console.error("Failed to load integrations:", e.message);
+    } catch {
       return [];
     } finally {
       setLoading(false);
@@ -290,9 +297,8 @@ export default function IntegrationsPage() {
       if (data.categories?.length > 0) {
         setAvailableCategories(data.categories);
       }
-    } catch (e: any) {
+    } catch {
       // Categories will be derived from integrations data as fallback
-      console.warn("Categories endpoint unavailable, using inline data");
     }
   };
 
@@ -318,11 +324,12 @@ export default function IntegrationsPage() {
 
         // Poll for popup close, then refresh integrations
         const connectedAppName = appName;
-        const pollTimer = setInterval(() => {
+        if (pollTimerRef.current) clearInterval(pollTimerRef.current);
+        pollTimerRef.current = setInterval(() => {
           if (!popup || popup.closed) {
-            clearInterval(pollTimer);
+            if (pollTimerRef.current) clearInterval(pollTimerRef.current);
+            pollTimerRef.current = null;
             setConnecting(null);
-            // Refresh integrations list after OAuth completes
             loadIntegrations().then((loaded) => {
               const slug = connectedAppName.toLowerCase().replace(/-/g, "");
               const isNowConnected = loaded.find(
@@ -336,9 +343,7 @@ export default function IntegrationsPage() {
         setConnecting(null);
       }
     } catch (e: any) {
-      console.error("Failed to connect:", e.message);
       setConnecting(null);
-      // Try to extract the backend's detail message
       const errorMsg =
         e.response?.data?.detail?.message ||
         e.response?.data?.detail ||
@@ -360,7 +365,6 @@ export default function IntegrationsPage() {
       setTimeout(() => setToast(null), 4000);
       loadIntegrations();
     } catch (e: any) {
-      console.error("Failed to disconnect:", e.message);
       const errorMsg =
         e.response?.data?.detail?.message ||
         e.response?.data?.detail ||
@@ -485,7 +489,7 @@ export default function IntegrationsPage() {
     const appSlug = integration.appName.toLowerCase().replace("-", "");
     const displayName = integration.label || integration.appName;
     const color = PLATFORM_COLORS[appSlug] || "#8b95b0";
-    const logoSvg = (integration as any).logo || PLATFORM_LOGOS[appSlug];
+    const logoSvg = PLATFORM_LOGOS[appSlug];
     const isConnected = integration.status === "connected";
     const isExpired = !isConnected && ["expired", "inactive", "error", "failed"].includes(integration.status);
     const isConnecting = connecting === integration.appName;
@@ -634,6 +638,7 @@ export default function IntegrationsPage() {
           <input
             type="text"
             placeholder="Search integrations..."
+            aria-label="Search integrations"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-56 pl-8 pr-3 py-1.5 text-xs rounded-md outline-none bg-white/[0.04] border border-white/[0.06] text-white placeholder-neutral-600 focus:border-white/20 transition-colors"
@@ -716,6 +721,8 @@ export default function IntegrationsPage() {
                       : "text-neutral-500 hover:text-white hover:bg-neutral-900"
                       }`}
                     title="Grid view"
+                    aria-label="Grid view"
+                    aria-pressed={!groupByCategory}
                   >
                     <Grid3X3 strokeWidth={1.5} size={16} />
                   </button>
@@ -726,6 +733,8 @@ export default function IntegrationsPage() {
                       : "text-neutral-500 hover:text-white hover:bg-neutral-900"
                       }`}
                     title="Group by category"
+                    aria-label="Group by category"
+                    aria-pressed={groupByCategory}
                   >
                     <LayoutList strokeWidth={1.5} size={16} />
                   </button>
@@ -811,7 +820,7 @@ export default function IntegrationsPage() {
                       <div>
                         <p className="text-sm font-medium text-neutral-300 mb-1">No apps connected yet</p>
                         <p className="text-xs text-neutral-600 max-w-xs">
-                          Connect Gmail, Calendar, Slack or GitHub to let Aariv monitor and act on your behalf.
+                          Connect Gmail, Calendar, Slack or GitHub to let CalmPilot monitor and act on your behalf.
                         </p>
                       </div>
                       <button
@@ -925,8 +934,8 @@ export default function IntegrationsPage() {
           const explanation = APP_CONNECT_EXPLANATIONS[appSlug] ?? {
             title: `${displayName} is connected`,
             bullets: [
-              "Use it as a tool when you chat with Aariv",
-              "Aariv can read and act on data in this app",
+              "Use it as a tool when you chat with CalmPilot",
+              "CalmPilot can read and act on data in this app",
               "Set up triggers to monitor it for events",
             ],
           };
@@ -970,7 +979,7 @@ export default function IntegrationsPage() {
                         {explanation.title}
                       </h3>
                       <p className="text-xs text-neutral-500 mt-0.5">
-                        Here's what Aariv can now do for you
+                        Here's what CalmPilot can now do for you
                       </p>
                     </div>
                   </div>

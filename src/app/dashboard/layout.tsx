@@ -1,5 +1,6 @@
 "use client";
 
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { FeedbackWidget } from "@/components/FeedbackWidget";
 import { Sidebar } from "@/components/Sidebar";
 import { useAuth } from "@/context/AuthContext";
@@ -23,7 +24,7 @@ function CreditsBanner() {
       <div className="flex items-center justify-between gap-3 px-5 py-2.5 bg-red-500/[0.08] border-b border-red-500/[0.15] text-red-400 text-xs font-medium">
         <div className="flex items-center gap-2">
           <XCircle strokeWidth={1.75} size={13} className="shrink-0" />
-          <span>Out of credits — add credits to continue using Aariv.</span>
+          <span>Out of credits — add credits to continue using CalmPilot.</span>
         </div>
         <Link href="/dashboard/usage" className="shrink-0 px-2.5 py-1 rounded-md bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs font-semibold transition-colors">
           Add Credits
@@ -89,9 +90,11 @@ export default function DashboardLayout({
       <LogoProvider>
         <div className="flex min-h-screen bg-black">
           <Sidebar />
-          <main className="flex-1 md:ml-[240px] ml-0 pt-[48px] md:pt-0 pb-[60px] md:pb-0 overflow-y-auto w-full min-w-0">
+          <main className="flex-1 md:ml-[240px] ml-0 pt-[48px] md:pt-0 pb-[env(safe-area-inset-bottom,60px)] md:pb-0 overflow-y-auto w-full min-w-0">
             <CreditsBanner />
-            {children}
+            <ErrorBoundary>
+              {children}
+            </ErrorBoundary>
           </main>
           <FeedbackWidget />
         </div>
