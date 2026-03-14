@@ -287,8 +287,8 @@ export default function ReviewPage() {
       );
       setItems(data.items || []);
       setCounts(data.counts || { total: 0, high: 0, medium: 0, low: 0 });
-    } catch (err: any) {
-      setError(err.message || "Failed to load review items");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to load review items");
     } finally {
       setLoading(false);
     }

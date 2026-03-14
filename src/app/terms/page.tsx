@@ -37,7 +37,7 @@ export default function TermsPage() {
           <section>
             <h2 className="text-lg font-semibold text-white mb-3">2. Description of Service</h2>
             <p>
-              CalmPilot is an AI-powered productivity assistant that connects to third-party applications via OAuth to automate tasks, generate briefings, and execute workflows on your behalf. The AI agent within CalmPilot (&quot;Aariv&quot;) acts only based on your explicit instructions or pre-configured automations.
+              CalmPilot is an AI-powered productivity assistant that connects to third-party applications via OAuth to automate tasks, generate briefings, and execute workflows on your behalf. The AI agent within CalmPilot acts only based on your explicit instructions or pre-configured automations.
             </p>
           </section>
 

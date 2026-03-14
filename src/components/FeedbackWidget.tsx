@@ -30,14 +30,13 @@ export function FeedbackWidget() {
 
     // Close when clicking outside
     useEffect(() => {
-        function handleClickOutside(event: MouseEvent) {
+        if (!isOpen) return;
+        const handleClickOutside = (event: MouseEvent) => {
             if (widgetRef.current && !widgetRef.current.contains(event.target as Node)) {
                 setIsOpen(false);
             }
-        }
-        if (isOpen) {
-            document.addEventListener("mousedown", handleClickOutside);
-        }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, [isOpen]);
 

@@ -1,12 +1,13 @@
 "use client";
 
 import { useAuth } from "@/context/AuthContext";
+import { useLogo } from "@/context/LogoContext";
 import { api } from "@/lib/api";
 import { ArrowRight, Calendar, Loader2, Mail, MessageSquare } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
-const WELCOME_KEY = (userId: string) => `aariv_welcome_seen_${userId}`;
+const WELCOME_KEY = (userId: string) => `calmpilot_welcome_seen_${userId}`;
 
 const APPS = [
   {
@@ -34,6 +35,7 @@ const APPS = [
 
 export default function WelcomePage() {
   const { user, isLoading } = useAuth();
+  const { getLogo } = useLogo();
   const router = useRouter();
   const [connecting, setConnecting] = useState<string | null>(null);
   const [connected, setConnected] = useState<string | null>(null);
@@ -156,10 +158,22 @@ export default function WelcomePage() {
                 className="w-full flex items-center gap-4 bg-neutral-950 border border-white/8 rounded-2xl px-4 py-4 hover:border-white/20 hover:bg-neutral-900 transition-all text-left group disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 <div
-                  className="w-10 h-10 rounded-xl flex items-center justify-center text-white shrink-0 opacity-90"
+                  className="w-10 h-10 rounded-xl flex items-center justify-center text-white shrink-0 relative overflow-hidden"
                   style={{ backgroundColor: app.color }}
                 >
-                  {app.icon}
+                  <span className="absolute inset-0 flex items-center justify-center">
+                    {app.icon}
+                  </span>
+                  {getLogo(app.slug) && (
+                    <img
+                      src={getLogo(app.slug)}
+                      alt={app.name}
+                      className="absolute inset-0 w-full h-full object-contain p-1.5 bg-[#111319] rounded-xl opacity-0 transition-opacity duration-200"
+                      loading="lazy"
+                      onLoad={(e) => { e.currentTarget.style.opacity = "1"; }}
+                      onError={(e) => { e.currentTarget.style.display = "none"; }}
+                    />
+                  )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-white">{app.name}</p>

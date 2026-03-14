@@ -4,6 +4,7 @@ import { DataCard, PulsingAvatar } from "@/components";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { useAuth } from "@/context/AuthContext";
 import { api } from "@/lib/api";
+import { useLogo } from "@/context/LogoContext";
 import { getAppLogo } from "@/lib/platform-logos";
 import type { ChatMessage, Conversation } from "@/lib/types";
 import { motion } from "framer-motion";
@@ -59,6 +60,7 @@ function parseCompletions(response: string): string[] {
 
 function AssistantPageInner() {
   const { user } = useAuth();
+  const { getLogo } = useLogo();
   const searchParams = useSearchParams();
   const promptAutoSentRef = useRef(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -104,14 +106,14 @@ function AssistantPageInner() {
 
   // Load model preference from Settings
   useEffect(() => {
-    const saved = localStorage.getItem("aariv_model");
+    const saved = localStorage.getItem("calmpilot_model");
     if (saved) setSelectedModel(saved);
     const handler = (e: Event) => {
       const model = (e as CustomEvent).detail;
       if (model) setSelectedModel(model);
     };
-    window.addEventListener("aariv-model-change", handler);
-    return () => window.removeEventListener("aariv-model-change", handler);
+    window.addEventListener("calmpilot-model-change", handler);
+    return () => window.removeEventListener("calmpilot-model-change", handler);
   }, []);
 
   // Auto-send ?prompt= param from proposal action buttons on the home page
@@ -190,7 +192,7 @@ function AssistantPageInner() {
       try {
         const data = await api.get(`/history/messages/${activeConversationId}`);
         if (data.length > 0) {
-          const mapped = data.map((msg: any) => ({
+          const mapped = data.map((msg: { id: string; role: string; content: string; timestamp: string; logs?: string[] }) => ({
             id: msg.id,
             role: msg.role,
             content: msg.content,
@@ -237,7 +239,7 @@ function AssistantPageInner() {
       try {
         const data = await api.get(`/history/conversations/${user.id}`);
         setConversations(data);
-        if (!data.find((c: any) => c.id === activeConversationId)) {
+        if (!data.find((c: Conversation) => c.id === activeConversationId)) {
           handleNewChat();
         }
       } catch {
@@ -263,7 +265,7 @@ function AssistantPageInner() {
       setConversations(data);
       if (
         activeConversationId &&
-        !data.find((c: any) => c.id === activeConversationId)
+        !data.find((c: Conversation) => c.id === activeConversationId)
       ) {
         handleNewChat();
       }
@@ -497,9 +499,9 @@ function AssistantPageInner() {
           }
         }
       }
-    } catch (e: any) {
+    } catch (e: unknown) {
       // Ignore AbortError — user navigated away or sent a new message
-      if (e?.name !== "AbortError") {
+      if (e instanceof Error && e.name !== "AbortError") {
         setMessages((prev) =>
           prev.map((msg) =>
             msg.id === aiMessageId
@@ -913,7 +915,7 @@ function AssistantPageInner() {
                                       const label = typeof children === "string" ? children : String(children);
                                       const appName = label.replace(/^connect\s*/i, "").replace(/^to\s*/i, "").trim() || "App";
                                       const appSlug = appName.toLowerCase().replace(/\s+/g, "");
-                                      const logoUrl = getAppLogo(appSlug);
+                                      const logoUrl = getLogo(appSlug) || getAppLogo(appSlug);
                                       return (
                                         <div className="flex items-center gap-3 w-full my-2 px-4 py-3 rounded-xl bg-black border border-white/10 hover:border-white/30/40 transition-colors">
                                           {logoUrl ? (
@@ -1096,7 +1098,7 @@ function AssistantPageInner() {
                           <div className="mt-4 space-y-2 max-w-md w-full">
                             {msg.auth_actions.map((action, idx) => {
                               const appSlug = action.appName.toLowerCase().replace(/\s+/g, "");
-                              const logoUrl = getAppLogo(appSlug);
+                              const logoUrl = getLogo(appSlug) || getAppLogo(appSlug);
                               return (
                                 <div
                                   key={idx}
@@ -1175,7 +1177,7 @@ function AssistantPageInner() {
               <div className="inline-flex items-center bg-neutral-900 border border-white/[0.08] rounded-full p-0.5">
                 <button
                   type="button"
-                  onClick={() => { setSelectedModel("gpt-4o-mini"); localStorage.setItem("aariv_model", "gpt-4o-mini"); }}
+                  onClick={() => { setSelectedModel("gpt-4o-mini"); localStorage.setItem("calmpilot_model", "gpt-4o-mini"); }}
                   className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-all duration-200 ${selectedModel.includes("mini")
                     ? "bg-[rgba(255,255,255,0.1)] text-amber-400 shadow-sm"
                     : "text-neutral-500 hover:text-neutral-400"
@@ -1186,7 +1188,7 @@ function AssistantPageInner() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => { setSelectedModel("gpt-4o"); localStorage.setItem("aariv_model", "gpt-4o"); }}
+                  onClick={() => { setSelectedModel("gpt-4o"); localStorage.setItem("calmpilot_model", "gpt-4o"); }}
                   className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-all duration-200 ${!selectedModel.includes("mini")
                     ? "bg-[rgba(255,255,255,0.1)] text-purple-400 shadow-sm"
                     : "text-neutral-500 hover:text-neutral-400"

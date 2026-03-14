@@ -68,7 +68,7 @@ export default function DashboardLayout({
   useEffect(() => {
     if (!user?.id) return;
     const today = new Date().toISOString().slice(0, 10);
-    const key = `aariv_last_active_${user.id}`;
+    const key = `calmpilot_last_active_${user.id}`;
     if (localStorage.getItem(key) === today) return;
     api.post("/activity/log", { event: "dashboard_open", userId: user.id })
       .catch(() => {})

@@ -14,7 +14,7 @@ function LoginContent() {
   useEffect(() => {
     const ref = searchParams.get("ref");
     if (ref && /^[A-Z0-9]{1,20}$/i.test(ref)) {
-      localStorage.setItem("aariv_referral_code", ref.toUpperCase());
+      localStorage.setItem("calmpilot_referral_code", ref.toUpperCase());
     }
   }, [searchParams]);
 

@@ -47,7 +47,7 @@ export default function PrivacyPage() {
               </div>
               <div>
                 <h3 className="text-base font-medium text-zinc-300 mb-2">Conversation History</h3>
-                <p>Your chat messages with Aariv are stored to provide context for ongoing conversations. You can configure automatic deletion or delete your history at any time from Settings.</p>
+                <p>Your chat messages with CalmPilot are stored to provide context for ongoing conversations. You can configure automatic deletion or delete your history at any time from Settings.</p>
               </div>
               <div>
                 <h3 className="text-base font-medium text-zinc-300 mb-2">Usage Data</h3>

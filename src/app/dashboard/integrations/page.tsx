@@ -132,9 +132,10 @@ const APP_CATEGORIES_FALLBACK: Record<string, string> = {
   hackernews: "social-media",
 };
 
+import { useLogo } from "@/context/LogoContext";
 import { PLATFORM_LOGOS } from "@/lib/platform-logos";
 
-// What Aariv can do after connecting each app
+// What CalmPilot can do after connecting each app
 const APP_CONNECT_EXPLANATIONS: Record<string, { title: string; bullets: string[] }> = {
   gmail: {
     title: "Gmail is connected",
@@ -212,6 +213,7 @@ const APP_CONNECT_EXPLANATIONS: Record<string, { title: string; bullets: string[
 
 export default function IntegrationsPage() {
   const { user } = useAuth();
+  const { getLogo } = useLogo();
   const pollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [integrations, setIntegrations] = useState<Integration[]>([]);
   const [loading, setLoading] = useState(true);
@@ -489,7 +491,7 @@ export default function IntegrationsPage() {
     const appSlug = integration.appName.toLowerCase().replace("-", "");
     const displayName = integration.label || integration.appName;
     const color = PLATFORM_COLORS[appSlug] || "#8b95b0";
-    const logoSvg = PLATFORM_LOGOS[appSlug];
+    const logoSvg = getLogo(appSlug) || PLATFORM_LOGOS[appSlug];
     const isConnected = integration.status === "connected";
     const isExpired = !isConnected && ["expired", "inactive", "error", "failed"].includes(integration.status);
     const isConnecting = connecting === integration.appName;
@@ -939,7 +941,7 @@ export default function IntegrationsPage() {
               "Set up triggers to monitor it for events",
             ],
           };
-          const logoSvg = PLATFORM_LOGOS[appSlug];
+          const logoSvg = getLogo(appSlug) || PLATFORM_LOGOS[appSlug];
           const color = PLATFORM_COLORS[appSlug] || "#8b95b0";
           return (
             <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4">

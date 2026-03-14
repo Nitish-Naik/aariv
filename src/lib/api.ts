@@ -61,15 +61,16 @@ export const api = {
       });
       clearTimeout(timeoutId);
       return handleResponse(response);
-    } catch (error: any) {
+    } catch (error: unknown) {
       clearTimeout(timeoutId);
-      if (error.name === "AbortError" && !options?.signal?.aborted) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      if (err.name === "AbortError" && !options?.signal?.aborted) {
         throw new Error("Request timeout. Please try again.");
       }
-      if (error.message?.includes("Failed to fetch")) {
+      if (err.message?.includes("Failed to fetch")) {
         throw new Error("Could not connect to server. Is the backend running?");
       }
-      throw error;
+      throw err;
     }
   },
 
@@ -90,15 +91,16 @@ export const api = {
       });
       clearTimeout(timeoutId);
       return handleResponse(response);
-    } catch (error: any) {
+    } catch (error: unknown) {
       clearTimeout(timeoutId);
-      if (error.name === "AbortError" && !options?.signal?.aborted) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      if (err.name === "AbortError" && !options?.signal?.aborted) {
         throw new Error("Request timeout. Please try again.");
       }
-      if (error.message?.includes("Failed to fetch")) {
+      if (err.message?.includes("Failed to fetch")) {
         throw new Error("Could not connect to server. Is the backend running?");
       }
-      throw error;
+      throw err;
     }
   },
 
@@ -119,15 +121,16 @@ export const api = {
       });
       clearTimeout(timeoutId);
       return handleResponse(response);
-    } catch (error: any) {
+    } catch (error: unknown) {
       clearTimeout(timeoutId);
-      if (error.name === "AbortError" && !options?.signal?.aborted) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      if (err.name === "AbortError" && !options?.signal?.aborted) {
         throw new Error("Request timeout. Please try again.");
       }
-      if (error.message?.includes("Failed to fetch")) {
+      if (err.message?.includes("Failed to fetch")) {
         throw new Error("Could not connect to server. Is the backend running?");
       }
-      throw error;
+      throw err;
     }
   },
 
@@ -148,15 +151,16 @@ export const api = {
       });
       clearTimeout(timeoutId);
       return handleResponse(response);
-    } catch (error: any) {
+    } catch (error: unknown) {
       clearTimeout(timeoutId);
-      if (error.name === "AbortError" && !options?.signal?.aborted) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      if (err.name === "AbortError" && !options?.signal?.aborted) {
         throw new Error("Request timeout. Please try again.");
       }
-      if (error.message?.includes("Failed to fetch")) {
+      if (err.message?.includes("Failed to fetch")) {
         throw new Error("Could not connect to server. Is the backend running?");
       }
-      throw error;
+      throw err;
     }
   },
 

@@ -218,11 +218,11 @@ export default function SettingsPage() {
 
   useEffect(() => {
     // Seed from localStorage immediately (no flicker)
-    const savedModel = localStorage.getItem("aariv_model") || "gpt-4.1-mini";
+    const savedModel = localStorage.getItem("calmpilot_model") || "gpt-4.1-mini";
     setModel(savedModel);
     setPendingModel(savedModel);
-    const bMode = (localStorage.getItem("aariv_briefing_mode") || "smart") as "smart" | "fixed";
-    const bTime = localStorage.getItem("aariv_briefing_time") || "08:00";
+    const bMode = (localStorage.getItem("calmpilot_briefing_mode") || "smart") as "smart" | "fixed";
+    const bTime = localStorage.getItem("calmpilot_briefing_time") || "08:00";
     setBriefingMode(bMode);
     setBriefingTime(bTime);
   }, []);
@@ -235,15 +235,15 @@ export default function SettingsPage() {
       if (d.preferred_model) {
         setModel(d.preferred_model);
         setPendingModel(d.preferred_model);
-        localStorage.setItem("aariv_model", d.preferred_model);
+        localStorage.setItem("calmpilot_model", d.preferred_model);
       }
       if (d.briefing_mode) {
         setBriefingMode(d.briefing_mode as "smart" | "fixed");
-        localStorage.setItem("aariv_briefing_mode", d.briefing_mode);
+        localStorage.setItem("calmpilot_briefing_mode", d.briefing_mode);
       }
       if (d.briefing_time) {
         setBriefingTime(d.briefing_time);
-        localStorage.setItem("aariv_briefing_time", d.briefing_time);
+        localStorage.setItem("calmpilot_briefing_time", d.briefing_time);
       }
       if (d.timezone) setTimezone(d.timezone);
       if (d.spend_alert_threshold != null) setSpendAlertThreshold(String(d.spend_alert_threshold));
@@ -328,8 +328,8 @@ export default function SettingsPage() {
   async function saveModel() {
     setSavingModel(true);
     setModel(pendingModel);
-    localStorage.setItem("aariv_model", pendingModel);
-    window.dispatchEvent(new CustomEvent("aariv-model-change", { detail: pendingModel }));
+    localStorage.setItem("calmpilot_model", pendingModel);
+    window.dispatchEvent(new CustomEvent("calmpilot-model-change", { detail: pendingModel }));
     try {
       await api.patch("/auth/model", { model: pendingModel });
     } catch { /* localStorage already updated — non-fatal */ }
@@ -339,8 +339,8 @@ export default function SettingsPage() {
 
   async function saveBriefing() {
     setSavingBriefing(true);
-    localStorage.setItem("aariv_briefing_mode", briefingMode);
-    localStorage.setItem("aariv_briefing_time", briefingTime);
+    localStorage.setItem("calmpilot_briefing_mode", briefingMode);
+    localStorage.setItem("calmpilot_briefing_time", briefingTime);
     try {
       await api.put(`/settings/briefing`, {
         mode: briefingMode,

@@ -197,7 +197,7 @@ export function Sidebar() {
               {user.avatar ? (
                 <img
                   src={user.avatar}
-                  alt=""
+                  alt={`${user.name}'s avatar`}
                   className="w-6 h-6 rounded-full shrink-0"
                 />
               ) : (
@@ -221,7 +221,7 @@ export function Sidebar() {
       <header className="md:hidden fixed top-0 left-0 right-0 z-40 flex items-center justify-between px-4 h-12 bg-black border-b border-white/[0.06] safe-top">
         <div className="flex items-center gap-2">
           <div className="w-5 h-5 rounded-md bg-white flex items-center justify-center shrink-0">
-            <img src="/icons/icon-192.svg" alt="" className="w-3.5 h-3.5" />
+            <img src="/icons/icon-192.svg" alt="CalmPilot" className="w-3.5 h-3.5" />
           </div>
           <span className="text-sm font-semibold text-white">CalmPilot</span>
         </div>
@@ -231,7 +231,7 @@ export function Sidebar() {
           aria-label="Open menu"
         >
           {user?.avatar ? (
-            <img src={user.avatar} alt="" className="w-7 h-7 rounded-full" />
+            <img src={user.avatar} alt={`${user.name}'s avatar`} className="w-7 h-7 rounded-full" />
           ) : (
             <div className="w-7 h-7 rounded-full bg-neutral-800 border border-white/10 flex items-center justify-center text-[11px] font-semibold text-white">
               {initials}
@@ -292,7 +292,7 @@ export function Sidebar() {
             {user && (
               <div className="px-4 py-3 border-b border-white/[0.06] flex items-center gap-3">
                 {user.avatar ? (
-                  <img src={user.avatar} alt="" className="w-8 h-8 rounded-full" />
+                  <img src={user.avatar} alt={`${user.name}'s avatar`} className="w-8 h-8 rounded-full" />
                 ) : (
                   <div className="w-8 h-8 rounded-full bg-neutral-700 flex items-center justify-center text-xs font-semibold text-white">
                     {initials}

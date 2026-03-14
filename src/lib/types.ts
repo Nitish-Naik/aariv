@@ -29,7 +29,7 @@ export interface ActionItem {
   proposedAt: Date;
   expiresAt: Date;
   status: "pending" | "approved" | "rejected" | "expired" | "executed";
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   requiresApproval: boolean;
 }
 

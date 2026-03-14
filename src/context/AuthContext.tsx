@@ -29,6 +29,7 @@ export function useAuth() {
   return useContext(AuthContext);
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function mapSupabaseUser(sbUser: any): User {
   return {
     id: sbUser.id,
@@ -93,14 +94,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
 
       // Apply referral code if one was stored from the login page
-      const refCode = localStorage.getItem("aariv_referral_code");
+      const refCode = localStorage.getItem("calmpilot_referral_code");
       if (refCode) {
         try {
           await api.post("/referral/apply", { code: refCode });
         } catch {
           // Silently ignore — user may have already applied or code invalid
         } finally {
-          localStorage.removeItem("aariv_referral_code");
+          localStorage.removeItem("calmpilot_referral_code");
         }
       }
     } catch {

@@ -3,6 +3,7 @@
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { Sheet } from "@/components/ui/Sheet";
 import { useAuth } from "@/context/AuthContext";
+import { useLogo } from "@/context/LogoContext";
 import { api } from "@/lib/api";
 import { formatTriggerSlug, getTriggerDescription } from "@/lib/appMeta";
 import { motion } from "framer-motion";
@@ -423,6 +424,7 @@ function ConfigFormModal({
 
 export default function TriggersPage() {
   const { user } = useAuth();
+  const { getLogo } = useLogo();
   // State
   const [userTriggers, setUserTriggers] = useState<UserTrigger[]>([]);
   const [integrations, setIntegrations] = useState<Integration[]>([]);
@@ -822,24 +824,12 @@ export default function TriggersPage() {
                           }
                           className="w-full flex items-center gap-3 bg-black border border-white/10 rounded-xl px-4 py-3 hover:border-white/30/30 transition-colors"
                         >
-                          {integration.logo ? (
+                          {(integration.logo || getLogo(integration.appName.toLowerCase())) ? (
                             <img
-                              src={integration.logo}
+                              src={(integration.logo || getLogo(integration.appName.toLowerCase()))!}
                               alt={displayName}
                               className="w-8 h-8 rounded-lg object-contain"
-                              onError={(e) => {
-                                // Hide broken image, show letter fallback
-                                const parent = e.currentTarget.parentElement;
-                                e.currentTarget.style.display = "none";
-                                if (parent) {
-                                  const fb = document.createElement("div");
-                                  fb.className =
-                                    "w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-xs";
-                                  fb.style.backgroundColor = color;
-                                  fb.textContent = displayName.charAt(0);
-                                  parent.prepend(fb);
-                                }
-                              }}
+                              onError={(e) => { e.currentTarget.style.display = "none"; }}
                             />
                           ) : (
                             <div
@@ -972,7 +962,7 @@ export default function TriggersPage() {
                       <div className="flex items-center gap-2 mb-3">
                         <div className="flex -space-x-2">
                           {tmpl.apps.map((app, j) => {
-                            const logo = undefined;
+                            const logo = getLogo(app.toLowerCase().replace(/\s+/g, ""));
                             const color = "#8b95b0";
                             return logo ? (
                               <img
@@ -1166,7 +1156,7 @@ export default function TriggersPage() {
                                     integrations.find(
                                       (i) =>
                                         i.appName.toLowerCase() === toolkitKey,
-                                    )?.logo || undefined;
+                                    )?.logo || getLogo(toolkitKey) || undefined;
                                   return logo ? (
                                     <img
                                       src={logo}

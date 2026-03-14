@@ -301,7 +301,7 @@ export const TRIGGER_DESCRIPTIONS: Record<string, string> = {
   // Slack
   SLACK_RECEIVE_MESSAGE: "Fires on any new message in a channel you're in",
   SLACK_NEW_MESSAGE: "Fires on any new message in a channel you're in",
-  SLACK_BOT_MENTION: "Fires when someone @-mentions Aariv in Slack",
+  SLACK_BOT_MENTION: "Fires when someone @-mentions CalmPilot in Slack",
   SLACK_DIRECT_MESSAGE: "Fires when you receive a direct message",
   SLACK_REACTION_ADDED: "Fires when a reaction emoji is added to a message",
   SLACK_CHANNEL_CREATED: "Fires when a new Slack channel is created",

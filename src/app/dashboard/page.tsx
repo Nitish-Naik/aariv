@@ -730,7 +730,7 @@ export default function DashboardHome() {
 
   useEffect(() => {
     if (!user?.id || !briefing || connectedApps.length === 0) return;
-    const nudgeKey = `aariv_nudge_dismissed_${user.id}`;
+    const nudgeKey = `calmpilot_nudge_dismissed_${user.id}`;
     if (localStorage.getItem(nudgeKey)) return;
     const hasSlack = connectedApps.includes("slack");
     const hasCalendar = connectedApps.includes("googlecalendar");
@@ -740,7 +740,7 @@ export default function DashboardHome() {
   const dismissNudge = () => {
     setShowNudge(false);
     if (user?.id) {
-      localStorage.setItem(`aariv_nudge_dismissed_${user.id}`, "1");
+      localStorage.setItem(`calmpilot_nudge_dismissed_${user.id}`, "1");
       api.patch("/auth/onboarding-step", { step: 4 }).catch(() => {});
     }
   };
