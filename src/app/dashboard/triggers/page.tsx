@@ -409,7 +409,7 @@ function ConfigFormModal({
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-4 py-2 rounded-lg bg-white text-white text-sm"
+              className="px-4 py-2 rounded-lg bg-white text-black text-xs font-semibold hover:bg-neutral-100 transition-colors disabled:opacity-50"
             >
               {isSubmitting ? "Creating..." : "Create"}
             </button>
@@ -901,7 +901,7 @@ export default function TriggersPage() {
                                   <button
                                     onClick={() => openConfigModal(trigger)}
                                     disabled={creating === trigger.slug}
-                                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-white text-white text-xs font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+                                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-white text-black text-xs font-semibold hover:bg-neutral-100 transition-colors disabled:opacity-50"
                                   >
                                     {creating === trigger.slug ? (
                                       <Loader2
@@ -1435,7 +1435,7 @@ export default function TriggersPage() {
                     {integrations.length > 0 ? (
                       <button
                         onClick={() => setShowCreatePanel(true)}
-                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white text-white text-sm font-semibold hover:opacity-90 transition-all hover:scale-105 active:scale-95 shadow-lg"
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white text-black text-xs font-semibold hover:bg-neutral-100 transition-colors"
                       >
                         <Plus strokeWidth={1.5} size={16} />
                         Create Trigger

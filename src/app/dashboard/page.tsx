@@ -121,10 +121,11 @@ function PageHeader({
         <button
           onClick={onRefresh}
           disabled={refreshing}
+          title="Regenerate your daily briefing — re-fetches calendar, emails, and app data"
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-white/[0.04] border border-white/[0.06] hover:bg-white/[0.07] transition-colors text-neutral-400 hover:text-white disabled:opacity-40 text-xs font-medium"
         >
           <RefreshCw size={12} className={refreshing ? "animate-spin" : ""} />
-          Refresh
+          {refreshing ? "Refreshing…" : "Refresh briefing"}
         </button>
       )}
     </div>

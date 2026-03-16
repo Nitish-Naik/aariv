@@ -953,7 +953,7 @@ function AssistantPageInner() {
                                             onClick={() => {
                                               window.open(href, "composio_connect", "width=600,height=700,left=200,top=100");
                                             }}
-                                            className="shrink-0 px-4 py-1.5 rounded-lg bg-white text-[black] text-xs font-semibold hover:opacity-90 transition-opacity"
+                                            className="shrink-0 px-4 py-1.5 rounded-lg bg-white text-black text-xs font-semibold hover:bg-neutral-100 transition-colors"
                                           >
                                             Connect
                                           </button>
@@ -1157,7 +1157,7 @@ function AssistantPageInner() {
                                         }
                                       }, 1000);
                                     }}
-                                    className="shrink-0 px-4 py-1.5 rounded-lg bg-white text-[black] text-xs font-semibold hover:opacity-90 transition-opacity"
+                                    className="shrink-0 px-4 py-1.5 rounded-lg bg-white text-black text-xs font-semibold hover:bg-neutral-100 transition-colors"
                                   >
                                     Connect
                                   </button>

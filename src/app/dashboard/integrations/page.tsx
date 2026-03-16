@@ -390,7 +390,7 @@ export default function IntegrationsPage() {
   // Filter integrations based on search, tab, and category
   const filteredIntegrations = useMemo(() => {
     return integrations.filter((integration) => {
-      const appSlug = integration.appName.toLowerCase().replace("-", "");
+      const appSlug = integration.appName.toLowerCase().replace(/[-_]/g, "");
       const displayName = integration.label || integration.appName;
 
       const matchesSearch = displayName
@@ -437,13 +437,34 @@ export default function IntegrationsPage() {
     });
   }, [integrations, searchQuery, activeTab, activeCategory]);
 
-  // Top 4 "Start here" apps shown above the grid
-  const START_HERE_SLUGS = ["gmail", "googlecalendar", "slack", "github"];
-  const startHereApps = useMemo(() => {
-    return START_HERE_SLUGS
-      .map((slug) => integrations.find((i) => i.appName.toLowerCase().replace(/-/g, "") === slug))
+  // Popular apps shown at the top — order matters (most popular first)
+  const POPULAR_SLUGS = [
+    "gmail", "slack", "github", "notion",
+    "googlesheets", "googledrive", "hubspot", "box",
+    "coda", "confluence", "discord", "googlecalendar",
+    "googledocs", "googlemaps", "googlemeet", "googleslides",
+    "googletasks", "jira", "atlassian", "mailchimp",
+    "outlook", "salesforce", "slackbot", "spotify",
+    "stripe", "todoist", "youtube", "zendesk",
+    "pipedrive", "zoom",
+  ];
+  const popularApps = useMemo(() => {
+    return POPULAR_SLUGS
+      .map((slug) => integrations.find((i) => i.appName.toLowerCase().replace(/[-_]/g, "") === slug))
       .filter(Boolean) as Integration[];
   }, [integrations]);
+
+  // Sort: connected apps first, then alphabetical
+  const sortedFilteredIntegrations = useMemo(() => {
+    return [...filteredIntegrations].sort((a, b) => {
+      const aConnected = a.status === "connected" ? 0 : 1;
+      const bConnected = b.status === "connected" ? 0 : 1;
+      if (aConnected !== bConnected) return aConnected - bConnected;
+      const aName = a.label || a.appName;
+      const bName = b.label || b.appName;
+      return aName.localeCompare(bName);
+    });
+  }, [filteredIntegrations]);
 
   // Group integrations by category for grouped view
   const groupedIntegrations = useMemo(() => {
@@ -453,7 +474,7 @@ export default function IntegrationsPage() {
 
     for (const integration of filteredIntegrations) {
       const cats = integration.categories || [];
-      const appSlug = integration.appName.toLowerCase().replace("-", "");
+      const appSlug = integration.appName.toLowerCase().replace(/[-_]/g, "");
 
       if (cats.length > 0) {
         // Add to first category (primary)
@@ -487,11 +508,16 @@ export default function IntegrationsPage() {
     });
   }, [filteredIntegrations, groupByCategory]);
 
+  const COMPOSIO_CDN = "https://logos.composio.dev/api";
+
   const renderIntegrationCard = (integration: Integration) => {
-    const appSlug = integration.appName.toLowerCase().replace("-", "");
+    const appSlug = integration.appName.toLowerCase().replace(/[-_]/g, "");
     const displayName = integration.label || integration.appName;
     const color = PLATFORM_COLORS[appSlug] || "#8b95b0";
     const logoSvg = getLogo(appSlug) || PLATFORM_LOGOS[appSlug];
+    // CDN fallback: use the original Composio slug (appName from backend)
+    const composioSlug = integration.appName.toLowerCase();
+    const cdnFallback = `${COMPOSIO_CDN}/${composioSlug}`;
     const isConnected = integration.status === "connected";
     const isExpired = !isConnected && ["expired", "inactive", "error", "failed"].includes(integration.status);
     const isConnecting = connecting === integration.appName;
@@ -504,10 +530,10 @@ export default function IntegrationsPage() {
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
         transition={{ duration: 0.2, ease: "easeOut" }}
-        className="group relative rounded-[1.25rem] p-[1.5px] hover:-translate-y-1 transition-all duration-500 ease-out h-[260px]"
+        className="group relative rounded-[1rem] sm:rounded-[1.25rem] p-[1.5px] hover:-translate-y-1 transition-all duration-500 ease-out h-[180px] sm:h-[220px] md:h-[260px]"
       >
         {/* Border layer (Cut off by overflow-hidden, shines through the 1.5px padding) */}
-        <div className="absolute inset-0 rounded-[1.25rem] z-0 overflow-hidden transition-all duration-500 pointer-events-none flex items-center justify-center opacity-0 group-hover:opacity-100 bg-white/5 border border-white/5 group-hover:border-transparent">
+        <div className="absolute inset-0 rounded-[1rem] sm:rounded-[1.25rem] z-0 overflow-hidden transition-all duration-500 pointer-events-none flex items-center justify-center opacity-0 group-hover:opacity-100 bg-white/5 border border-white/5 group-hover:border-transparent">
           {logoSvg ? (
             <img src={logoSvg} alt="" className="w-[150%] h-[150%] object-cover blur-[16px] saturate-[1.5]" />
           ) : (
@@ -515,7 +541,7 @@ export default function IntegrationsPage() {
           )}
         </div>
 
-        <div className="relative flex flex-col p-5 h-full overflow-hidden z-10 rounded-[calc(1.25rem-1.5px)] bg-[#111319] dark:bg-[#111319] w-full shadow-xl">
+        <div className="relative flex flex-col p-3 sm:p-4 md:p-5 h-full overflow-hidden z-10 rounded-[calc(1rem-1.5px)] sm:rounded-[calc(1.25rem-1.5px)] bg-[#111319] dark:bg-[#111319] w-full shadow-xl">
           <div
             className="absolute inset-0 opacity-0 group-hover:opacity-[0.10] transition-opacity duration-500 pointer-events-none"
             style={{ background: `radial-gradient(circle at 50% 50%, ${color} 0%, transparent 70%)` }}
@@ -530,16 +556,20 @@ export default function IntegrationsPage() {
                     setConfirmDisconnect({ id: integration.id, name: integration.appName });
                   }}
                   disabled={disconnecting === integration.appName}
-                  className="px-4 py-2 bg-emerald-500/10 hover:bg-red-500/20 text-emerald-400 hover:text-red-400 text-sm font-semibold rounded-xl transition-all duration-300 disabled:opacity-50"
+                  className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium text-emerald-400 hover:text-red-400 rounded-full border border-emerald-500/20 hover:border-red-500/30 bg-emerald-500/5 hover:bg-red-500/10 transition-all duration-300 disabled:opacity-50"
                 >
                   {disconnecting === integration.appName ? (
-                    <Loader2 strokeWidth={1.5} size={14} className="animate-spin" />
+                    <Loader2 strokeWidth={1.5} size={11} className="animate-spin" />
                   ) : (
-                    "Connected"
+                    <>
+                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                      Connected
+                    </>
                   )}
                 </button>
               ) : (
-                <div className="px-4 py-2 bg-emerald-500/10 text-emerald-400 text-sm font-semibold rounded-xl">
+                <div className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium text-emerald-400 rounded-full border border-emerald-500/20 bg-emerald-500/5">
+                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
                   Connected
                 </div>
               )
@@ -547,11 +577,11 @@ export default function IntegrationsPage() {
               <button
                 onClick={() => handleConnect(integration.appName, false)}
                 disabled={isConnecting}
-                className="px-4 py-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 text-sm font-semibold rounded-xl transition-all duration-300 disabled:opacity-50 border border-amber-500/20"
+                className="px-2.5 py-1 text-[11px] font-medium text-amber-400 rounded-full border border-amber-500/20 bg-amber-500/5 hover:bg-amber-500/10 transition-all duration-300 disabled:opacity-50"
                 title="This connection has expired. Click to reconnect."
               >
                 {isConnecting ? (
-                  <Loader2 strokeWidth={1.5} size={14} className="animate-spin" />
+                  <Loader2 strokeWidth={1.5} size={11} className="animate-spin" />
                 ) : (
                   "Reconnect"
                 )}
@@ -560,10 +590,10 @@ export default function IntegrationsPage() {
               <button
                 onClick={() => handleConnect(integration.appName, isConnected)}
                 disabled={isConnecting}
-                className="px-5 py-2 bg-[#e2e2e2] hover:bg-white text-black text-[15px] font-semibold rounded-xl transition-all duration-300 disabled:opacity-50 shadow-sm"
+                className="px-3 py-1 text-[11px] font-medium text-neutral-400 hover:text-white rounded-full border border-white/10 hover:border-white/25 bg-white/[0.03] hover:bg-white/[0.08] transition-all duration-300 disabled:opacity-50"
               >
                 {isConnecting ? (
-                  <Loader2 strokeWidth={1.5} size={16} className="animate-spin" />
+                  <Loader2 strokeWidth={1.5} size={11} className="animate-spin" />
                 ) : (
                   "Connect"
                 )}
@@ -571,20 +601,27 @@ export default function IntegrationsPage() {
             )}
           </div>
 
-          <div className="flex flex-col items-center justify-center flex-1 relative z-10 w-full pointer-events-none pb-4">
+          <div className="flex flex-col items-center justify-center flex-1 relative z-10 w-full pointer-events-none pb-2 sm:pb-4">
             {logoSvg ? (
               <motion.img
                 src={logoSvg}
                 alt={displayName}
-                className="w-[72px] h-[72px] object-contain mb-5 drop-shadow-md filter transition-all duration-500"
+                className="w-10 h-10 sm:w-14 sm:h-14 md:w-[72px] md:h-[72px] object-contain mb-2 sm:mb-4 md:mb-5 drop-shadow-md filter transition-all duration-500"
                 whileHover={{ scale: 1.05 }}
                 onError={(e: any) => {
-                  const parent = e.currentTarget.parentElement;
-                  e.currentTarget.style.display = "none";
+                  const img = e.currentTarget;
+                  // If the current src isn't the CDN fallback yet, try it
+                  if (!img.src.includes("logos.composio.dev")) {
+                    img.src = cdnFallback;
+                    return;
+                  }
+                  // CDN also failed — show letter fallback
+                  const parent = img.parentElement;
+                  img.style.display = "none";
                   if (parent && !parent.querySelector('.fallback-logo')) {
                     const fb = document.createElement("div");
                     fb.className =
-                      "fallback-logo w-[72px] h-[72px] rounded-xl flex items-center justify-center text-white font-bold text-3xl mb-5 shadow-lg shrink-0";
+                      "fallback-logo w-10 h-10 sm:w-14 sm:h-14 md:w-[72px] md:h-[72px] rounded-lg sm:rounded-xl flex items-center justify-center text-white font-bold text-xl sm:text-2xl md:text-3xl mb-2 sm:mb-4 md:mb-5 shadow-lg shrink-0";
                     fb.style.backgroundColor = color;
                     fb.textContent = displayName.charAt(0);
                     parent.prepend(fb);
@@ -593,14 +630,14 @@ export default function IntegrationsPage() {
               />
             ) : (
               <motion.div
-                className="w-[72px] h-[72px] rounded-xl flex items-center justify-center text-white font-bold text-3xl mb-5 shadow-lg shrink-0 transition-all duration-500"
+                className="w-10 h-10 sm:w-14 sm:h-14 md:w-[72px] md:h-[72px] rounded-lg sm:rounded-xl flex items-center justify-center text-white font-bold text-xl sm:text-2xl md:text-3xl mb-2 sm:mb-4 md:mb-5 shadow-lg shrink-0 transition-all duration-500"
                 style={{ backgroundColor: color }}
                 whileHover={{ scale: 1.05 }}
               >
                 {displayName.charAt(0)}
               </motion.div>
             )}
-            <h3 className="text-[22px] leading-tight font-bold text-white truncate max-w-full px-2 text-center tracking-tight">
+            <h3 className="text-sm sm:text-base md:text-lg lg:text-[22px] leading-tight font-bold text-white truncate max-w-full px-1 sm:px-2 text-center tracking-tight">
               {displayName}
             </h3>
           </div>
@@ -628,12 +665,22 @@ export default function IntegrationsPage() {
       )}
 
       {/* Page header */}
-      <div className="px-6 py-4 border-b border-white/[0.06] flex items-center justify-between shrink-0">
+      <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-white/[0.06] flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
         <div>
           <h1 className="text-sm font-semibold text-white">Integrations</h1>
-          <p className="text-xs text-neutral-500 mt-0.5">Connect your apps to unlock automations</p>
+          <p className="text-[11px] sm:text-xs text-neutral-500 mt-0.5">
+            {!loading && integrations.length > 0 ? (
+              <>
+                <span className="text-emerald-400 font-medium">{integrations.filter((i) => i.status === "connected").length} connected</span>
+                {" · "}
+                {integrations.filter((i) => i.status !== "connected" && i.canDisconnect !== false).length} available to connect
+              </>
+            ) : (
+              "Connect your apps to unlock automations"
+            )}
+          </p>
         </div>
-        <div className="relative group">
+        <div className="relative group w-full sm:w-auto">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <Search strokeWidth={1.5} size={14} className="text-neutral-500 group-focus-within:text-neutral-400 transition-colors" />
           </div>
@@ -643,13 +690,13 @@ export default function IntegrationsPage() {
             aria-label="Search integrations"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-56 pl-8 pr-3 py-1.5 text-xs rounded-md outline-none bg-white/[0.04] border border-white/[0.06] text-white placeholder-neutral-600 focus:border-white/20 transition-colors"
+            className="w-full sm:w-56 pl-8 pr-3 py-1.5 text-xs rounded-md outline-none bg-white/[0.04] border border-white/[0.06] text-white placeholder-neutral-600 focus:border-white/20 transition-colors"
           />
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="px-6 border-b border-white/[0.06] flex items-center gap-1">
+      <div className="px-4 sm:px-6 border-b border-white/[0.06] flex items-center gap-1">
         {(["all", "connected"] as const).map((tab) => (
           <button
             key={tab}
@@ -665,7 +712,7 @@ export default function IntegrationsPage() {
         ))}
       </div>
 
-      <div className="flex-1 px-6 py-6 text-white">
+      <div className="flex-1 px-3 sm:px-4 md:px-6 py-4 sm:py-6 text-white">
 
           {/* Categories Filter (Only show if 'all' tab is selected) */}
           <AnimatePresence>
@@ -674,13 +721,13 @@ export default function IntegrationsPage() {
                 initial={{ opacity: 0, height: 0, y: -10 }}
                 animate={{ opacity: 1, height: "auto", y: 0 }}
                 exit={{ opacity: 0, height: 0, y: -10 }}
-                className="flex flex-wrap items-center gap-2 mt-4"
+                className="flex flex-wrap items-center gap-2 mt-2 sm:mt-4"
               >
-                <div className="flex items-center flex-1 min-w-0 pr-4">
+                <div className="flex items-center flex-1 min-w-0 pr-2 sm:pr-4">
                   {/* Sticky "All" Pill */}
                   <button
                     onClick={() => setActiveCategory("all")}
-                    className={`shrink-0 z-10 px-4 py-1.5 text-xs font-medium rounded-full transition-all duration-300 border ${activeCategory === "all"
+                    className={`shrink-0 z-10 px-3 sm:px-4 py-1 sm:py-1.5 text-[11px] sm:text-xs font-medium rounded-full transition-all duration-300 border ${activeCategory === "all"
                       ? "bg-white text-black border-white shadow-sm"
                       : "bg-neutral-900 text-neutral-500 border-white/10 hover:border-white/20 hover:text-white"
                       }`}
@@ -691,16 +738,16 @@ export default function IntegrationsPage() {
                   {CATEGORIES.length > 1 && (
                     <>
                       {/* Vertical Divider */}
-                      <div className="w-[1px] h-5 bg-white/10 shrink-0 mx-3" />
+                      <div className="w-[1px] h-4 sm:h-5 bg-white/10 shrink-0 mx-2 sm:mx-3" />
 
                       {/* Horizontally scrolling list for the rest */}
-                      <div className="flex items-center gap-2 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] w-full scroll-smooth pt-1 pb-1">
+                      <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] w-full scroll-smooth pt-1 pb-1">
                         {CATEGORIES.filter((c) => c.id !== "all").map(
                           (category) => (
                             <button
                               key={category.id}
                               onClick={() => setActiveCategory(category.id)}
-                              className={`shrink-0 px-4 py-1.5 text-xs font-medium rounded-full transition-all duration-300 border capitalize ${activeCategory === category.id
+                              className={`shrink-0 px-3 sm:px-4 py-1 sm:py-1.5 text-[11px] sm:text-xs font-medium rounded-full transition-all duration-300 border capitalize ${activeCategory === category.id
                                 ? "bg-white text-black border-white shadow-sm"
                                 : "bg-neutral-900 text-neutral-500 border-white/10 hover:border-white/20 hover:text-white"
                                 }`}
@@ -714,8 +761,8 @@ export default function IntegrationsPage() {
                   )}
                 </div>
 
-                {/* Group-by toggle */}
-                <div className="flex items-center gap-1 ml-auto">
+                {/* Group-by toggle — hide on very small screens */}
+                <div className="hidden sm:flex items-center gap-1 ml-auto">
                   <button
                     onClick={() => setGroupByCategory(false)}
                     className={`p-1.5 rounded-lg transition-all duration-200 ${!groupByCategory
@@ -747,22 +794,20 @@ export default function IntegrationsPage() {
 
         {loading ? (
           /* Staggered Skeleton Loaders — match actual card shape */
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 xl:gap-5">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4 xl:gap-5">
             {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
               <div
                 key={i}
-                className="rounded-[1.25rem] h-[260px] bg-[#111319] border border-white/[0.06] animate-pulse"
+                className="rounded-[1rem] sm:rounded-[1.25rem] h-[180px] sm:h-[220px] md:h-[260px] bg-[#111319] border border-white/[0.06] animate-pulse"
                 style={{ animationDelay: `${i * 80}ms` }}
               >
-                <div className="h-full p-5 flex flex-col">
-                  {/* top-right: button stub */}
+                <div className="h-full p-3 sm:p-4 md:p-5 flex flex-col">
                   <div className="flex justify-end">
-                    <div className="h-8 w-20 rounded-xl bg-white/[0.07]" />
+                    <div className="h-6 w-16 sm:h-8 sm:w-20 rounded-lg sm:rounded-xl bg-white/[0.07]" />
                   </div>
-                  {/* center: logo + name */}
-                  <div className="flex-1 flex flex-col items-center justify-center pb-4 gap-4">
-                    <div className="w-[72px] h-[72px] rounded-xl bg-white/[0.07]" />
-                    <div className="h-5 w-28 rounded-lg bg-white/[0.05]" />
+                  <div className="flex-1 flex flex-col items-center justify-center pb-2 sm:pb-4 gap-2 sm:gap-4">
+                    <div className="w-10 h-10 sm:w-14 sm:h-14 md:w-[72px] md:h-[72px] rounded-lg sm:rounded-xl bg-white/[0.07]" />
+                    <div className="h-4 sm:h-5 w-20 sm:w-28 rounded-lg bg-white/[0.05]" />
                   </div>
                 </div>
               </div>
@@ -770,23 +815,26 @@ export default function IntegrationsPage() {
           </div>
         ) : (
           <>
-            {/* Start Here — top 4 apps, only on the flat "All" view */}
-            {activeTab === "all" && !searchQuery && activeCategory === "all" && startHereApps.length > 0 && (
-              <div className="mb-10 mt-8">
-                <div className="flex items-center gap-3 mb-5">
-                  <h2 className="text-[15px] font-medium uppercase tracking-widest text-neutral-500">
-                    Start here
+            {/* Popular apps — shown at the top on the flat "All" view */}
+            {activeTab === "all" && !searchQuery && activeCategory === "all" && popularApps.length > 0 && (
+              <div className="mb-6 sm:mb-10 mt-4 sm:mt-8">
+                <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-5 flex-wrap">
+                  <h2 className="text-xs sm:text-[15px] font-medium uppercase tracking-widest text-neutral-500">
+                    Popular
                   </h2>
-                  <span className="text-[11px] font-semibold text-amber-400 bg-amber-400/10 border border-amber-400/20 px-2.5 py-0.5 rounded-full">
+                  <span className="text-[10px] sm:text-[11px] font-semibold text-amber-400 bg-amber-400/10 border border-amber-400/20 px-2 sm:px-2.5 py-0.5 rounded-full">
                     ★ Most popular
+                  </span>
+                  <span className="text-[10px] sm:text-[11px] text-neutral-600 ml-1">
+                    {popularApps.filter((a) => a.status === "connected").length}/{popularApps.length} connected
                   </span>
                 </div>
                 <motion.div
                   layout
-                  className="grid grid-cols-2 md:grid-cols-4 gap-4 xl:gap-5"
+                  className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4 xl:gap-5"
                 >
                   <AnimatePresence mode="popLayout">
-                    {startHereApps.map(renderIntegrationCard)}
+                    {popularApps.map(renderIntegrationCard)}
                   </AnimatePresence>
                 </motion.div>
               </div>
@@ -801,7 +849,7 @@ export default function IntegrationsPage() {
                 </h2>
                 <motion.div
                   layout
-                  className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 xl:gap-5"
+                  className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4 xl:gap-5"
                 >
                   <AnimatePresence mode="popLayout">
                     {filteredIntegrations
@@ -841,7 +889,7 @@ export default function IntegrationsPage() {
                 </h2>
                 <motion.div
                   layout
-                  className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 xl:gap-5"
+                  className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4 xl:gap-5"
                 >
                   <AnimatePresence mode="popLayout">
                     {filteredIntegrations
@@ -881,7 +929,7 @@ export default function IntegrationsPage() {
                   </div>
                   <motion.div
                     layout
-                    className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 xl:gap-5"
+                    className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4 xl:gap-5"
                   >
                     <AnimatePresence mode="popLayout">
                       {group.items.map(renderIntegrationCard)}
@@ -903,13 +951,13 @@ export default function IntegrationsPage() {
           ) : (
             <motion.div
               layout
-              className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 xl:gap-5"
+              className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4 xl:gap-5"
             >
               <AnimatePresence mode="popLayout">
-                {filteredIntegrations.map(renderIntegrationCard)}
+                {sortedFilteredIntegrations.map(renderIntegrationCard)}
               </AnimatePresence>
 
-              {filteredIntegrations.length === 0 && (
+              {sortedFilteredIntegrations.length === 0 && (
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}

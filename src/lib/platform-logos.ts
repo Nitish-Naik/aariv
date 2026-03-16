@@ -41,16 +41,25 @@ export const PLATFORM_LOGOS: Record<string, string> = {
     "data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle fill='%238E24AA' cx='12' cy='12' r='10'/%3E%3Cpath fill='%23fff' d='M8 8h8v8H8z' rx='2'/%3E%3C/svg%3E",
 };
 
+const COMPOSIO_LOGO_CDN = "https://logos.composio.dev/api";
+
+/** Slugs that differ from the normalized (lowercase, no dashes) form on the Composio CDN */
+const SLUG_TO_COMPOSIO: Record<string, string> = {
+  googlemaps: "google_maps",
+};
+
 /**
- * Get a logo data-URI for an app slug. Tries the PLATFORM_LOGOS map first,
- * returns undefined if no match.
+ * Get a logo for an app slug.
+ * Tries inline data-URI first, then falls back to Composio's logo CDN.
  */
-export function getAppLogo(appSlug: string): string | undefined {
+export function getAppLogo(appSlug: string): string {
   const key = appSlug.toLowerCase().replace(/[\s-_]/g, "");
   if (PLATFORM_LOGOS[key]) return PLATFORM_LOGOS[key];
   // Prefix match: "discordbot" → "discord", "googlecalendarv2" → "googlecalendar"
   for (const k of Object.keys(PLATFORM_LOGOS)) {
     if (key.startsWith(k)) return PLATFORM_LOGOS[k];
   }
-  return undefined;
+  // Fallback to Composio CDN — works for all Composio-supported apps
+  const composioSlug = SLUG_TO_COMPOSIO[key] || key;
+  return `${COMPOSIO_LOGO_CDN}/${composioSlug}`;
 }

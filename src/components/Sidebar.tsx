@@ -5,18 +5,21 @@ import { useAuth } from "@/context/AuthContext";
 import { useBilling } from "@/context/useBilling";
 import {
   Activity,
+  ChevronUp,
+  CreditCard,
   Home,
   Link2,
   ListChecks,
   LogOut,
   MessageSquare,
   Settings,
+  User,
   X,
   Zap,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const mainNav = [
   { href: "/dashboard", label: "Overview", icon: Home, exact: true },
@@ -81,6 +84,106 @@ function NavItem({
         </span>
       )}
     </Link>
+  );
+}
+
+/* ─── User Profile Menu ───────────────────────────────── */
+
+function UserMenu({
+  user,
+  initials,
+  onSignOut,
+}: {
+  user: { name?: string; email?: string; avatar?: string };
+  initials: string;
+  onSignOut: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Close on outside click
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  const menuItems = [
+    { href: "/dashboard/settings", label: "Account settings", icon: User },
+    { href: "/dashboard/usage", label: "Usage & billing", icon: CreditCard },
+    { href: "/dashboard/settings", label: "Preferences", icon: Settings },
+  ];
+
+  return (
+    <div ref={menuRef} className="relative">
+      <button
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-md hover:bg-white/[0.04] transition-colors group"
+      >
+        {user.avatar ? (
+          <img
+            src={user.avatar}
+            alt={`${user.name}'s avatar`}
+            className="w-6 h-6 rounded-full shrink-0"
+          />
+        ) : (
+          <div className="w-6 h-6 rounded-full bg-neutral-700 flex items-center justify-center text-[10px] font-semibold text-white shrink-0">
+            {initials}
+          </div>
+        )}
+        <span className="flex-1 text-left text-sm text-neutral-400 group-hover:text-white truncate transition-colors">
+          {user.name}
+        </span>
+        <ChevronUp
+          size={14}
+          className={`text-neutral-600 group-hover:text-neutral-400 transition-all shrink-0 ${open ? "" : "rotate-180"}`}
+        />
+      </button>
+
+      {/* Dropdown */}
+      {open && (
+        <div className="absolute bottom-full left-0 right-0 mb-1.5 bg-[#111315] border border-white/[0.08] rounded-lg shadow-2xl overflow-hidden z-50">
+          {/* User info header */}
+          <div className="px-3 py-2.5 border-b border-white/[0.06]">
+            <p className="text-xs font-medium text-white truncate">{user.name}</p>
+            {user.email && (
+              <p className="text-[11px] text-neutral-500 truncate mt-0.5">{user.email}</p>
+            )}
+          </div>
+
+          {/* Menu items */}
+          <div className="py-1">
+            {menuItems.map((item) => (
+              <Link
+                key={item.label}
+                href={item.href}
+                onClick={() => setOpen(false)}
+                className="flex items-center gap-2.5 px-3 py-2 text-xs text-neutral-400 hover:text-white hover:bg-white/[0.04] transition-colors"
+              >
+                <item.icon size={13} strokeWidth={1.75} className="shrink-0" />
+                {item.label}
+              </Link>
+            ))}
+          </div>
+
+          {/* Sign out */}
+          <div className="border-t border-white/[0.06] py-1">
+            <button
+              onClick={() => { setOpen(false); onSignOut(); }}
+              className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-red-400 hover:text-red-300 hover:bg-red-500/5 transition-colors"
+            >
+              <LogOut size={13} strokeWidth={1.75} className="shrink-0" />
+              Sign out
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -188,31 +291,13 @@ export function Sidebar() {
             </Link>
           )}
 
-          {/* User row */}
+          {/* User row with dropdown */}
           {user && (
-            <button
-              onClick={() => setShowSignOutDialog(true)}
-              className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-md hover:bg-white/[0.04] transition-colors group"
-            >
-              {user.avatar ? (
-                <img
-                  src={user.avatar}
-                  alt={`${user.name}'s avatar`}
-                  className="w-6 h-6 rounded-full shrink-0"
-                />
-              ) : (
-                <div className="w-6 h-6 rounded-full bg-neutral-700 flex items-center justify-center text-[10px] font-semibold text-white shrink-0">
-                  {initials}
-                </div>
-              )}
-              <span className="flex-1 text-left text-sm text-neutral-400 group-hover:text-white truncate transition-colors">
-                {user.name}
-              </span>
-              <LogOut
-                size={14}
-                className="text-neutral-600 group-hover:text-red-400 transition-colors shrink-0"
-              />
-            </button>
+            <UserMenu
+              user={user}
+              initials={initials}
+              onSignOut={() => setShowSignOutDialog(true)}
+            />
           )}
         </div>
       </aside>

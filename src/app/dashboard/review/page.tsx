@@ -19,6 +19,9 @@ import {
   Loader2,
   Mail,
   MessageSquare,
+  ShieldCheck,
+  ShieldAlert,
+  ShieldQuestion,
   Square,
   Trash2,
   X,
@@ -695,14 +698,53 @@ export default function ReviewPage() {
                       </AnimatePresence>
                     </div>
 
-                    {/* AI confidence — inline text, no pill */}
+                    {/* AI confidence badge */}
                     {item.ai_confidence !== null && item.ai_confidence !== undefined && (() => {
                       const pct = Math.round(item.ai_confidence * 100);
-                      const color = pct >= 80 ? "text-neutral-500" : pct >= 50 ? "text-amber-500/60" : "text-red-500/60";
+                      const level = pct >= 80 ? "high" : pct >= 60 ? "medium" : "low";
+                      const config = {
+                        high: {
+                          label: "High confidence",
+                          icon: ShieldCheck,
+                          bg: "bg-emerald-500/8",
+                          border: "border-emerald-500/15",
+                          text: "text-emerald-400",
+                          dot: "bg-emerald-400",
+                          tooltip: `AI is ${pct}% confident this action is correct. Safe to approve.`,
+                        },
+                        medium: {
+                          label: "Medium confidence",
+                          icon: ShieldQuestion,
+                          bg: "bg-amber-500/8",
+                          border: "border-amber-500/15",
+                          text: "text-amber-400",
+                          dot: "bg-amber-400",
+                          tooltip: `AI is ${pct}% confident. Review the details before approving.`,
+                        },
+                        low: {
+                          label: "Low confidence",
+                          icon: ShieldAlert,
+                          bg: "bg-red-500/8",
+                          border: "border-red-500/15",
+                          text: "text-red-400",
+                          dot: "bg-red-400",
+                          tooltip: `AI is only ${pct}% confident. Carefully review before taking action.`,
+                        },
+                      }[level];
+                      const Icon = config.icon;
                       return (
-                        <p className={`text-[11px] mb-3 ${color}`}>
-                          {pct}% confidence
-                        </p>
+                        <div className="group/conf relative mb-3 inline-flex">
+                          <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium border ${config.bg} ${config.border} ${config.text}`}>
+                            <Icon strokeWidth={1.5} size={12} />
+                            {config.label}
+                            <span className="opacity-50 ml-0.5 tabular-nums">{pct}%</span>
+                          </div>
+                          {/* Tooltip */}
+                          <div className="absolute bottom-full left-0 mb-1.5 px-3 py-2 rounded-lg bg-[#1a1d27] border border-white/10 text-[11px] text-neutral-300 leading-relaxed w-56 opacity-0 pointer-events-none group-hover/conf:opacity-100 transition-opacity duration-200 shadow-xl z-30">
+                            {config.tooltip}
+                            <div className="absolute top-full left-4 w-2 h-2 bg-[#1a1d27] border-r border-b border-white/10 rotate-45 -mt-1" />
+                          </div>
+                        </div>
                       );
                     })()}
 

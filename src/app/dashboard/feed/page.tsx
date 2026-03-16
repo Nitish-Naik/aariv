@@ -1,9 +1,15 @@
 "use client";
 
+import { EmptyState } from "@/components/dashboard/EmptyState";
 import { useAuth } from "@/context/AuthContext";
 import { useLogo } from "@/context/LogoContext";
 import { api } from "@/lib/api";
-import { formatTriggerSlug, getAppColor, getAppIcon, getAppLabel } from "@/lib/appMeta";
+import {
+  formatTriggerSlug,
+  getAppColor,
+  getAppIcon,
+  getAppLabel,
+} from "@/lib/appMeta";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Activity,
@@ -18,7 +24,13 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 /* ─── Types ──────────────────────────────────────────────── */
 
@@ -37,7 +49,6 @@ type AppFilter = "all" | string;
 
 /* ─── Constants ──────────────────────────────────────────── */
 
-
 const STATUS_META: Record<string, { color: string; label: string }> = {
   received: { color: "text-blue-400", label: "Received" },
   processing: { color: "text-amber-400", label: "Processing" },
@@ -50,20 +61,43 @@ const STATUS_META: Record<string, { color: string; label: string }> = {
 function cleanError(error: string): string {
   if (!error) return "Unknown error";
   const e = error.toLowerCase();
-  if (e.includes("insufficient_credits") || e.includes("out of credits")) return "Out of credits — add credits to process events";
-  if (e.includes("nonetype") || e.includes("attributeerror")) return "Processing failed — event data was incomplete";
-  if (e.includes("connectionerror") || e.includes("connecttimeout") || e.includes("connection refused")) return "Couldn't reach the app — connection timed out";
-  if (e.includes("httperror") || e.includes("status code")) return "The app returned an error";
-  if (e.includes("jsondecode") || e.includes("json.decoder")) return "Couldn't parse the app response";
+  if (e.includes("insufficient_credits") || e.includes("out of credits"))
+    return "Out of credits — add credits to process events";
+  if (e.includes("nonetype") || e.includes("attributeerror"))
+    return "Processing failed — event data was incomplete";
+  if (
+    e.includes("connectionerror") ||
+    e.includes("connecttimeout") ||
+    e.includes("connection refused")
+  )
+    return "Couldn't reach the app — connection timed out";
+  if (e.includes("httperror") || e.includes("status code"))
+    return "The app returned an error";
+  if (e.includes("jsondecode") || e.includes("json.decoder"))
+    return "Couldn't parse the app response";
   if (e.includes("keyerror")) return "Missing expected data in event payload";
-  if (e.includes("timeouterror") || (e.includes("timeout") && !e.includes("connect"))) return "Processing timed out";
-  if (e.includes("ratelimit") || e.includes("rate limit") || e.includes("429")) return "Rate limited — will retry automatically";
-  if (e.includes("permission") || e.includes("unauthorized") || e.includes("403") || e.includes("token expired") || e.includes("authenticationerror") || e.includes("invalid_grant")) return "AUTH_ERROR";
+  if (
+    e.includes("timeouterror") ||
+    (e.includes("timeout") && !e.includes("connect"))
+  )
+    return "Processing timed out";
+  if (e.includes("ratelimit") || e.includes("rate limit") || e.includes("429"))
+    return "Rate limited — will retry automatically";
+  if (
+    e.includes("permission") ||
+    e.includes("unauthorized") ||
+    e.includes("403") ||
+    e.includes("token expired") ||
+    e.includes("authenticationerror") ||
+    e.includes("invalid_grant")
+  )
+    return "AUTH_ERROR";
   // Strip Python exception class prefix (e.g. "ValueError: ...")
   const colonIdx = error.indexOf(": ");
   if (colonIdx > 0 && colonIdx < 40 && /^[A-Z]/.test(error)) {
     const msg = error.slice(colonIdx + 2).trim();
-    if (msg.length > 0 && msg.length < 200) return msg.length > 120 ? msg.slice(0, 117) + "…" : msg;
+    if (msg.length > 0 && msg.length < 200)
+      return msg.length > 120 ? msg.slice(0, 117) + "…" : msg;
   }
   if (error.length > 120) return error.slice(0, 117) + "…";
   return error;
@@ -115,9 +149,22 @@ function groupByDate(
 /* ─── Logo helpers ───────────────────────────────────────── */
 
 /** Large (40×40) app icon — shows colored fallback, fades in logo on load */
-function FeedAppIcon({ logo, label, color, icon }: { logo?: string; label: string; color: string; icon: React.ReactNode }) {
+function FeedAppIcon({
+  logo,
+  label,
+  color,
+  icon,
+}: {
+  logo?: string;
+  label: string;
+  color: string;
+  icon: React.ReactNode;
+}) {
   return (
-    <div className="w-10 h-10 rounded-xl shrink-0 shadow-sm relative overflow-hidden" style={{ backgroundColor: color }}>
+    <div
+      className="w-10 h-10 rounded-xl shrink-0 shadow-sm relative overflow-hidden"
+      style={{ backgroundColor: color }}
+    >
       <div className="absolute inset-0 flex items-center justify-center text-white">
         {icon}
       </div>
@@ -126,8 +173,12 @@ function FeedAppIcon({ logo, label, color, icon }: { logo?: string; label: strin
           src={logo}
           alt={label}
           className="absolute inset-0 w-full h-full object-contain p-2 bg-[#111319] opacity-0 transition-opacity duration-200"
-          onLoad={(e) => { e.currentTarget.style.opacity = "1"; }}
-          onError={(e) => { e.currentTarget.style.display = "none"; }}
+          onLoad={(e) => {
+            e.currentTarget.style.opacity = "1";
+          }}
+          onError={(e) => {
+            e.currentTarget.style.display = "none";
+          }}
         />
       )}
     </div>
@@ -135,15 +186,31 @@ function FeedAppIcon({ logo, label, color, icon }: { logo?: string; label: strin
 }
 
 /** Small pill logo — falls back to colored dot on error */
-function PillLogo({ logo, alt, color }: { logo?: string; alt: string; color: string }) {
+function PillLogo({
+  logo,
+  alt,
+  color,
+}: {
+  logo?: string;
+  alt: string;
+  color: string;
+}) {
   const [failed, setFailed] = React.useState(false);
-  if (!logo || failed) return <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: color }} />;
+  if (!logo || failed)
+    return (
+      <div
+        className="w-1.5 h-1.5 rounded-full shrink-0"
+        style={{ backgroundColor: color }}
+      />
+    );
   return (
     <img
       src={logo}
       alt={alt}
       className="w-3 h-3 object-contain shrink-0 opacity-0 transition-opacity duration-150"
-      onLoad={(e) => { e.currentTarget.style.opacity = "1"; }}
+      onLoad={(e) => {
+        e.currentTarget.style.opacity = "1";
+      }}
       onError={() => setFailed(true)}
     />
   );
@@ -162,7 +229,9 @@ export default function FeedPage() {
   const [syncDelta, setSyncDelta] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [appFilter, setAppFilter] = useState<AppFilter>("all");
-  const [searchQuery, setSearchQuery] = useState(() => searchParams.get("q") || "");
+  const [searchQuery, setSearchQuery] = useState(
+    () => searchParams.get("q") || "",
+  );
   const [serverStats, setServerStats] = useState<{
     total: number;
     completed: number;
@@ -184,9 +253,7 @@ export default function FeedPage() {
         setLoadingMore(true);
       }
       try {
-        const data = await api.get(
-          `/dashboard/feed?limit=100&offset=${offset}`,
-        );
+        const data = await api.get(`/dashboard/feed?limit=25&offset=${offset}`);
         if (offset === 0) {
           setEvents(data.events || []);
         } else {
@@ -196,7 +263,8 @@ export default function FeedPage() {
         if (data.stats) setServerStats(data.stats);
         setError(null);
       } catch (err: unknown) {
-        if (!silent) setError(err instanceof Error ? err.message : "Failed to load feed");
+        if (!silent)
+          setError(err instanceof Error ? err.message : "Failed to load feed");
       } finally {
         setLoading(false);
         setRefreshing(false);
@@ -249,11 +317,27 @@ export default function FeedPage() {
     loadEvents();
   }, [loadEvents]);
 
-  // Auto-refresh every 30 seconds
+  // Auto-refresh every 60 seconds (silent — does not degrade perceived performance)
   useEffect(() => {
-    const interval = setInterval(() => loadEvents(true), 30000);
+    const interval = setInterval(() => loadEvents(true), 60000);
     return () => clearInterval(interval);
   }, [loadEvents]);
+
+  // Intersection Observer: auto-load next page when sentinel scrolls into view
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (!sentinelRef.current) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !loadingMore && !loading) {
+          loadEvents(true, events.length);
+        }
+      },
+      { rootMargin: "200px" },
+    );
+    observer.observe(sentinelRef.current);
+    return () => observer.disconnect();
+  }, [hasMore, loadingMore, loading, events.length, loadEvents]);
 
   // Derive unique apps for filter + per-app counts
   const appOptions = useMemo(() => {
@@ -267,13 +351,17 @@ export default function FeedPage() {
     return counts;
   }, [events]);
 
-  const failedCount = useMemo(() => events.filter((e) => e.status === "failed").length, [events]);
+  const failedCount = useMemo(
+    () => events.filter((e) => e.status === "failed").length,
+    [events],
+  );
 
   // Filtered events
   const filtered = useMemo(() => {
     let result = events;
     if (appFilter !== "all") result = result.filter((e) => e.app === appFilter);
-    if (statusFilter === "failed") result = result.filter((e) => e.status === "failed");
+    if (statusFilter === "failed")
+      result = result.filter((e) => e.status === "failed");
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       result = result.filter(
@@ -303,7 +391,9 @@ export default function FeedPage() {
   // Today stats + last activity timestamp
   const todayStats = useMemo(() => {
     const today = new Date().toDateString();
-    const todayEvents = events.filter((e) => new Date(e.createdAt).toDateString() === today);
+    const todayEvents = events.filter(
+      (e) => new Date(e.createdAt).toDateString() === today,
+    );
     const lastEvent = events.length > 0 ? events[0] : null; // events are sorted newest first
     return {
       events: todayEvents.length,
@@ -329,10 +419,16 @@ export default function FeedPage() {
             disabled={syncing}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-white/[0.04] border border-white/[0.06] text-xs font-medium text-neutral-400 hover:text-white transition-colors disabled:opacity-50"
           >
-            <Zap strokeWidth={1.5} size={13} className={syncing ? "animate-pulse" : ""} />
+            <Zap
+              strokeWidth={1.5}
+              size={13}
+              className={syncing ? "animate-pulse" : ""}
+            />
             {syncing ? "Checking…" : "Sync"}
             {!syncing && syncDelta !== null && (
-              <span className={`ml-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-semibold ${syncDelta > 0 ? "bg-emerald-500/20 text-emerald-400" : "bg-white/[0.06] text-neutral-500"}`}>
+              <span
+                className={`ml-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-semibold ${syncDelta > 0 ? "bg-emerald-500/20 text-emerald-400" : "bg-white/[0.06] text-neutral-500"}`}
+              >
                 {syncDelta > 0 ? `+${syncDelta}` : "✓"}
               </span>
             )}
@@ -342,7 +438,11 @@ export default function FeedPage() {
             disabled={refreshing}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-white/[0.04] border border-white/[0.06] text-xs font-medium text-neutral-400 hover:text-white transition-colors disabled:opacity-50"
           >
-            <RefreshCw strokeWidth={1.5} size={13} className={refreshing ? "animate-spin" : ""} />
+            <RefreshCw
+              strokeWidth={1.5}
+              size={13}
+              className={refreshing ? "animate-spin" : ""}
+            />
             Refresh
           </button>
         </div>
@@ -351,12 +451,18 @@ export default function FeedPage() {
       <div className="flex-1 px-6 py-6">
         {/* Contextual links */}
         <div className="flex items-center gap-4 mb-6 text-xs text-neutral-500">
-          <Link href="/dashboard/review" className="flex items-center gap-1.5 hover:text-white transition-colors">
+          <Link
+            href="/dashboard/review"
+            className="flex items-center gap-1.5 hover:text-white transition-colors"
+          >
             <CheckSquare strokeWidth={1.5} size={12} />
             Review items
           </Link>
           <span className="text-neutral-800">·</span>
-          <Link href="/dashboard/triggers" className="flex items-center gap-1.5 hover:text-white transition-colors">
+          <Link
+            href="/dashboard/triggers"
+            className="flex items-center gap-1.5 hover:text-white transition-colors"
+          >
             <Zap strokeWidth={1.5} size={12} />
             Manage triggers
           </Link>
@@ -366,11 +472,17 @@ export default function FeedPage() {
         {!loading && events.length > 0 && (
           <div className="flex items-center gap-3 flex-wrap mb-4 px-1 text-[12px] text-neutral-500">
             <span className="font-medium text-neutral-400">Today:</span>
-            <span>{todayStats.events} event{todayStats.events !== 1 ? "s" : ""}</span>
+            <span>
+              {todayStats.events} event{todayStats.events !== 1 ? "s" : ""}
+            </span>
             <span className="text-white/10">·</span>
-            <span className={todayStats.errors > 0 ? "text-red-400" : ""}>{todayStats.errors} error{todayStats.errors !== 1 ? "s" : ""}</span>
+            <span className={todayStats.errors > 0 ? "text-red-400" : ""}>
+              {todayStats.errors} error{todayStats.errors !== 1 ? "s" : ""}
+            </span>
             <span className="text-white/10">·</span>
-            <span>{todayStats.apps} app{todayStats.apps !== 1 ? "s" : ""} active</span>
+            <span>
+              {todayStats.apps} app{todayStats.apps !== 1 ? "s" : ""} active
+            </span>
             {todayStats.lastActivity && (
               <>
                 <span className="text-white/10">·</span>
@@ -385,12 +497,25 @@ export default function FeedPage() {
           <div className="grid grid-cols-2 md:grid-cols-4 border border-white/[0.06] rounded-lg mb-6">
             {[
               { label: "Events", value: stats.total, color: "text-white" },
-              { label: "Processed", value: stats.completed, color: "text-emerald-400" },
-              { label: "Errors", value: stats.failed, color: stats.failed > 0 ? "text-red-400" : "text-white" },
+              {
+                label: "Processed",
+                value: stats.completed,
+                color: "text-emerald-400",
+              },
+              {
+                label: "Errors",
+                value: stats.failed,
+                color: stats.failed > 0 ? "text-red-400" : "text-white",
+              },
               { label: "Apps", value: stats.apps, color: "text-white" },
             ].map((s, i) => (
-              <div key={s.label} className={`px-5 py-4 ${i < 3 ? "border-r border-white/[0.06]" : ""}`}>
-                <p className="text-[10px] font-semibold text-neutral-600 uppercase tracking-widest mb-1">{s.label}</p>
+              <div
+                key={s.label}
+                className={`px-5 py-4 ${i < 3 ? "border-r border-white/[0.06]" : ""}`}
+              >
+                <p className="text-[10px] font-semibold text-neutral-600 uppercase tracking-widest mb-1">
+                  {s.label}
+                </p>
                 <p className={`text-xl font-semibold ${s.color}`}>{s.value}</p>
               </div>
             ))}
@@ -400,12 +525,18 @@ export default function FeedPage() {
         {/* ── Today Summary Strip ───────────────────────── */}
         {!loading && events.length > 0 && (
           <div className="flex items-center gap-2 text-xs text-neutral-500 mb-6 -mt-4 px-1 flex-wrap">
-            <span className="font-semibold text-neutral-400 tracking-wide">Today</span>
+            <span className="font-semibold text-neutral-400 tracking-wide">
+              Today
+            </span>
             <span className="text-neutral-700">·</span>
-            <span>{todayStats.events} event{todayStats.events !== 1 ? "s" : ""}</span>
+            <span>
+              {todayStats.events} event{todayStats.events !== 1 ? "s" : ""}
+            </span>
             <span className="text-neutral-700">·</span>
             {todayStats.errors > 0 ? (
-              <span className="text-red-400 font-medium">{todayStats.errors} error{todayStats.errors !== 1 ? "s" : ""}</span>
+              <span className="text-red-400 font-medium">
+                {todayStats.errors} error{todayStats.errors !== 1 ? "s" : ""}
+              </span>
             ) : (
               <span>0 errors</span>
             )}
@@ -424,39 +555,63 @@ export default function FeedPage() {
             {/* App pills + status pills */}
             <div className="flex items-center gap-2 flex-wrap">
               <button
-                onClick={() => { setAppFilter("all"); setStatusFilter("all"); }}
-                className={`shrink-0 px-4 py-1.5 text-xs font-medium rounded-full transition-all duration-300 border ${appFilter === "all" && statusFilter === "all"
+                onClick={() => {
+                  setAppFilter("all");
+                  setStatusFilter("all");
+                }}
+                className={`shrink-0 px-4 py-1.5 text-xs font-medium rounded-full transition-all duration-300 border ${
+                  appFilter === "all" && statusFilter === "all"
                     ? "bg-white text-black border-white shadow-sm"
                     : "bg-neutral-900 text-neutral-500 border-white/10 hover:border-white/20 hover:text-white"
-                  }`}
+                }`}
               >
                 All
               </button>
               {failedCount > 0 && (
                 <button
-                  onClick={() => { setAppFilter("all"); setStatusFilter(statusFilter === "failed" ? "all" : "failed"); }}
-                  className={`flex items-center gap-1.5 shrink-0 px-4 py-1.5 text-xs font-medium rounded-full transition-all duration-300 border ${statusFilter === "failed"
+                  onClick={() => {
+                    setAppFilter("all");
+                    setStatusFilter(
+                      statusFilter === "failed" ? "all" : "failed",
+                    );
+                  }}
+                  className={`flex items-center gap-1.5 shrink-0 px-4 py-1.5 text-xs font-medium rounded-full transition-all duration-300 border ${
+                    statusFilter === "failed"
                       ? "bg-red-500/20 text-red-300 border-red-500/40 shadow-sm"
                       : "bg-neutral-900 text-neutral-500 border-white/10 hover:border-red-500/30 hover:text-red-400"
-                    }`}
+                  }`}
                 >
-                  <div className={`w-1.5 h-1.5 rounded-full bg-red-400 ${statusFilter === "failed" ? "animate-pulse" : ""}`} />
+                  <div
+                    className={`w-1.5 h-1.5 rounded-full bg-red-400 ${statusFilter === "failed" ? "animate-pulse" : ""}`}
+                  />
                   Failed
-                  <span className="ml-0.5 opacity-60 tabular-nums">({failedCount})</span>
+                  <span className="ml-0.5 opacity-60 tabular-nums">
+                    ({failedCount})
+                  </span>
                 </button>
               )}
               {appOptions.map((app) => (
                 <button
                   key={app}
-                  onClick={() => { setAppFilter(app); setStatusFilter("all"); }}
-                  className={`group flex items-center gap-1.5 shrink-0 px-4 py-1.5 text-xs font-medium rounded-full transition-all duration-300 border ${appFilter === app && statusFilter === "all"
+                  onClick={() => {
+                    setAppFilter(app);
+                    setStatusFilter("all");
+                  }}
+                  className={`group flex items-center gap-1.5 shrink-0 px-4 py-1.5 text-xs font-medium rounded-full transition-all duration-300 border ${
+                    appFilter === app && statusFilter === "all"
                       ? "bg-white text-black border-white shadow-sm"
                       : "bg-neutral-900 text-neutral-500 border-white/10 hover:border-white/20 hover:text-white"
-                    }`}
+                  }`}
                 >
-                  <PillLogo logo={getLogo(app)} alt={app} color={getAppColor(app)} />
+                  <PillLogo
+                    logo={getLogo(app)}
+                    alt={app}
+                    color={getAppColor(app)}
+                  />
                   {getAppLabel(app) || app}
-                  <span className={`ml-0.5 tabular-nums ${appFilter === app && statusFilter === "all" ? "opacity-50" : "opacity-40"}`}>
+                  <span
+                    className={`ml-0.5 tabular-nums ${appFilter === app && statusFilter === "all" ? "opacity-50" : "opacity-40"}`}
+                  >
                     ({appCounts[app] ?? 0})
                   </span>
                 </button>
@@ -466,7 +621,8 @@ export default function FeedPage() {
             {/* Search */}
             <div className="relative w-full sm:w-80 group">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Search strokeWidth={1.5}
+                <Search
+                  strokeWidth={1.5}
                   size={16}
                   className="transition-colors text-neutral-500 group-focus-within:text-neutral-400"
                 />
@@ -484,14 +640,28 @@ export default function FeedPage() {
 
         {/* ── Error Banner ──────────────────────────────── */}
         {error && !loading && (
-          <div className={`mb-6 flex items-center gap-3 ${error === "INSUFFICIENT_CREDITS" ? "bg-amber-500/10 border-amber-500/20" : "bg-red-500/10 border-red-500/20"} border rounded-xl px-5 py-4`}>
-            <AlertCircle strokeWidth={1.5} size={18} className={`${error === "INSUFFICIENT_CREDITS" ? "text-amber-400" : "text-red-400"} shrink-0`} />
+          <div
+            className={`mb-6 flex items-center gap-3 ${error === "INSUFFICIENT_CREDITS" ? "bg-amber-500/10 border-amber-500/20" : "bg-red-500/10 border-red-500/20"} border rounded-xl px-5 py-4`}
+          >
+            <AlertCircle
+              strokeWidth={1.5}
+              size={18}
+              className={`${error === "INSUFFICIENT_CREDITS" ? "text-amber-400" : "text-red-400"} shrink-0`}
+            />
             <div className="flex-1 min-w-0">
-              <p className={`text-sm font-medium ${error === "INSUFFICIENT_CREDITS" ? "text-amber-400" : "text-red-400"}`}>
-                {error === "INSUFFICIENT_CREDITS" ? "Out of credits" : "Failed to load feed"}
+              <p
+                className={`text-sm font-medium ${error === "INSUFFICIENT_CREDITS" ? "text-amber-400" : "text-red-400"}`}
+              >
+                {error === "INSUFFICIENT_CREDITS"
+                  ? "Out of credits"
+                  : "Failed to load feed"}
               </p>
-              <p className={`text-xs mt-0.5 truncate ${error === "INSUFFICIENT_CREDITS" ? "text-amber-400/70" : "text-red-400/70"}`}>
-                {error === "INSUFFICIENT_CREDITS" ? "Add credits to continue viewing your feed." : error}
+              <p
+                className={`text-xs mt-0.5 truncate ${error === "INSUFFICIENT_CREDITS" ? "text-amber-400/70" : "text-red-400/70"}`}
+              >
+                {error === "INSUFFICIENT_CREDITS"
+                  ? "Add credits to continue viewing your feed."
+                  : error}
               </p>
             </div>
             {error === "INSUFFICIENT_CREDITS" ? (
@@ -532,44 +702,22 @@ export default function FeedPage() {
           </div>
         ) : events.length === 0 ? (
           /* ── Empty State ──────────────────────────────── */
-          <div className="flex flex-col items-center justify-center min-h-[40vh] text-center gap-6 mt-10">
-            <div className="w-20 h-20 rounded-full bg-black border border-white/5 flex items-center justify-center shadow-lg relative">
-              <div className="absolute inset-0 rounded-full bg-white opacity-10 blur-xl"></div>
-              <Activity strokeWidth={1.5}
-                size={32}
-                className="text-neutral-500 relative z-10"
-              />
-            </div>
-            <div className="space-y-3 max-w-sm">
-              <h3 className="text-xl font-serif text-white">
-                Your feed is quiet
-              </h3>
-              <p className="text-sm text-neutral-500 leading-relaxed">
-                Once your triggers start capturing events from connected apps,
-                they&apos;ll appear here as a timeline.
-              </p>
-            </div>
-            <div className="flex items-center gap-3 pt-4">
-              <Link
-                href="/dashboard/triggers"
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white text-white text-sm font-medium hover:brightness-110 transition-all shadow-md"
-              >
-                <Zap strokeWidth={1.5} size={14} />
-                Set up triggers
-              </Link>
-              <Link
-                href="/dashboard/integrations"
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-black border border-white/5 text-sm font-medium text-neutral-400 hover:text-white hover:border-white/10 transition-all"
-              >
-                Connect apps
-              </Link>
-            </div>
-          </div>
+          <EmptyState
+            icon={Activity}
+            title="Your feed is quiet"
+            description="Once your triggers start capturing events from connected apps, they'll appear here as a timeline."
+            primaryAction={{ label: "Set up triggers", href: "/dashboard/triggers" }}
+            secondaryAction={{ label: "Connect apps", href: "/dashboard/integrations" }}
+          />
         ) : filtered.length === 0 ? (
           /* ── No Results ───────────────────────────────── */
           <div className="flex flex-col items-center justify-center py-24 text-center gap-4">
             <div className="w-16 h-16 rounded-full bg-neutral-900 flex items-center justify-center">
-              <Search strokeWidth={1.5} size={22} className="text-neutral-500" />
+              <Search
+                strokeWidth={1.5}
+                size={22}
+                className="text-neutral-500"
+              />
             </div>
             <div className="space-y-1">
               <h3 className="text-base font-medium text-white">
@@ -631,7 +779,12 @@ export default function FeedPage() {
                         >
                           <div className="flex items-start gap-4">
                             {/* App icon */}
-                            <FeedAppIcon logo={appLogo} label={appLabel} color={color} icon={icon} />
+                            <FeedAppIcon
+                              logo={appLogo}
+                              label={appLabel}
+                              color={color}
+                              icon={icon}
+                            />
 
                             {/* Content */}
                             <div className="flex-1 min-w-0 pt-0.5">
@@ -658,34 +811,51 @@ export default function FeedPage() {
                                 </p>
                               )}
 
-                              {evt.error && (() => {
-                                const cleaned = cleanError(evt.error);
-                                const isAuth = cleaned === "AUTH_ERROR";
-                                return (
-                                  <div className="flex items-center gap-1.5 mt-3 text-red-400 bg-red-400/10 px-3 py-2 rounded-lg border border-red-400/20 w-fit max-w-full">
-                                    <AlertCircle strokeWidth={1.5} size={12} className="shrink-0" />
-                                    <span className="text-[11px] font-medium">
-                                      {isAuth ? `Your ${appLabel} connection expired.` : cleaned}
-                                    </span>
-                                    {isAuth && (
-                                      <Link
-                                        href={`/dashboard/integrations?connect=${evt.app}`}
-                                        className="text-[11px] font-semibold text-red-300 hover:text-white underline underline-offset-2 ml-1"
-                                      >
-                                        Reconnect
-                                      </Link>
-                                    )}
-                                  </div>
-                                );
-                              })()}
+                              {evt.error &&
+                                (() => {
+                                  const cleaned = cleanError(evt.error);
+                                  const isAuth = cleaned === "AUTH_ERROR";
+                                  return (
+                                    <div className="flex items-center gap-1.5 mt-3 text-red-400 bg-red-400/10 px-3 py-2 rounded-lg border border-red-400/20 w-fit max-w-full">
+                                      <AlertCircle
+                                        strokeWidth={1.5}
+                                        size={12}
+                                        className="shrink-0"
+                                      />
+                                      <span className="text-[11px] font-medium">
+                                        {isAuth
+                                          ? `Your ${appLabel} connection expired.`
+                                          : cleaned}
+                                      </span>
+                                      {isAuth && (
+                                        <Link
+                                          href={`/dashboard/integrations?connect=${evt.app}`}
+                                          className="text-[11px] font-semibold text-red-300 hover:text-white underline underline-offset-2 ml-1"
+                                        >
+                                          Reconnect
+                                        </Link>
+                                      )}
+                                    </div>
+                                  );
+                                })()}
 
                               {/* Expandable details */}
                               <button
-                                onClick={() => setExpandedEvent(expandedEvent === evt.id ? null : evt.id)}
+                                onClick={() =>
+                                  setExpandedEvent(
+                                    expandedEvent === evt.id ? null : evt.id,
+                                  )
+                                }
                                 className="flex items-center gap-1 mt-3 text-[11px] text-neutral-600 hover:text-neutral-400 transition-colors"
                               >
-                                <ChevronDown strokeWidth={1.5} size={12} className={`transition-transform duration-200 ${expandedEvent === evt.id ? "rotate-180" : ""}`} />
-                                {expandedEvent === evt.id ? "Hide details" : "Details"}
+                                <ChevronDown
+                                  strokeWidth={1.5}
+                                  size={12}
+                                  className={`transition-transform duration-200 ${expandedEvent === evt.id ? "rotate-180" : ""}`}
+                                />
+                                {expandedEvent === evt.id
+                                  ? "Hide details"
+                                  : "Details"}
                               </button>
 
                               <AnimatePresence>
@@ -699,22 +869,44 @@ export default function FeedPage() {
                                   >
                                     <div className="mt-3 pt-3 border-t border-white/[0.04] space-y-2.5">
                                       <div className="grid grid-cols-[100px_1fr] gap-x-3 gap-y-1.5 text-[11px]">
-                                        <span className="text-neutral-600 font-medium">Event ID</span>
-                                        <span className="text-neutral-400 font-mono break-all">{evt.id}</span>
-                                        <span className="text-neutral-600 font-medium">Trigger</span>
-                                        <span className="text-neutral-400 font-mono">{evt.triggerSlug}</span>
-                                        <span className="text-neutral-600 font-medium">Status</span>
-                                        <span className="text-neutral-400">{evt.status}</span>
+                                        <span className="text-neutral-600 font-medium">
+                                          Event ID
+                                        </span>
+                                        <span className="text-neutral-400 font-mono break-all">
+                                          {evt.id}
+                                        </span>
+                                        <span className="text-neutral-600 font-medium">
+                                          Trigger
+                                        </span>
+                                        <span className="text-neutral-400 font-mono">
+                                          {evt.triggerSlug}
+                                        </span>
+                                        <span className="text-neutral-600 font-medium">
+                                          Status
+                                        </span>
+                                        <span className="text-neutral-400">
+                                          {evt.status}
+                                        </span>
                                         {evt.processingTimeMs != null && (
                                           <>
-                                            <span className="text-neutral-600 font-medium">Process time</span>
-                                            <span className="text-neutral-400">{evt.processingTimeMs}ms</span>
+                                            <span className="text-neutral-600 font-medium">
+                                              Process time
+                                            </span>
+                                            <span className="text-neutral-400">
+                                              {evt.processingTimeMs}ms
+                                            </span>
                                           </>
                                         )}
                                         {evt.error && (
                                           <>
-                                            <span className="text-neutral-600 font-medium">Raw error</span>
-                                            <span className="text-red-400/70 font-mono break-all">{evt.error.length > 300 ? evt.error.slice(0, 297) + "…" : evt.error}</span>
+                                            <span className="text-neutral-600 font-medium">
+                                              Raw error
+                                            </span>
+                                            <span className="text-red-400/70 font-mono break-all">
+                                              {evt.error.length > 300
+                                                ? evt.error.slice(0, 297) + "…"
+                                                : evt.error}
+                                            </span>
                                           </>
                                         )}
                                       </div>
@@ -722,7 +914,10 @@ export default function FeedPage() {
                                         href="/dashboard/review"
                                         className="inline-flex items-center gap-1.5 text-[11px] text-neutral-500 hover:text-white transition-colors"
                                       >
-                                        <ExternalLink strokeWidth={1.5} size={11} />
+                                        <ExternalLink
+                                          strokeWidth={1.5}
+                                          size={11}
+                                        />
                                         See if this needs your review →
                                       </Link>
                                     </div>
@@ -754,24 +949,16 @@ export default function FeedPage() {
           </div>
         )}
 
-        {/* Load more */}
-        {!loading && hasMore && (
-          <div className="mt-10 flex justify-center">
-            <button
-              onClick={() => loadEvents(true, events.length)}
-              disabled={loadingMore}
-              className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-black border border-white/5 text-sm font-medium text-neutral-400 hover:text-white hover:border-white/10 transition-all disabled:opacity-50 shadow-sm"
-            >
-              {loadingMore ? (
-                <RefreshCw strokeWidth={1.5}
-                  size={14}
-                  className="animate-spin text-neutral-500"
-                />
-              ) : (
-                <Activity strokeWidth={1.5} size={14} className="text-neutral-500" />
-              )}
-              {loadingMore ? "Loading more..." : "Load more events"}
-            </button>
+        {/* Sentinel for auto infinite scroll — becomes visible when user nears bottom */}
+        <div ref={sentinelRef} className="h-1" />
+        {/* Spinner shown while auto-loading next page */}
+        {loadingMore && (
+          <div className="mt-6 flex justify-center">
+            <RefreshCw
+              strokeWidth={1.5}
+              size={16}
+              className="animate-spin text-neutral-600"
+            />
           </div>
         )}
       </div>
