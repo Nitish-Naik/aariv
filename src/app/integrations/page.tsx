@@ -1,10 +1,10 @@
-import { INTEGRATIONS } from "@/lib/integrations-data";
 import Footer from "@/components/secure-agent/Footer";
 import Navbar from "@/components/secure-agent/Navbar";
+import { INTEGRATIONS } from "@/lib/integrations-data";
+import { ArrowRight } from "lucide-react";
 import { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "AI Assistant Integrations — CalmPilot",
@@ -26,16 +26,25 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: "AI Assistant Integrations — CalmPilot",
-    description: "Browse 500+ AI automation integrations. Connect your apps and let CalmPilot handle the work.",
+    description:
+      "Browse 500+ AI automation integrations. Connect your apps and let CalmPilot handle the work.",
     url: "https://calmpilot.app/integrations",
     type: "website",
     siteName: "CalmPilot",
-    images: [{ url: "/opengraph-image", width: 1200, height: 630, alt: "CalmPilot Integrations" }],
+    images: [
+      {
+        url: "/opengraph-image",
+        width: 1200,
+        height: 630,
+        alt: "CalmPilot Integrations",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "AI Assistant Integrations — CalmPilot",
-    description: "Browse 500+ AI automation integrations. Connect your apps and let CalmPilot handle the work.",
+    description:
+      "Browse 500+ AI automation integrations. Connect your apps and let CalmPilot handle the work.",
     images: ["/opengraph-image"],
   },
 };
@@ -47,13 +56,24 @@ export default function IntegrationsPage() {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
     name: "CalmPilot Integrations",
-    description: "AI automation integrations for 500+ apps including Gmail, Slack, Notion, GitHub, and more.",
+    description:
+      "AI automation integrations for 500+ apps including Gmail, Slack, Notion, GitHub, and more.",
     url: "https://calmpilot.app/integrations",
     breadcrumb: {
       "@type": "BreadcrumbList",
       itemListElement: [
-        { "@type": "ListItem", position: 1, name: "Home", item: "https://calmpilot.app" },
-        { "@type": "ListItem", position: 2, name: "Integrations", item: "https://calmpilot.app/integrations" },
+        {
+          "@type": "ListItem",
+          position: 1,
+          name: "Home",
+          item: "https://calmpilot.app",
+        },
+        {
+          "@type": "ListItem",
+          position: 2,
+          name: "Integrations",
+          item: "https://calmpilot.app/integrations",
+        },
       ],
     },
     hasPart: INTEGRATIONS.map((i) => ({
@@ -66,31 +86,37 @@ export default function IntegrationsPage() {
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-200 font-sans selection:bg-zinc-800">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
 
       <Navbar />
 
       <main>
         {/* Hero */}
-        <section className="relative py-20 px-4 text-center overflow-hidden">
+        <section className="relative py-14 sm:py-20 px-4 text-center overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-b from-violet-950/20 via-zinc-950 to-zinc-950 pointer-events-none" />
           <div className="relative max-w-3xl mx-auto">
             {/* Breadcrumb */}
-            <nav className="flex items-center justify-center gap-2 text-sm text-zinc-500 mb-8">
-              <Link href="/" className="hover:text-zinc-300 transition-colors">Home</Link>
+            <nav className="flex items-center justify-center gap-2 text-xs sm:text-sm text-zinc-500 mb-6 sm:mb-8 flex-wrap">
+              <Link href="/" className="hover:text-zinc-300 transition-colors">
+                Home
+              </Link>
               <span>/</span>
               <span className="text-zinc-300">Integrations</span>
             </nav>
 
-            <h1 className="text-4xl sm:text-5xl font-bold text-white mb-5 leading-tight tracking-tight">
+            <h1 className="text-3xl sm:text-5xl font-bold text-white mb-4 sm:mb-5 leading-tight tracking-tight">
               AI Assistant for Every App You Use
             </h1>
-            <p className="text-lg text-zinc-400 max-w-xl mx-auto mb-10">
-              CalmPilot connects to 500+ apps via OAuth and automates your work — no passwords, no setup, no manual entry.
+            <p className="text-base sm:text-lg text-zinc-400 max-w-xl mx-auto mb-8 sm:mb-10 leading-relaxed">
+              CalmPilot connects to 500+ apps via OAuth and automates your work
+              — no passwords, no setup, no manual entry.
             </p>
             <Link
               href="/login"
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-white text-zinc-950 font-semibold text-sm hover:bg-zinc-100 transition-colors"
+              className="inline-flex w-full sm:w-auto items-center justify-center gap-2 px-6 py-3 rounded-xl bg-white text-zinc-950 font-semibold text-sm hover:bg-zinc-100 transition-colors"
             >
               Connect Your Apps Free <ArrowRight size={16} />
             </Link>
@@ -103,7 +129,7 @@ export default function IntegrationsPage() {
           return (
             <section key={category} className="py-10 px-4">
               <div className="max-w-5xl mx-auto">
-                <h2 className="text-sm font-semibold text-zinc-500 uppercase tracking-widest mb-6">
+                <h2 className="text-xs sm:text-sm font-semibold text-zinc-500 uppercase tracking-[0.18em] sm:tracking-widest mb-5 sm:mb-6">
                   {category}
                 </h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -111,9 +137,9 @@ export default function IntegrationsPage() {
                     <Link
                       key={integration.slug}
                       href={`/integrations/${integration.slug}`}
-                      className="group flex items-start gap-4 p-5 rounded-2xl bg-zinc-900 border border-white/[0.06] hover:border-white/10 transition-all hover:bg-zinc-900/80"
+                      className="group flex items-start gap-3 sm:gap-4 p-4 sm:p-5 rounded-2xl bg-zinc-900 border border-white/[0.06] hover:border-white/10 transition-all hover:bg-zinc-900/80"
                     >
-                      <div className="flex-shrink-0 w-11 h-11 rounded-xl bg-zinc-800 border border-white/[0.06] flex items-center justify-center p-2.5">
+                      <div className="flex-shrink-0 w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-zinc-800 border border-white/[0.06] flex items-center justify-center p-2 sm:p-2.5">
                         <Image
                           src={integration.logo}
                           alt={integration.name}
@@ -132,7 +158,7 @@ export default function IntegrationsPage() {
                       </div>
                       <ArrowRight
                         size={14}
-                        className="flex-shrink-0 mt-0.5 text-zinc-600 group-hover:text-violet-400 transition-colors"
+                        className="hidden sm:block flex-shrink-0 mt-0.5 text-zinc-600 group-hover:text-violet-400 transition-colors"
                       />
                     </Link>
                   ))}
@@ -143,30 +169,36 @@ export default function IntegrationsPage() {
         })}
 
         {/* More coming */}
-        <section className="py-12 px-4">
+        <section className="py-10 sm:py-12 px-4">
           <div className="max-w-5xl mx-auto">
-            <div className="rounded-2xl bg-zinc-900/60 border border-white/[0.06] p-8 text-center">
-              <p className="text-3xl font-bold text-white mb-2">500+</p>
-              <p className="text-zinc-400 text-sm mb-1">apps available via CalmPilot</p>
+            <div className="rounded-2xl bg-zinc-900/60 border border-white/[0.06] p-6 sm:p-8 text-center">
+              <p className="text-2xl sm:text-3xl font-bold text-white mb-2">
+                500+
+              </p>
+              <p className="text-zinc-400 text-sm mb-1">
+                apps available via CalmPilot
+              </p>
               <p className="text-zinc-600 text-xs">
-                Including Salesforce, Jira, Confluence, Zoom, Calendly, Shopify, and hundreds more.
+                Including Salesforce, Jira, Confluence, Zoom, Calendly, Shopify,
+                and hundreds more.
               </p>
             </div>
           </div>
         </section>
 
         {/* CTA */}
-        <section className="py-20 px-4 text-center">
+        <section className="py-14 sm:py-20 px-4 text-center">
           <div className="max-w-2xl mx-auto">
-            <h2 className="text-3xl font-bold text-white mb-4">
+            <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">
               One AI assistant. All your apps.
             </h2>
-            <p className="text-zinc-400 mb-8">
-              Connect any app in one click and let CalmPilot handle the work — 24/7.
+            <p className="text-zinc-400 text-sm sm:text-base mb-7 sm:mb-8 leading-relaxed">
+              Connect any app in one click and let CalmPilot handle the work —
+              24/7.
             </p>
             <Link
               href="/login"
-              className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl bg-white text-zinc-950 font-semibold text-sm hover:bg-zinc-100 transition-colors"
+              className="inline-flex w-full sm:w-auto items-center justify-center gap-2 px-8 py-3.5 rounded-xl bg-white text-zinc-950 font-semibold text-sm hover:bg-zinc-100 transition-colors"
             >
               Get Started Free <ArrowRight size={16} />
             </Link>

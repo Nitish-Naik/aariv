@@ -69,7 +69,11 @@ export default function FAQ() {
           </p>
         </motion.div>
 
-        <Accordion className="w-full space-y-3">
+        <Accordion
+          multiple
+          defaultValue={["item-0", "item-3"]}
+          className="w-full space-y-3"
+        >
           {faqs.map((faq, idx) => (
             <motion.div
               key={idx}
@@ -78,7 +82,10 @@ export default function FAQ() {
               viewport={{ once: true }}
               transition={{ delay: idx * 0.04 }}
             >
-              <AccordionItem value={`item-${idx}`} className="border border-white/10 rounded-xl overflow-hidden bg-black px-1 data-[state=open]:bg-neutral-900 transition-colors">
+              <AccordionItem
+                value={`item-${idx}`}
+                className="border border-white/10 rounded-xl overflow-hidden bg-black px-1 data-[state=open]:bg-neutral-900 transition-colors"
+              >
                 <AccordionTrigger className="w-full text-left px-5 py-5 text-white font-medium hover:no-underline [&[data-state=open]]:text-indigo-400">
                   {faq.question}
                 </AccordionTrigger>

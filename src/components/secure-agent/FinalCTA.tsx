@@ -118,7 +118,7 @@ export default function FinalCTA() {
                         <div className="flex items-center justify-center gap-3 mt-4">
                             {total !== null && total > 0 && (
                                 <div className="flex items-center gap-1.5 text-sm text-zinc-500">
-                                    <Users strokeWidth={1.5} className="w-3.5 h-3.5" />
+                                    {/* <Users strokeWidth={1.5} className="w-3.5 h-3.5" /> */}
                                     {/* <span>Join <span className="text-zinc-300 font-medium">{total.toLocaleString()}+</span> on the waitlist</span> */}
                                 </div>
                             )}

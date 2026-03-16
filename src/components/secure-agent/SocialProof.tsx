@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, BarChart3, BriefcaseBusiness, Code2 } from "lucide-react";
 
 const staticStats = [
   { value: "500+", label: "apps connected" },
@@ -73,7 +73,7 @@ export default function SocialProof() {
             What actually changes
           </motion.p>
 
-          <div className="grid md:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
             {useCases.map((uc, i) => (
               <motion.div
                 key={i}
@@ -81,10 +81,19 @@ export default function SocialProof() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.1, duration: 0.5 }}
-                className="rounded-2xl bg-zinc-950 border border-white/[0.07] p-6 flex flex-col gap-4"
+                className="rounded-2xl bg-zinc-950 border border-white/[0.07] p-5 sm:p-6 flex flex-col gap-5"
               >
                 {/* Persona tag */}
-                <span className="self-start text-[11px] font-semibold text-zinc-500 uppercase tracking-widest px-2 py-1 rounded-md bg-white/[0.04] border border-white/[0.06]">
+                <span className="self-start inline-flex items-center gap-1.5 text-[11px] font-semibold text-zinc-400 uppercase tracking-widest px-2.5 py-1 rounded-md bg-white/[0.04] border border-white/[0.06]">
+                  {uc.persona === "Founder" && (
+                    <BriefcaseBusiness size={12} className="text-zinc-500" />
+                  )}
+                  {uc.persona === "Sales rep" && (
+                    <BarChart3 size={12} className="text-zinc-500" />
+                  )}
+                  {uc.persona === "Engineer" && (
+                    <Code2 size={12} className="text-zinc-500" />
+                  )}
                   {uc.persona}
                 </span>
 
@@ -99,10 +108,15 @@ export default function SocialProof() {
                 </div>
 
                 {/* Arrow */}
-                <div className="flex items-center gap-2">
-                  <div className="flex-1 h-px bg-white/[0.05]" />
-                  <ArrowRight size={12} className="text-zinc-600 shrink-0" />
-                  <div className="flex-1 h-px bg-white/[0.05]" />
+                <div className="flex items-center gap-2.5">
+                  <div className="flex-1 h-px bg-white/[0.1]" />
+                  <span className="inline-flex items-center justify-center w-7 h-7 rounded-full border border-emerald-500/30 bg-emerald-500/10">
+                    <ArrowRight
+                      size={14}
+                      className="text-emerald-400 shrink-0"
+                    />
+                  </span>
+                  <div className="flex-1 h-px bg-white/[0.1]" />
                 </div>
 
                 {/* After */}
