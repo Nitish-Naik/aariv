@@ -213,7 +213,7 @@ export default function Hero() {
                                         {total !== null && total > 0 && (
                                             <div className="flex items-center gap-1.5 text-sm text-zinc-500">
                                                 <Users strokeWidth={1.5} className="w-3.5 h-3.5" />
-                                                <span><span className="text-zinc-300 font-medium">{total.toLocaleString()}</span> on the waitlist</span>
+                                                {/* <span><span className="text-zinc-300 font-medium">{total.toLocaleString()}</span> on the waitlist</span> */}
                                             </div>
                                         )}
                                         <span className="text-sm text-zinc-600">Free early access</span>

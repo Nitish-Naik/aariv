@@ -73,6 +73,9 @@ const getGreeting = () => {
   return "Good evening";
 };
 
+/** Replace legacy "Aariv" branding that the backend may still return */
+const sanitizeBranding = (text: string) => text.replace(/\bAariv\b/g, "CalmPilot");
+
 const formatDate = () => {
   return new Date().toLocaleDateString("en-US", {
     weekday: "long",
@@ -243,27 +246,55 @@ function ProposalRow({
 
 function CalendarRow({
   event,
+  isNext,
 }: {
   event: CalendarEvent;
+  isNext?: boolean;
 }) {
-  const isPast = new Date(event.startTime) < new Date();
+  const isPast = new Date(event.endTime || event.startTime) < new Date();
   const time = formatTime(event.startTime);
+  const endTime = event.endTime ? formatTime(event.endTime) : "";
 
   return (
     <div
-      className={`flex items-center gap-4 px-5 py-3 border-b border-white/[0.05] last:border-0 ${
-        isPast ? "opacity-40" : ""
+      className={`flex items-center gap-4 px-5 py-3 border-b border-white/[0.05] last:border-0 transition-colors ${
+        isPast
+          ? "opacity-40"
+          : isNext
+            ? "bg-white/[0.03] border-l-2 border-l-amber-500/70"
+            : ""
       }`}
     >
-      <span className="text-[11px] font-medium text-neutral-500 tabular-nums w-16 shrink-0">
-        {time}
-      </span>
+      <div className="w-20 shrink-0">
+        <span className={`text-[11px] font-medium tabular-nums ${isPast ? "text-neutral-600" : "text-neutral-400"}`}>
+          {time}
+        </span>
+        {endTime && (
+          <span className="text-[10px] text-neutral-600 ml-1">– {endTime}</span>
+        )}
+      </div>
       <div
-        className="w-1 h-1 rounded-full shrink-0"
-        style={{ backgroundColor: event.color || "#ffffff" }}
+        className={`w-1.5 h-1.5 rounded-full shrink-0 ${isPast ? "opacity-50" : ""}`}
+        style={{ backgroundColor: event.color || (isPast ? "#525252" : "#f59e0b") }}
       />
-      <p className="text-sm text-white font-medium truncate">{event.title}</p>
+      <div className="min-w-0 flex-1">
+        <p className={`text-sm font-medium truncate ${isPast ? "text-neutral-500 line-through" : "text-white"}`}>
+          {event.title}
+        </p>
+      </div>
+      {isNext && (
+        <span className="text-[10px] font-semibold uppercase tracking-wider text-amber-500/80 shrink-0">
+          Next
+        </span>
+      )}
     </div>
+  );
+}
+
+function findNextEventIndex(events: CalendarEvent[]): number {
+  const now = new Date();
+  return events.findIndex(
+    (e) => new Date(e.endTime || e.startTime) >= now,
   );
 }
 
@@ -348,14 +379,14 @@ function OnboardingState({ firstName }: { firstName: string }) {
                 )}
               </div>
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
+                {/* <div className="flex items-center gap-2">
                   <span className="text-sm font-medium text-white">{app.name}</span>
                   {app.free && (
                     <span className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500">
                       Free
                     </span>
                   )}
-                </div>
+                </div> */}
                 <p className="text-xs text-neutral-500 mt-0.5 truncate">
                   {app.description}
                 </p>
@@ -436,7 +467,7 @@ function CalmState({
           {getGreeting()}, {firstName}
         </h2>
         <p className="text-xs text-neutral-500 max-w-xs leading-relaxed mb-8">
-          {briefing?.subtitle || "Nothing needs your attention right now. Your day is running smoothly."}
+          {sanitizeBranding(briefing?.subtitle || "Nothing needs your attention right now. Your day is running smoothly.")}
         </p>
 
         {/* Quick actions */}
@@ -486,9 +517,12 @@ function CalmState({
                 Today&apos;s schedule
               </p>
             </div>
-            {calendarEvents.map((event) => (
-              <CalendarRow key={event.id} event={event} />
-            ))}
+            {(() => {
+              const nextIdx = findNextEventIndex(calendarEvents);
+              return calendarEvents.map((event, i) => (
+                <CalendarRow key={event.id} event={event} isNext={i === nextIdx} />
+              ));
+            })()}
           </div>
         )}
 
@@ -496,7 +530,7 @@ function CalmState({
         {insight && (
           <div className="mt-6 flex items-start gap-3 border border-white/[0.06] rounded-lg px-4 py-3 max-w-sm w-full text-left">
             <Sparkles strokeWidth={1.75} size={14} className="text-neutral-500 shrink-0 mt-0.5" />
-            <p className="text-xs text-neutral-500 leading-relaxed">{insight}</p>
+            <p className="text-xs text-neutral-500 leading-relaxed">{sanitizeBranding(insight)}</p>
           </div>
         )}
       </div>
@@ -526,7 +560,7 @@ function ActiveState({
 
   const handleProposalAction = (proposal: Proposal, action: string) => {
     const prompt = encodeURIComponent(
-      `${action}: ${proposal.title} — ${proposal.description}`,
+      `${action} for: "${proposal.title}"\n\nBackground: ${proposal.description}`,
     );
     router.push(`/dashboard/assistant?prompt=${prompt}`);
   };
@@ -590,7 +624,7 @@ function ActiveState({
           {insight && (
             <div className="px-5 py-3 border-t border-white/[0.06] flex items-start gap-3">
               <Sparkles strokeWidth={1.75} size={13} className="text-neutral-600 shrink-0 mt-0.5" />
-              <p className="text-xs text-neutral-500 leading-relaxed">{insight}</p>
+              <p className="text-xs text-neutral-500 leading-relaxed">{sanitizeBranding(insight)}</p>
             </div>
           )}
         </div>
@@ -605,9 +639,12 @@ function ActiveState({
 
           {events.length > 0 ? (
             <div className="divide-y divide-white/[0.05]">
-              {events.map((event) => (
-                <CalendarRow key={event.id} event={event} />
-              ))}
+              {(() => {
+                const nextIdx = findNextEventIndex(events);
+                return events.map((event, i) => (
+                  <CalendarRow key={event.id} event={event} isNext={i === nextIdx} />
+                ));
+              })()}
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center flex-1 py-12 px-6 text-center">
@@ -676,10 +713,13 @@ export default function DashboardHome() {
   const [showNudge, setShowNudge] = useState(false);
   const [connectedApps, setConnectedApps] = useState<string[]>([]);
   const step3Tracked = useRef(false);
+  const fetchingRef = useRef(false);
 
   const fetchBriefing = useCallback(
     async (silent = false) => {
       if (!user?.id) return;
+      if (fetchingRef.current) return; // prevent concurrent fetches
+      fetchingRef.current = true;
       if (silent) setRefreshing(true);
       else setLoading(true);
       setError(null);
@@ -704,7 +744,7 @@ export default function DashboardHome() {
         setHasConnections(true);
 
         const [data, reviewData] = await Promise.all([
-          api.get(`/dashboard/briefing`),
+          api.get(`/dashboard/briefing${silent ? "?force=true" : ""}`),
           api.get(`/review?status=pending`).catch(() => null),
         ]);
         setBriefing(data);
@@ -714,11 +754,12 @@ export default function DashboardHome() {
           step3Tracked.current = true;
           api.patch("/auth/onboarding-step", { step: 3 }).catch(() => {});
         }
-      } catch (err: any) {
-        setError(err.message || "Couldn't load your briefing.");
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : "Couldn't load your briefing.");
       } finally {
         setLoading(false);
         setRefreshing(false);
+        fetchingRef.current = false;
       }
     },
     [user?.id],
@@ -778,7 +819,7 @@ export default function DashboardHome() {
           <div className="text-center space-y-3">
             <p className="text-sm text-neutral-500">{error}</p>
             <button
-              onClick={() => fetchBriefing()}
+              onClick={() => fetchBriefing(true)}
               className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-white text-black text-xs font-medium hover:bg-neutral-100 transition-colors"
             >
               <Loader2 strokeWidth={1.75} size={13} />

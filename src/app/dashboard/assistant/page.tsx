@@ -15,6 +15,7 @@ import {
   Clock,
   Copy,
   FileUp,
+  Loader2,
   Menu,
   MessageSquare,
   PanelLeftClose,
@@ -63,6 +64,7 @@ function AssistantPageInner() {
   const { getLogo } = useLogo();
   const searchParams = useSearchParams();
   const promptAutoSentRef = useRef(false);
+  const handleSendRef = useRef<(text?: string) => void>(() => {});
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeConversationId, setActiveConversationId] = useState<
@@ -117,17 +119,13 @@ function AssistantPageInner() {
   }, []);
 
   // Auto-send ?prompt= param from proposal action buttons on the home page
+  const autoPrompt = searchParams.get("prompt");
+  const [autoPromptPending, setAutoPromptPending] = useState(false);
+
   useEffect(() => {
-    if (!user?.id || promptAutoSentRef.current) return;
-    const raw = searchParams.get("prompt");
-    if (!raw) return;
-    promptAutoSentRef.current = true;
-    const decoded = decodeURIComponent(raw);
-    // Small delay so localStorage model preference loads first
-    const timer = setTimeout(() => handleSend(decoded), 150);
-    return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id, searchParams]);
+    if (!user?.id || !autoPrompt || promptAutoSentRef.current) return;
+    setAutoPromptPending(true);
+  }, [user?.id, autoPrompt]);
 
   // Fetch dynamic suggestion chips based on connected apps
   useEffect(() => {
@@ -355,14 +353,15 @@ function AssistantPageInner() {
     // Open logs panel automatically on send
     setIsLogsOpen(true);
 
+    const msgTimestamp = `${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
     const userMessage: ChatMessage = {
-      id: Date.now().toString(),
+      id: msgTimestamp,
       role: "user",
       content: messageText,
       timestamp: new Date(),
     };
 
-    const aiMessageId = Date.now().toString() + "_ai";
+    const aiMessageId = msgTimestamp + "_ai";
     const initialAiMessage: ChatMessage = {
       id: aiMessageId,
       role: "assistant",
@@ -521,6 +520,17 @@ function AssistantPageInner() {
     }
   };
 
+  // Keep ref in sync so useEffect closures always call the latest version
+  handleSendRef.current = handleSend;
+
+  // Fire auto-prompt after handleSend is ready
+  useEffect(() => {
+    if (!autoPromptPending || !autoPrompt || promptAutoSentRef.current) return;
+    promptAutoSentRef.current = true;
+    setAutoPromptPending(false);
+    handleSendRef.current(autoPrompt);
+  }, [autoPromptPending, autoPrompt]);
+
   return (
     <div className="flex h-screen overflow-hidden bg-black">
       {/* ── SIDEBAR OVERLAY (mobile) ── */}
@@ -533,13 +543,13 @@ function AssistantPageInner() {
 
       {/* ── LEFT SIDEBAR (Chat History) ── */}
       <aside
-        className={`fixed lg:static top-0 left-0 h-full z-40 flex flex-col bg-neutral-900 border-r border-white/10 transition-all duration-300 ease-in-out ${isSidebarOpen
+        className={`fixed lg:static top-0 left-0 h-full z-40 flex flex-col bg-[#0a0a0a] border-r border-white/[0.06] transition-all duration-300 ease-in-out ${isSidebarOpen
           ? "w-72 translate-x-0"
           : "w-0 -translate-x-full lg:translate-x-0 lg:w-0 overflow-hidden"
           }`}
       >
         {/* Sidebar Header */}
-        <div className="h-16 flex items-center justify-between px-4 border-b border-white/10 shrink-0">
+        <div className="h-16 flex items-center justify-between px-4 border-b border-white/[0.06] shrink-0">
           <span className="text-sm font-semibold text-white tracking-wide">
             Chat History
           </span>
@@ -775,7 +785,14 @@ function AssistantPageInner() {
         )}
 
         {/* Empty State — Centered landing */}
-        {messages.length === 0 ? (
+        {messages.length === 0 && autoPromptPending ? (
+          <div className="flex-1 flex flex-col items-center justify-center px-4">
+            <div className="flex items-center gap-3 text-neutral-500">
+              <Loader2 className="animate-spin" size={20} />
+              <span className="text-sm">Processing your request...</span>
+            </div>
+          </div>
+        ) : messages.length === 0 ? (
           <div className="flex-1 flex flex-col items-center justify-center px-4 sm:px-8">
             <div className="flex flex-col items-center text-center max-w-2xl w-full space-y-6">
               {/* Gradient headline */}
@@ -848,8 +865,8 @@ function AssistantPageInner() {
           </div>
         ) : (
           /* Messages List */
-          <div className="flex-1 overflow-y-auto px-4 sm:px-8 lg:px-12 py-6 space-y-6 scroll-smooth">
-            <div className="max-w-3xl mx-auto w-full space-y-8">
+          <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-6 space-y-4 scroll-smooth">
+            <div className="max-w-2xl mx-auto w-full space-y-5">
               {messages.map((msg) => {
                 const isUser = msg.role === "user";
                 const isThinking = !msg.content && (msg.logs?.length || 0) > 0;
@@ -865,7 +882,7 @@ function AssistantPageInner() {
                 return (
                   <div
                     key={msg.id}
-                    className={`flex gap-4 ${isUser ? "flex-row-reverse" : "flex-row"}`}
+                    className={`flex gap-3 ${isUser ? "flex-row-reverse" : "flex-row"}`}
                   >
                     {/* Avatar for AI */}
                     {!isUser && (
@@ -876,10 +893,10 @@ function AssistantPageInner() {
 
                     {/* Bubble Container */}
                     <div
-                      className={`flex flex-col group ${isUser ? "items-end" : "items-start w-full"
+                      className={`flex flex-col group min-w-0 ${isUser ? "items-end" : "items-start flex-1"
                         }`}
                     >
-                      <div className="max-w-[85%] lg:max-w-[90%] rounded-xl px-5 py-4 bg-neutral-900 border border-white/[0.02] shadow-sm">
+                      <div className={`rounded-xl px-4 py-3 shadow-sm ${isUser ? "max-w-[85%] bg-neutral-800 border border-white/[0.04]" : "w-full bg-transparent"}`}>
                         {/* Content */}
                         {isUser ? (
                           <div className="relative group/userMsg">
@@ -1095,7 +1112,7 @@ function AssistantPageInner() {
 
                         {/* Auth actions — connection cards */}
                         {msg.auth_actions && msg.auth_actions.length > 0 && (
-                          <div className="mt-4 space-y-2 max-w-md w-full">
+                          <div className="mt-3 space-y-2 w-full">
                             {msg.auth_actions.map((action, idx) => {
                               const appSlug = action.appName.toLowerCase().replace(/\s+/g, "");
                               const logoUrl = getLogo(appSlug) || getAppLogo(appSlug);
@@ -1152,7 +1169,7 @@ function AssistantPageInner() {
 
                         {/* Data cards — structured tool results */}
                         {msg.data_cards && msg.data_cards.length > 0 && (
-                          <div className="mt-4 space-y-3 max-w-md w-full">
+                          <div className="mt-3 space-y-3 w-full">
                             {msg.data_cards.map((group, idx) => (
                               <DataCard key={idx} cardType={group.cardType} cards={group.cards} />
                             ))}
@@ -1170,8 +1187,8 @@ function AssistantPageInner() {
 
         {/* Input Area — hidden on empty state since input is in the hero */}
         {messages.length > 0 && (
-          <div className="p-4 sm:p-6 lg:p-8 shrink-0 relative bg-gradient-to-t from-black to-transparent via-black">
-            <div className="max-w-3xl mx-auto w-full relative">
+          <div className="px-4 sm:px-6 pt-3 pb-4 shrink-0 relative bg-gradient-to-t from-black to-transparent via-black">
+            <div className="max-w-2xl mx-auto w-full relative">
               {/* Model Toggle */}
               {/* <div className="flex items-center gap-1 mb-2.5 ml-1">
               <div className="inline-flex items-center bg-neutral-900 border border-white/[0.08] rounded-full p-0.5">
@@ -1245,7 +1262,7 @@ function AssistantPageInner() {
 
       {/* ─── RIGHT PANEL (TOOL EXECUTION LOGS) ─── */}
 
-      {/* <div
+      <div
         className={`fixed lg:static top-0 right-0 h-full bg-[#111111] z-40 transition-all duration-300 ease-in-out transform flex flex-col border-l border-white/5 ${isLogsOpen
             ? "translate-x-0 w-[320px] lg:w-[40%]"
             : "translate-x-full lg:translate-x-0 lg:w-0 lg:overflow-hidden lg:border-none"
@@ -1277,8 +1294,7 @@ function AssistantPageInner() {
           )}
           <div ref={logsEndRef} />
         </div>
-      </div> */}
-
+      </div> 
 
 
 
