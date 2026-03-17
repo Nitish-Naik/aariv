@@ -1,8 +1,10 @@
 "use client";
 
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { Breadcrumb } from "@/components/dashboard/Breadcrumb";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
+import { useToast } from "@/context/ToastContext";
 import { useBilling } from "@/context/useBilling";
 import { api } from "@/lib/api";
 import { supabase } from "@/lib/supabase";
@@ -33,7 +35,7 @@ import {
     X,
     Zap,
 } from "lucide-react";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 
 const MODEL_OPTIONS = [
   {
@@ -140,15 +142,15 @@ function SectionCard({
   children: React.ReactNode;
 }) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-[260px_1fr] lg:grid-cols-[280px_1fr] gap-8 lg:gap-12 py-8 md:py-10 border-b border-white/10 last:border-0 border-t first:border-t-0">
+    <div className="grid grid-cols-1 md:grid-cols-[260px_1fr] lg:grid-cols-[280px_1fr] gap-8 lg:gap-12 py-8 md:py-10 border-b border-border last:border-0 border-t first:border-t-0">
       <div className="flex flex-col pr-4">
-        <h2 className="text-sm font-medium text-white">{title}</h2>
-        <p className="text-sm text-neutral-400 mt-1.5 leading-relaxed">
+        <h2 className="text-sm font-medium text-foreground">{title}</h2>
+        <p className="text-sm text-muted-foreground mt-1.5 leading-relaxed">
           {subtitle}
         </p>
       </div>
       <div className="min-w-0">
-        <div className="rounded-lg border border-white/10 bg-black overflow-hidden shadow-sm">
+        <div className="rounded-lg border border-border bg-card overflow-hidden shadow-sm">
           {children}
         </div>
       </div>
@@ -195,8 +197,7 @@ export default function SettingsPage() {
   const [showDelete, setShowDelete] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [showClearHist, setShowClearHist] = useState(false);
-  const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
-  const toastRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const { success: toastSuccess, error: toastError } = useToast();
 
   // Add Credits dialog
   const [showAddCredits, setShowAddCredits] = useState(false);
@@ -330,9 +331,8 @@ export default function SettingsPage() {
   }, [showUsageHistory, user?.id]);
 
   function flash(msg: string, ok = true) {
-    if (toastRef.current) clearTimeout(toastRef.current);
-    setToast({ msg, ok });
-    toastRef.current = setTimeout(() => setToast(null), 3000);
+    if (ok) toastSuccess(msg);
+    else toastError(msg);
   }
 
   async function saveProfile() {
@@ -518,29 +518,7 @@ export default function SettingsPage() {
     checkoutAmount <= 500;
 
   return (
-    <div className="min-h-screen bg-black">
-      {/* Toast */}
-      <div
-        className={`pointer-events-none fixed inset-x-0 top-5 z-50 flex justify-center transition-all duration-200 ${toast ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-1"}`}
-      >
-        <div
-          className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium shadow-lg border ${
-            toast?.ok === false
-              ? "bg-red-50 dark:bg-red-950/60 border-red-200 dark:border-red-800 text-red-600 dark:text-red-400"
-              : "bg-neutral-900 border-white/10 text-white"
-          }`}
-        >
-          {toast?.ok !== false && (
-            <Check
-              size={13}
-              className="text-emerald-500 shrink-0"
-              strokeWidth={2.5}
-            />
-          )}
-          {toast?.msg}
-        </div>
-      </div>
-
+    <div className="min-h-screen bg-background">
       {/* Confirm Dialogs */}
       <ConfirmDialog
         open={showSignOut}
@@ -562,29 +540,29 @@ export default function SettingsPage() {
           aria-modal="true"
         >
           <div
-            className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+            className="absolute inset-0 bg-background/80 backdrop-blur-sm"
             onClick={() => {
               setShowDelete(false);
               setDeleteConfirmText("");
             }}
           />
-          <div className="relative bg-neutral-900 border border-red-900/50 rounded-xl w-full max-w-sm p-7 shadow-2xl">
+          <div className="relative bg-muted border border-red-900/50 rounded-xl w-full max-w-sm p-7 shadow-2xl">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-9 h-9 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center shrink-0">
                 <Trash2 strokeWidth={1.5} size={16} className="text-red-400" />
               </div>
-              <h2 className="text-base font-semibold text-white">
+              <h2 className="text-base font-semibold text-foreground">
                 Delete your account?
               </h2>
             </div>
-            <p className="text-sm text-neutral-400 leading-relaxed mb-5">
+            <p className="text-sm text-muted-foreground leading-relaxed mb-5">
               This permanently removes your account, all conversations, and
               every connected integration.{" "}
               <span className="text-red-400 font-medium">
                 There is no undo.
               </span>
             </p>
-            <label className="text-xs font-medium text-neutral-500 mb-1.5 block">
+            <label className="text-xs font-medium text-muted-foreground mb-1.5 block">
               Type{" "}
               <span className="font-mono text-red-400 font-bold">DELETE</span>{" "}
               to confirm
@@ -594,7 +572,7 @@ export default function SettingsPage() {
               value={deleteConfirmText}
               onChange={(e) => setDeleteConfirmText(e.target.value)}
               placeholder="DELETE"
-              className="w-full py-2.5 px-4 rounded-xl bg-black border border-white/10 text-white text-sm outline-none focus:border-red-500/50 transition-colors placeholder:text-neutral-600 mb-5 font-mono"
+              className="w-full py-2.5 px-4 rounded-xl bg-background border border-border text-foreground text-sm outline-none focus:border-red-500/50 transition-colors placeholder:text-muted-foreground/60 mb-5 font-mono"
             />
             <div className="flex items-center gap-2">
               <button
@@ -602,7 +580,7 @@ export default function SettingsPage() {
                   setShowDelete(false);
                   setDeleteConfirmText("");
                 }}
-                className="flex-1 py-2.5 rounded-xl text-sm font-medium bg-neutral-900 text-neutral-400 hover:text-white border border-white/10 hover:border-white/20 transition-colors"
+                className="flex-1 py-2.5 rounded-xl text-sm font-medium bg-muted text-muted-foreground hover:text-foreground border border-border hover:border-foreground/20 transition-colors"
               >
                 Keep Account
               </button>
@@ -647,20 +625,20 @@ export default function SettingsPage() {
           aria-modal="true"
         >
           <div
-            className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+            className="absolute inset-0 bg-background/80 backdrop-blur-sm"
             onClick={() => setShowAddCredits(false)}
           />
-          <div className="relative bg-neutral-900 border border-white/10 rounded-xl w-full max-w-sm p-7 shadow-2xl">
+          <div className="relative bg-muted border border-border rounded-xl w-full max-w-sm p-7 shadow-2xl">
             <button
               onClick={() => setShowAddCredits(false)}
-              className="absolute top-4 right-4 w-7 h-7 rounded-lg bg-neutral-900 flex items-center justify-center text-neutral-500 hover:text-white transition-colors"
+              className="absolute top-4 right-4 w-7 h-7 rounded-lg bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
             >
               <X strokeWidth={1.5} size={14} />
             </button>
-            <h2 className="text-base font-semibold text-white mb-0.5">
+            <h2 className="text-base font-semibold text-foreground mb-0.5">
               Add Credits
             </h2>
-            <p className="text-xs text-neutral-500 mb-5">
+            <p className="text-xs text-muted-foreground mb-5">
               Choose an amount to add to your balance.
             </p>
 
@@ -675,7 +653,7 @@ export default function SettingsPage() {
                   className={`py-2.5 rounded-xl text-sm font-medium transition-all border ${
                     selectedAmount === amt && !customAmount
                       ? "bg-amber-500/10 text-amber-400 border-amber-500/40"
-                      : "bg-black text-neutral-400 border-white/10 hover:border-white/20"
+                      : "bg-background text-muted-foreground border-border hover:border-foreground/20"
                   }`}
                 >
                   ${amt}
@@ -684,11 +662,11 @@ export default function SettingsPage() {
             </div>
 
             <div className="mb-5">
-              <label className="text-xs font-medium text-white mb-1.5 block">
+              <label className="text-xs font-medium text-foreground mb-1.5 block">
                 Custom amount
               </label>
               <div className="relative">
-                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-500 text-sm">
+                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
                   $
                 </span>
                 <input
@@ -702,7 +680,7 @@ export default function SettingsPage() {
                     setSelectedAmount(null);
                   }}
                   placeholder="5.00 – 500.00"
-                  className="w-full py-2.5 pl-7 pr-4 rounded-xl bg-black border border-white/10 text-white text-sm placeholder:text-neutral-500 outline-none focus:border-white/20 transition-colors"
+                  className="w-full py-2.5 pl-7 pr-4 rounded-xl bg-background border border-border text-foreground text-sm placeholder:text-muted-foreground outline-none focus:border-ring transition-colors"
                 />
               </div>
               {customAmount && parseFloat(customAmount) < 5 && (
@@ -716,7 +694,7 @@ export default function SettingsPage() {
               className={`w-full py-3 rounded-xl font-medium text-sm flex items-center justify-center gap-2 transition-all ${
                 checkoutValid && !isCreatingCheckout
                   ? "bg-amber-500 text-black hover:bg-amber-400"
-                  : "bg-neutral-900 text-neutral-500 cursor-not-allowed opacity-50"
+                  : "bg-muted text-muted-foreground cursor-not-allowed opacity-50"
               }`}
             >
               <CreditCard strokeWidth={1.5} size={15} />
@@ -730,7 +708,7 @@ export default function SettingsPage() {
                 {checkoutError}
               </p>
             )}
-            <p className="text-[10px] text-neutral-500 text-center mt-3">
+            <p className="text-[10px] text-muted-foreground text-center mt-3">
               You will be redirected to Dodo Payments to complete your purchase.
             </p>
           </div>
@@ -745,17 +723,17 @@ export default function SettingsPage() {
           aria-modal="true"
         >
           <div
-            className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+            className="absolute inset-0 bg-background/80 backdrop-blur-sm"
             onClick={() => setShowUsageHistory(false)}
           />
-          <div className="relative bg-neutral-900 border border-white/10 rounded-t-2xl sm:rounded-xl w-full sm:max-w-lg max-h-[85vh] flex flex-col shadow-2xl">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-white/10 shrink-0">
-              <h2 className="text-base font-semibold text-white">
+          <div className="relative bg-muted border border-border rounded-t-2xl sm:rounded-xl w-full sm:max-w-lg max-h-[85vh] flex flex-col shadow-2xl">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
+              <h2 className="text-base font-semibold text-foreground">
                 Usage & History
               </h2>
               <button
                 onClick={() => setShowUsageHistory(false)}
-                className="w-7 h-7 rounded-lg bg-neutral-900 flex items-center justify-center text-neutral-500 hover:text-white transition-colors"
+                className="w-7 h-7 rounded-lg bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
               >
                 <X strokeWidth={1.5} size={14} />
               </button>
@@ -764,19 +742,19 @@ export default function SettingsPage() {
             <div className="overflow-y-auto flex-1">
               {loadingExtras ? (
                 <div className="flex items-center justify-center py-16">
-                  <div className="w-6 h-6 border-2 border-white/30 border-t-transparent rounded-full animate-spin" />
+                  <div className="w-6 h-6 border-2 border-foreground/30 border-t-transparent rounded-full animate-spin" />
                 </div>
               ) : (
                 <>
                   {/* Usage Summary */}
-                  <div className="px-5 pt-5 pb-4 border-b border-white/10">
+                  <div className="px-5 pt-5 pb-4 border-b border-border">
                     <div className="flex items-center gap-2 mb-3">
                       <Activity
                         strokeWidth={1.5}
                         size={13}
-                        className="text-neutral-500"
+                        className="text-muted-foreground"
                       />
-                      <p className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                         {usageData?.period || "Last 30 days"}
                       </p>
                     </div>
@@ -789,10 +767,10 @@ export default function SettingsPage() {
                               className="flex items-center justify-between"
                             >
                               <div>
-                                <p className="text-sm font-medium text-white">
+                                <p className="text-sm font-medium text-foreground">
                                   {mdl}
                                 </p>
-                                <p className="text-[11px] text-neutral-500">
+                                <p className="text-[11px] text-muted-foreground">
                                   {data.input_tokens.toLocaleString()} in ·{" "}
                                   {data.output_tokens.toLocaleString()} out
                                 </p>
@@ -803,8 +781,8 @@ export default function SettingsPage() {
                             </div>
                           ),
                         )}
-                        <div className="flex items-center justify-between pt-2 border-t border-white/10">
-                          <p className="text-xs font-medium text-neutral-500">
+                        <div className="flex items-center justify-between pt-2 border-t border-border">
+                          <p className="text-xs font-medium text-muted-foreground">
                             Total spent
                           </p>
                           <p className="text-sm font-mono font-bold text-amber-400">
@@ -813,7 +791,7 @@ export default function SettingsPage() {
                         </div>
                       </div>
                     ) : (
-                      <p className="text-sm text-neutral-500">
+                      <p className="text-sm text-muted-foreground">
                         No usage recorded yet.
                       </p>
                     )}
@@ -822,8 +800,8 @@ export default function SettingsPage() {
                   {/* Transaction History */}
                   {/* <div className="px-5 pt-4 pb-5">
                     <div className="flex items-center gap-2 mb-3">
-                      <History strokeWidth={1.5} size={13} className="text-neutral-500" />
-                      <p className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">
+                      <History strokeWidth={1.5} size={13} className="text-muted-foreground" />
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                         Transaction History
                       </p>
                     </div>
@@ -832,30 +810,30 @@ export default function SettingsPage() {
                         {historyData.map((tx) => {
                           const isPositive = tx.amount > 0;
                           return (
-                            <div key={tx.id} className="flex items-center gap-3 py-2.5 border-b border-white/10 last:border-0">
-                              <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${isPositive ? "bg-emerald-500/10" : "bg-neutral-900"}`}>
+                            <div key={tx.id} className="flex items-center gap-3 py-2.5 border-b border-border last:border-0">
+                              <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${isPositive ? "bg-emerald-500/10" : "bg-muted"}`}>
                                 {isPositive
                                   ? <ArrowUpRight size={13} className="text-emerald-400" />
-                                  : <ArrowDownRight size={13} className="text-neutral-500" />}
+                                  : <ArrowDownRight size={13} className="text-muted-foreground" />}
                               </div>
                               <div className="flex-1 min-w-0">
-                                <p className="text-sm text-white truncate">{tx.description}</p>
-                                <p className="text-[11px] text-neutral-500">
+                                <p className="text-sm text-foreground truncate">{tx.description}</p>
+                                <p className="text-[11px] text-muted-foreground">
                                   {new Date(tx.date).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
                                 </p>
                               </div>
                               <div className="text-right shrink-0">
-                                <p className={`text-sm font-mono font-medium ${isPositive ? "text-emerald-400" : "text-neutral-500"}`}>
+                                <p className={`text-sm font-mono font-medium ${isPositive ? "text-emerald-400" : "text-muted-foreground"}`}>
                                   {isPositive ? "+" : ""}${Math.abs(tx.amount).toFixed(isPositive ? 2 : 4)}
                                 </p>
-                                <p className="text-[11px] font-mono text-neutral-500">${tx.balance.toFixed(2)}</p>
+                                <p className="text-[11px] font-mono text-muted-foreground">${tx.balance.toFixed(2)}</p>
                               </div>
                             </div>
                           );
                         })}
                       </div>
                     ) : (
-                      <p className="text-sm text-neutral-500">No transaction history.</p>
+                      <p className="text-sm text-muted-foreground">No transaction history.</p>
                     )}
                   </div> */}
                 </>
@@ -866,10 +844,11 @@ export default function SettingsPage() {
       )}
 
       {/* Page header */}
-      <div className="px-6 py-4 border-b border-white/[0.06] flex items-center justify-between shrink-0">
+      <div className="px-4 sm:px-6 py-4 border-b border-border flex items-center justify-between shrink-0">
         <div>
-          <h1 className="text-sm font-semibold text-white">Settings</h1>
-          <p className="text-xs text-neutral-500 mt-0.5">
+          <Breadcrumb />
+          <h1 className="text-sm font-semibold text-foreground">Settings</h1>
+          <p className="text-xs text-muted-foreground mt-0.5">
             Manage your account, preferences, and data.
           </p>
         </div>
@@ -884,7 +863,7 @@ export default function SettingsPage() {
             title="Account Profile"
             subtitle="Your display name and connected account."
           >
-            <div className="flex items-center justify-between gap-4 px-5 py-4 border-b border-white/10">
+            <div className="flex items-center justify-between gap-4 px-5 py-4 border-b border-border">
               <div className="flex items-center gap-3 min-w-0">
                 <div
                   className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 overflow-hidden"
@@ -909,10 +888,10 @@ export default function SettingsPage() {
                       if (e.key === "Enter") saveProfile();
                       if (e.key === "Escape") setEditingName(false);
                     }}
-                    className="text-sm bg-black border border-white/20 rounded-lg px-3 py-1.5 outline-none text-white w-48"
+                    className="text-sm bg-background border border-border rounded-lg px-3 py-1.5 outline-none text-foreground w-48"
                   />
                 ) : (
-                  <span className="text-sm text-white truncate">
+                  <span className="text-sm text-foreground truncate">
                     {user?.name || "User"}
                   </span>
                 )}
@@ -922,7 +901,7 @@ export default function SettingsPage() {
                   <button
                     onClick={saveProfile}
                     disabled={savingProf}
-                    className="px-3 py-1.5 rounded-lg bg-white text-black text-xs font-semibold hover:bg-neutral-100 transition-colors disabled:opacity-50"
+                    className="px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/80 transition-colors disabled:opacity-50"
                   >
                     {savingProf ? "…" : "Save"}
                   </button>
@@ -931,7 +910,7 @@ export default function SettingsPage() {
                       setDisplayName(user?.name || "");
                       setEditingName(false);
                     }}
-                    className="px-3 py-1.5 rounded-lg bg-neutral-900 text-neutral-500 text-xs font-medium"
+                    className="px-3 py-1.5 rounded-lg bg-muted text-muted-foreground text-xs font-medium"
                   >
                     Cancel
                   </button>
@@ -939,7 +918,7 @@ export default function SettingsPage() {
               ) : (
                 <button
                   onClick={() => setEditingName(true)}
-                  className="p-1.5 rounded-lg text-neutral-500 hover:text-white hover:bg-neutral-900 transition-colors shrink-0"
+                  className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0"
                 >
                   <Pencil strokeWidth={1.5} size={12} />
                 </button>
@@ -947,10 +926,10 @@ export default function SettingsPage() {
             </div>
             <div className="flex items-center justify-between gap-4 px-5 py-4">
               <div>
-                <p className="text-xs text-neutral-500 mb-0.5">Email</p>
-                <p className="text-sm text-neutral-400">{user?.email}</p>
+                <p className="text-xs text-muted-foreground mb-0.5">Email</p>
+                <p className="text-sm text-muted-foreground">{user?.email}</p>
               </div>
-              <span className="text-[10px] px-2 py-0.5 rounded-full border border-white/10 bg-neutral-900 text-neutral-500 shrink-0">
+              <span className="text-[10px] px-2 py-0.5 rounded-full border border-border bg-muted text-muted-foreground shrink-0">
                 Google OAuth
               </span>
             </div>
@@ -974,7 +953,7 @@ export default function SettingsPage() {
                       className={`relative flex flex-col gap-2.5 p-4 rounded-xl border text-left transition-all ${
                         isPending
                           ? "border-amber-500/50 bg-amber-500/[0.06]"
-                          : "border-white/10 bg-black hover:border-white/20"
+                          : "border-border bg-background hover:border-foreground/20"
                       }`}
                     >
                       {isPending && (
@@ -990,27 +969,29 @@ export default function SettingsPage() {
                         className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
                           isPending
                             ? "bg-amber-500/15 border border-amber-500/30"
-                            : "bg-neutral-900 border border-white/10"
+                            : "bg-muted border border-border"
                         }`}
                       >
                         <m.icon
                           size={14}
                           className={
-                            isPending ? "text-amber-400" : "text-neutral-500"
+                            isPending
+                              ? "text-amber-400"
+                              : "text-muted-foreground"
                           }
                         />
                       </div>
                       <div>
-                        <p className="text-sm font-semibold text-white pr-6">
+                        <p className="text-sm font-semibold text-foreground pr-6">
                           {m.tier}
                         </p>
                         <p
-                          className={`text-[10px] font-mono mt-0.5 ${isPending ? "text-amber-400/60" : "text-neutral-600"}`}
+                          className={`text-[10px] font-mono mt-0.5 ${isPending ? "text-amber-400/60" : "text-muted-foreground/60"}`}
                         >
                           {m.name}
                         </p>
                         <p
-                          className={`text-xs mt-1 leading-relaxed ${isPending ? "text-amber-400/80" : "text-neutral-500"}`}
+                          className={`text-xs mt-1 leading-relaxed ${isPending ? "text-amber-400/80" : "text-muted-foreground"}`}
                         >
                           {m.detail}
                         </p>
@@ -1020,8 +1001,8 @@ export default function SettingsPage() {
                 })}
               </div>
             </div>
-            <div className="flex items-center justify-between px-5 py-3.5 border-t border-white/10 bg-black">
-              <p className="text-xs text-neutral-500">
+            <div className="flex items-center justify-between px-5 py-3.5 border-t border-border bg-background">
+              <p className="text-xs text-muted-foreground">
                 Changes apply to new conversations only
               </p>
               <button
@@ -1030,7 +1011,7 @@ export default function SettingsPage() {
                 className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
                   modelChanged
                     ? "bg-amber-500 text-black hover:bg-amber-400"
-                    : "bg-neutral-900 text-neutral-500 cursor-not-allowed"
+                    : "bg-muted text-muted-foreground cursor-not-allowed"
                 }`}
               >
                 {savingModel ? "Saving…" : "Save Preference"}
@@ -1055,12 +1036,12 @@ export default function SettingsPage() {
                     className={`flex flex-col gap-1.5 p-3.5 rounded-xl border text-left transition-all ${
                       briefingMode === mode
                         ? "border-amber-500/50 bg-amber-500/[0.06]"
-                        : "border-white/10 bg-black hover:border-white/20"
+                        : "border-border bg-background hover:border-foreground/20"
                     }`}
                   >
                     <div className="flex items-center justify-between">
                       <p
-                        className={`text-sm font-semibold ${briefingMode === mode ? "text-white" : "text-neutral-400"}`}
+                        className={`text-sm font-semibold ${briefingMode === mode ? "text-foreground" : "text-muted-foreground"}`}
                       >
                         {mode === "smart" ? "Smart" : "Fixed Time"}
                       </p>
@@ -1075,7 +1056,7 @@ export default function SettingsPage() {
                       )}
                     </div>
                     <p
-                      className={`text-xs leading-relaxed ${briefingMode === mode ? "text-amber-400/70" : "text-neutral-500"}`}
+                      className={`text-xs leading-relaxed ${briefingMode === mode ? "text-amber-400/70" : "text-muted-foreground"}`}
                     >
                       {mode === "smart"
                         ? "Learns when you're usually active and delivers at the right moment"
@@ -1088,18 +1069,18 @@ export default function SettingsPage() {
               {/* Fixed time picker */}
               {briefingMode === "fixed" && (
                 <div>
-                  <label className="text-xs font-medium text-neutral-500 mb-1.5 block">
+                  <label className="text-xs font-medium text-muted-foreground mb-1.5 block">
                     Delivery time
                   </label>
                   <input
                     type="time"
                     value={briefingTime}
                     onChange={(e) => setBriefingTime(e.target.value)}
-                    className="w-full py-2.5 px-4 rounded-xl bg-black border border-white/10 text-white text-sm outline-none focus:border-amber-500/50 transition-colors [color-scheme:dark]"
+                    className="w-full py-2.5 px-4 rounded-xl bg-background border border-border text-foreground text-sm outline-none focus:border-amber-500/50 transition-colors [color-scheme:dark]"
                   />
-                  <p className="text-[11px] text-neutral-500 mt-1.5">
+                  <p className="text-[11px] text-muted-foreground mt-1.5">
                     Briefing will be sent at{" "}
-                    <span className="text-neutral-300 font-medium">
+                    <span className="text-foreground/80 font-medium">
                       {briefingTime}
                     </span>{" "}
                     in your local timezone
@@ -1108,21 +1089,21 @@ export default function SettingsPage() {
               )}
 
               {briefingMode === "smart" && (
-                <div className="flex items-start gap-2.5 px-3.5 py-3 rounded-xl bg-neutral-900 border border-white/[0.06]">
+                <div className="flex items-start gap-2.5 px-3.5 py-3 rounded-xl bg-muted border border-border">
                   <Sunrise
                     strokeWidth={1.5}
                     size={13}
                     className="text-amber-400/70 mt-0.5 shrink-0"
                   />
-                  <p className="text-xs text-neutral-500 leading-relaxed">
+                  <p className="text-xs text-muted-foreground leading-relaxed">
                     CalmPilot tracks when you typically read your briefing and
                     adjusts delivery timing automatically over time.
                   </p>
                 </div>
               )}
             </div>
-            <div className="flex items-center justify-between px-5 py-3.5 border-t border-white/10 bg-black">
-              <p className="text-xs text-neutral-500">
+            <div className="flex items-center justify-between px-5 py-3.5 border-t border-border bg-background">
+              <p className="text-xs text-muted-foreground">
                 {briefingMode === "smart"
                   ? "Pattern adapts after a few days"
                   : "Applies from tomorrow"}
@@ -1145,14 +1126,14 @@ export default function SettingsPage() {
             subtitle="Used for briefing schedules, calendar times, and activity logs."
           >
             <div className="p-5">
-              <label className="text-xs font-medium text-neutral-500 mb-2 block">
+              <label className="text-xs font-medium text-muted-foreground mb-2 block">
                 Select your timezone
               </label>
               <select
                 value={timezone}
                 onChange={(e) => saveTimezone(e.target.value)}
                 disabled={savingTz}
-                className="w-full py-2.5 px-4 rounded-xl bg-black border border-white/10 text-white text-sm outline-none focus:border-white/20 transition-colors disabled:opacity-50 [color-scheme:dark]"
+                className="w-full py-2.5 px-4 rounded-xl bg-background border border-border text-foreground text-sm outline-none focus:border-ring transition-colors disabled:opacity-50 [color-scheme:dark]"
               >
                 {COMMON_TIMEZONES.map((tz) => (
                   <option key={tz} value={tz}>
@@ -1169,9 +1150,9 @@ export default function SettingsPage() {
                     </option>
                   )}
               </select>
-              <p className="text-[11px] text-neutral-500 mt-2">
+              <p className="text-[11px] text-muted-foreground mt-2">
                 Auto-detected as{" "}
-                <span className="text-neutral-300">
+                <span className="text-foreground/80">
                   {Intl.DateTimeFormat().resolvedOptions().timeZone}
                 </span>
               </p>
@@ -1194,22 +1175,22 @@ export default function SettingsPage() {
                       key={String(opt.value)}
                       onClick={() => saveRetention(opt.value)}
                       disabled={retSaving}
-                      className={`w-full flex items-start gap-4 p-4 rounded-lg border text-left transition-all disabled:opacity-40 ${sel ? "border-amber-500/50 bg-amber-500/[0.04]" : "border-white/10 bg-black hover:border-white/20"}`}
+                      className={`w-full flex items-start gap-4 p-4 rounded-lg border text-left transition-all disabled:opacity-40 ${sel ? "border-amber-500/50 bg-amber-500/[0.04]" : "border-border bg-background hover:border-foreground/20"}`}
                     >
                       <div
-                        className={`mt-0.5 w-[18px] h-[18px] rounded-full border-2 shrink-0 flex items-center justify-center transition-colors ${sel ? "border-amber-500 bg-amber-500" : "border-white/20"}`}
+                        className={`mt-0.5 w-[18px] h-[18px] rounded-full border-2 shrink-0 flex items-center justify-center transition-colors ${sel ? "border-amber-500 bg-amber-500" : "border-border"}`}
                       >
                         {sel && (
-                          <div className="w-2 h-2 rounded-full bg-black" />
+                          <div className="w-2 h-2 rounded-full bg-background" />
                         )}
                       </div>
                       <div>
                         <p
-                          className={`text-sm font-medium ${sel ? "text-white" : "text-neutral-400"}`}
+                          className={`text-sm font-medium ${sel ? "text-foreground" : "text-muted-foreground"}`}
                         >
                           {opt.label}
                         </p>
-                        <p className="text-sm text-neutral-500 mt-1">
+                        <p className="text-sm text-muted-foreground mt-1">
                           {opt.description}
                         </p>
                       </div>
@@ -1221,9 +1202,9 @@ export default function SettingsPage() {
                 <Clock
                   strokeWidth={1.5}
                   size={12}
-                  className="text-neutral-500 shrink-0 mt-0.5"
+                  className="text-muted-foreground shrink-0 mt-0.5"
                 />
-                <p className="text-xs text-neutral-500">
+                <p className="text-xs text-muted-foreground">
                   Applies to chat conversations only. Trigger events and
                   activity feed are kept for 90 days regardless.
                 </p>
@@ -1241,7 +1222,7 @@ export default function SettingsPage() {
             <div className="px-5 py-5">
               <div className="flex items-start justify-between gap-6">
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-neutral-500 mb-2">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2">
                     Available Credits
                   </p>
                   <p
@@ -1256,7 +1237,7 @@ export default function SettingsPage() {
                     {balanceFmt}
                   </p>
                   {/* {estimatedMessages !== null && (
-                  <p className="text-xs text-neutral-500 mt-1.5">
+                  <p className="text-xs text-muted-foreground mt-1.5">
                     ≈ {estimatedMessages.toLocaleString()} {activeModelName} messages remaining
                   </p>
                 )} */}
@@ -1264,13 +1245,13 @@ export default function SettingsPage() {
                 <div className="flex flex-col gap-2 shrink-0">
                   <button
                     onClick={() => setShowAddCredits(true)}
-                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-white/10 bg-black text-sm font-medium text-neutral-400 hover:text-white hover:border-white/20 transition-colors whitespace-nowrap"
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-border bg-background text-sm font-medium text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-colors whitespace-nowrap"
                   >
                     <Wallet strokeWidth={1.5} size={13} /> Add Credits
                   </button>
                   <button
                     onClick={() => setShowUsageHistory(true)}
-                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-white/10 bg-black text-sm font-medium text-neutral-400 hover:text-white hover:border-white/20 transition-colors whitespace-nowrap"
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-border bg-background text-sm font-medium text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-colors whitespace-nowrap"
                   >
                     <History strokeWidth={1.5} size={13} /> View History
                   </button>
@@ -1279,19 +1260,21 @@ export default function SettingsPage() {
             </div>
 
             {/* Auto-refill */}
-            <div className="px-5 py-4 border-t border-white/10">
+            <div className="px-5 py-4 border-t border-border">
               <div className="flex items-center justify-between mb-1">
                 <div className="flex items-center gap-2">
                   <RefreshCw
                     strokeWidth={1.5}
                     size={13}
-                    className="text-neutral-500"
+                    className="text-muted-foreground"
                   />
-                  <p className="text-sm font-medium text-white">Auto-refill</p>
+                  <p className="text-sm font-medium text-foreground">
+                    Auto-refill
+                  </p>
                 </div>
                 <button
                   onClick={() => setAutoRefill((v) => !v)}
-                  className={`relative w-10 h-6 rounded-full transition-colors shrink-0 ${autoRefill ? "bg-amber-500" : "bg-neutral-900 border border-white/10"}`}
+                  className={`relative w-10 h-6 rounded-full transition-colors shrink-0 ${autoRefill ? "bg-amber-500" : "bg-muted border border-border"}`}
                   aria-pressed={autoRefill}
                 >
                   <span
@@ -1299,7 +1282,7 @@ export default function SettingsPage() {
                   />
                 </button>
               </div>
-              <p className="text-xs text-neutral-500 mb-4">
+              <p className="text-xs text-muted-foreground mb-4">
                 Automatically add credits when your balance drops below a
                 threshold.
               </p>
@@ -1308,11 +1291,11 @@ export default function SettingsPage() {
                 <div className="space-y-3">
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="text-xs font-medium text-neutral-500 mb-1.5 block">
+                      <label className="text-xs font-medium text-muted-foreground mb-1.5 block">
                         Refill when below
                       </label>
                       <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500 text-sm">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
                           $
                         </span>
                         <input
@@ -1324,16 +1307,16 @@ export default function SettingsPage() {
                           onChange={(e) =>
                             setRefillThreshold(parseFloat(e.target.value) || 0)
                           }
-                          className="w-full py-2.5 pl-7 pr-3 rounded-xl bg-black border border-white/10 text-white text-sm outline-none focus:border-white/20 transition-colors"
+                          className="w-full py-2.5 pl-7 pr-3 rounded-xl bg-background border border-border text-foreground text-sm outline-none focus:border-ring transition-colors"
                         />
                       </div>
                     </div>
                     <div>
-                      <label className="text-xs font-medium text-neutral-500 mb-1.5 block">
+                      <label className="text-xs font-medium text-muted-foreground mb-1.5 block">
                         Amount to add
                       </label>
                       <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500 text-sm">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
                           $
                         </span>
                         <input
@@ -1345,7 +1328,7 @@ export default function SettingsPage() {
                           onChange={(e) =>
                             setRefillAmount(parseFloat(e.target.value) || 0)
                           }
-                          className="w-full py-2.5 pl-7 pr-3 rounded-xl bg-black border border-white/10 text-white text-sm outline-none focus:border-white/20 transition-colors"
+                          className="w-full py-2.5 pl-7 pr-3 rounded-xl bg-background border border-border text-foreground text-sm outline-none focus:border-ring transition-colors"
                         />
                       </div>
                     </div>
@@ -1364,7 +1347,7 @@ export default function SettingsPage() {
                 <button
                   onClick={saveAutoRefill}
                   disabled={savingRefill}
-                  className="text-xs text-neutral-500 hover:text-neutral-400 transition-colors disabled:opacity-40"
+                  className="text-xs text-muted-foreground hover:text-muted-foreground transition-colors disabled:opacity-40"
                 >
                   {savingRefill ? "Saving…" : "Save (disabled)"}
                 </button>
@@ -1372,24 +1355,24 @@ export default function SettingsPage() {
             </div>
 
             {/* Spend alert */}
-            <div className="px-5 py-4 border-t border-white/10">
+            <div className="px-5 py-4 border-t border-border">
               <div className="flex items-center gap-2 mb-1">
                 <Bell
                   strokeWidth={1.5}
                   size={13}
-                  className="text-neutral-500"
+                  className="text-muted-foreground"
                 />
-                <p className="text-sm font-medium text-white">
+                <p className="text-sm font-medium text-foreground">
                   Monthly spend alert
                 </p>
               </div>
-              <p className="text-xs text-neutral-500 mb-4">
+              <p className="text-xs text-muted-foreground mb-4">
                 Get an email when your monthly spend exceeds this amount. Leave
                 blank to disable.
               </p>
               <div className="flex items-center gap-3">
                 <div className="relative flex-1">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500 text-sm">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
                     $
                   </span>
                   <input
@@ -1399,7 +1382,7 @@ export default function SettingsPage() {
                     placeholder="e.g. 10"
                     value={spendAlertThreshold}
                     onChange={(e) => setSpendAlertThreshold(e.target.value)}
-                    className="w-full py-2.5 pl-7 pr-3 rounded-xl bg-black border border-white/10 text-white text-sm outline-none focus:border-white/20 transition-colors"
+                    className="w-full py-2.5 pl-7 pr-3 rounded-xl bg-background border border-border text-foreground text-sm outline-none focus:border-ring transition-colors"
                   />
                 </div>
                 <button
@@ -1423,17 +1406,17 @@ export default function SettingsPage() {
             <div className="px-5 py-5">
               {referralLoading ? (
                 <div className="flex items-center justify-center py-6">
-                  <div className="w-5 h-5 border-2 border-white/30 border-t-transparent rounded-full animate-spin" />
+                  <div className="w-5 h-5 border-2 border-foreground/30 border-t-transparent rounded-full animate-spin" />
                 </div>
               ) : (
                 <>
                   {/* Referral Link */}
                   <div className="mb-5">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-neutral-500 mb-2">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2">
                       Your Referral Link
                     </p>
                     <div className="flex items-center gap-2">
-                      <div className="flex-1 py-2.5 px-3.5 rounded-xl bg-black border border-white/10 text-sm text-neutral-400 font-mono truncate">
+                      <div className="flex-1 py-2.5 px-3.5 rounded-xl bg-background border border-border text-sm text-muted-foreground font-mono truncate">
                         {referralCode
                           ? `${typeof window !== "undefined" ? window.location.origin : "calmpilot.app"}/login?ref=${referralCode}`
                           : "Loading..."}
@@ -1460,48 +1443,48 @@ export default function SettingsPage() {
                   {/* Stats */}
                   {referralStats && (
                     <div className="grid grid-cols-3 gap-3">
-                      <div className="rounded-xl bg-black border border-white/10 p-3.5 text-center">
+                      <div className="rounded-xl bg-background border border-border p-3.5 text-center">
                         <div className="flex items-center justify-center gap-1 mb-1">
                           <Users
                             strokeWidth={1.5}
                             size={12}
-                            className="text-neutral-500"
+                            className="text-muted-foreground"
                           />
                         </div>
-                        <p className="text-xl font-bold text-white tabular-nums">
+                        <p className="text-xl font-bold text-foreground tabular-nums">
                           {referralStats.credited}
                         </p>
-                        <p className="text-[10px] text-neutral-500 mt-0.5">
+                        <p className="text-[10px] text-muted-foreground mt-0.5">
                           Successful
                         </p>
                       </div>
-                      <div className="rounded-xl bg-black border border-white/10 p-3.5 text-center">
+                      <div className="rounded-xl bg-background border border-border p-3.5 text-center">
                         <div className="flex items-center justify-center gap-1 mb-1">
                           <Wallet
                             strokeWidth={1.5}
                             size={12}
-                            className="text-neutral-500"
+                            className="text-muted-foreground"
                           />
                         </div>
                         <p className="text-xl font-bold text-amber-400 tabular-nums">
                           ${referralStats.earned.toFixed(0)}
                         </p>
-                        <p className="text-[10px] text-neutral-500 mt-0.5">
+                        <p className="text-[10px] text-muted-foreground mt-0.5">
                           Earned
                         </p>
                       </div>
-                      <div className="rounded-xl bg-black border border-white/10 p-3.5 text-center">
+                      <div className="rounded-xl bg-background border border-border p-3.5 text-center">
                         <div className="flex items-center justify-center gap-1 mb-1">
                           <Gift
                             strokeWidth={1.5}
                             size={12}
-                            className="text-neutral-500"
+                            className="text-muted-foreground"
                           />
                         </div>
-                        <p className="text-xl font-bold text-neutral-400 tabular-nums">
+                        <p className="text-xl font-bold text-muted-foreground tabular-nums">
                           ${referralStats.remaining.toFixed(0)}
                         </p>
-                        <p className="text-[10px] text-neutral-500 mt-0.5">
+                        <p className="text-[10px] text-muted-foreground mt-0.5">
                           Remaining
                         </p>
                       </div>
@@ -1509,11 +1492,11 @@ export default function SettingsPage() {
                   )}
 
                   {/* How it works */}
-                  <div className="mt-4 pt-4 border-t border-white/10">
-                    <p className="text-xs font-medium text-neutral-500 mb-2">
+                  <div className="mt-4 pt-4 border-t border-border">
+                    <p className="text-xs font-medium text-muted-foreground mb-2">
                       How it works
                     </p>
-                    <div className="space-y-1.5 text-xs text-neutral-500">
+                    <div className="space-y-1.5 text-xs text-muted-foreground">
                       <p>1. Share your link with a friend</p>
                       <p>
                         2. They sign up and get{" "}
@@ -1545,16 +1528,16 @@ export default function SettingsPage() {
           >
             <div className="flex items-center justify-between px-5 py-4">
               <div>
-                <p className="text-sm text-white">
+                <p className="text-sm text-foreground">
                   {isDark ? "Dark Mode" : "Light Mode"}
                 </p>
-                <p className="text-xs text-neutral-500 mt-0.5">
+                <p className="text-xs text-muted-foreground mt-0.5">
                   {isDark ? "Easy on the eyes at night" : "Bright and clear"}
                 </p>
               </div>
               <button
                 onClick={toggleTheme}
-                className={`relative w-12 h-7 rounded-full transition-colors shrink-0 ${isDark ? "bg-amber-500" : "bg-neutral-900 border border-white/10"}`}
+                className={`relative w-12 h-7 rounded-full transition-colors shrink-0 ${isDark ? "bg-amber-500" : "bg-muted border border-border"}`}
                 aria-pressed={isDark}
               >
                 <span
@@ -1596,11 +1579,11 @@ export default function SettingsPage() {
                   key={label}
                   className="flex items-center gap-3 opacity-40 cursor-not-allowed select-none"
                 >
-                  <div className="w-4 h-4 rounded border border-white/20 bg-black shrink-0" />
-                  <p className="text-sm text-neutral-400">{label}</p>
+                  <div className="w-4 h-4 rounded border border-border bg-background shrink-0" />
+                  <p className="text-sm text-muted-foreground">{label}</p>
                 </div>
               ))}
-              <p className="text-xs text-neutral-600 pt-1">
+              <p className="text-xs text-muted-foreground/60 pt-1">
                 Coming soon — notifications are not yet available.
               </p>
             </div>
@@ -1608,55 +1591,55 @@ export default function SettingsPage() {
 
           {/* ── Advanced ── */}
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-neutral-500 mb-3 px-1">
+            <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground mb-3 px-1">
               ADVANCED
             </p>
             <div className="space-y-3">
-              <div className="rounded-xl border border-white/10 bg-neutral-900 overflow-hidden">
-                <div className="flex items-center gap-3.5 px-5 py-4 border-b border-white/10">
-                  <div className="w-9 h-9 rounded-xl bg-neutral-900 border border-white/10 flex items-center justify-center shrink-0">
+              <div className="rounded-xl border border-border bg-muted overflow-hidden">
+                <div className="flex items-center gap-3.5 px-5 py-4 border-b border-border">
+                  <div className="w-9 h-9 rounded-xl bg-muted border border-border flex items-center justify-center shrink-0">
                     <LogOut
                       strokeWidth={1.5}
                       size={15}
-                      className="text-neutral-400"
+                      className="text-muted-foreground"
                     />
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-white">
+                    <p className="text-sm font-semibold text-foreground">
                       Session Management
                     </p>
-                    <p className="text-xs text-neutral-500 mt-0.5">
+                    <p className="text-xs text-muted-foreground mt-0.5">
                       Control your active login session on this device.
                     </p>
                   </div>
                 </div>
                 <div className="flex items-center justify-between gap-6 px-5 py-4">
-                  <p className="text-sm text-neutral-500">
+                  <p className="text-sm text-muted-foreground">
                     End your current session. You can sign back in anytime.
                   </p>
                   <button
                     onClick={() => setShowSignOut(true)}
-                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-white/10 bg-black text-sm font-medium text-neutral-400 hover:text-white hover:border-white/20 transition-colors shrink-0 whitespace-nowrap"
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-border bg-background text-sm font-medium text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-colors shrink-0 whitespace-nowrap"
                   >
                     <LogOut strokeWidth={1.5} size={13} /> Sign Out
                   </button>
                 </div>
               </div>
 
-              <div className="rounded-xl border border-white/10 bg-neutral-900 overflow-hidden">
+              <div className="rounded-xl border border-border bg-muted overflow-hidden">
                 <div className="flex items-center justify-between gap-6 px-5 py-4">
                   <div>
-                    <p className="text-sm font-medium text-white">
+                    <p className="text-sm font-medium text-foreground">
                       Chat History
                     </p>
-                    <p className="text-xs text-neutral-500 mt-0.5">
+                    <p className="text-xs text-muted-foreground mt-0.5">
                       Permanently delete all conversations from your account.
                     </p>
                   </div>
                   <button
                     onClick={() => setShowClearHist(true)}
                     disabled={clearingHist}
-                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-white/10 bg-black text-sm font-medium text-neutral-400 hover:text-white hover:border-white/20 transition-colors shrink-0 whitespace-nowrap disabled:opacity-40"
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-border bg-background text-sm font-medium text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-colors shrink-0 whitespace-nowrap disabled:opacity-40"
                   >
                     <Trash2 strokeWidth={1.5} size={13} />{" "}
                     {clearingHist ? "Clearing…" : "Clear History"}

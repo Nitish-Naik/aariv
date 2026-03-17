@@ -3,15 +3,14 @@
 import { DataCard, PulsingAvatar } from "@/components";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { useAuth } from "@/context/AuthContext";
-import { api } from "@/lib/api";
 import { useLogo } from "@/context/LogoContext";
+import { api } from "@/lib/api";
 import { getAppLogo } from "@/lib/platform-logos";
 import type { ChatMessage, Conversation } from "@/lib/types";
 import { motion } from "framer-motion";
 import {
   Check,
   ChevronDown,
-  ChevronRight,
   Clock,
   Copy,
   FileUp,
@@ -22,29 +21,57 @@ import {
   Plus,
   Send,
   Shield,
-  Terminal,
   Trash2,
-  X,
+  X
 } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
-import { DetailedLogEntry } from "@/components";
 
 // Detect completed actions in the agent's final response text
 const ACTION_PATTERNS: { re: RegExp; label: string }[] = [
-  { re: /\b(sent|send|emailed)\b.{0,40}\b(email|message)\b/i, label: "Email sent" },
-  { re: /\b(created|scheduled|added)\b.{0,40}\b(meeting|event|calendar)\b/i, label: "Meeting created" },
-  { re: /\b(sent|posted|messaged)\b.{0,40}\bslack\b/i, label: "Slack message sent" },
-  { re: /\bslack\b.{0,40}\b(sent|posted|messaged)\b/i, label: "Slack message sent" },
-  { re: /\b(created|filed|opened)\b.{0,40}\b(issue|ticket|pr|pull request)\b/i, label: "Issue created" },
-  { re: /\b(created|added|made)\b.{0,40}\b(task|to.?do)\b/i, label: "Task created" },
-  { re: /\b(created|wrote|added)\b.{0,40}\b(note|page|document|doc)\b/i, label: "Note created" },
-  { re: /\b(deleted|removed|archived)\b.{0,40}\b(email|message|file|event)\b/i, label: "Item deleted" },
-  { re: /\b(updated|edited|modified)\b.{0,40}\b(event|task|issue|page)\b/i, label: "Item updated" },
-  { re: /\b(replied|responded)\b.{0,40}\b(email|message|thread)\b/i, label: "Reply sent" },
+  {
+    re: /\b(sent|send|emailed)\b.{0,40}\b(email|message)\b/i,
+    label: "Email sent",
+  },
+  {
+    re: /\b(created|scheduled|added)\b.{0,40}\b(meeting|event|calendar)\b/i,
+    label: "Meeting created",
+  },
+  {
+    re: /\b(sent|posted|messaged)\b.{0,40}\bslack\b/i,
+    label: "Slack message sent",
+  },
+  {
+    re: /\bslack\b.{0,40}\b(sent|posted|messaged)\b/i,
+    label: "Slack message sent",
+  },
+  {
+    re: /\b(created|filed|opened)\b.{0,40}\b(issue|ticket|pr|pull request)\b/i,
+    label: "Issue created",
+  },
+  {
+    re: /\b(created|added|made)\b.{0,40}\b(task|to.?do)\b/i,
+    label: "Task created",
+  },
+  {
+    re: /\b(created|wrote|added)\b.{0,40}\b(note|page|document|doc)\b/i,
+    label: "Note created",
+  },
+  {
+    re: /\b(deleted|removed|archived)\b.{0,40}\b(email|message|file|event)\b/i,
+    label: "Item deleted",
+  },
+  {
+    re: /\b(updated|edited|modified)\b.{0,40}\b(event|task|issue|page)\b/i,
+    label: "Item updated",
+  },
+  {
+    re: /\b(replied|responded)\b.{0,40}\b(email|message|thread)\b/i,
+    label: "Reply sent",
+  },
 ];
 
 function parseCompletions(response: string): string[] {
@@ -98,7 +125,9 @@ function AssistantPageInner() {
 
   // Cancel any in-flight stream when the component unmounts
   useEffect(() => {
-    return () => { streamAbortRef.current?.abort(); };
+    return () => {
+      streamAbortRef.current?.abort();
+    };
   }, []);
 
   // Auto-scroll to bottom of chat
@@ -190,13 +219,21 @@ function AssistantPageInner() {
       try {
         const data = await api.get(`/history/messages/${activeConversationId}`);
         if (data.length > 0) {
-          const mapped = data.map((msg: { id: string; role: string; content: string; timestamp: string; logs?: string[] }) => ({
-            id: msg.id,
-            role: msg.role,
-            content: msg.content,
-            timestamp: new Date(msg.timestamp),
-            logs: msg.logs || [],
-          }));
+          const mapped = data.map(
+            (msg: {
+              id: string;
+              role: string;
+              content: string;
+              timestamp: string;
+              logs?: string[];
+            }) => ({
+              id: msg.id,
+              role: msg.role,
+              content: msg.content,
+              timestamp: new Date(msg.timestamp),
+              logs: msg.logs || [],
+            }),
+          );
           setMessages(mapped);
         }
       } catch {
@@ -368,6 +405,7 @@ function AssistantPageInner() {
       content: "",
       timestamp: new Date(),
       logs: [],
+      isFirstMessage: messages.length === 0,
     };
 
     setMessages((prev) => [...prev, userMessage, initialAiMessage]);
@@ -380,19 +418,26 @@ function AssistantPageInner() {
     streamAbortRef.current = abortController;
 
     try {
-      const response = await api.stream("/chat", {
-        userId: user.id,
-        message: messageText,
-        model: selectedModel,
-        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-        currentDate: new Date().toLocaleDateString("en-US", {
-          weekday: "long", year: "numeric", month: "long", day: "numeric",
-          timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-        }),
-        ...(activeConversationId
-          ? { conversationId: activeConversationId }
-          : {}),
-      }, abortController.signal);
+      const response = await api.stream(
+        "/chat",
+        {
+          userId: user.id,
+          message: messageText,
+          model: selectedModel,
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          currentDate: new Date().toLocaleDateString("en-US", {
+            weekday: "long",
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+            timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          }),
+          ...(activeConversationId
+            ? { conversationId: activeConversationId }
+            : {}),
+        },
+        abortController.signal,
+      );
 
       if (!response.body) throw new Error("No response body from server");
 
@@ -418,7 +463,10 @@ function AssistantPageInner() {
                   if (msg.id !== aiMessageId) return msg;
 
                   if (event.type === "token") {
-                    return { ...msg, content: (msg.content || "") + event.data };
+                    return {
+                      ...msg,
+                      content: (msg.content || "") + event.data,
+                    };
                   } else if (event.type === "log") {
                     const newLogs = [...(msg.logs || [])];
                     const existingIdx = newLogs.findIndex(
@@ -494,7 +542,7 @@ function AssistantPageInner() {
                   return msg;
                 }),
               );
-            } catch { }
+            } catch {}
           }
         }
       }
@@ -505,11 +553,11 @@ function AssistantPageInner() {
           prev.map((msg) =>
             msg.id === aiMessageId
               ? {
-                ...msg,
-                content:
-                  "Sorry, I encountered an error: " +
-                  (e.message || "Unknown error"),
-              }
+                  ...msg,
+                  content:
+                    "Sorry, I encountered an error: " +
+                    (e.message || "Unknown error"),
+                }
               : msg,
           ),
         );
@@ -532,30 +580,31 @@ function AssistantPageInner() {
   }, [autoPromptPending, autoPrompt]);
 
   return (
-    <div className="flex h-screen overflow-hidden bg-black">
+    <div className="flex h-screen overflow-hidden bg-background">
       {/* ── SIDEBAR OVERLAY (mobile) ── */}
       {isSidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-30 lg:hidden"
+          className="fixed inset-0 bg-background/50 backdrop-blur-sm z-30 lg:hidden"
           onClick={() => setIsSidebarOpen(false)}
         />
       )}
 
       {/* ── LEFT SIDEBAR (Chat History) ── */}
       <aside
-        className={`fixed lg:static top-0 left-0 h-full z-40 flex flex-col bg-[#0a0a0a] border-r border-white/[0.06] transition-all duration-300 ease-in-out ${isSidebarOpen
-          ? "w-72 translate-x-0"
-          : "w-0 -translate-x-full lg:translate-x-0 lg:w-0 overflow-hidden"
-          }`}
+        className={`fixed lg:static top-0 left-0 h-full z-40 flex flex-col bg-background border-r border-border transition-all duration-300 ease-in-out ${
+          isSidebarOpen
+            ? "w-72 translate-x-0"
+            : "w-0 -translate-x-full lg:translate-x-0 lg:w-0 overflow-hidden"
+        }`}
       >
         {/* Sidebar Header */}
-        <div className="h-16 flex items-center justify-between px-4 border-b border-white/[0.06] shrink-0">
-          <span className="text-sm font-semibold text-white tracking-wide">
+        <div className="h-16 flex items-center justify-between px-4 border-b border-border shrink-0">
+          <span className="text-sm font-semibold text-foreground tracking-wide">
             Chat History
           </span>
           <button
             onClick={() => setIsSidebarOpen(false)}
-            className="p-1.5 rounded-lg text-neutral-500 hover:text-white hover:bg-white/5 transition-colors"
+            className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
           >
             <PanelLeftClose strokeWidth={1.5} size={18} />
           </button>
@@ -565,7 +614,7 @@ function AssistantPageInner() {
         <div className="px-3 pt-3 pb-1">
           <button
             onClick={handleNewChat}
-            className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium text-white bg-white/5 hover:bg-white hover:text-black transition-colors"
+            className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium text-foreground bg-muted/50 hover:bg-primary hover:text-primary-foreground transition-colors"
           >
             <Plus strokeWidth={1.5} size={16} />
             New Chat
@@ -575,17 +624,18 @@ function AssistantPageInner() {
         {/* Conversations List */}
         <div className="flex-1 overflow-y-auto px-2 py-2 space-y-0.5">
           {conversations.length === 0 ? (
-            <div className="px-3 py-6 text-xs text-neutral-500 italic text-center">
+            <div className="px-3 py-6 text-xs text-muted-foreground italic text-center">
               No recent chats.
             </div>
           ) : (
             conversations.map((conv) => (
               <div
                 key={conv.id}
-                className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-left transition-colors group/conv cursor-pointer ${activeConversationId === conv.id
-                  ? "bg-white/[0.08] text-white"
-                  : "text-neutral-400 hover:bg-white/[0.04]"
-                  }`}
+                className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-left transition-colors group/conv cursor-pointer ${
+                  activeConversationId === conv.id
+                    ? "bg-muted text-foreground"
+                    : "text-muted-foreground hover:bg-muted/50"
+                }`}
               >
                 <button
                   onClick={() => {
@@ -594,7 +644,11 @@ function AssistantPageInner() {
                   }}
                   className="flex items-center gap-2.5 flex-1 min-w-0"
                 >
-                  <MessageSquare strokeWidth={1.5} size={14} className="shrink-0 opacity-50" />
+                  <MessageSquare
+                    strokeWidth={1.5}
+                    size={14}
+                    className="shrink-0 opacity-50"
+                  />
                   <span className="text-[13px] truncate">{conv.title}</span>
                 </button>
                 <button
@@ -605,7 +659,7 @@ function AssistantPageInner() {
                       conversationId: conv.id,
                     });
                   }}
-                  className="shrink-0 p-1 rounded-md opacity-0 group-hover/conv:opacity-100 text-neutral-500 hover:text-red-400 hover:bg-red-400/10 transition-all"
+                  className="shrink-0 p-1 rounded-md opacity-0 group-hover/conv:opacity-100 text-muted-foreground hover:text-red-400 hover:bg-red-400/10 transition-all"
                   title="Delete conversation"
                 >
                   <Trash2 strokeWidth={1.5} size={13} />
@@ -617,39 +671,41 @@ function AssistantPageInner() {
 
         {/* Manage History Section */}
         {conversations.length > 0 && (
-          <div className="border-t border-white/10 shrink-0">
+          <div className="border-t border-border shrink-0">
             <button
               onClick={() => setIsDeleteMenuOpen(!isDeleteMenuOpen)}
-              className="w-full flex items-center justify-between px-4 py-3 text-sm text-neutral-400 hover:text-white hover:bg-white/[0.03] transition-colors"
+              className="w-full flex items-center justify-between px-4 py-3 text-sm text-muted-foreground hover:text-foreground hover:bg-muted/30 transition-colors"
             >
               <span className="flex items-center gap-2 text-xs font-medium">
                 <Shield strokeWidth={1.5} size={14} className="opacity-60" />
                 Manage History
               </span>
-              <ChevronDown strokeWidth={1.5}
+              <ChevronDown
+                strokeWidth={1.5}
                 size={12}
                 className={`transition-transform ${isDeleteMenuOpen ? "rotate-180" : ""}`}
               />
             </button>
             {isDeleteMenuOpen && (
-              <div className="bg-[rgba(0,0,0,0.15)] pb-2">
+              <div className="bg-muted/30 pb-2">
                 {/* Auto-delete retention setting */}
-                <div className="px-4 py-3 border-b border-white/5">
+                <div className="px-4 py-3 border-b border-border">
                   <div className="flex items-center gap-2 mb-2">
-                    <Clock strokeWidth={1.5}
+                    <Clock
+                      strokeWidth={1.5}
                       size={12}
-                      className="text-white opacity-80"
+                      className="text-foreground opacity-80"
                     />
-                    <span className="text-[11px] font-medium text-white uppercase tracking-wider">
+                    <span className="text-[11px] font-medium text-foreground uppercase tracking-wider">
                       Auto-delete
                     </span>
                     {retentionDays && (
-                      <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded-full bg-white/5 text-white">
+                      <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded-full bg-muted/50 text-foreground">
                         Active
                       </span>
                     )}
                   </div>
-                  <p className="text-[10px] text-neutral-500 mb-2.5">
+                  <p className="text-[10px] text-muted-foreground mb-2.5">
                     Automatically delete history older than:
                   </p>
                   <div className="flex flex-wrap gap-1.5">
@@ -664,10 +720,11 @@ function AssistantPageInner() {
                         key={opt.label}
                         onClick={() => handleRetentionChange(opt.value)}
                         disabled={retentionSaving}
-                        className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-all ${retentionDays === opt.value
-                          ? "bg-white text-black"
-                          : "bg-white/5 text-neutral-400 hover:bg-[rgba(255,255,255,0.1)] hover:text-white"
-                          } disabled:opacity-50`}
+                        className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-all ${
+                          retentionDays === opt.value
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
+                        } disabled:opacity-50`}
                       >
                         {opt.label}
                       </button>
@@ -691,7 +748,7 @@ function AssistantPageInner() {
                         label: opt.label,
                       })
                     }
-                    className="w-full flex items-center gap-2 px-5 py-2 text-xs text-neutral-400 hover:text-red-400 hover:bg-red-400/10 transition-colors"
+                    className="w-full flex items-center gap-2 px-5 py-2 text-xs text-muted-foreground hover:text-red-400 hover:bg-red-400/10 transition-colors"
                   >
                     <Clock strokeWidth={1.5} size={12} className="opacity-60" />
                     Delete {opt.label}
@@ -699,7 +756,7 @@ function AssistantPageInner() {
                 ))}
                 <button
                   onClick={() => setDeleteConfirm({ type: "all" })}
-                  className="w-full flex items-center gap-2 px-5 py-2 text-xs text-red-500 font-medium hover:bg-red-400/10 transition-colors border-t border-white/[0.03]"
+                  className="w-full flex items-center gap-2 px-5 py-2 text-xs text-red-500 font-medium hover:bg-red-400/10 transition-colors border-t border-border"
                 >
                   <Trash2 strokeWidth={1.5} size={12} />
                   Delete Everything
@@ -712,7 +769,7 @@ function AssistantPageInner() {
 
       {/* ─── MAIN CHAT PANEL ─── */}
       <div
-        className="flex flex-col h-full flex-1 bg-black relative"
+        className="flex flex-col h-full flex-1 bg-background relative"
         onDragEnter={handleDragEnter}
         onDragLeave={handleDragLeave}
         onDragOver={handleDragOver}
@@ -720,11 +777,11 @@ function AssistantPageInner() {
       >
         {/* Drag & Drop Overlay */}
         {isDragOver && (
-          <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/90 backdrop-blur-sm border-2 border-dashed border-white/30 rounded-xl m-4 pointer-events-none">
-            <div className="flex flex-col items-center gap-3 text-white">
+          <div className="absolute inset-0 z-20 flex items-center justify-center bg-background/90 backdrop-blur-sm border-2 border-dashed border-border rounded-xl m-4 pointer-events-none">
+            <div className="flex flex-col items-center gap-3 text-foreground">
               <FileUp size={40} strokeWidth={1.5} />
               <span className="text-lg font-medium">Drop files here</span>
-              <span className="text-xs text-neutral-500">
+              <span className="text-xs text-muted-foreground">
                 Text, Markdown, JSON, CSV files supported
               </span>
             </div>
@@ -732,27 +789,22 @@ function AssistantPageInner() {
         )}
 
         {/* Header */}
-        <div className="px-6 flex items-center justify-between h-16 border-b border-white/10 shrink-0">
+        <div className="px-4 sm:px-6 flex items-center justify-between h-14 sm:h-16 border-b border-border shrink-0">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className="p-2 rounded-lg text-neutral-500 hover:text-white hover:bg-white/5 transition-colors"
+              className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
               title={isSidebarOpen ? "Close sidebar" : "Open sidebar"}
             >
               <Menu strokeWidth={1.5} size={18} />
             </button>
-            <div>
-              <h1 className="text-lg font-serif font-semibold text-white">
-                Assistant
-              </h1>
-              <p className="text-[11px] text-neutral-500">
-                Your calm thinking partner
-              </p>
-            </div>
+            <h1 className="text-lg font-serif font-semibold text-foreground">
+              Assistant
+            </h1>
           </div>
           <button
             onClick={handleNewChat}
-            className="p-2 rounded-lg text-neutral-500 hover:text-white hover:bg-white/5 transition-colors"
+            className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
             title="New chat"
           >
             <Plus strokeWidth={1.5} size={18} />
@@ -763,19 +815,25 @@ function AssistantPageInner() {
         {isLoading && (
           <div className="relative shrink-0 z-10">
             {/* Shimmer sweep bar */}
-            <div className="h-[2px] w-full bg-white/[0.04] overflow-hidden relative">
+            <div className="h-[2px] w-full bg-muted/50 overflow-hidden relative">
               <motion.div
                 className="absolute inset-y-0 w-[40%] bg-gradient-to-r from-transparent via-white/35 to-transparent"
                 animate={{ left: ["-40%", "140%"] }}
-                transition={{ duration: 1.4, ease: "easeInOut", repeat: Infinity }}
+                transition={{
+                  duration: 1.4,
+                  ease: "easeInOut",
+                  repeat: Infinity,
+                }}
               />
             </div>
             {/* Mobile-only activity label (logs panel is desktop-only) */}
-            <div className="lg:hidden px-4 py-1.5 flex items-center gap-2 bg-black border-b border-white/[0.03]">
-              <div className="w-1.5 h-1.5 rounded-full bg-white/30 animate-pulse shrink-0" />
-              <span className="text-[11px] text-neutral-500 truncate">
+            <div className="lg:hidden px-4 py-1.5 flex items-center gap-2 bg-background border-b border-border">
+              <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/30 animate-pulse shrink-0" />
+              <span className="text-[11px] text-muted-foreground truncate">
                 {(() => {
-                  const lastMsg = [...messages].reverse().find(m => m.role === "assistant");
+                  const lastMsg = [...messages]
+                    .reverse()
+                    .find((m) => m.role === "assistant");
                   const lastLog = lastMsg?.logs?.[lastMsg.logs.length - 1];
                   return lastLog?.label || "Thinking…";
                 })()}
@@ -787,7 +845,7 @@ function AssistantPageInner() {
         {/* Empty State — Centered landing */}
         {messages.length === 0 && autoPromptPending ? (
           <div className="flex-1 flex flex-col items-center justify-center px-4">
-            <div className="flex items-center gap-3 text-neutral-500">
+            <div className="flex items-center gap-3 text-muted-foreground">
               <Loader2 className="animate-spin" size={20} />
               <span className="text-sm">Processing your request...</span>
             </div>
@@ -807,8 +865,9 @@ function AssistantPageInner() {
               >
                 Chat with 500+ Apps
               </h1>
-              <p className="text-sm text-neutral-500 -mt-2">
-                Connect your favorite tools and let CalmPilot automate your work.
+              <p className="text-sm text-muted-foreground -mt-2">
+                Connect your favorite tools and let CalmPilot automate your
+                work.
               </p>
 
               {/* Centered input */}
@@ -817,8 +876,31 @@ function AssistantPageInner() {
                   e.preventDefault();
                   handleSend();
                 }}
-                className="w-full max-w-xl relative flex items-end rounded-xl overflow-hidden bg-neutral-900 border border-[rgba(255,255,255,0.1)] focus-within:border-[rgba(255,255,255,0.2)] focus-within:ring-1 focus-within:ring-[rgba(255,255,255,0.1)] shadow-lg transition-all"
+                className="w-full max-w-xl flex items-center gap-3 rounded-3xl bg-card border border-border px-4 py-3 shadow-xl transition-all focus-within:border-foreground/20"
               >
+                <label className="flex items-center justify-center shrink-0 w-7 h-7 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer">
+                  <Plus strokeWidth={2} size={17} />
+                  <input
+                    type="file"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      const reader = new FileReader();
+                      reader.onload = (ev) => {
+                        const text = ev.target?.result as string;
+                        setInputText(
+                          (prev) =>
+                            prev +
+                            (prev ? "\n\n" : "") +
+                            `[File: ${file.name}]\n${text}`,
+                        );
+                        inputRef.current?.focus();
+                      };
+                      reader.readAsText(file);
+                    }}
+                  />
+                </label>
                 <textarea
                   ref={inputRef}
                   value={inputText}
@@ -832,15 +914,27 @@ function AssistantPageInner() {
                   placeholder="Ask me anything..."
                   disabled={isLoading}
                   rows={1}
-                  className="w-full max-h-32 min-h-[56px] py-4 pl-5 pr-14 bg-transparent text-[15px] text-white placeholder:text-neutral-500 resize-none outline-none disabled:opacity-50"
-                  style={{ height: "auto", overflowY: "auto" }}
+                  className="flex-1 bg-transparent text-[15px] text-foreground placeholder:text-muted-foreground resize-none outline-none disabled:opacity-50 leading-6"
+                  style={{
+                    height: "24px",
+                    minHeight: "24px",
+                    maxHeight: "168px",
+                    overflowY: "hidden",
+                  }}
+                  onInput={(e) => {
+                    const el = e.currentTarget;
+                    el.style.height = "24px";
+                    const next = Math.min(el.scrollHeight, 168);
+                    el.style.height = next + "px";
+                    el.style.overflowY = next >= 168 ? "auto" : "hidden";
+                  }}
                 />
                 <button
                   type="submit"
                   disabled={!inputText.trim() || isLoading}
-                  className="absolute right-2 bottom-2 p-2 rounded-xl bg-white text-black hover:bg-neutral-200 transition-colors disabled:opacity-30 disabled:bg-transparent disabled:text-neutral-500"
+                  className="flex items-center justify-center shrink-0 w-7 h-7 rounded-full bg-white text-black hover:bg-white/90 transition-colors disabled:opacity-25 disabled:cursor-not-allowed"
                 >
-                  <Send strokeWidth={1.5} size={18} className="ml-0.5" />
+                  <Send strokeWidth={2} size={13} />
                 </button>
               </form>
 
@@ -854,7 +948,7 @@ function AssistantPageInner() {
                         setInputText(chip.message);
                         inputRef.current?.focus();
                       }}
-                      className="px-4 py-2.5 rounded-full bg-neutral-900 border border-white/[0.08] text-sm text-neutral-400 hover:text-white hover:border-white/30 transition-all"
+                      className="px-4 py-2.5 rounded-full bg-muted border border-border text-sm text-muted-foreground hover:text-foreground hover:border-border transition-all"
                     >
                       {chip.label}
                     </button>
@@ -893,14 +987,17 @@ function AssistantPageInner() {
 
                     {/* Bubble Container */}
                     <div
-                      className={`flex flex-col group min-w-0 ${isUser ? "items-end" : "items-start flex-1"
-                        }`}
+                      className={`flex flex-col group min-w-0 ${
+                        isUser ? "items-end" : "items-start flex-1"
+                      }`}
                     >
-                      <div className={`rounded-xl px-4 py-3 shadow-sm ${isUser ? "max-w-[85%] bg-neutral-800 border border-white/[0.04]" : "w-full bg-transparent"}`}>
+                      <div
+                        className={`rounded-xl px-4 py-3 shadow-sm ${isUser ? "max-w-[85%] bg-muted border border-border" : "w-full bg-transparent"}`}
+                      >
                         {/* Content */}
                         {isUser ? (
                           <div className="relative group/userMsg">
-                            <p className="text-[15px] leading-relaxed text-white">
+                            <p className="text-[15px] leading-relaxed text-foreground">
                               {msg.content}
                             </p>
                             <div className="flex justify-end mt-1 -mb-1">
@@ -908,11 +1005,15 @@ function AssistantPageInner() {
                                 onClick={() =>
                                   handleCopyMessage(msg.id, msg.content)
                                 }
-                                className="p-1 rounded-md text-neutral-500 opacity-0 group-hover/userMsg:opacity-100 hover:text-white hover:bg-white/[0.06] transition-all"
+                                className="p-1 rounded-md text-muted-foreground opacity-0 group-hover/userMsg:opacity-100 hover:text-foreground hover:bg-muted transition-all"
                                 title="Copy message"
                               >
                                 {copiedMessageId === msg.id ? (
-                                  <Check strokeWidth={1.5} size={14} className="text-green-400" />
+                                  <Check
+                                    strokeWidth={1.5}
+                                    size={14}
+                                    className="text-green-400"
+                                  />
                                 ) : (
                                   <Copy strokeWidth={1.5} size={14} />
                                 )}
@@ -921,20 +1022,34 @@ function AssistantPageInner() {
                           </div>
                         ) : msg.content ? (
                           <>
-                            <div className="markdown-content text-[15px] leading-relaxed text-white">
+                            <div className="markdown-content text-[15px] leading-relaxed text-foreground">
                               <ReactMarkdown
                                 remarkPlugins={[remarkGfm]}
                                 components={{
                                   a: ({ href, children }) => {
                                     // Render Composio connection links as cards
-                                    const isConnectLink = href?.includes("connect.composio.dev/link/") || href?.includes("composio.dev/connect/");
+                                    const isConnectLink =
+                                      href?.includes(
+                                        "connect.composio.dev/link/",
+                                      ) ||
+                                      href?.includes("composio.dev/connect/");
                                     if (isConnectLink) {
-                                      const label = typeof children === "string" ? children : String(children);
-                                      const appName = label.replace(/^connect\s*/i, "").replace(/^to\s*/i, "").trim() || "App";
-                                      const appSlug = appName.toLowerCase().replace(/\s+/g, "");
-                                      const logoUrl = getLogo(appSlug) || getAppLogo(appSlug);
+                                      const label =
+                                        typeof children === "string"
+                                          ? children
+                                          : String(children);
+                                      const appName =
+                                        label
+                                          .replace(/^connect\s*/i, "")
+                                          .replace(/^to\s*/i, "")
+                                          .trim() || "App";
+                                      const appSlug = appName
+                                        .toLowerCase()
+                                        .replace(/\s+/g, "");
+                                      const logoUrl =
+                                        getLogo(appSlug) || getAppLogo(appSlug);
                                       return (
-                                        <div className="flex items-center gap-3 w-full my-2 px-4 py-3 rounded-xl bg-black border border-white/10 hover:border-white/30/40 transition-colors">
+                                        <div className="flex items-center gap-3 w-full my-2 px-4 py-3 rounded-xl bg-background border border-border hover:border-border/40 transition-colors">
                                           {logoUrl ? (
                                             <img
                                               src={logoUrl}
@@ -942,18 +1057,24 @@ function AssistantPageInner() {
                                               className="w-8 h-8 rounded-lg object-contain"
                                             />
                                           ) : (
-                                            <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-white text-xs font-bold">
+                                            <div className="w-8 h-8 rounded-lg bg-muted/50 flex items-center justify-center text-foreground text-xs font-bold">
                                               {appName.charAt(0).toUpperCase()}
                                             </div>
                                           )}
-                                          <span className="flex-1 text-sm font-medium text-white">
-                                            Connect to {appName.charAt(0).toUpperCase() + appName.slice(1)}
+                                          <span className="flex-1 text-sm font-medium text-foreground">
+                                            Connect to{" "}
+                                            {appName.charAt(0).toUpperCase() +
+                                              appName.slice(1)}
                                           </span>
                                           <button
                                             onClick={() => {
-                                              window.open(href, "composio_connect", "width=600,height=700,left=200,top=100");
+                                              window.open(
+                                                href,
+                                                "composio_connect",
+                                                "width=600,height=700,left=200,top=100",
+                                              );
                                             }}
-                                            className="shrink-0 px-4 py-1.5 rounded-lg bg-white text-black text-xs font-semibold hover:bg-neutral-100 transition-colors"
+                                            className="shrink-0 px-4 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/80 transition-colors"
                                           >
                                             Connect
                                           </button>
@@ -965,56 +1086,89 @@ function AssistantPageInner() {
                                         href={href}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="text-white hover:underline"
+                                        className="text-foreground hover:underline"
                                       >
                                         {children}
                                       </a>
                                     );
                                   },
                                   strong: ({ children }) => (
-                                    <strong className="font-semibold">{children}</strong>
+                                    <strong className="font-semibold">
+                                      {children}
+                                    </strong>
                                   ),
                                   ul: ({ children }) => (
-                                    <ul className="my-2 ml-6 list-disc space-y-1">{children}</ul>
+                                    <ul className="my-2 ml-6 list-disc space-y-1">
+                                      {children}
+                                    </ul>
                                   ),
                                   ol: ({ children }) => (
-                                    <ol className="my-2 ml-6 list-decimal space-y-1">{children}</ol>
+                                    <ol className="my-2 ml-6 list-decimal space-y-1">
+                                      {children}
+                                    </ol>
                                   ),
                                   li: ({ children }) => (
                                     <li className="pl-1">{children}</li>
                                   ),
                                   p: ({ children }) => (
-                                    <p className="mb-2.5 last:mb-0 leading-[1.75]">{children}</p>
+                                    <p className="mb-2.5 last:mb-0 leading-[1.75]">
+                                      {children}
+                                    </p>
                                   ),
                                   code: ({ className, children }) => {
-                                    const isBlock = className?.includes("language-");
+                                    const isBlock =
+                                      className?.includes("language-");
                                     return isBlock ? (
-                                      <pre className="my-3 p-4 rounded-lg bg-black/[0.03] dark:bg-white/[0.06] overflow-x-auto">
-                                        <code className="text-[13px] font-mono">{children}</code>
+                                      <pre className="my-3 p-4 rounded-lg bg-background/[0.03] dark:bg-muted overflow-x-auto">
+                                        <code className="text-[13px] font-mono">
+                                          {children}
+                                        </code>
                                       </pre>
                                     ) : (
-                                      <code className="px-1.5 py-0.5 rounded text-[13px] font-mono bg-black/[0.06] dark:bg-white/[0.1]">{children}</code>
+                                      <code className="px-1.5 py-0.5 rounded text-[13px] font-mono bg-background/[0.06] dark:bg-muted">
+                                        {children}
+                                      </code>
                                     );
                                   },
                                   blockquote: ({ children }) => (
-                                    <blockquote className="border-l-[3px] border-white/10 pl-4 my-3 text-neutral-400">{children}</blockquote>
+                                    <blockquote className="border-l-[3px] border-border pl-4 my-3 text-muted-foreground">
+                                      {children}
+                                    </blockquote>
                                   ),
                                   hr: () => (
-                                    <hr className="border-white/10 my-4" />
+                                    <hr className="border-border my-4" />
                                   ),
-                                  h1: ({ children }) => <h1 className="text-xl font-semibold mt-4 mb-2">{children}</h1>,
-                                  h2: ({ children }) => <h2 className="text-lg font-semibold mt-4 mb-2">{children}</h2>,
-                                  h3: ({ children }) => <h3 className="text-base font-semibold mt-3 mb-1.5">{children}</h3>,
+                                  h1: ({ children }) => (
+                                    <h1 className="text-xl font-semibold mt-4 mb-2">
+                                      {children}
+                                    </h1>
+                                  ),
+                                  h2: ({ children }) => (
+                                    <h2 className="text-lg font-semibold mt-4 mb-2">
+                                      {children}
+                                    </h2>
+                                  ),
+                                  h3: ({ children }) => (
+                                    <h3 className="text-base font-semibold mt-3 mb-1.5">
+                                      {children}
+                                    </h3>
+                                  ),
                                   table: ({ children }) => (
                                     <div className="overflow-x-auto my-3">
-                                      <table className="w-full text-sm border-collapse">{children}</table>
+                                      <table className="w-full text-sm border-collapse">
+                                        {children}
+                                      </table>
                                     </div>
                                   ),
                                   th: ({ children }) => (
-                                    <th className="px-3 py-2 text-left border-b-2 border-white/10 font-semibold text-sm">{children}</th>
+                                    <th className="px-3 py-2 text-left border-b-2 border-border font-semibold text-sm">
+                                      {children}
+                                    </th>
                                   ),
                                   td: ({ children }) => (
-                                    <td className="px-3 py-2 border-b border-white/10">{children}</td>
+                                    <td className="px-3 py-2 border-b border-border">
+                                      {children}
+                                    </td>
                                   ),
                                 }}
                               >
@@ -1038,53 +1192,87 @@ function AssistantPageInner() {
                         ) : (
                           isThinking && (
                             <div className="py-0.5 space-y-2.5 min-w-[160px]">
-                              {(!msg.logs || msg.logs.length === 0) ? (
+                              {!msg.logs ||
+                              msg.logs.filter(
+                                (log) =>
+                                  msg.isFirstMessage ||
+                                  !/initializ/i.test(log.label),
+                              ).length === 0 ? (
                                 /* No steps yet — subtle three dots */
                                 <div className="flex items-center gap-1.5 px-1 py-0.5">
                                   {[0, 0.2, 0.4].map((delay) => (
                                     <motion.span
                                       key={delay}
-                                      className="inline-block w-1.5 h-1.5 rounded-full bg-neutral-500"
-                                      animate={{ opacity: [0.3, 1, 0.3], scale: [0.8, 1, 0.8] }}
-                                      transition={{ repeat: Infinity, duration: 1.4, ease: "easeInOut", delay }}
+                                      className="inline-block w-1.5 h-1.5 rounded-full bg-muted-foreground"
+                                      animate={{
+                                        opacity: [0.3, 1, 0.3],
+                                        scale: [0.8, 1, 0.8],
+                                      }}
+                                      transition={{
+                                        repeat: Infinity,
+                                        duration: 1.4,
+                                        ease: "easeInOut",
+                                        delay,
+                                      }}
                                     />
                                   ))}
                                 </div>
                               ) : (
                                 /* Step-by-step progress list */
                                 <div className="space-y-2">
-                                  {msg.logs.map((log, i) => {
-                                    const isRunning = log.status === "running";
-                                    const isDone = log.status === "completed" || log.status === "success";
-                                    const isFailed = log.status === "failed" || log.status === "error";
-                                    const label = log.label
-                                      .replace(/composio_?/gi, "")
-                                      .replace(/composio\s*/gi, "")
-                                      .replace(/_/g, " ")
-                                      .trim();
-                                    return (
-                                      <motion.div
-                                        key={i}
-                                        initial={{ opacity: 0, y: 4 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        transition={{ duration: 0.2 }}
-                                        className="flex items-center gap-2.5"
-                                      >
-                                        {isRunning ? (
-                                          <div className="w-3 h-3 rounded-full border border-neutral-600 border-t-white/70 animate-spin shrink-0" />
-                                        ) : isDone ? (
-                                          <Check strokeWidth={2.5} size={12} className="text-emerald-400 shrink-0" />
-                                        ) : isFailed ? (
-                                          <X strokeWidth={2.5} size={12} className="text-red-400 shrink-0" />
-                                        ) : (
-                                          <div className="w-1.5 h-1.5 rounded-full bg-neutral-600 shrink-0 ml-[3px]" />
-                                        )}
-                                        <span className={`text-[12.5px] font-medium capitalize ${isRunning ? "text-white/80" : "text-neutral-500"}`}>
-                                          {label}
-                                        </span>
-                                      </motion.div>
-                                    );
-                                  })}
+                                  {msg.logs
+                                    .filter(
+                                      (log) =>
+                                        msg.isFirstMessage ||
+                                        !/initializ/i.test(log.label),
+                                    )
+                                    .map((log, i) => {
+                                      const isRunning =
+                                        log.status === "running";
+                                      const isDone =
+                                        log.status === "completed" ||
+                                        log.status === "success";
+                                      const isFailed =
+                                        log.status === "failed" ||
+                                        log.status === "error";
+                                      const label = log.label
+                                        .replace(/composio_?/gi, "")
+                                        .replace(/composio\s*/gi, "")
+                                        .replace(/_/g, " ")
+                                        .trim();
+                                      return (
+                                        <motion.div
+                                          key={i}
+                                          initial={{ opacity: 0, y: 4 }}
+                                          animate={{ opacity: 1, y: 0 }}
+                                          transition={{ duration: 0.2 }}
+                                          className="flex items-center gap-2.5"
+                                        >
+                                          {isRunning ? (
+                                            <div className="w-3 h-3 rounded-full border border-muted-foreground border-t-foreground/70 animate-spin shrink-0" />
+                                          ) : isDone ? (
+                                            <Check
+                                              strokeWidth={2.5}
+                                              size={12}
+                                              className="text-emerald-400 shrink-0"
+                                            />
+                                          ) : isFailed ? (
+                                            <X
+                                              strokeWidth={2.5}
+                                              size={12}
+                                              className="text-red-400 shrink-0"
+                                            />
+                                          ) : (
+                                            <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/60 shrink-0 ml-[3px]" />
+                                          )}
+                                          <span
+                                            className={`text-[12.5px] font-medium capitalize ${isRunning ? "text-foreground/80" : "text-muted-foreground"}`}
+                                          >
+                                            {label}
+                                          </span>
+                                        </motion.div>
+                                      );
+                                    })}
                                 </div>
                               )}
                             </div>
@@ -1098,11 +1286,15 @@ function AssistantPageInner() {
                               onClick={() =>
                                 handleCopyMessage(msg.id, msg.content)
                               }
-                              className="p-1 rounded-md text-neutral-500 opacity-0 group-hover:opacity-100 hover:text-white hover:bg-white/[0.06] transition-all"
+                              className="p-1 rounded-md text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-foreground hover:bg-muted transition-all"
                               title="Copy response"
                             >
                               {copiedMessageId === msg.id ? (
-                                <Check strokeWidth={1.5} size={14} className="text-green-400" />
+                                <Check
+                                  strokeWidth={1.5}
+                                  size={14}
+                                  className="text-green-400"
+                                />
                               ) : (
                                 <Copy strokeWidth={1.5} size={14} />
                               )}
@@ -1114,12 +1306,15 @@ function AssistantPageInner() {
                         {msg.auth_actions && msg.auth_actions.length > 0 && (
                           <div className="mt-3 space-y-2 w-full">
                             {msg.auth_actions.map((action, idx) => {
-                              const appSlug = action.appName.toLowerCase().replace(/\s+/g, "");
-                              const logoUrl = getLogo(appSlug) || getAppLogo(appSlug);
+                              const appSlug = action.appName
+                                .toLowerCase()
+                                .replace(/\s+/g, "");
+                              const logoUrl =
+                                getLogo(appSlug) || getAppLogo(appSlug);
                               return (
                                 <div
                                   key={idx}
-                                  className="flex items-center gap-3 w-full px-4 py-3 rounded-xl bg-black border border-white/10 hover:border-white/30/40 transition-colors"
+                                  className="flex items-center gap-3 w-full px-4 py-3 rounded-xl bg-background border border-border hover:border-border/40 transition-colors"
                                 >
                                   {logoUrl ? (
                                     <img
@@ -1128,11 +1323,11 @@ function AssistantPageInner() {
                                       className="w-8 h-8 rounded-lg object-contain"
                                     />
                                   ) : (
-                                    <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-white text-xs font-bold">
+                                    <div className="w-8 h-8 rounded-lg bg-muted/50 flex items-center justify-center text-foreground text-xs font-bold">
                                       {action.appName.charAt(0)}
                                     </div>
                                   )}
-                                  <span className="flex-1 text-sm font-medium text-white">
+                                  <span className="flex-1 text-sm font-medium text-foreground">
                                     Connect to {action.appName}
                                   </span>
                                   <button
@@ -1147,17 +1342,21 @@ function AssistantPageInner() {
                                           clearInterval(pollTimer);
                                           if (user?.id) {
                                             api
-                                              .get(`/chat/suggestions/${user.id}`)
+                                              .get(
+                                                `/chat/suggestions/${user.id}`,
+                                              )
                                               .then((res) => {
                                                 if (res?.suggestions)
-                                                  setSuggestions(res.suggestions);
+                                                  setSuggestions(
+                                                    res.suggestions,
+                                                  );
                                               })
-                                              .catch(() => { });
+                                              .catch(() => {});
                                           }
                                         }
                                       }, 1000);
                                     }}
-                                    className="shrink-0 px-4 py-1.5 rounded-lg bg-white text-black text-xs font-semibold hover:bg-neutral-100 transition-colors"
+                                    className="shrink-0 px-4 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/80 transition-colors"
                                   >
                                     Connect
                                   </button>
@@ -1171,7 +1370,11 @@ function AssistantPageInner() {
                         {msg.data_cards && msg.data_cards.length > 0 && (
                           <div className="mt-3 space-y-3 w-full">
                             {msg.data_cards.map((group, idx) => (
-                              <DataCard key={idx} cardType={group.cardType} cards={group.cards} />
+                              <DataCard
+                                key={idx}
+                                cardType={group.cardType}
+                                cards={group.cards}
+                              />
                             ))}
                           </div>
                         )}
@@ -1191,13 +1394,13 @@ function AssistantPageInner() {
             <div className="max-w-2xl mx-auto w-full relative">
               {/* Model Toggle */}
               {/* <div className="flex items-center gap-1 mb-2.5 ml-1">
-              <div className="inline-flex items-center bg-neutral-900 border border-white/[0.08] rounded-full p-0.5">
+              <div className="inline-flex items-center bg-muted border border-border rounded-full p-0.5">
                 <button
                   type="button"
                   onClick={() => { setSelectedModel("gpt-4o-mini"); localStorage.setItem("calmpilot_model", "gpt-4o-mini"); }}
                   className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-all duration-200 ${selectedModel.includes("mini")
                     ? "bg-[rgba(255,255,255,0.1)] text-amber-400 shadow-sm"
-                    : "text-neutral-500 hover:text-neutral-400"
+                    : "text-muted-foreground hover:text-muted-foreground"
                     }`}
                 >
                   <Zap size={12} />
@@ -1208,14 +1411,14 @@ function AssistantPageInner() {
                   onClick={() => { setSelectedModel("gpt-4o"); localStorage.setItem("calmpilot_model", "gpt-4o"); }}
                   className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-all duration-200 ${!selectedModel.includes("mini")
                     ? "bg-[rgba(255,255,255,0.1)] text-purple-400 shadow-sm"
-                    : "text-neutral-500 hover:text-neutral-400"
+                    : "text-muted-foreground hover:text-muted-foreground"
                     }`}
                 >
                   <Brain size={12} />
                   Smart
                 </button>
               </div>
-              <span className="text-[10px] text-neutral-500 ml-2">
+              <span className="text-[10px] text-muted-foreground ml-2">
                 {selectedModel.includes("mini") ? "Quicker responses, lower cost" : "Better reasoning, more accurate"}
               </span>
             </div> */}
@@ -1224,8 +1427,31 @@ function AssistantPageInner() {
                   e.preventDefault();
                   handleSend();
                 }}
-                className="relative flex items-end shadow-lg rounded-xl overflow-hidden bg-neutral-900 border border-[rgba(255,255,255,0.1)] focus-within:border-[rgba(255,255,255,0.2)] focus-within:ring-1 focus-within:ring-[rgba(255,255,255,0.1)] transition-all"
+                className="flex items-center gap-3 rounded-3xl bg-card border border-border px-4 py-3 shadow-xl transition-all focus-within:border-foreground/20"
               >
+                <label className="flex items-center justify-center shrink-0 w-7 h-7 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer">
+                  <Plus strokeWidth={2} size={17} />
+                  <input
+                    type="file"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      const reader = new FileReader();
+                      reader.onload = (ev) => {
+                        const text = ev.target?.result as string;
+                        setInputText(
+                          (prev) =>
+                            prev +
+                            (prev ? "\n\n" : "") +
+                            `[File: ${file.name}]\n${text}`,
+                        );
+                        inputRef.current?.focus();
+                      };
+                      reader.readAsText(file);
+                    }}
+                  />
+                </label>
                 <textarea
                   ref={inputRef}
                   value={inputText}
@@ -1239,22 +1465,29 @@ function AssistantPageInner() {
                   placeholder="Ask CalmPilot to do something..."
                   disabled={isLoading}
                   rows={1}
-                  className="w-full max-h-32 min-h-[56px] py-4 pl-5 pr-14 bg-transparent text-[15px] text-white placeholder:text-neutral-500 resize-none outline-none disabled:opacity-50"
-                  style={{ height: "auto", overflowY: "auto" }}
+                  className="flex-1 bg-transparent text-[15px] text-foreground placeholder:text-muted-foreground resize-none outline-none disabled:opacity-50 leading-6"
+                  style={{
+                    height: "24px",
+                    minHeight: "24px",
+                    maxHeight: "168px",
+                    overflowY: "hidden",
+                  }}
+                  onInput={(e) => {
+                    const el = e.currentTarget;
+                    el.style.height = "24px";
+                    const next = Math.min(el.scrollHeight, 168);
+                    el.style.height = next + "px";
+                    el.style.overflowY = next >= 168 ? "auto" : "hidden";
+                  }}
                 />
                 <button
                   type="submit"
                   disabled={!inputText.trim() || isLoading}
-                  className="absolute right-2 bottom-2 p-2 rounded-xl bg-white text-black hover:bg-neutral-200 transition-colors disabled:opacity-30 disabled:bg-transparent disabled:text-neutral-500"
+                  className="flex items-center justify-center shrink-0 w-7 h-7 rounded-full bg-white text-black hover:bg-white/90 transition-colors disabled:opacity-25 disabled:cursor-not-allowed"
                 >
-                  <Send strokeWidth={1.5} size={18} className="ml-0.5" />
+                  <Send strokeWidth={2} size={13} />
                 </button>
               </form>
-              <div className="text-center mt-3">
-                <span className="text-[10px] text-neutral-500">
-                  Press Enter to send, Shift+Enter for new line
-                </span>
-              </div>
             </div>
           </div>
         )}
@@ -1262,22 +1495,22 @@ function AssistantPageInner() {
 
       {/* ─── RIGHT PANEL (TOOL EXECUTION LOGS) ─── */}
 
-      <div
-        className={`fixed lg:static top-0 right-0 h-full bg-[#111111] z-40 transition-all duration-300 ease-in-out transform flex flex-col border-l border-white/5 ${isLogsOpen
+      {/* <div
+        className={`fixed lg:static top-0 right-0 h-full bg-[#111111] z-40 transition-all duration-300 ease-in-out transform flex flex-col border-l border-border ${isLogsOpen
             ? "translate-x-0 w-[320px] lg:w-[40%]"
             : "translate-x-full lg:translate-x-0 lg:w-0 lg:overflow-hidden lg:border-none"
           }`}
       >
-        <div className="h-16 flex items-center justify-between px-6 border-b border-white/5 bg-[#1A1A1A]/80 backdrop-blur shrink-0">
+        <div className="h-16 flex items-center justify-between px-6 border-b border-border bg-[#1A1A1A]/80 backdrop-blur shrink-0">
           <div className="flex items-center gap-2">
-            <Terminal strokeWidth={1.5} size={16} className="text-neutral-400" />
-            <span className="text-xs font-mono font-medium tracking-wider text-neutral-300 uppercase">
+            <Terminal strokeWidth={1.5} size={16} className="text-muted-foreground" />
+            <span className="text-xs font-mono font-medium tracking-wider text-foreground/80 uppercase">
               Execution Logs
             </span>
           </div>
           <button
             onClick={() => setIsLogsOpen(false)}
-            className="p-1.5 rounded-lg text-neutral-500 hover:text-neutral-300 hover:bg-neutral-800 transition-colors lg:hidden"
+            className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground/80 hover:bg-muted transition-colors lg:hidden"
           >
             <ChevronRight strokeWidth={1.5} size={18} />
           </button>
@@ -1285,7 +1518,7 @@ function AssistantPageInner() {
 
         <div className="flex-1 overflow-y-auto p-4 space-y-3 font-mono text-sm">
           {allLogs.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full text-neutral-600 text-xs">
+            <div className="flex flex-col items-center justify-center h-full text-muted-foreground/60 text-xs">
               <Terminal strokeWidth={1.5} size={24} className="mb-2 opacity-50" />
               <span>Waiting for tasks...</span>
             </div>
@@ -1294,9 +1527,7 @@ function AssistantPageInner() {
           )}
           <div ref={logsEndRef} />
         </div>
-      </div> 
-
-
+      </div>  */}
 
       <ConfirmDialog
         open={!!deleteConfirm}

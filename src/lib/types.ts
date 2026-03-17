@@ -120,6 +120,7 @@ export interface ChatMessage {
     action_required?: { message: string, url: string };
   }[];
   is_proactive?: boolean;
+  isFirstMessage?: boolean;
   auth_actions?: AuthAction[];
   data_cards?: DataCardGroup[];
   completions?: string[];

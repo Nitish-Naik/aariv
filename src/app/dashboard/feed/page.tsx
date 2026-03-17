@@ -1,35 +1,41 @@
 "use client";
 
+import { Breadcrumb } from "@/components/dashboard/Breadcrumb";
 import { EmptyState } from "@/components/dashboard/EmptyState";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/context/AuthContext";
 import { useLogo } from "@/context/LogoContext";
 import { api } from "@/lib/api";
 import {
-  formatTriggerSlug,
-  getAppColor,
-  getAppIcon,
-  getAppLabel,
+    formatTriggerSlug,
+    getAppColor,
+    getAppIcon,
+    getAppLabel,
 } from "@/lib/appMeta";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  Activity,
-  AlertCircle,
-  CheckSquare,
-  ChevronDown,
-  Clock,
-  ExternalLink,
-  RefreshCw,
-  Search,
-  Zap,
+    Activity,
+    AlertCircle,
+    CheckSquare,
+    ChevronDown,
+    Clock,
+    ExternalLink,
+    Loader2,
+    RefreshCw,
+    Search,
+    Zap,
 } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
 } from "react";
 
 /* ─── Types ──────────────────────────────────────────────── */
@@ -49,11 +55,30 @@ type AppFilter = "all" | string;
 
 /* ─── Constants ──────────────────────────────────────────── */
 
-const STATUS_META: Record<string, { color: string; label: string }> = {
-  received: { color: "text-blue-400", label: "Received" },
-  processing: { color: "text-amber-400", label: "Processing" },
-  completed: { color: "text-emerald-400", label: "Summarized" },
-  failed: { color: "text-red-400", label: "Failed" },
+const STATUS_META: Record<
+  string,
+  { color: string; label: string; badgeClass: string }
+> = {
+  received: {
+    color: "text-blue-400",
+    label: "Received",
+    badgeClass: "bg-blue-500/10 text-blue-400 border-blue-500/20",
+  },
+  processing: {
+    color: "text-amber-400",
+    label: "Processing",
+    badgeClass: "bg-amber-500/10 text-amber-400 border-amber-500/20",
+  },
+  completed: {
+    color: "text-emerald-400",
+    label: "Summarized",
+    badgeClass: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
+  },
+  failed: {
+    color: "text-destructive",
+    label: "Failed",
+    badgeClass: "bg-destructive/10 text-destructive border-destructive/20",
+  },
 };
 
 /* ─── Helpers ────────────────────────────────────────────── */
@@ -92,7 +117,6 @@ function cleanError(error: string): string {
     e.includes("invalid_grant")
   )
     return "AUTH_ERROR";
-  // Strip Python exception class prefix (e.g. "ValueError: ...")
   const colonIdx = error.indexOf(": ");
   if (colonIdx > 0 && colonIdx < 40 && /^[A-Z]/.test(error)) {
     const msg = error.slice(colonIdx + 2).trim();
@@ -121,25 +145,20 @@ function groupByDate(
   const today = new Date();
   const yesterday = new Date(today);
   yesterday.setDate(yesterday.getDate() - 1);
-
   for (const evt of events) {
     const d = new Date(evt.createdAt);
     let label: string;
-    if (d.toDateString() === today.toDateString()) {
-      label = "Today";
-    } else if (d.toDateString() === yesterday.toDateString()) {
-      label = "Yesterday";
-    } else {
+    if (d.toDateString() === today.toDateString()) label = "Today";
+    else if (d.toDateString() === yesterday.toDateString()) label = "Yesterday";
+    else
       label = d.toLocaleDateString("en-US", {
         weekday: "long",
         month: "short",
         day: "numeric",
       });
-    }
     if (!groups.has(label)) groups.set(label, []);
     groups.get(label)!.push(evt);
   }
-
   return Array.from(groups.entries()).map(([label, events]) => ({
     label,
     events,
@@ -148,7 +167,6 @@ function groupByDate(
 
 /* ─── Logo helpers ───────────────────────────────────────── */
 
-/** Large (40×40) app icon — shows colored fallback, fades in logo on load */
 function FeedAppIcon({
   logo,
   label,
@@ -160,32 +178,30 @@ function FeedAppIcon({
   color: string;
   icon: React.ReactNode;
 }) {
+  const [failed, setFailed] = React.useState(false);
+  const useFallback = !logo || failed;
+
   return (
     <div
       className="w-10 h-10 rounded-xl shrink-0 shadow-sm relative overflow-hidden"
-      style={{ backgroundColor: color }}
+      style={useFallback ? { backgroundColor: color } : undefined}
     >
-      <div className="absolute inset-0 flex items-center justify-center text-white">
-        {icon}
-      </div>
-      {logo && (
+      {useFallback ? (
+        <div className="absolute inset-0 flex items-center justify-center text-white">
+          {icon}
+        </div>
+      ) : (
         <img
           src={logo}
           alt={label}
-          className="absolute inset-0 w-full h-full object-contain p-2 bg-[#111319] opacity-0 transition-opacity duration-200"
-          onLoad={(e) => {
-            e.currentTarget.style.opacity = "1";
-          }}
-          onError={(e) => {
-            e.currentTarget.style.display = "none";
-          }}
+          className="absolute inset-0 w-full h-full object-contain p-1.5 bg-card"
+          onError={() => setFailed(true)}
         />
       )}
     </div>
   );
 }
 
-/** Small pill logo — falls back to colored dot on error */
 function PillLogo({
   logo,
   alt,
@@ -254,11 +270,8 @@ export default function FeedPage() {
       }
       try {
         const data = await api.get(`/dashboard/feed?limit=25&offset=${offset}`);
-        if (offset === 0) {
-          setEvents(data.events || []);
-        } else {
-          setEvents((prev) => [...prev, ...(data.events || [])]);
-        }
+        if (offset === 0) setEvents(data.events || []);
+        else setEvents((prev) => [...prev, ...(data.events || [])]);
         setHasMore(data.hasMore || false);
         if (data.stats) setServerStats(data.stats);
         setError(null);
@@ -291,13 +304,11 @@ export default function FeedPage() {
       await new Promise((r) => setTimeout(r, 2000));
       await loadEvents(true);
     } catch {
-      // Sync failure is non-fatal; user can retry
     } finally {
       setSyncing(false);
     }
   }, [user?.id, syncing, loadEvents, events.length]);
 
-  // Compute delta once syncing finishes and events are updated
   useEffect(() => {
     if (!syncing && countBeforeSyncRef.current !== null) {
       const delta = events.length - countBeforeSyncRef.current;
@@ -305,33 +316,26 @@ export default function FeedPage() {
       if (delta >= 0) setSyncDelta(delta);
     }
   }, [syncing, events.length]);
-
-  // Auto-clear delta badge after 8 s
   useEffect(() => {
     if (syncDelta === null) return;
     const t = setTimeout(() => setSyncDelta(null), 8000);
     return () => clearTimeout(t);
   }, [syncDelta]);
-
   useEffect(() => {
     loadEvents();
   }, [loadEvents]);
-
-  // Auto-refresh every 60 seconds (silent — does not degrade perceived performance)
   useEffect(() => {
     const interval = setInterval(() => loadEvents(true), 60000);
     return () => clearInterval(interval);
   }, [loadEvents]);
 
-  // Intersection Observer: auto-load next page when sentinel scrolls into view
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
     if (!sentinelRef.current) return;
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && hasMore && !loadingMore && !loading) {
+        if (entries[0].isIntersecting && hasMore && !loadingMore && !loading)
           loadEvents(true, events.length);
-        }
       },
       { rootMargin: "200px" },
     );
@@ -339,24 +343,20 @@ export default function FeedPage() {
     return () => observer.disconnect();
   }, [hasMore, loadingMore, loading, events.length, loadEvents]);
 
-  // Derive unique apps for filter + per-app counts
-  const appOptions = useMemo(() => {
-    const apps = new Set(events.map((e) => e.app));
-    return Array.from(apps).sort();
-  }, [events]);
-
+  const appOptions = useMemo(
+    () => Array.from(new Set(events.map((e) => e.app))).sort(),
+    [events],
+  );
   const appCounts = useMemo(() => {
-    const counts: Record<string, number> = {};
-    for (const e of events) counts[e.app] = (counts[e.app] || 0) + 1;
-    return counts;
+    const c: Record<string, number> = {};
+    for (const e of events) c[e.app] = (c[e.app] || 0) + 1;
+    return c;
   }, [events]);
-
   const failedCount = useMemo(
     () => events.filter((e) => e.status === "failed").length,
     [events],
   );
 
-  // Filtered events
   const filtered = useMemo(() => {
     let result = events;
     if (appFilter !== "all") result = result.filter((e) => e.app === appFilter);
@@ -376,7 +376,6 @@ export default function FeedPage() {
 
   const grouped = useMemo(() => groupByDate(filtered), [filtered]);
 
-  // Stats — prefer server stats, fall back to local computation
   const stats = useMemo(
     () =>
       serverStats || {
@@ -388,13 +387,12 @@ export default function FeedPage() {
     [events, serverStats],
   );
 
-  // Today stats + last activity timestamp
   const todayStats = useMemo(() => {
     const today = new Date().toDateString();
     const todayEvents = events.filter(
       (e) => new Date(e.createdAt).toDateString() === today,
     );
-    const lastEvent = events.length > 0 ? events[0] : null; // events are sorted newest first
+    const lastEvent = events.length > 0 ? events[0] : null;
     return {
       events: todayEvents.length,
       errors: todayEvents.filter((e) => e.status === "failed").length,
@@ -406,18 +404,20 @@ export default function FeedPage() {
   return (
     <div className="flex flex-col min-h-screen">
       {/* Page header */}
-      <div className="px-6 py-4 border-b border-white/[0.06] flex items-center justify-between shrink-0">
+      <div className="px-4 sm:px-6 py-4 border-b border-border flex items-center justify-between shrink-0">
         <div>
-          <h1 className="text-sm font-semibold text-white">Activity</h1>
-          <p className="text-xs text-neutral-500 mt-0.5">
+          <Breadcrumb />
+          <h1 className="text-sm font-semibold text-foreground">Activity</h1>
+          <p className="text-xs text-muted-foreground mt-0.5">
             Everything your triggers captured, in one timeline
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <button
+          <Button
+            variant="outline"
+            size="sm"
             onClick={syncFromComposio}
             disabled={syncing}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-white/[0.04] border border-white/[0.06] text-xs font-medium text-neutral-400 hover:text-white transition-colors disabled:opacity-50"
           >
             <Zap
               strokeWidth={1.5}
@@ -426,17 +426,19 @@ export default function FeedPage() {
             />
             {syncing ? "Checking…" : "Sync"}
             {!syncing && syncDelta !== null && (
-              <span
-                className={`ml-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-semibold ${syncDelta > 0 ? "bg-emerald-500/20 text-emerald-400" : "bg-white/[0.06] text-neutral-500"}`}
+              <Badge
+                variant={syncDelta > 0 ? "default" : "secondary"}
+                className="ml-0.5 text-[10px]"
               >
                 {syncDelta > 0 ? `+${syncDelta}` : "✓"}
-              </span>
+              </Badge>
             )}
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => loadEvents(true)}
             disabled={refreshing}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-white/[0.04] border border-white/[0.06] text-xs font-medium text-neutral-400 hover:text-white transition-colors disabled:opacity-50"
           >
             <RefreshCw
               strokeWidth={1.5}
@@ -444,59 +446,57 @@ export default function FeedPage() {
               className={refreshing ? "animate-spin" : ""}
             />
             Refresh
-          </button>
+          </Button>
         </div>
       </div>
 
-      <div className="flex-1 px-6 py-6">
+      <div className="flex-1 px-4 sm:px-6 py-4">
         {/* Contextual links */}
-        <div className="flex items-center gap-4 mb-6 text-xs text-neutral-500">
+        <div className="flex items-center gap-4 mb-6 text-xs text-muted-foreground">
           <Link
             href="/dashboard/review"
-            className="flex items-center gap-1.5 hover:text-white transition-colors"
+            className="flex items-center gap-1.5 hover:text-foreground transition-colors"
           >
-            <CheckSquare strokeWidth={1.5} size={12} />
-            Review items
+            <CheckSquare strokeWidth={1.5} size={12} /> Review items
           </Link>
-          <span className="text-neutral-800">·</span>
+          <span className="text-border">·</span>
           <Link
             href="/dashboard/triggers"
-            className="flex items-center gap-1.5 hover:text-white transition-colors"
+            className="flex items-center gap-1.5 hover:text-foreground transition-colors"
           >
-            <Zap strokeWidth={1.5} size={12} />
-            Manage triggers
+            <Zap strokeWidth={1.5} size={12} /> Manage triggers
           </Link>
         </div>
 
-        {/* ── Today Strip ──────────────────────────────── */}
+        {/* Today Strip */}
         {!loading && events.length > 0 && (
-          <div className="flex items-center gap-3 flex-wrap mb-4 px-1 text-[12px] text-neutral-500">
-            <span className="font-medium text-neutral-400">Today:</span>
+          <div className="flex items-center gap-3 flex-wrap mb-4 px-1 text-[12px] text-muted-foreground">
+            <span className="font-medium text-muted-foreground">Today:</span>
             <span>
               {todayStats.events} event{todayStats.events !== 1 ? "s" : ""}
             </span>
-            <span className="text-white/10">·</span>
-            <span className={todayStats.errors > 0 ? "text-red-400" : ""}>
+            <span className="text-border">·</span>
+            <span className={todayStats.errors > 0 ? "text-destructive" : ""}>
               {todayStats.errors} error{todayStats.errors !== 1 ? "s" : ""}
             </span>
-            <span className="text-white/10">·</span>
+            <span className="text-border">·</span>
             <span>
               {todayStats.apps} app{todayStats.apps !== 1 ? "s" : ""} active
             </span>
             {todayStats.lastActivity && (
               <>
-                <span className="text-white/10">·</span>
+                <span className="text-border">·</span>
                 <span>Last: {todayStats.lastActivity}</span>
               </>
             )}
           </div>
         )}
 
-        {/* ── Stats strip ───────────────────────────────── */}
+        {/* Stats strip */}
         {!loading && events.length > 0 && (
-          <div className="grid grid-cols-2 md:grid-cols-4 border border-white/[0.06] rounded-lg mb-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 border border-border rounded-lg mb-6">
             {[
-              { label: "Events", value: stats.total, color: "text-white" },
+              { label: "Events", value: stats.total, color: "text-foreground" },
               {
                 label: "Processed",
                 value: stats.completed,
@@ -505,15 +505,16 @@ export default function FeedPage() {
               {
                 label: "Errors",
                 value: stats.failed,
-                color: stats.failed > 0 ? "text-red-400" : "text-white",
+                color:
+                  stats.failed > 0 ? "text-destructive" : "text-foreground",
               },
-              { label: "Apps", value: stats.apps, color: "text-white" },
+              { label: "Apps", value: stats.apps, color: "text-foreground" },
             ].map((s, i) => (
               <div
                 key={s.label}
-                className={`px-5 py-4 ${i < 3 ? "border-r border-white/[0.06]" : ""}`}
+                className={`px-5 py-4 ${i < 3 ? "border-r border-border" : ""}`}
               >
-                <p className="text-[10px] font-semibold text-neutral-600 uppercase tracking-widest mb-1">
+                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-1">
                   {s.label}
                 </p>
                 <p className={`text-xl font-semibold ${s.color}`}>{s.value}</p>
@@ -522,86 +523,62 @@ export default function FeedPage() {
           </div>
         )}
 
-        {/* ── Today Summary Strip ───────────────────────── */}
-        {!loading && events.length > 0 && (
-          <div className="flex items-center gap-2 text-xs text-neutral-500 mb-6 -mt-4 px-1 flex-wrap">
-            <span className="font-semibold text-neutral-400 tracking-wide">
-              Today
-            </span>
-            <span className="text-neutral-700">·</span>
-            <span>
-              {todayStats.events} event{todayStats.events !== 1 ? "s" : ""}
-            </span>
-            <span className="text-neutral-700">·</span>
-            {todayStats.errors > 0 ? (
-              <span className="text-red-400 font-medium">
-                {todayStats.errors} error{todayStats.errors !== 1 ? "s" : ""}
-              </span>
-            ) : (
-              <span>0 errors</span>
-            )}
-            {todayStats.lastActivity && (
-              <>
-                <span className="text-neutral-700">·</span>
-                <span>Last: {todayStats.lastActivity}</span>
-              </>
-            )}
-          </div>
-        )}
-
-        {/* ── Filters ───────────────────────────────────── */}
+        {/* Filters */}
         {!loading && events.length > 0 && (
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-8">
-            {/* App pills + status pills */}
             <div className="flex items-center gap-2 flex-wrap">
-              <button
+              <Button
+                variant={
+                  appFilter === "all" && statusFilter === "all"
+                    ? "default"
+                    : "outline"
+                }
+                size="xs"
+                className="rounded-full"
                 onClick={() => {
                   setAppFilter("all");
                   setStatusFilter("all");
                 }}
-                className={`shrink-0 px-4 py-1.5 text-xs font-medium rounded-full transition-all duration-300 border ${
-                  appFilter === "all" && statusFilter === "all"
-                    ? "bg-white text-black border-white shadow-sm"
-                    : "bg-neutral-900 text-neutral-500 border-white/10 hover:border-white/20 hover:text-white"
-                }`}
               >
                 All
-              </button>
+              </Button>
               {failedCount > 0 && (
-                <button
+                <Button
+                  variant={
+                    statusFilter === "failed" ? "destructive" : "outline"
+                  }
+                  size="xs"
+                  className="rounded-full"
                   onClick={() => {
                     setAppFilter("all");
                     setStatusFilter(
                       statusFilter === "failed" ? "all" : "failed",
                     );
                   }}
-                  className={`flex items-center gap-1.5 shrink-0 px-4 py-1.5 text-xs font-medium rounded-full transition-all duration-300 border ${
-                    statusFilter === "failed"
-                      ? "bg-red-500/20 text-red-300 border-red-500/40 shadow-sm"
-                      : "bg-neutral-900 text-neutral-500 border-white/10 hover:border-red-500/30 hover:text-red-400"
-                  }`}
                 >
                   <div
-                    className={`w-1.5 h-1.5 rounded-full bg-red-400 ${statusFilter === "failed" ? "animate-pulse" : ""}`}
+                    className={`w-1.5 h-1.5 rounded-full bg-destructive ${statusFilter === "failed" ? "animate-pulse" : ""}`}
                   />
                   Failed
                   <span className="ml-0.5 opacity-60 tabular-nums">
                     ({failedCount})
                   </span>
-                </button>
+                </Button>
               )}
               {appOptions.map((app) => (
-                <button
+                <Button
                   key={app}
+                  variant={
+                    appFilter === app && statusFilter === "all"
+                      ? "default"
+                      : "outline"
+                  }
+                  size="xs"
+                  className="rounded-full"
                   onClick={() => {
                     setAppFilter(app);
                     setStatusFilter("all");
                   }}
-                  className={`group flex items-center gap-1.5 shrink-0 px-4 py-1.5 text-xs font-medium rounded-full transition-all duration-300 border ${
-                    appFilter === app && statusFilter === "all"
-                      ? "bg-white text-black border-white shadow-sm"
-                      : "bg-neutral-900 text-neutral-500 border-white/10 hover:border-white/20 hover:text-white"
-                  }`}
                 >
                   <PillLogo
                     logo={getLogo(app)}
@@ -609,55 +586,52 @@ export default function FeedPage() {
                     color={getAppColor(app)}
                   />
                   {getAppLabel(app) || app}
-                  <span
-                    className={`ml-0.5 tabular-nums ${appFilter === app && statusFilter === "all" ? "opacity-50" : "opacity-40"}`}
-                  >
+                  <span className="ml-0.5 tabular-nums opacity-40">
                     ({appCounts[app] ?? 0})
                   </span>
-                </button>
+                </Button>
               ))}
             </div>
 
             {/* Search */}
-            <div className="relative w-full sm:w-80 group">
+            <div className="relative w-full sm:w-80">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <Search
                   strokeWidth={1.5}
                   size={16}
-                  className="transition-colors text-neutral-500 group-focus-within:text-neutral-400"
+                  className="text-muted-foreground"
                 />
               </div>
-              <input
-                type="text"
+              <Input
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search feed…"
-                className="w-full pl-10 pr-4 py-2 text-sm rounded-xl outline-none transition-all duration-200 bg-black border border-white/10 text-white placeholder-neutral-600 focus:border-white/20 focus:ring-1 focus:ring-white/20"
+                className="pl-10"
               />
             </div>
           </div>
         )}
 
-        {/* ── Error Banner ──────────────────────────────── */}
+        {/* Error Banner */}
         {error && !loading && (
           <div
-            className={`mb-6 flex items-center gap-3 ${error === "INSUFFICIENT_CREDITS" ? "bg-amber-500/10 border-amber-500/20" : "bg-red-500/10 border-red-500/20"} border rounded-xl px-5 py-4`}
+            className={`mb-6 flex items-center gap-3 ${error === "INSUFFICIENT_CREDITS" ? "bg-amber-500/10 border-amber-500/20" : "bg-destructive/10 border-destructive/20"} border rounded-xl px-5 py-4`}
           >
             <AlertCircle
               strokeWidth={1.5}
               size={18}
-              className={`${error === "INSUFFICIENT_CREDITS" ? "text-amber-400" : "text-red-400"} shrink-0`}
+              className={`${error === "INSUFFICIENT_CREDITS" ? "text-amber-400" : "text-destructive"} shrink-0`}
             />
             <div className="flex-1 min-w-0">
               <p
-                className={`text-sm font-medium ${error === "INSUFFICIENT_CREDITS" ? "text-amber-400" : "text-red-400"}`}
+                className={`text-sm font-medium ${error === "INSUFFICIENT_CREDITS" ? "text-amber-400" : "text-destructive"}`}
               >
                 {error === "INSUFFICIENT_CREDITS"
                   ? "Out of credits"
                   : "Failed to load feed"}
               </p>
               <p
-                className={`text-xs mt-0.5 truncate ${error === "INSUFFICIENT_CREDITS" ? "text-amber-400/70" : "text-red-400/70"}`}
+                className={`text-xs mt-0.5 truncate ${error === "INSUFFICIENT_CREDITS" ? "text-amber-400/70" : "text-destructive/70"}`}
               >
                 {error === "INSUFFICIENT_CREDITS"
                   ? "Add credits to continue viewing your feed."
@@ -665,92 +639,93 @@ export default function FeedPage() {
               </p>
             </div>
             {error === "INSUFFICIENT_CREDITS" ? (
-              <a
-                href="/dashboard/settings"
-                className="text-xs font-medium text-amber-400 hover:text-amber-300 px-3 py-1.5 rounded-full border border-amber-400/30 hover:border-amber-400/50 transition-all shrink-0"
+              <Button
+                variant="outline"
+                size="sm"
+                render={<a href="/dashboard/settings" />}
               >
-                Add Credits →
-              </a>
+                Add Credits
+              </Button>
             ) : (
-              <button
-                onClick={() => loadEvents()}
-                className="text-xs font-medium text-red-400 hover:text-red-300 px-3 py-1.5 rounded-full border border-red-400/30 hover:border-red-400/50 transition-all shrink-0"
-              >
+              <Button variant="outline" size="sm" onClick={() => loadEvents()}>
                 Retry
-              </button>
+              </Button>
             )}
           </div>
         )}
 
-        {/* ── Loading ───────────────────────────────────── */}
+        {/* Loading */}
         {loading ? (
           <div className="space-y-4">
             {[1, 2, 3].map((i) => (
-              <div
-                key={i}
-                className="bg-neutral-900 border border-white/[0.03] rounded-xl p-5"
-              >
+              <div key={i} className="border border-border rounded-xl p-5">
                 <div className="flex items-start gap-4">
-                  <div className="w-10 h-10 rounded-xl bg-white/[0.02] animate-pulse" />
+                  <Skeleton className="w-10 h-10 rounded-xl" />
                   <div className="flex-1 space-y-3 pt-1">
-                    <div className="h-4 w-1/3 rounded bg-white/[0.02] animate-pulse" />
-                    <div className="h-3 w-1/4 rounded bg-white/[0.02] animate-pulse" />
+                    <Skeleton className="h-4 w-1/3" />
+                    <Skeleton className="h-3 w-1/4" />
                   </div>
                 </div>
               </div>
             ))}
           </div>
         ) : events.length === 0 ? (
-          /* ── Empty State ──────────────────────────────── */
           <EmptyState
             icon={Activity}
             title="Your feed is quiet"
             description="Once your triggers start capturing events from connected apps, they'll appear here as a timeline."
-            primaryAction={{ label: "Set up triggers", href: "/dashboard/triggers" }}
-            secondaryAction={{ label: "Connect apps", href: "/dashboard/integrations" }}
+            primaryAction={{
+              label: "Set up triggers",
+              href: "/dashboard/triggers",
+            }}
+            secondaryAction={{
+              label: "Connect apps",
+              href: "/dashboard/integrations",
+            }}
           />
         ) : filtered.length === 0 ? (
-          /* ── No Results ───────────────────────────────── */
+          /* No Results */
           <div className="flex flex-col items-center justify-center py-24 text-center gap-4">
-            <div className="w-16 h-16 rounded-full bg-neutral-900 flex items-center justify-center">
+            <div className="w-12 h-12 rounded-2xl bg-muted border border-border flex items-center justify-center">
               <Search
                 strokeWidth={1.5}
-                size={22}
-                className="text-neutral-500"
+                size={20}
+                className="text-muted-foreground"
               />
             </div>
-            <div className="space-y-1">
-              <h3 className="text-base font-medium text-white">
+            <div className="space-y-1.5">
+              <h3 className="text-sm font-semibold text-foreground">
                 No matches found
               </h3>
-              <p className="text-sm text-neutral-500">
+              <p className="text-xs text-muted-foreground">
                 No events match your current filters or search
               </p>
             </div>
-            <button
+            <Button
+              variant="secondary"
+              size="sm"
               onClick={() => {
                 setAppFilter("all");
                 setStatusFilter("all");
                 setSearchQuery("");
               }}
-              className="text-xs font-medium text-white hover:text-white transition-colors mt-2 bg-white/10 px-4 py-1.5 rounded-full"
             >
               Clear filters
-            </button>
+            </Button>
           </div>
         ) : (
-          /* ── Timeline ─────────────────────────────────── */
+          /* Timeline */
           <div className="space-y-10 relative">
-            <div className="absolute left-[29px] top-6 bottom-0 w-px bg-gradient-to-b from-white/10 via-white/10 to-transparent opacity-50 hidden sm:block pointer-events-none" />
+            <div className="absolute left-[29px] top-6 bottom-0 w-px bg-gradient-to-b from-border via-border to-transparent opacity-50 hidden sm:block pointer-events-none" />
             {grouped.map((group) => (
               <div key={group.label} className="relative">
                 {/* Date header */}
-                <div className="flex items-center gap-4 mb-6 sticky top-0 bg-black/80 backdrop-blur-md py-2 z-10 transition-colors">
-                  <span className="text-xs font-semibold text-white bg-black px-3 py-1 rounded-full border border-white/[0.03] tracking-wide shadow-sm">
+                <div className="flex items-center gap-4 mb-6 sticky top-0 bg-background/80 backdrop-blur-md py-2 z-10">
+                  <Badge variant="outline" className="text-xs font-semibold">
                     {group.label}
-                  </span>
-                  <div className="flex-1 h-px bg-gradient-to-r from-[rgba(255,255,255,0.05)] to-transparent" />
-                  <span className="text-[11px] font-medium text-neutral-500 tabular-nums px-2">
+                  </Badge>
+                  <div className="flex-1 h-px bg-gradient-to-r from-border to-transparent" />
+                  <span className="text-[11px] font-medium text-muted-foreground tabular-nums px-2">
                     {group.events.length} event
                     {group.events.length !== 1 ? "s" : ""}
                   </span>
@@ -775,10 +750,9 @@ export default function FeedPage() {
                           animate={{ opacity: 1, scale: 1, y: 0 }}
                           exit={{ opacity: 0, scale: 0.96 }}
                           transition={{ duration: 0.2, ease: "easeOut" }}
-                          className="group relative bg-neutral-900 border border-white/[0.03] rounded-xl px-5 py-4 hover:border-white/[0.08] hover:bg-white/[0.02] hover:-translate-y-[1px] transition-all shadow-sm"
+                          className="group relative border border-border rounded-xl px-4 sm:px-5 py-4 hover:border-foreground/10 hover:bg-muted/30 lift pressable shadow-sm"
                         >
                           <div className="flex items-start gap-4">
-                            {/* App icon */}
                             <FeedAppIcon
                               logo={appLogo}
                               label={appLabel}
@@ -786,27 +760,30 @@ export default function FeedPage() {
                               icon={icon}
                             />
 
-                            {/* Content */}
                             <div className="flex-1 min-w-0 pt-0.5">
                               <div className="flex items-center flex-wrap gap-2.5 mb-1.5">
-                                <span className="text-[15px] font-medium text-white tracking-tight">
+                                <span className="text-[15px] font-medium text-foreground tracking-tight">
                                   {eventLabel}
                                 </span>
                                 <div className="flex items-center gap-2">
-                                  <span className="text-[10px] font-medium text-neutral-500 bg-white/[0.03] border border-white/5 px-2 py-0.5 rounded-full">
-                                    {appLabel}
-                                  </span>
-                                  <span
-                                    className={`text-[10px] font-medium px-2 py-0.5 rounded-full flex items-center gap-1 border border-current/10 ${statusMeta.color} bg-current/5`}
+                                  <Badge
+                                    variant="secondary"
+                                    className="text-[10px]"
                                   >
-                                    <div className="w-1 h-1 rounded-full bg-current"></div>
+                                    {appLabel}
+                                  </Badge>
+                                  <Badge
+                                    variant="outline"
+                                    className={`text-[10px] ${statusMeta.badgeClass}`}
+                                  >
+                                    <div className="w-1 h-1 rounded-full bg-current" />
                                     {statusMeta.label}
-                                  </span>
+                                  </Badge>
                                 </div>
                               </div>
 
                               {evt.preview && (
-                                <p className="text-[13px] text-neutral-400 leading-relaxed line-clamp-2 mt-1 max-w-2xl">
+                                <p className="text-[13px] text-muted-foreground leading-relaxed line-clamp-2 mt-1 max-w-2xl">
                                   {evt.preview}
                                 </p>
                               )}
@@ -816,7 +793,7 @@ export default function FeedPage() {
                                   const cleaned = cleanError(evt.error);
                                   const isAuth = cleaned === "AUTH_ERROR";
                                   return (
-                                    <div className="flex items-center gap-1.5 mt-3 text-red-400 bg-red-400/10 px-3 py-2 rounded-lg border border-red-400/20 w-fit max-w-full">
+                                    <div className="flex items-center gap-1.5 mt-3 text-destructive bg-destructive/10 px-3 py-2 rounded-lg border border-destructive/20 w-fit max-w-full">
                                       <AlertCircle
                                         strokeWidth={1.5}
                                         size={12}
@@ -830,7 +807,7 @@ export default function FeedPage() {
                                       {isAuth && (
                                         <Link
                                           href={`/dashboard/integrations?connect=${evt.app}`}
-                                          className="text-[11px] font-semibold text-red-300 hover:text-white underline underline-offset-2 ml-1"
+                                          className="text-[11px] font-semibold text-destructive/80 hover:text-foreground underline underline-offset-2 ml-1"
                                         >
                                           Reconnect
                                         </Link>
@@ -846,7 +823,7 @@ export default function FeedPage() {
                                     expandedEvent === evt.id ? null : evt.id,
                                   )
                                 }
-                                className="flex items-center gap-1 mt-3 text-[11px] text-neutral-600 hover:text-neutral-400 transition-colors"
+                                className="flex items-center gap-1 mt-3 text-[11px] text-muted-foreground/60 hover:text-muted-foreground transition-colors"
                               >
                                 <ChevronDown
                                   strokeWidth={1.5}
@@ -867,42 +844,42 @@ export default function FeedPage() {
                                     transition={{ duration: 0.2 }}
                                     className="overflow-hidden"
                                   >
-                                    <div className="mt-3 pt-3 border-t border-white/[0.04] space-y-2.5">
+                                    <div className="mt-3 pt-3 border-t border-border space-y-2.5">
                                       <div className="grid grid-cols-[100px_1fr] gap-x-3 gap-y-1.5 text-[11px]">
-                                        <span className="text-neutral-600 font-medium">
+                                        <span className="text-muted-foreground/60 font-medium">
                                           Event ID
                                         </span>
-                                        <span className="text-neutral-400 font-mono break-all">
+                                        <span className="text-muted-foreground font-mono break-all">
                                           {evt.id}
                                         </span>
-                                        <span className="text-neutral-600 font-medium">
+                                        <span className="text-muted-foreground/60 font-medium">
                                           Trigger
                                         </span>
-                                        <span className="text-neutral-400 font-mono">
+                                        <span className="text-muted-foreground font-mono">
                                           {evt.triggerSlug}
                                         </span>
-                                        <span className="text-neutral-600 font-medium">
+                                        <span className="text-muted-foreground/60 font-medium">
                                           Status
                                         </span>
-                                        <span className="text-neutral-400">
+                                        <span className="text-muted-foreground">
                                           {evt.status}
                                         </span>
                                         {evt.processingTimeMs != null && (
                                           <>
-                                            <span className="text-neutral-600 font-medium">
+                                            <span className="text-muted-foreground/60 font-medium">
                                               Process time
                                             </span>
-                                            <span className="text-neutral-400">
+                                            <span className="text-muted-foreground">
                                               {evt.processingTimeMs}ms
                                             </span>
                                           </>
                                         )}
                                         {evt.error && (
                                           <>
-                                            <span className="text-neutral-600 font-medium">
+                                            <span className="text-muted-foreground/60 font-medium">
                                               Raw error
                                             </span>
-                                            <span className="text-red-400/70 font-mono break-all">
+                                            <span className="text-destructive/70 font-mono break-all">
                                               {evt.error.length > 300
                                                 ? evt.error.slice(0, 297) + "…"
                                                 : evt.error}
@@ -912,13 +889,13 @@ export default function FeedPage() {
                                       </div>
                                       <Link
                                         href="/dashboard/review"
-                                        className="inline-flex items-center gap-1.5 text-[11px] text-neutral-500 hover:text-white transition-colors"
+                                        className="inline-flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
                                       >
                                         <ExternalLink
                                           strokeWidth={1.5}
                                           size={11}
                                         />
-                                        See if this needs your review →
+                                        See if this needs your review
                                       </Link>
                                     </div>
                                   </motion.div>
@@ -927,12 +904,12 @@ export default function FeedPage() {
                             </div>
 
                             {/* Right: time + processing */}
-                            <div className="flex flex-col items-end gap-1.5 shrink-0 pl-4 border-l border-white/[0.03] h-full min-h-[40px] justify-center">
-                              <span className="text-[11px] font-medium text-neutral-500 tabular-nums whitespace-nowrap">
+                            <div className="flex flex-col items-end gap-1.5 shrink-0 pl-4 border-l border-border h-full min-h-[40px] justify-center">
+                              <span className="text-[11px] font-medium text-muted-foreground tabular-nums whitespace-nowrap">
                                 {timeAgo(evt.createdAt)}
                               </span>
                               {evt.processingTimeMs != null && (
-                                <span className="text-[10px] text-neutral-500/50 tabular-nums flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <span className="text-[10px] text-muted-foreground/50 tabular-nums flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                   <Clock strokeWidth={1.5} size={10} />
                                   {evt.processingTimeMs}ms
                                 </span>
@@ -949,15 +926,13 @@ export default function FeedPage() {
           </div>
         )}
 
-        {/* Sentinel for auto infinite scroll — becomes visible when user nears bottom */}
         <div ref={sentinelRef} className="h-1" />
-        {/* Spinner shown while auto-loading next page */}
         {loadingMore && (
           <div className="mt-6 flex justify-center">
-            <RefreshCw
+            <Loader2
               strokeWidth={1.5}
               size={16}
-              className="animate-spin text-neutral-600"
+              className="animate-spin text-muted-foreground"
             />
           </div>
         )}

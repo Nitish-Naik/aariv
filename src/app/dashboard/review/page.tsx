@@ -1,34 +1,55 @@
 "use client";
 
+import { Breadcrumb } from "@/components/dashboard/Breadcrumb";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/context/AuthContext";
 import { useLogo } from "@/context/LogoContext";
+import { useToast } from "@/context/ToastContext";
 import { api } from "@/lib/api";
 import { getAppColor } from "@/lib/appMeta";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  Activity,
-  AlertTriangle,
-  Calendar,
-  Check,
-  CheckSquare,
-  ChevronDown,
-  Clock,
-  Cloud,
-  GitPullRequest,
-  Inbox,
-  Loader2,
-  Mail,
-  MessageSquare,
-  ShieldCheck,
-  ShieldAlert,
-  ShieldQuestion,
-  Square,
-  Trash2,
-  X,
-  XCircle,
+    Activity,
+    AlertTriangle,
+    ArrowDownAZ,
+    Calendar,
+    Check,
+    CheckSquare,
+    ChevronDown,
+    Clock,
+    Cloud,
+    GitPullRequest,
+    Inbox,
+    Loader2,
+    Mail,
+    MessageSquare,
+    Search,
+    ShieldAlert,
+    ShieldCheck,
+    ShieldQuestion,
+    SlidersHorizontal,
+    Square,
+    Trash2,
+    X,
+    XCircle,
 } from "lucide-react";
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+
+type SortMode = "newest" | "oldest" | "confidence-high" | "confidence-low";
+type CategoryFilter = "all" | string;
 
 // ─── Types ──────────────────────────────────────────────────────────────
 
@@ -62,16 +83,28 @@ type ViewFilter = "pending" | "all" | "resolved";
 
 // ─── Logo helper ────────────────────────────────────────────────────────
 
-/** Small app dot — shows logo when loaded, colored dot as fallback */
-function AppDot({ logo, alt, color }: { logo?: string; alt: string; color: string }) {
+function AppDot({
+  logo,
+  alt,
+  color,
+}: {
+  logo?: string;
+  alt: string;
+  color: string;
+}) {
   const [failed, setFailed] = useState(false);
-  if (!logo || failed) return <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: color }} />;
+  if (!logo || failed)
+    return (
+      <span
+        className="w-1.5 h-1.5 rounded-full shrink-0"
+        style={{ backgroundColor: color }}
+      />
+    );
   return (
     <img
       src={logo}
       alt={alt}
-      className="w-3.5 h-3.5 rounded-sm object-contain shrink-0 opacity-0 transition-opacity duration-150"
-      onLoad={(e) => { e.currentTarget.style.opacity = "1"; }}
+      className="w-3.5 h-3.5 rounded-sm object-contain shrink-0"
       onError={() => setFailed(true)}
     />
   );
@@ -95,30 +128,6 @@ const CATEGORY_ICONS: Record<string, React.ReactNode> = {
   general: <Inbox strokeWidth={1.5} size={14} />,
 };
 
-const PRIORITY_STYLES: Record<
-  string,
-  { bg: string; border: string; text: string; label: string }
-> = {
-  high: {
-    bg: "bg-amber-100 dark:bg-[#2C2114]",
-    border: "border-amber-200 dark:border-[#4B371E]",
-    text: "text-amber-800 dark:text-[#D8934A]",
-    label: "Needs attention",
-  },
-  medium: {
-    bg: "bg-blue-100 dark:bg-[#1A2332]",
-    border: "border-blue-200 dark:border-[#2A3A4F]",
-    text: "text-blue-800 dark:text-[#6B9FD4]",
-    label: "Review",
-  },
-  low: {
-    bg: "bg-emerald-100 dark:bg-[#1A231A]",
-    border: "border-emerald-200 dark:border-[#2A3F2A]",
-    text: "text-emerald-800 dark:text-[#6BD46B]",
-    label: "Low priority",
-  },
-};
-
 // ─── Helpers ────────────────────────────────────────────────────────────
 
 interface EventPayload {
@@ -133,22 +142,30 @@ function EventPayloadPanel({ payload }: { payload: EventPayload }) {
 
   if (type.includes("GMAIL") || data.subject || data.from) {
     return (
-      <div className="mt-3 rounded-xl bg-black/40 border border-white/[0.04] overflow-hidden">
+      <div className="mt-3 rounded-xl bg-muted/40 border border-border overflow-hidden">
         {!!data.from && (
-          <div className="flex gap-3 px-4 py-2.5 text-[11px] border-b border-white/[0.03]">
-            <span className="text-neutral-500 font-medium shrink-0 w-[72px]">From</span>
-            <span className="text-neutral-300 break-all">{String(data.from)}</span>
+          <div className="flex gap-3 px-4 py-2.5 text-[11px] border-b border-border">
+            <span className="text-muted-foreground font-medium shrink-0 w-[72px]">
+              From
+            </span>
+            <span className="text-foreground/80 break-all">
+              {String(data.from)}
+            </span>
           </div>
         )}
         {!!data.subject && (
-          <div className="flex gap-3 px-4 py-2.5 text-[11px] border-b border-white/[0.03]">
-            <span className="text-neutral-500 font-medium shrink-0 w-[72px]">Subject</span>
-            <span className="text-neutral-300 font-medium break-all">{String(data.subject)}</span>
+          <div className="flex gap-3 px-4 py-2.5 text-[11px] border-b border-border">
+            <span className="text-muted-foreground font-medium shrink-0 w-[72px]">
+              Subject
+            </span>
+            <span className="text-foreground/80 font-medium break-all">
+              {String(data.subject)}
+            </span>
           </div>
         )}
         {!!(data.snippet || data.body) && (
           <div className="px-4 py-3 text-[11px]">
-            <p className="text-neutral-400 leading-relaxed whitespace-pre-wrap">
+            <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap">
               {String(data.snippet || data.body).slice(0, 600)}
               {String(data.snippet || data.body).length > 600 ? "…" : ""}
             </p>
@@ -160,16 +177,20 @@ function EventPayloadPanel({ payload }: { payload: EventPayload }) {
 
   if (type.includes("SLACK") || data.channel_name || data.text) {
     return (
-      <div className="mt-3 rounded-xl bg-black/40 border border-white/[0.04] overflow-hidden">
+      <div className="mt-3 rounded-xl bg-muted/40 border border-border overflow-hidden">
         {!!data.channel_name && (
-          <div className="flex gap-3 px-4 py-2.5 text-[11px] border-b border-white/[0.03]">
-            <span className="text-neutral-500 font-medium shrink-0 w-[72px]">Channel</span>
-            <span className="text-neutral-300">#{String(data.channel_name)}</span>
+          <div className="flex gap-3 px-4 py-2.5 text-[11px] border-b border-border">
+            <span className="text-muted-foreground font-medium shrink-0 w-[72px]">
+              Channel
+            </span>
+            <span className="text-foreground/80">
+              #{String(data.channel_name)}
+            </span>
           </div>
         )}
         {!!data.text && (
           <div className="px-4 py-3 text-[11px]">
-            <p className="text-neutral-400 leading-relaxed whitespace-pre-wrap">
+            <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap">
               {String(data.text).slice(0, 600)}
               {String(data.text).length > 600 ? "…" : ""}
             </p>
@@ -180,23 +201,34 @@ function EventPayloadPanel({ payload }: { payload: EventPayload }) {
   }
 
   // Generic fallback
-  const entries = Object.entries(data).filter(([, v]) => v !== null && v !== undefined && v !== "");
+  const entries = Object.entries(data).filter(
+    ([, v]) => v !== null && v !== undefined && v !== "",
+  );
   if (entries.length === 0) return null;
-  const formatKey = (k: string) => k.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  const formatKey = (k: string) =>
+    k.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
   const fmtVal = (v: unknown): string => {
     if (typeof v === "boolean") return v ? "Yes" : "No";
     if (typeof v === "string") return v;
     if (typeof v === "number") return String(v);
     if (Array.isArray(v)) return v.join(", ");
-    try { return JSON.stringify(v, null, 2); } catch { return String(v); }
+    try {
+      return JSON.stringify(v, null, 2);
+    } catch {
+      return String(v);
+    }
   };
   return (
-    <div className="mt-3 rounded-xl bg-black/40 border border-white/[0.04] divide-y divide-white/[0.03] overflow-hidden">
+    <div className="mt-3 rounded-xl bg-muted/40 border border-border divide-y divide-border overflow-hidden">
       {entries.map(([key, value]) => (
         <div key={key} className="flex gap-3 px-4 py-2.5 text-[11px]">
-          <span className="text-neutral-500 font-medium shrink-0 w-[130px] truncate">{formatKey(key)}</span>
-          <span className="text-neutral-400 break-all">
-            {fmtVal(value).length > 200 ? fmtVal(value).slice(0, 197) + "…" : fmtVal(value)}
+          <span className="text-muted-foreground font-medium shrink-0 w-[130px] truncate">
+            {formatKey(key)}
+          </span>
+          <span className="text-muted-foreground break-all">
+            {fmtVal(value).length > 200
+              ? fmtVal(value).slice(0, 197) + "…"
+              : fmtVal(value)}
           </span>
         </div>
       ))}
@@ -218,17 +250,21 @@ function ContextPanel({ ctx }: { ctx: Record<string, unknown> }) {
     if (typeof v === "string") return v;
     if (typeof v === "number") return String(v);
     if (Array.isArray(v)) return v.join(", ");
-    try { return JSON.stringify(v, null, 2); } catch { return String(v); }
+    try {
+      return JSON.stringify(v, null, 2);
+    } catch {
+      return String(v);
+    }
   };
 
   return (
-    <div className="mt-2 rounded-xl bg-black/20 border border-white/[0.03] divide-y divide-white/[0.02] overflow-hidden">
+    <div className="mt-2 rounded-xl bg-muted/30 border border-border divide-y divide-border overflow-hidden">
       {entries.map(([key, value]) => (
         <div key={key} className="flex gap-3 px-4 py-2 text-[11px]">
-          <span className="text-neutral-600 font-medium shrink-0 w-[130px] truncate">
+          <span className="text-muted-foreground font-medium shrink-0 w-[130px] truncate">
             {formatKey(key)}
           </span>
-          <span className="text-neutral-500 break-all">
+          <span className="text-muted-foreground break-all">
             {formatValue(value).length > 200
               ? formatValue(value).slice(0, 197) + "…"
               : formatValue(value)}
@@ -250,11 +286,90 @@ function timeAgo(iso: string): string {
   return `${days}d ago`;
 }
 
+// ─── Expandable Text ────────────────────────────────────────────────────
+
+function ExpandableText({
+  text,
+  maxLength,
+}: {
+  text: string;
+  maxLength: number;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  return (
+    <div>
+      <p className="text-xs text-muted-foreground leading-relaxed">
+        {expanded ? text : text.slice(0, maxLength) + "…"}
+      </p>
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="mt-1 text-[11px] font-medium text-muted-foreground/60 hover:text-foreground transition-colors"
+      >
+        {expanded ? "Show less" : "Show more"}
+      </button>
+    </div>
+  );
+}
+
+// ─── Confidence Badge ───────────────────────────────────────────────────
+
+function ConfidenceBadge({ confidence }: { confidence: number }) {
+  const pct = Math.round(confidence * 100);
+  const level = pct >= 80 ? "high" : pct >= 60 ? "medium" : "low";
+  const config = {
+    high: {
+      label: "High confidence",
+      icon: ShieldCheck,
+      variant: "default" as const,
+      className: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
+      tooltip: `AI is ${pct}% confident this action is correct. Safe to approve.`,
+      helperText: "Safe to approve.",
+    },
+    medium: {
+      label: "Medium confidence",
+      icon: ShieldQuestion,
+      variant: "outline" as const,
+      className: "bg-amber-500/10 text-amber-400 border-amber-500/20",
+      tooltip: `AI is ${pct}% confident. Review the details before approving.`,
+      helperText: "Review before approving.",
+    },
+    low: {
+      label: "Low confidence",
+      icon: ShieldAlert,
+      variant: "destructive" as const,
+      className: "bg-red-500/10 text-red-400 border-red-500/20",
+      tooltip: `AI is only ${pct}% confident. Carefully review before taking action.`,
+      helperText: "Inspect carefully.",
+    },
+  }[level];
+  const Icon = config.icon;
+
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <Badge
+        variant="outline"
+        className={config.className}
+        title={config.tooltip}
+      >
+        <Icon strokeWidth={1.5} size={12} />
+        {config.label}
+        <span className="opacity-50 ml-0.5 tabular-nums">{pct}%</span>
+      </Badge>
+      <span className="text-[11px] leading-relaxed text-muted-foreground/80">
+        {config.helperText}
+      </span>
+    </div>
+  );
+}
+
 // ─── Component ──────────────────────────────────────────────────────────
 
 export default function ReviewPage() {
   const { user } = useAuth();
   const { getLogo } = useLogo();
+  const { success: toastSuccess, error: toastError } = useToast();
+  const searchParams = useSearchParams();
+  const highlightRef = useRef<HTMLDivElement>(null);
   const [items, setItems] = useState<ReviewItem[]>([]);
   const [counts, setCounts] = useState<ReviewCounts>({
     total: 0,
@@ -266,7 +381,6 @@ export default function ReviewPage() {
   const [error, setError] = useState<string | null>(null);
   const [viewFilter, setViewFilter] = useState<ViewFilter>("pending");
   const [actingOn, setActingOn] = useState<string | null>(null);
-  const [snoozeOpen, setSnoozeOpen] = useState<string | null>(null);
   const [actionResult, setActionResult] = useState<{
     id: string;
     message: string;
@@ -274,10 +388,21 @@ export default function ReviewPage() {
   } | null>(null);
   const [dismissingAll, setDismissingAll] = useState(false);
   const [expandedItem, setExpandedItem] = useState<string | null>(null);
-  const [eventPayloads, setEventPayloads] = useState<Record<string, EventPayload>>({});
+  const [eventPayloads, setEventPayloads] = useState<
+    Record<string, EventPayload>
+  >({});
   const [loadingPayload, setLoadingPayload] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [batchDismissing, setBatchDismissing] = useState(false);
+  const [batchApproving, setBatchApproving] = useState(false);
+  const [searchQuery, setSearchQuery] = useState(
+    () => searchParams.get("q") || "",
+  );
+  const [highlightItemId, setHighlightItemId] = useState<string | null>(() =>
+    searchParams.get("item"),
+  );
+  const [sortMode, setSortMode] = useState<SortMode>("newest");
+  const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>("all");
 
   // ── Fetch review items ──────────────────────────────────────────────
 
@@ -285,13 +410,13 @@ export default function ReviewPage() {
     if (!user?.id) return;
     try {
       setError(null);
-      const data = await api.get(
-        `/review?status=${viewFilter}`,
-      );
+      const data = await api.get(`/review?status=${viewFilter}`);
       setItems(data.items || []);
       setCounts(data.counts || { total: 0, high: 0, medium: 0, low: 0 });
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to load review items");
+      setError(
+        err instanceof Error ? err.message : "Failed to load review items",
+      );
     } finally {
       setLoading(false);
     }
@@ -301,12 +426,29 @@ export default function ReviewPage() {
     fetchItems();
   }, [fetchItems]);
 
-  // Auto-refresh every 30 seconds for pending items
   useEffect(() => {
     if (viewFilter !== "pending") return;
     const interval = setInterval(fetchItems, 30000);
     return () => clearInterval(interval);
   }, [fetchItems, viewFilter]);
+
+  // Auto-scroll to highlighted item from URL ?item=
+  useEffect(() => {
+    if (!highlightItemId || loading || items.length === 0) return;
+    const found = items.find((i) => i.id === highlightItemId);
+    if (found) {
+      setExpandedItem(highlightItemId);
+      // Scroll after a brief render delay
+      setTimeout(() => {
+        highlightRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+      }, 300);
+      // Clear highlight after 3s
+      setTimeout(() => setHighlightItemId(null), 3000);
+    }
+  }, [highlightItemId, loading, items]);
 
   // ── Actions ─────────────────────────────────────────────────────────
 
@@ -317,7 +459,6 @@ export default function ReviewPage() {
   ) => {
     if (!user?.id) return;
     setActingOn(itemId);
-    setSnoozeOpen(null);
     setActionResult(null);
 
     try {
@@ -328,16 +469,11 @@ export default function ReviewPage() {
         snoozeDuration,
       });
 
-      // Optimistic removal for dismiss/snooze
       if (action === "dismiss" || action === "snooze") {
         setItems((prev) => prev.filter((i) => i.id !== itemId));
-        setCounts((prev) => ({
-          ...prev,
-          total: Math.max(0, prev.total - 1),
-        }));
+        setCounts((prev) => ({ ...prev, total: Math.max(0, prev.total - 1) }));
       }
 
-      // For approve, show the result then remove
       if (action === "approve") {
         setActionResult({
           id: itemId,
@@ -345,7 +481,6 @@ export default function ReviewPage() {
             result.result?.message || result.message || "Action executed",
           error: result.result?.error,
         });
-        // Remove after a brief delay to let user read the result
         setTimeout(() => {
           setItems((prev) => prev.filter((i) => i.id !== itemId));
           setCounts((prev) => ({
@@ -374,6 +509,7 @@ export default function ReviewPage() {
       await api.post(`/review/dismiss-all`, {});
       setItems([]);
       setCounts({ total: 0, high: 0, medium: 0, low: 0 });
+      toastSuccess("All items dismissed");
     } catch (err: any) {
       setError(err.message || "Failed to dismiss all");
     } finally {
@@ -401,7 +537,7 @@ export default function ReviewPage() {
         const data = await api.get(`/review/${itemId}/context`);
         setEventPayloads((prev) => ({ ...prev, [itemId]: data }));
       } catch {
-        // non-fatal — context panel degrades gracefully
+        // non-fatal
       } finally {
         setLoadingPayload(null);
       }
@@ -413,42 +549,128 @@ export default function ReviewPage() {
     setBatchDismissing(true);
     try {
       await Promise.all(
-        ids.map((id) => api.post("/review/act", { userId: user.id, itemId: id, action: "dismiss" }))
+        ids.map((id) =>
+          api.post("/review/act", {
+            userId: user.id,
+            itemId: id,
+            action: "dismiss",
+          }),
+        ),
       );
       setItems((prev) => prev.filter((i) => !ids.includes(i.id)));
-      setCounts((prev) => ({ ...prev, total: Math.max(0, prev.total - ids.length) }));
+      setCounts((prev) => ({
+        ...prev,
+        total: Math.max(0, prev.total - ids.length),
+      }));
       setSelectedIds(new Set());
+      toastSuccess(`${ids.length} item${ids.length > 1 ? "s" : ""} dismissed`);
     } catch (err: any) {
-      setError(err.message || "Batch dismiss failed");
+      toastError(err.message || "Batch dismiss failed");
     } finally {
       setBatchDismissing(false);
     }
   };
+
+  const handleBatchApprove = async (ids: string[]) => {
+    if (!user?.id || ids.length === 0) return;
+    setBatchApproving(true);
+    try {
+      await Promise.all(
+        ids.map((id) =>
+          api.post("/review/act", {
+            userId: user.id,
+            itemId: id,
+            action: "approve",
+          }),
+        ),
+      );
+      setItems((prev) => prev.filter((i) => !ids.includes(i.id)));
+      setCounts((prev) => ({
+        ...prev,
+        total: Math.max(0, prev.total - ids.length),
+      }));
+      setSelectedIds(new Set());
+      toastSuccess(`${ids.length} item${ids.length > 1 ? "s" : ""} approved`);
+    } catch (err: any) {
+      toastError(err.message || "Batch approve failed");
+    } finally {
+      setBatchApproving(false);
+    }
+  };
+
+  // ── Derived: categories, filtered & sorted items ────────────────────
+
+  const categories = useMemo(() => {
+    const cats = new Set(items.map((i) => i.category).filter(Boolean));
+    return Array.from(cats).sort();
+  }, [items]);
+
+  const filteredItems = useMemo(() => {
+    let result = items;
+
+    // Category filter
+    if (categoryFilter !== "all") {
+      result = result.filter((i) => i.category === categoryFilter);
+    }
+
+    // Search
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(
+        (i) =>
+          i.title.toLowerCase().includes(q) ||
+          i.description.toLowerCase().includes(q) ||
+          i.source_app.toLowerCase().includes(q) ||
+          i.category?.toLowerCase().includes(q),
+      );
+    }
+
+    // Sort
+    result = [...result].sort((a, b) => {
+      switch (sortMode) {
+        case "oldest":
+          return (
+            new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+          );
+        case "confidence-high":
+          return (b.ai_confidence ?? 0) - (a.ai_confidence ?? 0);
+        case "confidence-low":
+          return (a.ai_confidence ?? 0) - (b.ai_confidence ?? 0);
+        case "newest":
+        default:
+          return (
+            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+          );
+      }
+    });
+
+    return result;
+  }, [items, categoryFilter, searchQuery, sortMode]);
 
   // ── Render ──────────────────────────────────────────────────────────
 
   if (loading) {
     return (
       <div className="flex flex-col min-h-screen">
-        <div className="px-6 py-4 border-b border-white/[0.06] shrink-0">
-          <div className="h-3.5 w-12 rounded bg-white/[0.06] animate-pulse" />
-          <div className="h-2.5 w-32 rounded bg-white/[0.04] animate-pulse mt-1.5" />
+        <div className="px-6 py-4 border-b border-border shrink-0 space-y-1.5">
+          <Skeleton className="h-3.5 w-12" />
+          <Skeleton className="h-2.5 w-32" />
         </div>
-        <div className="px-6 border-b border-white/[0.06] flex items-center gap-1 h-10">
+        <div className="px-6 border-b border-border flex items-center gap-3 h-10">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-2.5 w-14 rounded bg-white/[0.04] animate-pulse mx-1" />
+            <Skeleton key={i} className="h-2.5 w-14" />
           ))}
         </div>
         <div>
           {[1, 2, 3].map((i) => (
-            <div key={i} className="border-b border-white/[0.06] px-6 py-4">
-              <div className="flex items-center gap-2.5 mb-2">
-                <div className="w-1.5 h-1.5 rounded-full bg-white/[0.06] animate-pulse" />
-                <div className="h-2.5 w-14 rounded bg-white/[0.04] animate-pulse" />
-                <div className="h-2.5 w-10 rounded bg-white/[0.03] animate-pulse" />
+            <div key={i} className="border-b border-border px-6 py-4 space-y-2">
+              <div className="flex items-center gap-2.5">
+                <Skeleton className="w-1.5 h-1.5 rounded-full" />
+                <Skeleton className="h-2.5 w-14" />
+                <Skeleton className="h-2.5 w-10" />
               </div>
-              <div className="h-3.5 w-2/5 rounded bg-white/[0.06] animate-pulse mb-1.5" />
-              <div className="h-2.5 w-3/5 rounded bg-white/[0.04] animate-pulse" />
+              <Skeleton className="h-3.5 w-2/5" />
+              <Skeleton className="h-2.5 w-3/5" />
             </div>
           ))}
         </div>
@@ -459,10 +681,11 @@ export default function ReviewPage() {
   return (
     <div className="flex flex-col min-h-screen">
       {/* Page header */}
-      <div className="px-6 py-4 border-b border-white/[0.06] flex items-center justify-between shrink-0">
+      <div className="px-4 sm:px-6 py-4 border-b border-border flex items-center justify-between shrink-0">
         <div>
-          <h1 className="text-sm font-semibold text-white">Inbox</h1>
-          <p className="text-xs text-neutral-500 mt-0.5">
+          <Breadcrumb />
+          <h1 className="text-sm font-semibold text-foreground">Inbox</h1>
+          <p className="text-xs text-muted-foreground mt-0.5">
             {viewFilter === "pending"
               ? counts.total === 0
                 ? "Nothing needs your judgment"
@@ -475,37 +698,62 @@ export default function ReviewPage() {
         {counts.total > 0 && viewFilter === "pending" && (
           <div className="flex items-center gap-2">
             {counts.low > 0 && (
-              <button
-                onClick={() => handleBatchDismiss(items.filter((i) => i.priority === "low" && i.status === "pending").map((i) => i.id))}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() =>
+                  handleBatchDismiss(
+                    items
+                      .filter(
+                        (i) => i.priority === "low" && i.status === "pending",
+                      )
+                      .map((i) => i.id),
+                  )
+                }
                 disabled={batchDismissing}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-neutral-500 hover:text-white hover:bg-white/[0.03] rounded-md transition-colors"
               >
-                {batchDismissing ? <Loader2 strokeWidth={1.5} size={12} className="animate-spin" /> : <Trash2 strokeWidth={1.5} size={12} />}
+                {batchDismissing ? (
+                  <Loader2
+                    strokeWidth={1.5}
+                    size={12}
+                    className="animate-spin"
+                  />
+                ) : (
+                  <Trash2 strokeWidth={1.5} size={12} />
+                )}
                 Dismiss low
-              </button>
+              </Button>
             )}
-            <button
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={handleDismissAll}
               disabled={dismissingAll}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-neutral-500 hover:text-white hover:bg-white/[0.03] rounded-md transition-colors"
             >
-              {dismissingAll ? <Loader2 strokeWidth={1.5} size={12} className="animate-spin" /> : <XCircle strokeWidth={1.5} size={12} />}
+              {dismissingAll ? (
+                <Loader2 strokeWidth={1.5} size={12} className="animate-spin" />
+              ) : (
+                <XCircle strokeWidth={1.5} size={12} />
+              )}
               Dismiss all
-            </button>
+            </Button>
           </div>
         )}
       </div>
 
       {/* Filter tabs */}
-      <div className="px-6 border-b border-white/[0.06] flex items-center gap-1">
+      <div className="px-4 sm:px-6 border-b border-border flex items-center gap-1">
         {(["pending", "resolved", "all"] as ViewFilter[]).map((filter) => (
           <button
             key={filter}
-            onClick={() => { setViewFilter(filter); setSelectedIds(new Set()); }}
+            onClick={() => {
+              setViewFilter(filter);
+              setSelectedIds(new Set());
+            }}
             className={`px-3 py-3 text-xs font-medium transition-colors capitalize border-b-2 -mb-px ${
               viewFilter === filter
-                ? "text-white border-white"
-                : "text-neutral-500 hover:text-neutral-300 border-transparent"
+                ? "text-foreground border-foreground"
+                : "text-muted-foreground hover:text-foreground/80 border-transparent"
             }`}
           >
             {filter}
@@ -513,50 +761,177 @@ export default function ReviewPage() {
         ))}
         <Link
           href="/dashboard/feed"
-          className="ml-auto flex items-center gap-1.5 text-xs font-medium text-neutral-500 hover:text-white transition-colors py-3"
+          className="ml-auto flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors py-3"
         >
           <Activity strokeWidth={1.5} size={12} />
           Feed
         </Link>
       </div>
 
-      <div className="flex-1 px-6 py-4">
+      <div className="flex-1 px-4 sm:px-6 py-4">
+        {/* Search + Sort/Filter bar */}
+        {!loading && items.length > 0 && (
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-4">
+            {/* Search */}
+            <div className="relative w-full sm:w-72">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <Search
+                  strokeWidth={1.5}
+                  size={14}
+                  className="text-muted-foreground"
+                />
+              </div>
+              <Input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search inbox..."
+                className="pl-9"
+              />
+            </div>
+
+            <div className="flex items-center gap-2 ml-auto">
+              {/* Category filter */}
+              {categories.length > 1 && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger
+                    render={<Button variant="outline" size="xs" />}
+                  >
+                    <SlidersHorizontal strokeWidth={1.5} size={12} />
+                    {categoryFilter === "all"
+                      ? "All categories"
+                      : categoryFilter}
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuLabel>Category</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => setCategoryFilter("all")}>
+                      All categories
+                    </DropdownMenuItem>
+                    {categories.map((cat) => (
+                      <DropdownMenuItem
+                        key={cat}
+                        onClick={() => setCategoryFilter(cat)}
+                      >
+                        {cat}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+
+              {/* Sort */}
+              <DropdownMenu>
+                <DropdownMenuTrigger
+                  render={<Button variant="outline" size="xs" />}
+                >
+                  <ArrowDownAZ strokeWidth={1.5} size={12} />
+                  {sortMode === "newest"
+                    ? "Newest"
+                    : sortMode === "oldest"
+                      ? "Oldest"
+                      : sortMode === "confidence-high"
+                        ? "High confidence"
+                        : "Low confidence"}
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuLabel>Sort by</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => setSortMode("newest")}>
+                    Newest first
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setSortMode("oldest")}>
+                    Oldest first
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setSortMode("confidence-high")}
+                  >
+                    Confidence: high → low
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setSortMode("confidence-low")}
+                  >
+                    Confidence: low → high
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </div>
+        )}
 
         {/* Error */}
         {error && (
-          <div className={`w-full mb-6 p-4 ${error === "INSUFFICIENT_CREDITS" ? "bg-amber-500/10 border-amber-500/20" : "bg-red-500/10 border-red-500/20"} border rounded-xl flex items-center gap-3`}>
-            <AlertTriangle strokeWidth={1.5} size={16} className={`${error === "INSUFFICIENT_CREDITS" ? "text-amber-400" : "text-red-500"} shrink-0`} />
-            <p className={`text-sm flex-1 ${error === "INSUFFICIENT_CREDITS" ? "text-amber-400" : "text-red-500"}`}>
-              {error === "INSUFFICIENT_CREDITS" ? "You're out of credits. Add credits to continue." : error}
+          <div
+            className={`w-full mb-6 p-4 ${error === "INSUFFICIENT_CREDITS" ? "bg-amber-500/10 border-amber-500/20" : "bg-destructive/10 border-destructive/20"} border rounded-xl flex items-center gap-3`}
+          >
+            <AlertTriangle
+              strokeWidth={1.5}
+              size={16}
+              className={`${error === "INSUFFICIENT_CREDITS" ? "text-amber-400" : "text-destructive"} shrink-0`}
+            />
+            <p
+              className={`text-sm flex-1 ${error === "INSUFFICIENT_CREDITS" ? "text-amber-400" : "text-destructive"}`}
+            >
+              {error === "INSUFFICIENT_CREDITS"
+                ? "You're out of credits. Add credits to continue."
+                : error}
             </p>
             {error === "INSUFFICIENT_CREDITS" && (
-              <a href="/dashboard/settings" className="text-xs font-medium text-amber-400 hover:text-amber-300 px-3 py-1.5 rounded-full border border-amber-400/30 hover:border-amber-400/50 transition-all shrink-0">
-                Add Credits →
-              </a>
+              <Button
+                variant="outline"
+                size="sm"
+                render={<a href="/dashboard/settings" />}
+              >
+                Add Credits
+              </Button>
             )}
           </div>
         )}
 
         {/* Empty state */}
-        {items.length === 0 && !error ? (
+        {filteredItems.length === 0 && !error ? (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="flex flex-col items-center justify-center w-full mt-20 text-center"
+            className="flex flex-col items-center justify-center w-full mt-20 text-center gap-4"
           >
-            <Cloud strokeWidth={1.5} size={28} className="text-neutral-700 mb-4" />
-            <p className="text-sm font-semibold text-white mb-1">
-              {viewFilter === "pending"
-                ? "All clear"
-                : viewFilter === "resolved"
-                  ? "No resolved items"
-                  : "No items"}
-            </p>
-            <p className="text-xs text-neutral-600">
-              {viewFilter === "pending"
-                ? "Nothing needs your attention right now."
-                : "Items will appear here as triggers fire."}
-            </p>
+            <div className="w-12 h-12 rounded-2xl bg-muted border border-border flex items-center justify-center">
+              <Cloud
+                strokeWidth={1.5}
+                size={20}
+                className="text-muted-foreground"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <p className="text-sm font-semibold text-foreground">
+                {searchQuery || categoryFilter !== "all"
+                  ? "No matches"
+                  : viewFilter === "pending"
+                    ? "All clear"
+                    : viewFilter === "resolved"
+                      ? "No resolved items"
+                      : "No items"}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {searchQuery || categoryFilter !== "all"
+                  ? "Try adjusting your search or filters."
+                  : viewFilter === "pending"
+                    ? "Nothing needs your attention right now."
+                    : "Items will appear here as triggers fire."}
+              </p>
+              {(searchQuery || categoryFilter !== "all") && (
+                <Button
+                  variant="secondary"
+                  size="xs"
+                  className="mt-2"
+                  onClick={() => {
+                    setSearchQuery("");
+                    setCategoryFilter("all");
+                  }}
+                >
+                  Clear filters
+                </Button>
+              )}
+            </div>
           </motion.div>
         ) : (
           /* Items list */
@@ -569,37 +944,65 @@ export default function ReviewPage() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -8 }}
                   transition={{ duration: 0.18 }}
-                  className="flex items-center justify-between px-6 py-2.5 border-b border-white/[0.06] bg-white/[0.02]"
+                  className="flex items-center justify-between px-4 sm:px-6 py-2.5 border-b border-border bg-muted/50"
                 >
                   <div className="flex items-center gap-3">
-                    <button
+                    <Button
+                      variant="ghost"
+                      size="icon-xs"
                       onClick={() => setSelectedIds(new Set())}
-                      className="text-neutral-600 hover:text-white transition-colors"
                     >
                       <X strokeWidth={1.5} size={13} />
-                    </button>
-                    <span className="text-xs font-medium text-neutral-400">
+                    </Button>
+                    <span className="text-xs font-medium text-muted-foreground">
                       {selectedIds.size} selected
                     </span>
                   </div>
-                  <button
-                    onClick={() => handleBatchDismiss(Array.from(selectedIds))}
-                    disabled={batchDismissing}
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-neutral-500 hover:text-white hover:bg-white/[0.04] rounded-md transition-colors disabled:opacity-50"
-                  >
-                    {batchDismissing ? (
-                      <Loader2 strokeWidth={1.5} size={12} className="animate-spin" />
-                    ) : (
-                      <Trash2 strokeWidth={1.5} size={12} />
-                    )}
-                    Dismiss selected
-                  </button>
+                  <div className="flex items-center gap-1.5">
+                    <Button
+                      size="sm"
+                      onClick={() =>
+                        handleBatchApprove(Array.from(selectedIds))
+                      }
+                      disabled={batchApproving || batchDismissing}
+                    >
+                      {batchApproving ? (
+                        <Loader2
+                          strokeWidth={1.5}
+                          size={12}
+                          className="animate-spin"
+                        />
+                      ) : (
+                        <Check strokeWidth={2} size={12} />
+                      )}
+                      Approve selected
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() =>
+                        handleBatchDismiss(Array.from(selectedIds))
+                      }
+                      disabled={batchDismissing || batchApproving}
+                    >
+                      {batchDismissing ? (
+                        <Loader2
+                          strokeWidth={1.5}
+                          size={12}
+                          className="animate-spin"
+                        />
+                      ) : (
+                        <Trash2 strokeWidth={1.5} size={12} />
+                      )}
+                      Dismiss selected
+                    </Button>
+                  </div>
                 </motion.div>
               )}
             </AnimatePresence>
 
             <AnimatePresence mode="popLayout">
-              {items.map((item) => {
+              {filteredItems.map((item) => {
                 const isActing = actingOn === item.id;
                 const result =
                   actionResult?.id === item.id ? actionResult : null;
@@ -609,65 +1012,88 @@ export default function ReviewPage() {
                 return (
                   <motion.div
                     key={item.id}
+                    ref={item.id === highlightItemId ? highlightRef : undefined}
                     layout
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    exit={{
-                      opacity: 0,
-                      x: -40,
-                      transition: { duration: 0.2 },
-                    }}
-                    className="border-b border-white/[0.06] px-6 py-4 hover:bg-white/[0.02] transition-colors"
+                    exit={{ opacity: 0, x: -40, transition: { duration: 0.2 } }}
+                    className={`border-b border-border px-4 sm:px-6 py-4 hover:bg-muted/30 transition-all ${item.id === highlightItemId ? "ring-2 ring-primary/50 bg-primary/5" : ""}`}
                   >
-                    {/* Top row: source + time + urgent tag */}
+                    {/* Top row */}
                     <div className="flex items-center gap-2.5 mb-2">
                       {item.status === "pending" && (
                         <button
                           onClick={() => toggleSelect(item.id)}
-                          className="shrink-0 text-neutral-700 hover:text-neutral-400 transition-colors"
-                          aria-label={selectedIds.has(item.id) ? "Deselect" : "Select"}
-                        >
-                          {selectedIds.has(item.id)
-                            ? <CheckSquare strokeWidth={1.5} size={13} className="text-white" />
-                            : <Square strokeWidth={1.5} size={13} />
+                          className="shrink-0 text-muted-foreground/40 hover:text-muted-foreground transition-colors"
+                          aria-label={
+                            selectedIds.has(item.id) ? "Deselect" : "Select"
                           }
+                        >
+                          {selectedIds.has(item.id) ? (
+                            <CheckSquare
+                              strokeWidth={1.5}
+                              size={13}
+                              className="text-foreground"
+                            />
+                          ) : (
+                            <Square strokeWidth={1.5} size={13} />
+                          )}
                         </button>
                       )}
-                      <AppDot logo={appLogo} alt={item.source_app} color={appColor} />
-                      <span className="text-[11px] font-semibold tracking-widest text-neutral-500 uppercase">
+                      <AppDot
+                        logo={appLogo}
+                        alt={item.source_app}
+                        color={appColor}
+                      />
+                      <span className="text-[11px] font-semibold tracking-widest text-muted-foreground uppercase">
                         {item.source_app}
                       </span>
                       {item.category && CATEGORY_ICONS[item.category] && (
-                        <span className="text-neutral-700">
+                        <span className="text-muted-foreground/40">
                           {CATEGORY_ICONS[item.category]}
                         </span>
                       )}
-                      <span className="text-[11px] text-neutral-600">
+                      <span className="text-[11px] text-muted-foreground/60">
                         {timeAgo(item.created_at)}
                       </span>
                       {item.priority === "high" && (
-                        <span className="ml-auto text-[10px] font-semibold uppercase tracking-widest text-amber-500/80">
+                        <Badge
+                          variant="outline"
+                          className="ml-auto bg-amber-500/10 text-amber-500 border-amber-500/20 text-[10px]"
+                        >
                           Urgent
-                        </span>
+                        </Badge>
                       )}
                     </div>
 
-                    {/* Title + description */}
-                    <h3 className="text-sm font-semibold text-white mb-1 leading-snug">
+                    {/* Title + description (truncated with expand) */}
+                    <h3 className="text-sm font-semibold text-foreground mb-1 leading-snug">
                       {item.title}
                     </h3>
-                    <p className="text-xs text-neutral-500 leading-relaxed">
-                      {item.description}
-                    </p>
+                    {item.description &&
+                      (item.description.length > 180 ? (
+                        <ExpandableText
+                          text={item.description}
+                          maxLength={180}
+                        />
+                      ) : (
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                          {item.description}
+                        </p>
+                      ))}
 
-                    {/* Expandable context details */}
+                    {/* Expandable context */}
                     <div className="mt-2.5 mb-3">
                       <button
                         onClick={() => toggleExpand(item.id)}
-                        className="flex items-center gap-1.5 text-[11px] text-neutral-600 hover:text-neutral-400 transition-colors"
+                        className="flex items-center gap-1.5 text-[11px] text-muted-foreground/60 hover:text-muted-foreground transition-colors"
                       >
                         {loadingPayload === item.id ? (
-                          <Loader2 strokeWidth={1.5} size={11} className="animate-spin" />
+                          <Loader2
+                            strokeWidth={1.5}
+                            size={11}
+                            className="animate-spin"
+                          />
                         ) : (
                           <ChevronDown
                             strokeWidth={1.5}
@@ -675,7 +1101,9 @@ export default function ReviewPage() {
                             className={`transition-transform duration-200 ${expandedItem === item.id ? "rotate-180" : ""}`}
                           />
                         )}
-                        {expandedItem === item.id ? "Hide details" : "View details"}
+                        {expandedItem === item.id
+                          ? "Hide details"
+                          : "View details"}
                       </button>
                       <AnimatePresence>
                         {expandedItem === item.id && (
@@ -686,10 +1114,15 @@ export default function ReviewPage() {
                             transition={{ duration: 0.2 }}
                             className="overflow-hidden"
                           >
-                            {eventPayloads[item.id]?.data && Object.keys(eventPayloads[item.id].data!).length > 0 ? (
-                              <EventPayloadPanel payload={eventPayloads[item.id]} />
+                            {eventPayloads[item.id]?.data &&
+                            Object.keys(eventPayloads[item.id].data!).length >
+                              0 ? (
+                              <EventPayloadPanel
+                                payload={eventPayloads[item.id]}
+                              />
                             ) : (
-                              item.action_context && Object.keys(item.action_context).length > 0 && (
+                              item.action_context &&
+                              Object.keys(item.action_context).length > 0 && (
                                 <ContextPanel ctx={item.action_context} />
                               )
                             )}
@@ -698,55 +1131,13 @@ export default function ReviewPage() {
                       </AnimatePresence>
                     </div>
 
-                    {/* AI confidence badge */}
-                    {item.ai_confidence !== null && item.ai_confidence !== undefined && (() => {
-                      const pct = Math.round(item.ai_confidence * 100);
-                      const level = pct >= 80 ? "high" : pct >= 60 ? "medium" : "low";
-                      const config = {
-                        high: {
-                          label: "High confidence",
-                          icon: ShieldCheck,
-                          bg: "bg-emerald-500/8",
-                          border: "border-emerald-500/15",
-                          text: "text-emerald-400",
-                          dot: "bg-emerald-400",
-                          tooltip: `AI is ${pct}% confident this action is correct. Safe to approve.`,
-                        },
-                        medium: {
-                          label: "Medium confidence",
-                          icon: ShieldQuestion,
-                          bg: "bg-amber-500/8",
-                          border: "border-amber-500/15",
-                          text: "text-amber-400",
-                          dot: "bg-amber-400",
-                          tooltip: `AI is ${pct}% confident. Review the details before approving.`,
-                        },
-                        low: {
-                          label: "Low confidence",
-                          icon: ShieldAlert,
-                          bg: "bg-red-500/8",
-                          border: "border-red-500/15",
-                          text: "text-red-400",
-                          dot: "bg-red-400",
-                          tooltip: `AI is only ${pct}% confident. Carefully review before taking action.`,
-                        },
-                      }[level];
-                      const Icon = config.icon;
-                      return (
-                        <div className="group/conf relative mb-3 inline-flex">
-                          <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium border ${config.bg} ${config.border} ${config.text}`}>
-                            <Icon strokeWidth={1.5} size={12} />
-                            {config.label}
-                            <span className="opacity-50 ml-0.5 tabular-nums">{pct}%</span>
-                          </div>
-                          {/* Tooltip */}
-                          <div className="absolute bottom-full left-0 mb-1.5 px-3 py-2 rounded-lg bg-[#1a1d27] border border-white/10 text-[11px] text-neutral-300 leading-relaxed w-56 opacity-0 pointer-events-none group-hover/conf:opacity-100 transition-opacity duration-200 shadow-xl z-30">
-                            {config.tooltip}
-                            <div className="absolute top-full left-4 w-2 h-2 bg-[#1a1d27] border-r border-b border-white/10 rotate-45 -mt-1" />
-                          </div>
+                    {/* AI confidence badge — shadcn Tooltip */}
+                    {item.ai_confidence !== null &&
+                      item.ai_confidence !== undefined && (
+                        <div className="mt-1 mb-3">
+                          <ConfidenceBadge confidence={item.ai_confidence} />
                         </div>
-                      );
-                    })()}
+                      )}
 
                     {/* Post-approve result */}
                     {result && (
@@ -757,82 +1148,105 @@ export default function ReviewPage() {
                         transition={{ duration: 0.2 }}
                         className="overflow-hidden mb-3"
                       >
-                        <div className={`flex items-start gap-2.5 px-3 py-2.5 rounded-md border text-xs ${result.error
-                          ? "bg-red-500/5 border-red-500/20 text-red-400"
-                          : "bg-emerald-500/5 border-emerald-500/20 text-emerald-400"
-                        }`}>
-                          {result.error
-                            ? <AlertTriangle strokeWidth={1.5} size={13} className="shrink-0 mt-px" />
-                            : <Check strokeWidth={2} size={13} className="shrink-0 mt-px" />
-                          }
-                          <p className="leading-relaxed text-neutral-300">{result.message}</p>
+                        <div
+                          className={`flex items-start gap-2.5 px-3 py-2.5 rounded-md border text-xs ${
+                            result.error
+                              ? "bg-destructive/5 border-destructive/20 text-destructive"
+                              : "bg-emerald-500/5 border-emerald-500/20 text-emerald-400"
+                          }`}
+                        >
+                          {result.error ? (
+                            <AlertTriangle
+                              strokeWidth={1.5}
+                              size={13}
+                              className="shrink-0 mt-px"
+                            />
+                          ) : (
+                            <Check
+                              strokeWidth={2}
+                              size={13}
+                              className="shrink-0 mt-px"
+                            />
+                          )}
+                          <p className="leading-relaxed text-foreground/70">
+                            {result.message}
+                          </p>
                         </div>
                       </motion.div>
                     )}
 
-                    {/* Action buttons */}
+                    {/* Action buttons — shadcn Button + DropdownMenu */}
                     {item.status === "pending" && (
                       <div className="flex items-center gap-1.5 mt-3">
-                        <button
+                        <Button
+                          size="sm"
                           onClick={() => handleAction(item.id, "approve")}
                           disabled={isActing}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-white text-black text-xs font-semibold hover:bg-neutral-100 transition-colors disabled:opacity-50"
                         >
                           {isActing ? (
-                            <Loader2 strokeWidth={1.5} size={12} className="animate-spin" />
+                            <Loader2
+                              strokeWidth={1.5}
+                              size={12}
+                              className="animate-spin"
+                            />
                           ) : (
                             <Check strokeWidth={2} size={12} />
                           )}
                           Yes, do it
-                        </button>
-                        <button
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
                           onClick={() => handleAction(item.id, "dismiss")}
                           disabled={isActing}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium text-neutral-500 hover:text-white hover:bg-white/[0.04] transition-colors disabled:opacity-50"
                         >
                           <X strokeWidth={1.5} size={12} />
                           Dismiss
-                        </button>
+                        </Button>
 
-                        {/* Snooze toggle */}
-                        <div className="relative">
-                          <button
-                            onClick={() => setSnoozeOpen(snoozeOpen === item.id ? null : item.id)}
+                        {/* Snooze — shadcn DropdownMenu */}
+                        <DropdownMenu>
+                          <DropdownMenuTrigger
                             disabled={isActing}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium text-neutral-500 hover:text-white hover:bg-white/[0.04] transition-colors disabled:opacity-50"
+                            render={<Button variant="ghost" size="sm" />}
                           >
                             <Clock strokeWidth={1.5} size={12} />
                             Snooze
-                          </button>
-                          {snoozeOpen === item.id && (
-                            <motion.div
-                              initial={{ opacity: 0, y: 4 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              className="absolute bottom-full left-0 mb-1.5 bg-[#0c0c0c] border border-white/[0.08] rounded-lg shadow-xl overflow-hidden z-10"
-                            >
-                              {SNOOZE_OPTIONS.map((opt) => (
-                                <button
-                                  key={opt.minutes}
-                                  onClick={() => handleAction(item.id, "snooze", opt.minutes)}
-                                  className="block w-full text-left px-4 py-2 text-xs text-neutral-500 hover:text-white hover:bg-white/[0.04] transition-colors whitespace-nowrap"
-                                >
-                                  {opt.label}
-                                </button>
-                              ))}
-                            </motion.div>
-                          )}
-                        </div>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent side="top" align="start">
+                            {SNOOZE_OPTIONS.map((opt) => (
+                              <DropdownMenuItem
+                                key={opt.minutes}
+                                onClick={() =>
+                                  handleAction(item.id, "snooze", opt.minutes)
+                                }
+                              >
+                                {opt.label}
+                              </DropdownMenuItem>
+                            ))}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                     )}
 
                     {/* Resolved status */}
-                    {(item.status === "approved" || item.status === "dismissed") && (
+                    {(item.status === "approved" ||
+                      item.status === "dismissed") && (
                       <div className="flex items-center gap-2 mt-2">
-                        <span className={`text-[11px] font-medium ${item.status === "approved" ? "text-emerald-500" : "text-neutral-600"}`}>
-                          {item.status === "approved" ? "Approved" : "Dismissed"}
-                        </span>
+                        <Badge
+                          variant={
+                            item.status === "approved" ? "default" : "secondary"
+                          }
+                          className="text-[11px]"
+                        >
+                          {item.status === "approved"
+                            ? "Approved"
+                            : "Dismissed"}
+                        </Badge>
                         {item.resolved_at && (
-                          <span className="text-[11px] text-neutral-700">· {timeAgo(item.resolved_at)}</span>
+                          <span className="text-[11px] text-muted-foreground/50">
+                            · {timeAgo(item.resolved_at)}
+                          </span>
                         )}
                       </div>
                     )}

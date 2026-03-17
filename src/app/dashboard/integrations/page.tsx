@@ -1,19 +1,14 @@
 "use client";
 
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { Breadcrumb } from "@/components/dashboard/Breadcrumb";
 import { useAuth } from "@/context/AuthContext";
+import { useToast } from "@/context/ToastContext";
 import { api } from "@/lib/api";
 import { AnimatePresence, motion } from "framer-motion";
-import {
-  AlertCircle,
-  Check,
-  Grid3X3,
-  LayoutList,
-  Loader2,
-  Search,
-} from "lucide-react";
+import { Check, Grid3X3, LayoutList, Loader2, Search } from "lucide-react";
 import Link from "next/link";
-import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 interface CategoryInfo {
   id: string;
@@ -48,20 +43,20 @@ const PLATFORM_COLORS: Record<string, string> = {
 
 // Manual overrides for multi-color brand logos: [topLeft, topRight, bottomRight, bottomLeft]
 const PLATFORM_CORNER_COLORS: Record<string, [string, string, string, string]> =
-{
-  gmail: ["#EA4335", "#FBBC05", "#34A853", "#4285F4"],
-  googlecalendar: ["#4285F4", "#34A853", "#EA4335", "#FBBC05"],
-  googlesheets: ["#34A853", "#FBBC05", "#4285F4", "#1E8E3E"],
-  slack: ["#36C5F0", "#2EB67D", "#E01E5A", "#ECB22E"],
-  discord: ["#5865F2", "#57F287", "#FEE75C", "#EB459E"],
-  notion: ["#FFFFFF", "#CCCCCC", "#666666", "#000000"], // monochrome gradient
-  linear: ["#5E6AD2", "#7E8AE2", "#3E4AB2", "#5E6AD2"], // purple hues
-  github: ["#fafbfc", "#e1e4e8", "#24292e", "#6a737d"], // greyscale github scheme
-  twitter: ["#1DA1F2", "#71C9F8", "#1A91DA", "#1DA1F2"], // distinct twitter blues
-  composio: ["#8E24AA", "#AB47BC", "#6A1B9A", "#8E24AA"], // violet/purple
-  codeinterpreter: ["#4A5568", "#718096", "#2D3748", "#4A5568"], // terminal slate
-  hackernews: ["#FF6600", "#FF8533", "#CC5200", "#FF6600"], // Y-combinator orange
-};
+  {
+    gmail: ["#EA4335", "#FBBC05", "#34A853", "#4285F4"],
+    googlecalendar: ["#4285F4", "#34A853", "#EA4335", "#FBBC05"],
+    googlesheets: ["#34A853", "#FBBC05", "#4285F4", "#1E8E3E"],
+    slack: ["#36C5F0", "#2EB67D", "#E01E5A", "#ECB22E"],
+    discord: ["#5865F2", "#57F287", "#FEE75C", "#EB459E"],
+    notion: ["#FFFFFF", "#CCCCCC", "#666666", "#000000"], // monochrome gradient
+    linear: ["#5E6AD2", "#7E8AE2", "#3E4AB2", "#5E6AD2"], // purple hues
+    github: ["#fafbfc", "#e1e4e8", "#24292e", "#6a737d"], // greyscale github scheme
+    twitter: ["#1DA1F2", "#71C9F8", "#1A91DA", "#1DA1F2"], // distinct twitter blues
+    composio: ["#8E24AA", "#AB47BC", "#6A1B9A", "#8E24AA"], // violet/purple
+    codeinterpreter: ["#4A5568", "#718096", "#2D3748", "#4A5568"], // terminal slate
+    hackernews: ["#FF6600", "#FF8533", "#CC5200", "#FF6600"], // Y-combinator orange
+  };
 
 /**
  * Derive 4 corner colors from a single hex brand color.
@@ -136,7 +131,10 @@ import { useLogo } from "@/context/LogoContext";
 import { PLATFORM_LOGOS } from "@/lib/platform-logos";
 
 // What CalmPilot can do after connecting each app
-const APP_CONNECT_EXPLANATIONS: Record<string, { title: string; bullets: string[] }> = {
+const APP_CONNECT_EXPLANATIONS: Record<
+  string,
+  { title: string; bullets: string[] }
+> = {
   gmail: {
     title: "Gmail is connected",
     bullets: [
@@ -219,13 +217,15 @@ export default function IntegrationsPage() {
   const [loading, setLoading] = useState(true);
   const [connecting, setConnecting] = useState<string | null>(null);
   const [disconnecting, setDisconnecting] = useState<string | null>(null);
-  const [toast, setToast] = useState<ReactNode | null>(null);
-  const [errorToast, setErrorToast] = useState<string | null>(null);
+  const { success: toastSuccess, error: toastError } = useToast();
   const [availableCategories, setAvailableCategories] = useState<
     CategoryInfo[]
   >([]);
   const [groupByCategory, setGroupByCategory] = useState(false);
-  const [confirmDisconnect, setConfirmDisconnect] = useState<{ id: string, name: string } | null>(null);
+  const [confirmDisconnect, setConfirmDisconnect] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
   const [postConnectApp, setPostConnectApp] = useState<string | null>(null);
 
   // UI State
@@ -256,7 +256,7 @@ export default function IntegrationsPage() {
       // Fire auto-setup for default triggers (server-side also runs this via callback)
       api
         .post("/triggers/auto-setup", { userId: user!.id, appName: app })
-        .catch(() => { });
+        .catch(() => {});
       // Show post-connect explanation panel for all apps
       setPostConnectApp(appSlug);
       // Clean URL
@@ -335,7 +335,9 @@ export default function IntegrationsPage() {
             loadIntegrations().then((loaded) => {
               const slug = connectedAppName.toLowerCase().replace(/-/g, "");
               const isNowConnected = loaded.find(
-                (i) => i.appName.toLowerCase().replace(/-/g, "") === slug && i.status === "connected",
+                (i) =>
+                  i.appName.toLowerCase().replace(/-/g, "") === slug &&
+                  i.status === "connected",
               );
               if (isNowConnected) setPostConnectApp(slug);
             });
@@ -350,8 +352,7 @@ export default function IntegrationsPage() {
         e.response?.data?.detail?.message ||
         e.response?.data?.detail ||
         "Failed to initiate connection. Please try again.";
-      setErrorToast(errorMsg);
-      setTimeout(() => setErrorToast(null), 5000);
+      toastError(errorMsg);
     }
   };
 
@@ -363,16 +364,14 @@ export default function IntegrationsPage() {
         connectionId,
       });
 
-      setToast(`${appName.replace("-", " ")} disconnected successfully!`);
-      setTimeout(() => setToast(null), 4000);
+      toastSuccess(`${appName.replace("-", " ")} disconnected successfully!`);
       loadIntegrations();
     } catch (e: any) {
       const errorMsg =
         e.response?.data?.detail?.message ||
         e.response?.data?.detail ||
         "Failed to disconnect. Please try again.";
-      setErrorToast(errorMsg);
-      setTimeout(() => setErrorToast(null), 5000);
+      toastError(errorMsg);
     } finally {
       setDisconnecting(null);
     }
@@ -412,46 +411,68 @@ export default function IntegrationsPage() {
         }
       }
 
-      // Filter out unwanted built-in features
-      const isBuiltin = !integration.canDisconnect;
-      const isBlacklistedBuiltin = isBuiltin
-        ? [
+      // Filter out unwanted built-in/no-auth apps entirely
+      const isHidden =
+        !integration.canDisconnect &&
+        [
           "composio",
           "browsertool",
           "browser",
-          "composio_search",
-          "",
+          "browser_tool",
           "code-interpeter",
           "codeinterpreter",
+          "composiosearch",
+          "composio_search",
+          "texttopdf",
           "text_to_pdf",
-          "text-to-pdf",
-          "TEXT_TO_PDF",
-          "browser_tool",
+          "testapp",
           "test_app",
-        ].includes(appSlug)
-        : false;
+          "",
+        ].includes(appSlug);
 
-      return (
-        matchesSearch && matchesTab && matchesCategory && !isBlacklistedBuiltin
-      );
+      return matchesSearch && matchesTab && matchesCategory && !isHidden;
     });
   }, [integrations, searchQuery, activeTab, activeCategory]);
 
   // Popular apps shown at the top — order matters (most popular first)
   const POPULAR_SLUGS = [
-    "gmail", "slack", "github", "notion",
-    "googlesheets", "googledrive", "hubspot", "box",
-    "coda", "confluence", "discord", "googlecalendar",
-    "googledocs", "googlemaps", "googlemeet", "googleslides",
-    "googletasks", "jira", "atlassian", "mailchimp",
-    "outlook", "salesforce", "slackbot", "spotify",
-    "stripe", "todoist", "youtube", "zendesk",
-    "pipedrive", "zoom",
+    "gmail",
+    "slack",
+    "github",
+    "notion",
+    "googlesheets",
+    "googledrive",
+    "discord",
+    "googlecalendar",
+    "googledocs",
+    "googlemaps",
+    "googlemeet",
+    "googleslides",
+    "googletasks",
+    "jira",
+    "atlassian",
+    "hubspot",
+    "box",
+    "coda",
+    "confluence",
+    "mailchimp",
+    "outlook",
+    "pipedrive",
+    "salesforce",
+    "slackbot",
+    "spotify",
+    "stripe",
+    "todoist",
+    "youtube",
+    "zendesk",
+    "zoom",
   ];
   const popularApps = useMemo(() => {
-    return POPULAR_SLUGS
-      .map((slug) => integrations.find((i) => i.appName.toLowerCase().replace(/[-_]/g, "") === slug))
-      .filter(Boolean) as Integration[];
+    return POPULAR_SLUGS.map((slug) =>
+      integrations.find(
+        (i) => i.appName.toLowerCase().replace(/[-_]/g, "") === slug,
+      ),
+    ).filter(Boolean) as Integration[];
   }, [integrations]);
 
   // Sort: connected apps first, then alphabetical
@@ -490,9 +511,9 @@ export default function IntegrationsPage() {
           fallbackId === "other"
             ? "Other"
             : fallbackId
-              .split("-")
-              .map((w) => w[0].toUpperCase() + w.slice(1))
-              .join(" ");
+                .split("-")
+                .map((w) => w[0].toUpperCase() + w.slice(1))
+                .join(" ");
         if (!groups.has(fallbackId)) {
           groups.set(fallbackId, { label: fallbackLabel, items: [] });
         }
@@ -519,7 +540,9 @@ export default function IntegrationsPage() {
     const composioSlug = integration.appName.toLowerCase();
     const cdnFallback = `${COMPOSIO_CDN}/${composioSlug}`;
     const isConnected = integration.status === "connected";
-    const isExpired = !isConnected && ["expired", "inactive", "error", "failed"].includes(integration.status);
+    const isExpired =
+      !isConnected &&
+      ["expired", "inactive", "error", "failed"].includes(integration.status);
     const isConnecting = connecting === integration.appName;
 
     return (
@@ -530,36 +553,32 @@ export default function IntegrationsPage() {
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
         transition={{ duration: 0.2, ease: "easeOut" }}
-        className="group relative rounded-[1rem] sm:rounded-[1.25rem] p-[1.5px] hover:-translate-y-1 transition-all duration-500 ease-out h-[180px] sm:h-[220px] md:h-[260px]"
+        className="group relative rounded-[1rem] sm:rounded-[1.25rem] p-[1.5px] lift pressable h-[180px] sm:h-[220px] md:h-[260px]"
       >
-        {/* Border layer (Cut off by overflow-hidden, shines through the 1.5px padding) */}
-        <div className="absolute inset-0 rounded-[1rem] sm:rounded-[1.25rem] z-0 overflow-hidden transition-all duration-500 pointer-events-none flex items-center justify-center opacity-0 group-hover:opacity-100 bg-white/5 border border-white/5 group-hover:border-transparent">
-          {logoSvg ? (
-            <img src={logoSvg} alt="" className="w-[150%] h-[150%] object-cover blur-[16px] saturate-[1.5]" />
-          ) : (
-            <div className="w-full h-full" style={{ backgroundColor: color }} />
-          )}
-        </div>
+        {/* Neutral border only; no brand-color hover wash */}
+        <div className="absolute inset-0 rounded-[1rem] sm:rounded-[1.25rem] z-0 overflow-hidden pointer-events-none border border-border/70 bg-muted/20 transition-colors duration-300 group-hover:border-foreground/20" />
 
-        <div className="relative flex flex-col p-3 sm:p-4 md:p-5 h-full overflow-hidden z-10 rounded-[calc(1rem-1.5px)] sm:rounded-[calc(1.25rem-1.5px)] bg-[#111319] dark:bg-[#111319] w-full shadow-xl">
-          <div
-            className="absolute inset-0 opacity-0 group-hover:opacity-[0.10] transition-opacity duration-500 pointer-events-none"
-            style={{ background: `radial-gradient(circle at 50% 50%, ${color} 0%, transparent 70%)` }}
-          />
-
+        <div className="relative flex flex-col p-3 sm:p-4 md:p-5 h-full overflow-hidden z-10 rounded-[calc(1rem-1.5px)] sm:rounded-[calc(1.25rem-1.5px)] bg-card w-full shadow-xl">
           <div className="flex justify-end w-full relative z-20">
             {isConnected ? (
               integration.canDisconnect ? (
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    setConfirmDisconnect({ id: integration.id, name: integration.appName });
+                    setConfirmDisconnect({
+                      id: integration.id,
+                      name: integration.appName,
+                    });
                   }}
                   disabled={disconnecting === integration.appName}
                   className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium text-emerald-400 hover:text-red-400 rounded-full border border-emerald-500/20 hover:border-red-500/30 bg-emerald-500/5 hover:bg-red-500/10 transition-all duration-300 disabled:opacity-50"
                 >
                   {disconnecting === integration.appName ? (
-                    <Loader2 strokeWidth={1.5} size={11} className="animate-spin" />
+                    <Loader2
+                      strokeWidth={1.5}
+                      size={11}
+                      className="animate-spin"
+                    />
                   ) : (
                     <>
                       <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
@@ -581,7 +600,11 @@ export default function IntegrationsPage() {
                 title="This connection has expired. Click to reconnect."
               >
                 {isConnecting ? (
-                  <Loader2 strokeWidth={1.5} size={11} className="animate-spin" />
+                  <Loader2
+                    strokeWidth={1.5}
+                    size={11}
+                    className="animate-spin"
+                  />
                 ) : (
                   "Reconnect"
                 )}
@@ -590,10 +613,14 @@ export default function IntegrationsPage() {
               <button
                 onClick={() => handleConnect(integration.appName, isConnected)}
                 disabled={isConnecting}
-                className="px-3 py-1 text-[11px] font-medium text-neutral-400 hover:text-white rounded-full border border-white/10 hover:border-white/25 bg-white/[0.03] hover:bg-white/[0.08] transition-all duration-300 disabled:opacity-50"
+                className="px-3 py-1 text-[11px] font-medium text-muted-foreground hover:text-foreground rounded-full border border-border hover:border-foreground/20 bg-muted/30 hover:bg-muted transition-all duration-300 disabled:opacity-50"
               >
                 {isConnecting ? (
-                  <Loader2 strokeWidth={1.5} size={11} className="animate-spin" />
+                  <Loader2
+                    strokeWidth={1.5}
+                    size={11}
+                    className="animate-spin"
+                  />
                 ) : (
                   "Connect"
                 )}
@@ -606,8 +633,7 @@ export default function IntegrationsPage() {
               <motion.img
                 src={logoSvg}
                 alt={displayName}
-                className="w-10 h-10 sm:w-14 sm:h-14 md:w-[72px] md:h-[72px] object-contain mb-2 sm:mb-4 md:mb-5 drop-shadow-md filter transition-all duration-500"
-                whileHover={{ scale: 1.05 }}
+                className="w-10 h-10 sm:w-14 sm:h-14 md:w-[72px] md:h-[72px] object-contain mb-2 sm:mb-4 md:mb-5 drop-shadow-md filter transition-transform duration-300 group-hover:scale-[1.03]"
                 onError={(e: any) => {
                   const img = e.currentTarget;
                   // If the current src isn't the CDN fallback yet, try it
@@ -618,10 +644,10 @@ export default function IntegrationsPage() {
                   // CDN also failed — show letter fallback
                   const parent = img.parentElement;
                   img.style.display = "none";
-                  if (parent && !parent.querySelector('.fallback-logo')) {
+                  if (parent && !parent.querySelector(".fallback-logo")) {
                     const fb = document.createElement("div");
                     fb.className =
-                      "fallback-logo w-10 h-10 sm:w-14 sm:h-14 md:w-[72px] md:h-[72px] rounded-lg sm:rounded-xl flex items-center justify-center text-white font-bold text-xl sm:text-2xl md:text-3xl mb-2 sm:mb-4 md:mb-5 shadow-lg shrink-0";
+                      "fallback-logo w-10 h-10 sm:w-14 sm:h-14 md:w-[72px] md:h-[72px] rounded-lg sm:rounded-xl flex items-center justify-center text-foreground font-bold text-xl sm:text-2xl md:text-3xl mb-2 sm:mb-4 md:mb-5 shadow-lg shrink-0";
                     fb.style.backgroundColor = color;
                     fb.textContent = displayName.charAt(0);
                     parent.prepend(fb);
@@ -630,14 +656,13 @@ export default function IntegrationsPage() {
               />
             ) : (
               <motion.div
-                className="w-10 h-10 sm:w-14 sm:h-14 md:w-[72px] md:h-[72px] rounded-lg sm:rounded-xl flex items-center justify-center text-white font-bold text-xl sm:text-2xl md:text-3xl mb-2 sm:mb-4 md:mb-5 shadow-lg shrink-0 transition-all duration-500"
+                className="w-10 h-10 sm:w-14 sm:h-14 md:w-[72px] md:h-[72px] rounded-lg sm:rounded-xl flex items-center justify-center text-foreground font-bold text-xl sm:text-2xl md:text-3xl mb-2 sm:mb-4 md:mb-5 shadow-lg shrink-0 transition-transform duration-300 group-hover:scale-[1.03]"
                 style={{ backgroundColor: color }}
-                whileHover={{ scale: 1.05 }}
               >
                 {displayName.charAt(0)}
               </motion.div>
             )}
-            <h3 className="text-sm sm:text-base md:text-lg lg:text-[22px] leading-tight font-bold text-white truncate max-w-full px-1 sm:px-2 text-center tracking-tight">
+            <h3 className="text-sm sm:text-base md:text-lg lg:text-[22px] leading-tight font-bold text-foreground truncate max-w-full px-1 sm:px-2 text-center tracking-tight">
               {displayName}
             </h3>
           </div>
@@ -648,32 +673,28 @@ export default function IntegrationsPage() {
 
   return (
     <div className="flex flex-col min-h-screen">
-      {/* Success toast */}
-      {toast && (
-        <div className="fixed top-4 right-4 z-50 flex items-center gap-2 bg-emerald-500/90 text-white px-5 py-3 rounded-xl shadow-lg text-sm font-medium animate-in slide-in-from-top fade-in duration-300">
-          <Check strokeWidth={1.5} size={16} />
-          {toast}
-        </div>
-      )}
-
-      {/* Error toast */}
-      {errorToast && (
-        <div className="fixed top-4 right-4 z-50 flex items-center gap-2 bg-red-500/90 text-white px-5 py-3 rounded-xl shadow-lg text-sm font-medium animate-in slide-in-from-top fade-in duration-300">
-          <AlertCircle strokeWidth={1.5} size={16} />
-          {errorToast}
-        </div>
-      )}
-
       {/* Page header */}
-      <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-white/[0.06] flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
+      <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-border flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
         <div>
-          <h1 className="text-sm font-semibold text-white">Integrations</h1>
-          <p className="text-[11px] sm:text-xs text-neutral-500 mt-0.5">
+          <Breadcrumb />
+          <h1 className="text-sm font-semibold text-foreground">
+            Integrations
+          </h1>
+          <p className="text-[11px] sm:text-xs text-muted-foreground mt-0.5">
             {!loading && integrations.length > 0 ? (
               <>
-                <span className="text-emerald-400 font-medium">{integrations.filter((i) => i.status === "connected").length} connected</span>
+                <span className="text-emerald-400 font-medium">
+                  {integrations.filter((i) => i.status === "connected").length}{" "}
+                  connected
+                </span>
                 {" · "}
-                {integrations.filter((i) => i.status !== "connected" && i.canDisconnect !== false).length} available to connect
+                {
+                  integrations.filter(
+                    (i) =>
+                      i.status !== "connected" && i.canDisconnect !== false,
+                  ).length
+                }{" "}
+                available to connect
               </>
             ) : (
               "Connect your apps to unlock automations"
@@ -682,7 +703,11 @@ export default function IntegrationsPage() {
         </div>
         <div className="relative group w-full sm:w-auto">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Search strokeWidth={1.5} size={14} className="text-neutral-500 group-focus-within:text-neutral-400 transition-colors" />
+            <Search
+              strokeWidth={1.5}
+              size={14}
+              className="text-muted-foreground group-focus-within:text-muted-foreground transition-colors"
+            />
           </div>
           <input
             type="text"
@@ -690,21 +715,21 @@ export default function IntegrationsPage() {
             aria-label="Search integrations"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full sm:w-56 pl-8 pr-3 py-1.5 text-xs rounded-md outline-none bg-white/[0.04] border border-white/[0.06] text-white placeholder-neutral-600 focus:border-white/20 transition-colors"
+            className="w-full sm:w-56 pl-8 pr-3 py-1.5 text-xs rounded-md outline-none bg-muted/50 border border-border text-foreground placeholder-muted-foreground focus:border-ring transition-colors"
           />
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="px-4 sm:px-6 border-b border-white/[0.06] flex items-center gap-1">
+      <div className="px-4 sm:px-6 border-b border-border flex items-center gap-1">
         {(["all", "connected"] as const).map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
             className={`px-3 py-3 text-xs font-medium transition-colors capitalize border-b-2 -mb-px ${
               activeTab === tab
-                ? "text-white border-white"
-                : "text-neutral-500 hover:text-neutral-300 border-transparent"
+                ? "text-foreground border-foreground"
+                : "text-muted-foreground hover:text-foreground/80 border-transparent"
             }`}
           >
             {tab === "all" ? "All" : "Connected"}
@@ -712,85 +737,88 @@ export default function IntegrationsPage() {
         ))}
       </div>
 
-      <div className="flex-1 px-3 sm:px-4 md:px-6 py-4 sm:py-6 text-white">
+      <div className="flex-1 px-3 sm:px-4 md:px-6 py-4 sm:py-6 text-foreground">
+        {/* Categories Filter (Only show if 'all' tab is selected) */}
+        <AnimatePresence>
+          {activeTab === "all" && (
+            <motion.div
+              initial={{ opacity: 0, height: 0, y: -10 }}
+              animate={{ opacity: 1, height: "auto", y: 0 }}
+              exit={{ opacity: 0, height: 0, y: -10 }}
+              className="flex flex-wrap items-center gap-2 mt-2 sm:mt-4"
+            >
+              <div className="flex items-center flex-1 min-w-0 pr-2 sm:pr-4">
+                {/* Sticky "All" Pill */}
+                <button
+                  onClick={() => setActiveCategory("all")}
+                  className={`shrink-0 z-10 px-3 sm:px-4 py-1 sm:py-1.5 text-[11px] sm:text-xs font-medium rounded-full transition-all duration-300 border ${
+                    activeCategory === "all"
+                      ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                      : "bg-muted text-muted-foreground border-border hover:border-foreground/20 hover:text-foreground"
+                  }`}
+                >
+                  All
+                </button>
 
-          {/* Categories Filter (Only show if 'all' tab is selected) */}
-          <AnimatePresence>
-            {activeTab === "all" && (
-              <motion.div
-                initial={{ opacity: 0, height: 0, y: -10 }}
-                animate={{ opacity: 1, height: "auto", y: 0 }}
-                exit={{ opacity: 0, height: 0, y: -10 }}
-                className="flex flex-wrap items-center gap-2 mt-2 sm:mt-4"
-              >
-                <div className="flex items-center flex-1 min-w-0 pr-2 sm:pr-4">
-                  {/* Sticky "All" Pill */}
-                  <button
-                    onClick={() => setActiveCategory("all")}
-                    className={`shrink-0 z-10 px-3 sm:px-4 py-1 sm:py-1.5 text-[11px] sm:text-xs font-medium rounded-full transition-all duration-300 border ${activeCategory === "all"
-                      ? "bg-white text-black border-white shadow-sm"
-                      : "bg-neutral-900 text-neutral-500 border-white/10 hover:border-white/20 hover:text-white"
-                      }`}
-                  >
-                    All
-                  </button>
+                {CATEGORIES.length > 1 && (
+                  <>
+                    {/* Vertical Divider */}
+                    <div className="w-[1px] h-4 sm:h-5 bg-muted shrink-0 mx-2 sm:mx-3" />
 
-                  {CATEGORIES.length > 1 && (
-                    <>
-                      {/* Vertical Divider */}
-                      <div className="w-[1px] h-4 sm:h-5 bg-white/10 shrink-0 mx-2 sm:mx-3" />
+                    {/* Horizontally scrolling list for the rest */}
+                    <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] w-full scroll-smooth pt-1 pb-1">
+                      {CATEGORIES.filter((c) => c.id !== "all").map(
+                        (category) => (
+                          <button
+                            key={category.id}
+                            onClick={() => setActiveCategory(category.id)}
+                            className={`shrink-0 px-3 sm:px-4 py-1 sm:py-1.5 text-[11px] sm:text-xs font-medium rounded-full transition-all duration-300 border capitalize ${
+                              activeCategory === category.id
+                                ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                                : "bg-muted text-muted-foreground border-border hover:border-foreground/20 hover:text-foreground"
+                            }`}
+                          >
+                            {category.label}
+                          </button>
+                        ),
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
 
-                      {/* Horizontally scrolling list for the rest */}
-                      <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] w-full scroll-smooth pt-1 pb-1">
-                        {CATEGORIES.filter((c) => c.id !== "all").map(
-                          (category) => (
-                            <button
-                              key={category.id}
-                              onClick={() => setActiveCategory(category.id)}
-                              className={`shrink-0 px-3 sm:px-4 py-1 sm:py-1.5 text-[11px] sm:text-xs font-medium rounded-full transition-all duration-300 border capitalize ${activeCategory === category.id
-                                ? "bg-white text-black border-white shadow-sm"
-                                : "bg-neutral-900 text-neutral-500 border-white/10 hover:border-white/20 hover:text-white"
-                                }`}
-                            >
-                              {category.label}
-                            </button>
-                          ),
-                        )}
-                      </div>
-                    </>
-                  )}
-                </div>
-
-                {/* Group-by toggle — hide on very small screens */}
-                <div className="hidden sm:flex items-center gap-1 ml-auto">
-                  <button
-                    onClick={() => setGroupByCategory(false)}
-                    className={`p-1.5 rounded-lg transition-all duration-200 ${!groupByCategory
-                      ? "bg-white/10 text-white"
-                      : "text-neutral-500 hover:text-white hover:bg-neutral-900"
-                      }`}
-                    title="Grid view"
-                    aria-label="Grid view"
-                    aria-pressed={!groupByCategory}
-                  >
-                    <Grid3X3 strokeWidth={1.5} size={16} />
-                  </button>
-                  <button
-                    onClick={() => setGroupByCategory(true)}
-                    className={`p-1.5 rounded-lg transition-all duration-200 ${groupByCategory
-                      ? "bg-white/10 text-white"
-                      : "text-neutral-500 hover:text-white hover:bg-neutral-900"
-                      }`}
-                    title="Group by category"
-                    aria-label="Group by category"
-                    aria-pressed={groupByCategory}
-                  >
-                    <LayoutList strokeWidth={1.5} size={16} />
-                  </button>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+              {/* Group-by toggle — hide on very small screens */}
+              <div className="hidden sm:flex items-center gap-1 ml-auto">
+                <button
+                  onClick={() => setGroupByCategory(false)}
+                  className={`p-1.5 rounded-lg transition-all duration-200 ${
+                    !groupByCategory
+                      ? "bg-muted text-foreground"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  }`}
+                  title="Grid view"
+                  aria-label="Grid view"
+                  aria-pressed={!groupByCategory}
+                >
+                  <Grid3X3 strokeWidth={1.5} size={16} />
+                </button>
+                <button
+                  onClick={() => setGroupByCategory(true)}
+                  className={`p-1.5 rounded-lg transition-all duration-200 ${
+                    groupByCategory
+                      ? "bg-muted text-foreground"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  }`}
+                  title="Group by category"
+                  aria-label="Group by category"
+                  aria-pressed={groupByCategory}
+                >
+                  <LayoutList strokeWidth={1.5} size={16} />
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {loading ? (
           /* Staggered Skeleton Loaders — match actual card shape */
@@ -798,16 +826,16 @@ export default function IntegrationsPage() {
             {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
               <div
                 key={i}
-                className="rounded-[1rem] sm:rounded-[1.25rem] h-[180px] sm:h-[220px] md:h-[260px] bg-[#111319] border border-white/[0.06] animate-pulse"
+                className="rounded-[1rem] sm:rounded-[1.25rem] h-[180px] sm:h-[220px] md:h-[260px] bg-card border border-border animate-pulse"
                 style={{ animationDelay: `${i * 80}ms` }}
               >
                 <div className="h-full p-3 sm:p-4 md:p-5 flex flex-col">
                   <div className="flex justify-end">
-                    <div className="h-6 w-16 sm:h-8 sm:w-20 rounded-lg sm:rounded-xl bg-white/[0.07]" />
+                    <div className="h-6 w-16 sm:h-8 sm:w-20 rounded-lg sm:rounded-xl bg-muted" />
                   </div>
                   <div className="flex-1 flex flex-col items-center justify-center pb-2 sm:pb-4 gap-2 sm:gap-4">
-                    <div className="w-10 h-10 sm:w-14 sm:h-14 md:w-[72px] md:h-[72px] rounded-lg sm:rounded-xl bg-white/[0.07]" />
-                    <div className="h-4 sm:h-5 w-20 sm:w-28 rounded-lg bg-white/[0.05]" />
+                    <div className="w-10 h-10 sm:w-14 sm:h-14 md:w-[72px] md:h-[72px] rounded-lg sm:rounded-xl bg-muted" />
+                    <div className="h-4 sm:h-5 w-20 sm:w-28 rounded-lg bg-muted/50" />
                   </div>
                 </div>
               </div>
@@ -816,115 +844,24 @@ export default function IntegrationsPage() {
         ) : (
           <>
             {/* Popular apps — shown at the top on the flat "All" view */}
-            {activeTab === "all" && !searchQuery && activeCategory === "all" && popularApps.length > 0 && (
-              <div className="mb-6 sm:mb-10 mt-4 sm:mt-8">
-                <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-5 flex-wrap">
-                  <h2 className="text-xs sm:text-[15px] font-medium uppercase tracking-widest text-neutral-500">
-                    Popular
-                  </h2>
-                  <span className="text-[10px] sm:text-[11px] font-semibold text-amber-400 bg-amber-400/10 border border-amber-400/20 px-2 sm:px-2.5 py-0.5 rounded-full">
-                    ★ Most popular
-                  </span>
-                  <span className="text-[10px] sm:text-[11px] text-neutral-600 ml-1">
-                    {popularApps.filter((a) => a.status === "connected").length}/{popularApps.length} connected
-                  </span>
-                </div>
-                <motion.div
-                  layout
-                  className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4 xl:gap-5"
-                >
-                  <AnimatePresence mode="popLayout">
-                    {popularApps.map(renderIntegrationCard)}
-                  </AnimatePresence>
-                </motion.div>
-              </div>
-            )}
-
-            {/* Toolkit Grid */}
-            {activeTab === "connected" ? (
-            <div className="space-y-12">
-              <div>
-                <h2 className="text-[15px] font-medium uppercase tracking-widest text-neutral-500 mb-5">
-                  Your Connections
-                </h2>
-                <motion.div
-                  layout
-                  className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4 xl:gap-5"
-                >
-                  <AnimatePresence mode="popLayout">
-                    {filteredIntegrations
-                      .filter((i) => i.canDisconnect)
-                      .map(renderIntegrationCard)}
-                  </AnimatePresence>
-                </motion.div>
-                {filteredIntegrations.filter((i) => i.canDisconnect).length ===
-                  0 && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="col-span-full py-16 flex flex-col items-center gap-4 text-center"
-                    >
-                      <div className="w-14 h-14 rounded-2xl bg-neutral-900 border border-white/[0.06] flex items-center justify-center">
-                        <Grid3X3 strokeWidth={1.5} size={22} className="text-neutral-600" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-neutral-300 mb-1">No apps connected yet</p>
-                        <p className="text-xs text-neutral-600 max-w-xs">
-                          Connect Gmail, Calendar, Slack or GitHub to let CalmPilot monitor and act on your behalf.
-                        </p>
-                      </div>
-                      <button
-                        onClick={() => setActiveTab("all")}
-                        className="mt-1 px-5 py-2 bg-white hover:bg-neutral-100 text-black text-sm font-semibold rounded-xl transition-all duration-200 shadow-sm"
-                      >
-                        Browse apps
-                      </button>
-                    </motion.div>
-                  )}
-              </div>
-
-              <div>
-                <h2 className="text-[15px] font-medium uppercase tracking-widest text-neutral-500 mb-5">
-                  Built-in Features
-                </h2>
-                <motion.div
-                  layout
-                  className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4 xl:gap-5"
-                >
-                  <AnimatePresence mode="popLayout">
-                    {filteredIntegrations
-                      .filter((i) => !i.canDisconnect)
-                      .map(renderIntegrationCard)}
-                  </AnimatePresence>
-                </motion.div>
-                {filteredIntegrations.filter((i) => !i.canDisconnect).length ===
-                  0 && (
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className="py-10 text-center text-sm text-[#888]"
-                    >
-                      No built-in features found.
-                    </motion.div>
-                  )}
-              </div>
-            </div>
-          ) : groupByCategory && groupedIntegrations ? (
-            /* Grouped-by-category view */
-            <div className="space-y-10">
-              {groupedIntegrations.map(([categoryId, group]) => (
-                <motion.div
-                  key={categoryId}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <div className="flex items-center gap-3 mb-5">
-                    <h2 className="text-[15px] font-medium uppercase tracking-widest text-neutral-500">
-                      {group.label}
-                    </h2>
-                    <span className="text-xs text-neutral-400 bg-black/5 dark:bg-[#1a1a1a] px-2 py-0.5 rounded-full">
-                      {group.items.length}
+            {activeTab === "all" &&
+              !searchQuery &&
+              activeCategory === "all" &&
+              popularApps.length > 0 && (
+                <div className="mb-6 sm:mb-10 mt-4 sm:mt-8">
+                  <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-5 flex-wrap">
+                    {/* <h2 className="text-xs sm:text-[15px] font-medium uppercase tracking-widest text-muted-foreground">
+                      Popular
+                    </h2> */}
+                    <span className="text-[10px] sm:text-[11px] font-semibold text-amber-400 bg-amber-400/10 border border-amber-400/20 px-2 sm:px-2.5 py-0.5 rounded-full">
+                      ★ Most popular
+                    </span>
+                    <span className="text-[10px] sm:text-[11px] text-muted-foreground/60 ml-1">
+                      {
+                        popularApps.filter((a) => a.status === "connected")
+                          .length
+                      }
+                      /{popularApps.length} connected
                     </span>
                   </div>
                   <motion.div
@@ -932,151 +869,277 @@ export default function IntegrationsPage() {
                     className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4 xl:gap-5"
                   >
                     <AnimatePresence mode="popLayout">
-                      {group.items.map(renderIntegrationCard)}
+                      {popularApps.map(renderIntegrationCard)}
                     </AnimatePresence>
                   </motion.div>
-                </motion.div>
-              ))}
-              {groupedIntegrations.length === 0 && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="py-20 text-center text-sm text-[#888]"
-                >
-                  No toolkits found{" "}
-                  {searchQuery ? `matching "${searchQuery}"` : ""}.
-                </motion.div>
+                </div>
               )}
-            </div>
-          ) : (
-            <motion.div
-              layout
-              className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4 xl:gap-5"
-            >
-              <AnimatePresence mode="popLayout">
-                {sortedFilteredIntegrations.map(renderIntegrationCard)}
-              </AnimatePresence>
 
-              {sortedFilteredIntegrations.length === 0 && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="col-span-full py-20 text-center text-sm text-[#888]"
-                >
-                  No toolkits found{" "}
-                  {searchQuery ? `matching "${searchQuery}"` : ""}.
-                </motion.div>
-              )}
-            </motion.div>
-          )}
+            {/* Toolkit Grid */}
+            {activeTab === "connected" ? (
+              <div className="space-y-12">
+                <div>
+                  <h2 className="text-[15px] font-medium uppercase tracking-widest text-muted-foreground mb-5">
+                    Your Connections
+                  </h2>
+                  <motion.div
+                    layout
+                    className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4 xl:gap-5"
+                  >
+                    <AnimatePresence mode="popLayout">
+                      {filteredIntegrations
+                        .filter((i) => i.canDisconnect)
+                        .map(renderIntegrationCard)}
+                    </AnimatePresence>
+                  </motion.div>
+                  {filteredIntegrations.filter((i) => i.canDisconnect)
+                    .length === 0 && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="col-span-full py-16 flex flex-col items-center gap-4 text-center"
+                    >
+                      <div className="w-14 h-14 rounded-2xl bg-muted border border-border flex items-center justify-center">
+                        <Grid3X3
+                          strokeWidth={1.5}
+                          size={22}
+                          className="text-muted-foreground/60"
+                        />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-foreground/80 mb-1">
+                          No apps connected yet
+                        </p>
+                        <p className="text-xs text-muted-foreground/60 max-w-xs">
+                          Connect Gmail, Calendar, Slack or GitHub to let
+                          CalmPilot monitor and act on your behalf.
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => setActiveTab("all")}
+                        className="mt-1 px-5 py-2 bg-primary hover:bg-primary/80 text-primary-foreground text-sm font-semibold rounded-xl transition-all duration-200 shadow-sm"
+                      >
+                        Browse apps
+                      </button>
+                    </motion.div>
+                  )}
+                </div>
+
+                <div>
+                  <h2 className="text-[15px] font-medium uppercase tracking-widest text-muted-foreground mb-5">
+                    Built-in Features
+                  </h2>
+                  <motion.div
+                    layout
+                    className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4 xl:gap-5"
+                  >
+                    <AnimatePresence mode="popLayout">
+                      {filteredIntegrations
+                        .filter((i) => !i.canDisconnect)
+                        .map(renderIntegrationCard)}
+                    </AnimatePresence>
+                  </motion.div>
+                  {filteredIntegrations.filter((i) => !i.canDisconnect)
+                    .length === 0 && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="py-10 text-center text-sm text-muted-foreground"
+                    >
+                      No built-in features found.
+                    </motion.div>
+                  )}
+                </div>
+              </div>
+            ) : groupByCategory && groupedIntegrations ? (
+              /* Grouped-by-category view */
+              <div className="space-y-10">
+                {groupedIntegrations.map(([categoryId, group]) => (
+                  <motion.div
+                    key={categoryId}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <div className="flex items-center gap-3 mb-5">
+                      <h2 className="text-[15px] font-medium uppercase tracking-widest text-muted-foreground">
+                        {group.label}
+                      </h2>
+                      <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
+                        {group.items.length}
+                      </span>
+                    </div>
+                    <motion.div
+                      layout
+                      className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4 xl:gap-5"
+                    >
+                      <AnimatePresence mode="popLayout">
+                        {group.items.map(renderIntegrationCard)}
+                      </AnimatePresence>
+                    </motion.div>
+                  </motion.div>
+                ))}
+                {groupedIntegrations.length === 0 && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="py-20 text-center text-sm text-muted-foreground"
+                  >
+                    No toolkits found{" "}
+                    {searchQuery ? `matching "${searchQuery}"` : ""}.
+                  </motion.div>
+                )}
+              </div>
+            ) : (
+              <motion.div
+                layout
+                className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4 xl:gap-5"
+              >
+                <AnimatePresence mode="popLayout">
+                  {sortedFilteredIntegrations.map(renderIntegrationCard)}
+                </AnimatePresence>
+
+                {sortedFilteredIntegrations.length === 0 && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="col-span-full py-20 text-center text-sm text-muted-foreground"
+                  >
+                    No toolkits found{" "}
+                    {searchQuery ? `matching "${searchQuery}"` : ""}.
+                  </motion.div>
+                )}
+              </motion.div>
+            )}
           </>
         )}
       </div>
 
       {/* Post-connect Explanation Panel */}
       <AnimatePresence>
-        {postConnectApp && (() => {
-          const appSlug = postConnectApp;
-          const connectedIntegration = integrations.find(
-            (i) => i.appName.toLowerCase().replace(/-/g, "") === appSlug,
-          );
-          const displayName = connectedIntegration?.label || appSlug.charAt(0).toUpperCase() + appSlug.slice(1);
-          const explanation = APP_CONNECT_EXPLANATIONS[appSlug] ?? {
-            title: `${displayName} is connected`,
-            bullets: [
-              "Use it as a tool when you chat with CalmPilot",
-              "CalmPilot can read and act on data in this app",
-              "Set up triggers to monitor it for events",
-            ],
-          };
-          const logoSvg = getLogo(appSlug) || PLATFORM_LOGOS[appSlug];
-          const color = PLATFORM_COLORS[appSlug] || "#8b95b0";
-          return (
-            <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4">
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="absolute inset-0 bg-black/70 backdrop-blur-sm"
-                onClick={() => setPostConnectApp(null)}
-              />
-              <motion.div
-                initial={{ opacity: 0, y: 24, scale: 0.97 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: 24, scale: 0.97 }}
-                transition={{ type: "spring", bounce: 0.25, duration: 0.45 }}
-                className="relative w-full max-w-md bg-[#111319] border border-white/10 rounded-2xl shadow-2xl overflow-hidden"
-              >
-                {/* Subtle brand glow behind header */}
-                <div
-                  className="absolute top-0 left-0 right-0 h-32 opacity-20 pointer-events-none"
-                  style={{ background: `radial-gradient(ellipse at 50% 0%, ${color} 0%, transparent 70%)` }}
+        {postConnectApp &&
+          (() => {
+            const appSlug = postConnectApp;
+            const connectedIntegration = integrations.find(
+              (i) => i.appName.toLowerCase().replace(/-/g, "") === appSlug,
+            );
+            const displayName =
+              connectedIntegration?.label ||
+              appSlug.charAt(0).toUpperCase() + appSlug.slice(1);
+            const explanation = APP_CONNECT_EXPLANATIONS[appSlug] ?? {
+              title: `${displayName} is connected`,
+              bullets: [
+                "Use it as a tool when you chat with CalmPilot",
+                "CalmPilot can read and act on data in this app",
+                "Set up triggers to monitor it for events",
+              ],
+            };
+            const logoSvg = getLogo(appSlug) || PLATFORM_LOGOS[appSlug];
+            const color = PLATFORM_COLORS[appSlug] || "#8b95b0";
+            return (
+              <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4">
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="absolute inset-0 bg-background/70 backdrop-blur-sm"
+                  onClick={() => setPostConnectApp(null)}
                 />
+                <motion.div
+                  initial={{ opacity: 0, y: 24, scale: 0.97 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 24, scale: 0.97 }}
+                  transition={{ type: "spring", bounce: 0.25, duration: 0.45 }}
+                  className="relative w-full max-w-md bg-card border border-border rounded-2xl shadow-2xl overflow-hidden"
+                >
+                  {/* Subtle brand glow behind header */}
+                  <div
+                    className="absolute top-0 left-0 right-0 h-32 opacity-20 pointer-events-none"
+                    style={{
+                      background: `radial-gradient(ellipse at 50% 0%, ${color} 0%, transparent 70%)`,
+                    }}
+                  />
 
-                <div className="relative p-6">
-                  {/* Header */}
-                  <div className="flex items-center gap-3 mb-5">
-                    {logoSvg ? (
-                      <img src={logoSvg} alt={appSlug} className="w-9 h-9 object-contain shrink-0" />
-                    ) : (
-                      <div className="w-9 h-9 rounded-lg flex items-center justify-center text-white font-bold text-lg shrink-0"
-                        style={{ backgroundColor: color }}>
-                        {appSlug[0].toUpperCase()}
+                  <div className="relative p-6">
+                    {/* Header */}
+                    <div className="flex items-center gap-3 mb-5">
+                      {logoSvg ? (
+                        <img
+                          src={logoSvg}
+                          alt={appSlug}
+                          className="w-9 h-9 object-contain shrink-0"
+                        />
+                      ) : (
+                        <div
+                          className="w-9 h-9 rounded-lg flex items-center justify-center text-foreground font-bold text-lg shrink-0"
+                          style={{ backgroundColor: color }}
+                        >
+                          {appSlug[0].toUpperCase()}
+                        </div>
+                      )}
+                      <div>
+                        <h3 className="text-[17px] font-semibold text-foreground leading-tight">
+                          {explanation.title}
+                        </h3>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          Here's what CalmPilot can now do for you
+                        </p>
                       </div>
-                    )}
-                    <div>
-                      <h3 className="text-[17px] font-semibold text-white leading-tight">
-                        {explanation.title}
-                      </h3>
-                      <p className="text-xs text-neutral-500 mt-0.5">
-                        Here's what CalmPilot can now do for you
-                      </p>
+                    </div>
+
+                    {/* Bullet list */}
+                    <ul className="space-y-3 mb-6">
+                      {explanation.bullets.map((bullet, i) => (
+                        <li key={i} className="flex items-start gap-3">
+                          <span className="mt-0.5 shrink-0 w-5 h-5 rounded-full bg-emerald-500/15 flex items-center justify-center">
+                            <Check
+                              strokeWidth={2.5}
+                              size={11}
+                              className="text-emerald-400"
+                            />
+                          </span>
+                          <span className="text-sm text-foreground/80 leading-snug">
+                            {bullet}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+
+                    {/* Actions */}
+                    <div className="flex items-center gap-3">
+                      <Link
+                        href="/dashboard/triggers"
+                        onClick={() => setPostConnectApp(null)}
+                        className="flex-1 text-center px-4 py-2.5 bg-primary text-primary-foreground text-sm font-semibold rounded-xl hover:bg-primary/80 transition-colors"
+                      >
+                        Set up triggers →
+                      </Link>
+                      <button
+                        onClick={() => setPostConnectApp(null)}
+                        className="px-4 py-2.5 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-xl transition-colors"
+                      >
+                        Done
+                      </button>
                     </div>
                   </div>
-
-                  {/* Bullet list */}
-                  <ul className="space-y-3 mb-6">
-                    {explanation.bullets.map((bullet, i) => (
-                      <li key={i} className="flex items-start gap-3">
-                        <span className="mt-0.5 shrink-0 w-5 h-5 rounded-full bg-emerald-500/15 flex items-center justify-center">
-                          <Check strokeWidth={2.5} size={11} className="text-emerald-400" />
-                        </span>
-                        <span className="text-sm text-neutral-300 leading-snug">{bullet}</span>
-                      </li>
-                    ))}
-                  </ul>
-
-                  {/* Actions */}
-                  <div className="flex items-center gap-3">
-                    <Link
-                      href="/dashboard/triggers"
-                      onClick={() => setPostConnectApp(null)}
-                      className="flex-1 text-center px-4 py-2.5 bg-white text-black text-sm font-semibold rounded-xl hover:bg-neutral-100 transition-colors"
-                    >
-                      Set up triggers →
-                    </Link>
-                    <button
-                      onClick={() => setPostConnectApp(null)}
-                      className="px-4 py-2.5 text-sm font-medium text-neutral-400 hover:text-white hover:bg-white/5 rounded-xl transition-colors"
-                    >
-                      Done
-                    </button>
-                  </div>
-                </div>
-              </motion.div>
-            </div>
-          );
-        })()}
+                </motion.div>
+              </div>
+            );
+          })()}
       </AnimatePresence>
 
       <ConfirmDialog
         open={!!confirmDisconnect}
-        title={`Disconnect ${confirmDisconnect?.name.replace("-", " ").replace(/\b\w/g, c => c.toUpperCase()) ?? ""}?`}
+        title={`Disconnect ${confirmDisconnect?.name.replace("-", " ").replace(/\b\w/g, (c) => c.toUpperCase()) ?? ""}?`}
         description="Any active triggers or automations relying on this connection will stop working immediately."
         confirmLabel="Disconnect"
         cancelLabel="Cancel"
         variant="danger"
-        onConfirm={() => { if (confirmDisconnect) handleDisconnect(confirmDisconnect.id, confirmDisconnect.name); setConfirmDisconnect(null); }}
+        onConfirm={() => {
+          if (confirmDisconnect)
+            handleDisconnect(confirmDisconnect.id, confirmDisconnect.name);
+          setConfirmDisconnect(null);
+        }}
         onCancel={() => setConfirmDisconnect(null)}
       />
     </div>

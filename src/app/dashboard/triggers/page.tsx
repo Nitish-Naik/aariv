@@ -1,30 +1,48 @@
 "use client";
 
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { Breadcrumb } from "@/components/dashboard/Breadcrumb";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Sheet } from "@/components/ui/Sheet";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useAuth } from "@/context/AuthContext";
 import { useLogo } from "@/context/LogoContext";
+import { useToast } from "@/context/ToastContext";
 import { api } from "@/lib/api";
 import { formatTriggerSlug, getTriggerDescription } from "@/lib/appMeta";
-import { motion } from "framer-motion";
 import {
-  Activity,
-  ArrowRight,
-  Check,
-  ChevronDown,
-  ChevronRight,
-  Clock,
-  Globe,
-  Info,
-  Loader2,
-  Pause,
-  Play,
-  Plus,
-  RefreshCw,
-  Search,
-  Trash2,
-  X,
-  Zap,
+    Activity,
+    ArrowRight,
+    ChevronDown,
+    ChevronRight,
+    Clock,
+    Globe,
+    Info,
+    Loader2,
+    Pause,
+    Play,
+    Plus,
+    RefreshCw,
+    Search,
+    Trash2,
+    X,
+    Zap
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
@@ -125,7 +143,6 @@ function extractPayloadPreview(
       return trimmed.length > 80 ? trimmed.slice(0, 77) + "…" : trimmed;
     }
   }
-  // Fallback: first string-valued key
   for (const [, val] of Object.entries(payload)) {
     if (val && typeof val === "string" && val.trim().length > 2) {
       const trimmed = val.trim();
@@ -133,18 +150,6 @@ function extractPayloadPreview(
     }
   }
   return null;
-}
-
-/* ─── App-grouped structure ──────────────────────────────────────── */
-
-interface AppGroup {
-  appKey: string;
-  displayName: string;
-  logo?: string;
-  connectionId: string;
-  triggers: UserTrigger[];
-  totalEvents: number;
-  totalErrors: number;
 }
 
 // --- Helpers ---
@@ -166,12 +171,9 @@ type FilterMode = "all" | "active" | "paused" | "auto";
 function TriggerTypeBadge({ type }: { type?: string }) {
   const isWebhook = type === "webhook";
   return (
-    <span
-      className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium uppercase tracking-wide ${
-        isWebhook
-          ? "bg-emerald-500/10 text-emerald-500"
-          : "bg-blue-500/10 text-blue-500"
-      }`}
+    <Badge
+      variant="outline"
+      className={`text-[10px] ${isWebhook ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" : "bg-blue-500/10 text-blue-500 border-blue-500/20"}`}
     >
       {isWebhook ? (
         <Globe strokeWidth={1.5} size={9} />
@@ -179,7 +181,7 @@ function TriggerTypeBadge({ type }: { type?: string }) {
         <RefreshCw strokeWidth={1.5} size={9} />
       )}
       {isWebhook ? "Webhook" : "Poll"}
-    </span>
+    </Badge>
   );
 }
 
@@ -190,51 +192,43 @@ function AppLogo({
   appKey,
   displayName,
   size = "md",
+  className,
 }: {
   logo?: string;
   appKey: string;
   displayName: string;
   size?: "sm" | "md" | "lg";
+  className?: string;
 }) {
+  const [failed, setFailed] = useState(false);
   const dims =
     size === "sm" ? "w-5 h-5" : size === "lg" ? "w-10 h-10" : "w-8 h-8";
   const textSz =
     size === "sm" ? "text-[8px]" : size === "lg" ? "text-sm" : "text-xs";
   const rounded = size === "sm" ? "rounded" : "rounded-lg";
-  const color = typeof logo === "string" && logo ? undefined : "#8b95b0";
+  const resolvedLogo = !failed ? logo : undefined;
 
-  if (logo) {
+  if (resolvedLogo) {
     return (
       <img
-        src={logo}
+        src={resolvedLogo}
         alt={displayName}
-        className={`${dims} ${rounded} object-contain bg-neutral-900`}
-        onError={(e) => {
-          e.currentTarget.style.display = "none";
-          const parent = e.currentTarget.parentElement;
-          if (parent) {
-            const fb = document.createElement("div");
-            fb.className = `${dims} ${rounded} flex items-center justify-center text-white font-bold ${textSz}`;
-            fb.style.backgroundColor = color || "#8b95b0";
-            fb.textContent = displayName.charAt(0).toUpperCase();
-            parent.prepend(fb);
-          }
-        }}
+        className={`${dims} ${rounded} object-contain bg-muted ${className || ""}`}
+        onError={() => setFailed(true)}
       />
     );
   }
 
   return (
     <div
-      className={`${dims} ${rounded} flex items-center justify-center text-white font-bold ${textSz}`}
-      style={{ backgroundColor: color || "#8b95b0" }}
+      className={`${dims} ${rounded} flex items-center justify-center text-foreground font-bold ${textSz} bg-muted ${className || ""}`}
     >
       {displayName.charAt(0).toUpperCase()}
     </div>
   );
 }
 
-/* ─── Config Form Modal ──────────────────────────────────────────── */
+/* ─── Config Form Modal (shadcn Dialog) ──────────────────────────── */
 
 function ConfigFormModal({
   trigger,
@@ -261,10 +255,6 @@ function ConfigFormModal({
   });
   const [error, setError] = useState<string | null>(null);
 
-  const handleChange = (key: string, val: string) => {
-    setValues((s) => ({ ...s, [key]: val }));
-  };
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -282,40 +272,30 @@ function ConfigFormModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
-      <div className="bg-black border border-white/10 rounded-xl shadow-2xl w-full max-w-md max-h-[85vh] overflow-hidden flex flex-col">
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
+    <Dialog
+      open
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      <DialogContent showCloseButton className="sm:max-w-md">
+        <DialogHeader>
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center">
-              <Zap strokeWidth={1.5} size={16} className="text-white" />
+            <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center">
+              <Zap strokeWidth={1.5} size={16} className="text-foreground" />
             </div>
             <div>
-              <h3 className="text-sm font-semibold text-white">
-                {trigger.displayName}
-              </h3>
-              <div className="flex items-center gap-2 mt-0.5">
+              <DialogTitle>{trigger.displayName}</DialogTitle>
+              <div className="mt-1">
                 <TriggerTypeBadge type={trigger.type} />
               </div>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="p-1.5 rounded-lg hover:bg-neutral-900 transition-colors text-neutral-500"
-          >
-            <X strokeWidth={1.5} size={16} />
-          </button>
-        </div>
+        </DialogHeader>
 
-        {/* Body */}
-        <form
-          onSubmit={handleSubmit}
-          className="flex-1 overflow-y-auto px-5 py-4 space-y-4"
-        >
+        <form onSubmit={handleSubmit} className="space-y-4">
           {trigger.description && (
-            <p className="text-xs text-neutral-400 leading-relaxed">
-              {trigger.description}
-            </p>
+            <DialogDescription>{trigger.description}</DialogDescription>
           )}
 
           {trigger.instructions && (
@@ -331,30 +311,34 @@ function ConfigFormModal({
             </div>
           )}
 
-          {fields.length > 0 ? (
+          {fields.length > 0 && (
             <div className="space-y-3">
-              <p className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 Configuration
               </p>
               {fields.map(([key, prop]) => {
                 const isRequired = required.includes(key);
                 const val = values[key] || "";
                 return (
-                  <div key={key} className="space-y-1">
-                    <label className="flex items-center gap-1 text-xs font-semibold text-white">
+                  <div key={key} className="space-y-1.5">
+                    <Label>
                       {prop.title || key}
-                      {isRequired && <span className="text-red-400">*</span>}
-                    </label>
+                      {isRequired && (
+                        <span className="text-destructive ml-0.5">*</span>
+                      )}
+                    </Label>
                     {prop.description && (
-                      <p className="text-[11px] text-neutral-400 leading-relaxed">
+                      <p className="text-[11px] text-muted-foreground leading-relaxed">
                         {prop.description}
                       </p>
                     )}
                     {prop.enum ? (
                       <select
                         value={val}
-                        onChange={(e) => handleChange(key, e.target.value)}
-                        className="w-full rounded-md border px-3 py-2 bg-neutral-900 text-sm"
+                        onChange={(e) =>
+                          setValues((s) => ({ ...s, [key]: e.target.value }))
+                        }
+                        className="flex h-8 w-full rounded-lg border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
                       >
                         <option value="">Select</option>
                         {prop.enum!.map((o) => (
@@ -364,22 +348,23 @@ function ConfigFormModal({
                         ))}
                       </select>
                     ) : (
-                      <input
+                      <Input
                         value={val}
-                        onChange={(e) => handleChange(key, e.target.value)}
+                        onChange={(e) =>
+                          setValues((s) => ({ ...s, [key]: e.target.value }))
+                        }
                         placeholder={prop.placeholder || ""}
-                        className="w-full rounded-md border px-3 py-2 bg-neutral-900 text-sm"
                       />
                     )}
                   </div>
                 );
               })}
             </div>
-          ) : null}
+          )}
 
           {error && (
-            <div
-              className={`text-sm ${error === "INSUFFICIENT_CREDITS" ? "text-amber-400" : "text-red-400"}`}
+            <p
+              className={`text-sm ${error === "INSUFFICIENT_CREDITS" ? "text-amber-400" : "text-destructive"}`}
             >
               {error === "INSUFFICIENT_CREDITS" ? (
                 <>
@@ -394,38 +379,39 @@ function ConfigFormModal({
               ) : (
                 error
               )}
-            </div>
+            </p>
           )}
 
-          {/* Footer */}
-          <div className="flex items-center justify-end gap-3">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-3 py-2 rounded-lg text-sm bg-neutral-900"
-            >
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onClose}>
               Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="px-4 py-2 rounded-lg bg-white text-black text-xs font-semibold hover:bg-neutral-100 transition-colors disabled:opacity-50"
-            >
-              {isSubmitting ? "Creating..." : "Create"}
-            </button>
-          </div>
+            </Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? (
+                <>
+                  <Loader2
+                    strokeWidth={1.5}
+                    size={14}
+                    className="animate-spin"
+                  />{" "}
+                  Creating...
+                </>
+              ) : (
+                "Create"
+              )}
+            </Button>
+          </DialogFooter>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
-/* ─── Page Component (Redesigned) ─────────────────────────────── */
+/* ─── Page Component ─────────────────────────────────────────────── */
 
 export default function TriggersPage() {
   const { user } = useAuth();
   const { getLogo } = useLogo();
-  // State
   const [userTriggers, setUserTriggers] = useState<UserTrigger[]>([]);
   const [integrations, setIntegrations] = useState<Integration[]>([]);
   const [availableTriggers, setAvailableTriggers] = useState<
@@ -441,7 +427,6 @@ export default function TriggersPage() {
   const [activityEvents, setActivityEvents] = useState<TriggerEvent[]>([]);
   const [loadingActivity, setLoadingActivity] = useState(false);
 
-  // UI state
   const [loading, setLoading] = useState(true);
   const [showCreatePanel, setShowCreatePanel] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -455,15 +440,10 @@ export default function TriggersPage() {
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [pauseWarningTrigger, setPauseWarningTrigger] =
     useState<UserTrigger | null>(null);
-  const [toast, setToast] = useState<{
-    message: string;
-    type: "success" | "error";
-  } | null>(null);
+  const { success: toastSuccess, error: toastError } = useToast();
 
-  // Load initial data
   useEffect(() => {
-    if (!user?.id) return;
-    loadData();
+    if (user?.id) loadData();
   }, [user?.id]);
 
   const loadData = async () => {
@@ -478,7 +458,6 @@ export default function TriggersPage() {
       setIntegrations(appsRes.apps || []);
       if (statsRes) setStats(statsRes);
     } catch {
-      // Non-fatal: user will see empty state
     } finally {
       setLoading(false);
     }
@@ -498,7 +477,7 @@ export default function TriggersPage() {
       );
       setAvailableTriggers(data.triggers || []);
     } catch {
-      showToast("Failed to load triggers for this app", "error");
+      showToastMsg("Failed to load triggers for this app", "error");
     } finally {
       setLoadingTriggers(false);
     }
@@ -523,7 +502,7 @@ export default function TriggersPage() {
         (trigger.toolkit || trigger.toolkitName || "").toLowerCase(),
     );
     if (!connection)
-      return showToast(
+      return showToastMsg(
         "Please connect this app first in Integrations",
         "error",
       );
@@ -536,14 +515,14 @@ export default function TriggersPage() {
         toolkit: connection.appName,
         config,
       });
-      showToast(`${trigger.displayName} trigger created`, "success");
+      showToastMsg(`${trigger.displayName} trigger created`, "success");
       setConfiguringTrigger(null);
       setSelectedToolkit(null);
       setAvailableTriggers([]);
       setShowCreatePanel(false);
       loadData();
     } catch (e: any) {
-      showToast(e?.message || "Failed to create trigger", "error");
+      showToastMsg(e?.message || "Failed to create trigger", "error");
     } finally {
       setCreating(null);
     }
@@ -552,21 +531,21 @@ export default function TriggersPage() {
   const handleToggle = async (trigger: UserTrigger) => {
     try {
       setTogglingId(trigger.id);
-      const endpoint = trigger.is_enabled
-        ? "/triggers/disable"
-        : "/triggers/enable";
-      await api.post(endpoint, { triggerId: trigger.id });
+      await api.post(
+        trigger.is_enabled ? "/triggers/disable" : "/triggers/enable",
+        { triggerId: trigger.id },
+      );
       setUserTriggers((prev) =>
         prev.map((t) =>
           t.id === trigger.id ? { ...t, is_enabled: !t.is_enabled } : t,
         ),
       );
-      showToast(
+      showToastMsg(
         `Trigger ${trigger.is_enabled ? "paused" : "resumed"}`,
         "success",
       );
     } catch (e: any) {
-      showToast(e?.message || "Failed to update trigger", "error");
+      showToastMsg(e?.message || "Failed to update trigger", "error");
     } finally {
       setTogglingId(null);
     }
@@ -577,17 +556,17 @@ export default function TriggersPage() {
       setDeletingId(triggerId);
       await api.post("/triggers/delete", { triggerId });
       setUserTriggers((prev) => prev.filter((t) => t.id !== triggerId));
-      showToast("Trigger removed", "success");
+      showToastMsg("Trigger removed", "success");
     } catch (e: any) {
-      showToast(e?.message || "Failed to delete trigger", "error");
+      showToastMsg(e?.message || "Failed to delete trigger", "error");
     } finally {
       setDeletingId(null);
     }
   };
 
-  const showToast = (message: string, type: "success" | "error") => {
-    setToast({ message, type });
-    setTimeout(() => setToast(null), 4000);
+  const showToastMsg = (message: string, type: "success" | "error") => {
+    if (type === "success") toastSuccess(message);
+    else toastError(message);
   };
 
   const loadTriggerEvents = async (triggerId: string) => {
@@ -603,7 +582,7 @@ export default function TriggersPage() {
         `/triggers/events?triggerId=${triggerId}&limit=10`,
       );
       setTriggerEvents(data.events || []);
-    } catch (e) {
+    } catch {
       setTriggerEvents([]);
     } finally {
       setLoadingEvents(false);
@@ -616,7 +595,7 @@ export default function TriggersPage() {
       setLoadingActivity(true);
       const data = await api.get(`/triggers/events?limit=30`);
       setActivityEvents(data.events || []);
-    } catch (e) {
+    } catch {
       setActivityEvents([]);
     } finally {
       setLoadingActivity(false);
@@ -638,28 +617,11 @@ export default function TriggersPage() {
       return name.includes(q) || app.includes(q);
     });
   }, [userTriggers, searchQuery]);
+
   return (
     <>
-    <div className="flex flex-col min-h-screen">
-      {/* Toast */}
-      {toast && (
-        <div
-          className={`fixed top-4 right-4 z-50 flex items-center gap-2 px-5 py-3 rounded-xl shadow-lg text-sm font-medium animate-in slide-in-from-top fade-in duration-300 ${
-            toast.type === "success"
-              ? "bg-emerald-500/90 text-white"
-              : "bg-red-500/90 text-white"
-          }`}
-        >
-          {toast.type === "success" ? (
-            <Check strokeWidth={1.5} size={16} />
-          ) : (
-            <Zap strokeWidth={1.5} size={16} />
-          )}
-          {toast.message}
-        </div>
-      )}
-
-        {/* Config Modal */}
+      <div className="flex flex-col min-h-screen">
+        {/* Config Modal — shadcn Dialog */}
         {configuringTrigger && (
           <ConfigFormModal
             trigger={configuringTrigger}
@@ -669,15 +631,16 @@ export default function TriggersPage() {
           />
         )}
 
-        {/* Pause Warning Modal */}
-        {pauseWarningTrigger && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div
-              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-              onClick={() => setPauseWarningTrigger(null)}
-            />
-            <div className="relative w-full max-w-sm bg-black border border-amber-500/20 rounded-xl shadow-xl overflow-hidden p-6">
-              <div className="flex items-center gap-3 mb-3">
+        {/* Pause Warning — shadcn Dialog */}
+        <Dialog
+          open={!!pauseWarningTrigger}
+          onOpenChange={(open) => {
+            if (!open) setPauseWarningTrigger(null);
+          }}
+        >
+          <DialogContent showCloseButton={false} className="sm:max-w-sm">
+            <DialogHeader>
+              <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-xl bg-amber-500/10 flex items-center justify-center shrink-0">
                   <Pause
                     strokeWidth={1.5}
@@ -685,791 +648,790 @@ export default function TriggersPage() {
                     className="text-amber-400"
                   />
                 </div>
-                <h3 className="text-sm font-semibold text-white">
-                  Pause this automation?
-                </h3>
+                <DialogTitle>Pause this automation?</DialogTitle>
               </div>
-              <p className="text-xs text-neutral-400 leading-relaxed mb-1">
-                <span className="font-medium text-white">
-                  {pauseWarningTrigger.trigger_name ||
-                    formatTriggerSlug(pauseWarningTrigger.trigger_slug)}
+              <DialogDescription>
+                <span className="font-medium text-foreground">
+                  {pauseWarningTrigger?.trigger_name ||
+                    formatTriggerSlug(pauseWarningTrigger?.trigger_slug || "")}
                 </span>{" "}
-                runs automatically to keep your daily briefings updated.
-              </p>
-              <p className="text-xs text-amber-400/80 leading-relaxed mb-5">
-                Pausing it will stop new events from appearing in your briefing
-                until you resume.
-              </p>
-              <div className="flex items-center justify-end gap-2">
-                <button
-                  onClick={() => setPauseWarningTrigger(null)}
-                  className="px-4 py-2 text-sm font-medium text-neutral-400 hover:text-white hover:bg-neutral-900 rounded-xl transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => {
-                    handleToggle(pauseWarningTrigger);
-                    setPauseWarningTrigger(null);
-                  }}
-                  className="px-4 py-2 text-sm font-medium bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/20 rounded-xl transition-colors"
-                >
-                  Pause anyway
-                </button>
-              </div>
-            </div>
+                runs automatically to keep your daily briefings updated. Pausing
+                it will stop new events from appearing in your briefing until
+                you resume.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setPauseWarningTrigger(null)}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="outline"
+                className="bg-amber-500/10 text-amber-400 border-amber-500/20 hover:bg-amber-500/20"
+                onClick={() => {
+                  if (pauseWarningTrigger) handleToggle(pauseWarningTrigger);
+                  setPauseWarningTrigger(null);
+                }}
+              >
+                Pause anyway
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Page header */}
+        <div className="px-4 sm:px-6 py-4 border-b border-border flex items-center justify-between shrink-0">
+          <div>
+            <Breadcrumb />
+            <h1 className="text-sm font-semibold text-foreground">
+              Automations
+            </h1>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Triggers that watch for events across your connected apps
+            </p>
+          </div>
+          {!loading && integrations.length > 0 && (
+            <Button
+              size="sm"
+              onClick={() => setShowCreatePanel(!showCreatePanel)}
+            >
+              <Plus strokeWidth={1.5} size={14} />
+              New
+            </Button>
+          )}
+        </div>
+
+        {/* View tabs */}
+        {!loading && userTriggers.length > 0 && (
+          <div className="px-4 sm:px-6 border-b border-border flex items-center gap-1">
+            {(["triggers", "activity"] as const).map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setViewTab(tab)}
+                className={`px-3 py-3 text-xs font-medium transition-colors border-b-2 -mb-px ${viewTab === tab ? "text-foreground border-foreground" : "text-muted-foreground hover:text-foreground/80 border-transparent"}`}
+              >
+                {tab === "triggers" ? "Triggers" : "Activity Log"}
+              </button>
+            ))}
           </div>
         )}
 
-      {/* Page header */}
-      <div className="px-6 py-4 border-b border-white/[0.06] flex items-center justify-between shrink-0">
-        <div>
-          <h1 className="text-sm font-semibold text-white">Automations</h1>
-          <p className="text-xs text-neutral-500 mt-0.5">
-            Triggers that watch for events across your connected apps
-          </p>
-        </div>
-        {!loading && integrations.length > 0 && (
-          <button
-            onClick={() => setShowCreatePanel(!showCreatePanel)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-white text-black text-xs font-semibold hover:opacity-90 transition-opacity"
-          >
-            <Plus strokeWidth={1.5} size={14} />
-            New
-          </button>
-        )}
-      </div>
-
-      {/* View tabs */}
-      {!loading && userTriggers.length > 0 && (
-        <div className="px-6 border-b border-white/[0.06] flex items-center gap-1">
-          {(["triggers", "activity"] as const).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setViewTab(tab)}
-              className={`px-3 py-3 text-xs font-medium transition-colors border-b-2 -mb-px ${
-                viewTab === tab
-                  ? "text-white border-white"
-                  : "text-neutral-500 hover:text-neutral-300 border-transparent"
-              }`}
-            >
-              {tab === "triggers" ? "Triggers" : "Activity Log"}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {/* Stats strip */}
-      {stats && stats.total > 0 && !loading && (
-        <div className="grid grid-cols-2 md:grid-cols-4 border-b border-white/[0.06]">
-          {[
-            { label: "Active", value: stats.active, color: "text-emerald-400" },
-            { label: "Paused", value: stats.paused, color: "text-neutral-400" },
-            { label: "Events", value: stats.totalEvents, color: "text-white" },
-            { label: "Errors", value: stats.totalErrors, color: stats.totalErrors > 0 ? "text-red-400" : "text-neutral-500" },
-          ].map((s, i) => (
-            <div key={s.label} className={`px-6 py-4 ${i < 3 ? "border-r border-white/[0.06]" : ""}`}>
-              <p className="text-[10px] font-semibold text-neutral-600 uppercase tracking-widest mb-1">{s.label}</p>
-              <p className={`text-xl font-semibold ${s.color}`}>{s.value}</p>
-            </div>
-          ))}
-        </div>
-      )}
-
-      <div className="flex-1 px-6 py-6">
-
-        {/* Loading — skeleton cards */}
-        {loading ? (
-          <div className="space-y-3">
-            <div className="h-4 w-36 rounded bg-black animate-pulse mb-2" />
-            {[1, 2, 3].map((i) => (
+        {/* Stats strip */}
+        {stats && stats.total > 0 && !loading && (
+          <div className="grid grid-cols-2 md:grid-cols-4 border-b border-border">
+            {[
+              {
+                label: "Active",
+                value: stats.active,
+                color: "text-emerald-400",
+              },
+              {
+                label: "Paused",
+                value: stats.paused,
+                color: "text-muted-foreground",
+              },
+              {
+                label: "Events",
+                value: stats.totalEvents,
+                color: "text-foreground",
+              },
+              {
+                label: "Errors",
+                value: stats.totalErrors,
+                color:
+                  stats.totalErrors > 0
+                    ? "text-destructive"
+                    : "text-muted-foreground",
+              },
+            ].map((s, i) => (
               <div
-                key={i}
-                className="bg-black border border-white/10 rounded-xl px-4 sm:px-5 py-4"
+                key={s.label}
+                className={`px-6 py-4 ${i < 3 ? "border-r border-border" : ""}`}
               >
-                <div className="flex items-start gap-3">
-                  <div className="w-9 h-9 rounded-lg bg-white/10 animate-pulse" />
-                  <div className="flex-1 space-y-2 pt-0.5">
-                    <div className="h-3.5 w-40 rounded bg-white/10 animate-pulse" />
-                    <div className="h-3 w-24 rounded bg-white/10 animate-pulse" />
-                  </div>
-                </div>
+                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-1">
+                  {s.label}
+                </p>
+                <p className={`text-xl font-semibold ${s.color}`}>{s.value}</p>
               </div>
             ))}
           </div>
-        ) : (
-          <>
-            {/* ─── Create Panel ─────────────────────────────────── */}
-            <Sheet
-              isOpen={showCreatePanel}
-              onClose={() => setShowCreatePanel(false)}
-              title="Create Automation"
-              description="Choose an app to set up a trigger"
-            >
-              <div className="space-y-3 pb-8">
-                {/* Connected apps list */}
-                <div className="space-y-2">
-                  {integrations.map((integration) => {
-                    const color = "#8b95b0";
-                    const displayName =
-                      integration.displayName || integration.appName;
-                    const isExpanded = selectedToolkit === integration.appName;
+        )}
 
-                    return (
-                      <div key={integration.id}>
-                        {/* App row */}
-                        <button
-                          onClick={() =>
-                            loadAvailableTriggers(integration.appName)
-                          }
-                          className="w-full flex items-center gap-3 bg-black border border-white/10 rounded-xl px-4 py-3 hover:border-white/30/30 transition-colors"
-                        >
-                          {(integration.logo || getLogo(integration.appName.toLowerCase())) ? (
-                            <img
-                              src={(integration.logo || getLogo(integration.appName.toLowerCase()))!}
-                              alt={displayName}
-                              className="w-8 h-8 rounded-lg object-contain"
-                              onError={(e) => { e.currentTarget.style.display = "none"; }}
-                            />
-                          ) : (
-                            <div
-                              className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-xs"
-                              style={{ backgroundColor: color }}
-                            >
-                              {displayName.charAt(0)}
-                            </div>
-                          )}
-                          <span className="flex-1 text-left text-sm font-medium text-white">
-                            {displayName}
-                          </span>
-                          {isExpanded ? (
-                            <ChevronDown
-                              strokeWidth={1.5}
-                              size={16}
-                              className="text-neutral-500"
-                            />
-                          ) : (
-                            <ChevronRight
-                              strokeWidth={1.5}
-                              size={16}
-                              className="text-neutral-500"
-                            />
-                          )}
-                        </button>
-
-                        {/* Expanded: available triggers */}
-                        {isExpanded && (
-                          <div className="ml-4 mt-2 space-y-1.5">
-                            {loadingTriggers ? (
-                              <div className="flex items-center justify-center py-4">
-                                <Loader2
-                                  strokeWidth={1.5}
-                                  size={16}
-                                  className="animate-spin text-neutral-500"
-                                />
-                              </div>
-                            ) : availableTriggers.length > 0 ? (
-                              availableTriggers.map((trigger) => (
-                                <div
-                                  key={trigger.slug}
-                                  className="flex items-center gap-3 bg-neutral-900 border border-white/10 rounded-lg px-3 py-2.5"
-                                >
-                                  <Zap
-                                    strokeWidth={1.5}
-                                    size={14}
-                                    className="text-neutral-500 flex-shrink-0"
-                                  />
-                                  <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2">
-                                      <p className="text-sm text-white truncate">
-                                        {formatTriggerSlug(trigger.slug) ||
-                                          trigger.displayName}
-                                      </p>
-                                      <TriggerTypeBadge type={trigger.type} />
-                                    </div>
-                                    {(() => {
-                                      const desc =
-                                        getTriggerDescription(trigger.slug) ||
-                                        trigger.description;
-                                      return desc ? (
-                                        <p className="text-xs text-neutral-400 truncate mt-0.5">
-                                          {desc}
-                                        </p>
-                                      ) : null;
-                                    })()}
-                                  </div>
-                                  <button
-                                    onClick={() => openConfigModal(trigger)}
-                                    disabled={creating === trigger.slug}
-                                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-white text-black text-xs font-semibold hover:bg-neutral-100 transition-colors disabled:opacity-50"
-                                  >
-                                    {creating === trigger.slug ? (
-                                      <Loader2
-                                        strokeWidth={1.5}
-                                        size={12}
-                                        className="animate-spin"
-                                      />
-                                    ) : (
-                                      <Plus strokeWidth={1.5} size={12} />
-                                    )}
-                                    Add
-                                  </button>
-                                </div>
-                              ))
-                            ) : (
-                              <p className="text-xs text-neutral-500 py-3 px-2">
-                                No triggers available for this app
-                              </p>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
+        <div className="flex-1 px-4 sm:px-6 py-4">
+          {/* Loading */}
+          {loading ? (
+            <div className="space-y-3">
+              <Skeleton className="h-4 w-36 mb-2" />
+              {[1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className="border border-border rounded-xl px-4 sm:px-5 py-4"
+                >
+                  <div className="flex items-start gap-3">
+                    <Skeleton className="w-9 h-9 rounded-lg" />
+                    <div className="flex-1 space-y-2 pt-0.5">
+                      <Skeleton className="h-3.5 w-40" />
+                      <Skeleton className="h-3 w-24" />
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </Sheet>
-
-            {/* ─── Suggested Templates (1-Click) ────────────────── */}
-            {!searchQuery && userTriggers.length < 5 && (
-              <div className="mb-10 space-y-4">
-                <p className="text-xs font-medium text-neutral-500 uppercase tracking-wider">
-                  Start with a Template
-                </p>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {[
-                    {
-                      title: "Slack on new PR",
-                      desc: "Notify a channel when a GitHub Pull Request is opened.",
-                      apps: ["github", "slack"],
-                    },
-                    {
-                      title: "Notion release notes",
-                      desc: "Draft a document when Linear issues are marked 'Done'.",
-                      apps: ["linear", "notion"],
-                    },
-                    {
-                      title: "Gmail triage",
-                      desc: "Auto-label and summarize high-priority incoming emails.",
-                      apps: ["gmail"],
-                    },
-                  ].map((tmpl, i) => (
-                    <button
-                      key={i}
-                      onClick={() => setShowCreatePanel(true)}
-                      className="text-left bg-black border border-white/10 rounded-xl p-4 hover:border-white/30/40 hover:bg-neutral-900 transition-all group"
-                    >
-                      <div className="flex items-center gap-2 mb-3">
-                        <div className="flex -space-x-2">
-                          {tmpl.apps.map((app, j) => {
-                            const logo = getLogo(app.toLowerCase().replace(/\s+/g, ""));
-                            const color = "#8b95b0";
-                            return logo ? (
-                              <img
-                                key={j}
-                                src={logo}
-                                alt={app}
-                                className="w-6 h-6 rounded border-2 border-black bg-black object-contain relative z-10"
+              ))}
+            </div>
+          ) : (
+            <>
+              {/* Create Panel */}
+              <Sheet
+                isOpen={showCreatePanel}
+                onClose={() => setShowCreatePanel(false)}
+                title="Create Automation"
+                description="Choose an app to set up a trigger"
+              >
+                <div className="space-y-3 pb-8">
+                  <div className="space-y-2">
+                    {integrations.map((integration) => {
+                      const displayName =
+                        integration.displayName || integration.appName;
+                      const isExpanded =
+                        selectedToolkit === integration.appName;
+                      return (
+                        <div key={integration.id}>
+                          <button
+                            onClick={() =>
+                              loadAvailableTriggers(integration.appName)
+                            }
+                            className="w-full flex items-center gap-3 border border-border rounded-xl px-4 py-3 hover:bg-muted/50 transition-colors"
+                          >
+                            <AppLogo
+                              logo={
+                                integration.logo ||
+                                getLogo(integration.appName.toLowerCase()) ||
+                                undefined
+                              }
+                              appKey={integration.appName}
+                              displayName={displayName}
+                              size="md"
+                            />
+                            <span className="flex-1 text-left text-sm font-medium text-foreground">
+                              {displayName}
+                            </span>
+                            {isExpanded ? (
+                              <ChevronDown
+                                strokeWidth={1.5}
+                                size={16}
+                                className="text-muted-foreground"
                               />
                             ) : (
-                              <div
-                                key={j}
-                                className="w-6 h-6 rounded border-2 border-black flex items-center justify-center text-[10px] font-bold text-white relative z-10"
-                                style={{ backgroundColor: color }}
-                              >
-                                {app.charAt(0).toUpperCase()}
-                              </div>
-                            );
-                          })}
-                        </div>
-                        <div className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Plus
-                            strokeWidth={1.5}
-                            size={16}
-                            className="text-white"
-                          />
-                        </div>
-                      </div>
-                      <h4 className="text-sm font-medium text-white mb-1">
-                        {tmpl.title}
-                      </h4>
-                      <p className="text-xs text-neutral-500 leading-relaxed">
-                        {tmpl.desc}
-                      </p>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* ─── Activity Tab ───────────────────────────────── */}
-            {viewTab === "activity" && userTriggers.length > 0 && (
-              <div className="space-y-3">
-                <p className="text-xs font-medium text-neutral-500 uppercase tracking-wider">
-                  Recent Events
-                </p>
-                {loadingActivity ? (
-                  <div className="flex items-center justify-center py-16">
-                    <Loader2
-                      strokeWidth={1.5}
-                      className="animate-spin text-neutral-500"
-                      size={20}
-                    />
-                  </div>
-                ) : activityEvents.length === 0 ? (
-                  <div className="text-center py-12 border border-dashed border-white/10 rounded-xl">
-                    <Clock
-                      strokeWidth={1.5}
-                      size={24}
-                      className="mx-auto text-neutral-500 mb-2"
-                    />
-                    <p className="text-sm text-neutral-500">
-                      No trigger events recorded yet.
-                    </p>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {activityEvents.map((ev) => (
-                      <div
-                        key={ev.id}
-                        className="bg-black border border-white/10 rounded-xl px-4 py-3 flex items-center justify-between gap-3"
-                      >
-                        <div className="flex items-center gap-3 min-w-0">
-                          <div
-                            className={`w-2 h-2 rounded-full flex-shrink-0 ${
-                              ev.status === "processed"
-                                ? "bg-emerald-500"
-                                : ev.status === "error"
-                                  ? "bg-red-500"
-                                  : ev.status === "skipped"
-                                    ? "bg-amber-500"
-                                    : "bg-neutral-500"
-                            }`}
-                          />
-                          <div className="min-w-0">
-                            <p className="text-sm font-medium text-white truncate">
-                              {formatTriggerSlug(
-                                ev.trigger_slug || ev.event_type,
-                              )}
-                            </p>
-                            {ev.error && (
-                              <p className="text-[11px] text-red-400 truncate">
-                                {ev.error}
-                              </p>
+                              <ChevronRight
+                                strokeWidth={1.5}
+                                size={16}
+                                className="text-muted-foreground"
+                              />
                             )}
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-3 flex-shrink-0">
-                          {ev.processing_time_ms != null && (
-                            <span className="text-[11px] text-neutral-500 tabular-nums">
-                              {ev.processing_time_ms}ms
-                            </span>
-                          )}
-                          <span className="text-[11px] text-neutral-500 tabular-nums whitespace-nowrap">
-                            {new Date(ev.created_at).toLocaleString(undefined, {
-                              month: "short",
-                              day: "numeric",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
+                          </button>
 
-            {/* ─── Active Triggers Header ──────────────────────── */}
-            {viewTab === "triggers" && userTriggers.length > 0 ? (
-              <div className="space-y-4">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                  <p className="text-xs font-medium text-neutral-500 uppercase tracking-wider">
-                    Active Automations
-                  </p>
-                  <div className="relative w-full sm:w-64">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-neutral-500">
-                      <Search strokeWidth={1.5} size={14} />
-                    </div>
-                    <input
-                      type="text"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="Search triggers..."
-                      className="w-full bg-black border border-white/10 rounded-lg pl-9 pr-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-white text-white placeholder-neutral-600 transition-all"
-                    />
-                  </div>
-                </div>
-
-                {filteredTriggers.length === 0 ? (
-                  <div className="text-center py-12">
-                    <p className="text-sm text-neutral-500">
-                      No active triggers match your search.
-                    </p>
-                  </div>
-                ) : (
-                  filteredTriggers.map((trigger) => {
-                    const toolkitKey = trigger.toolkit?.toLowerCase() || "";
-                    const color = "#8b95b0";
-                    const toolkitName = trigger.toolkit;
-                    const isToggling = togglingId === trigger.id;
-                    const isDeleting = deletingId === trigger.id;
-
-                    return (
-                      <div
-                        key={trigger.id}
-                        className={`bg-black border border-white/10 rounded-xl px-4 sm:px-5 py-4 transition-all hover:border-white/20 ${!trigger.is_enabled ? "opacity-60 grayscale-[0.5]" : ""}`}
-                      >
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                          {/* Left: Trigger Info & Visual Flow */}
-                          <div className="flex-1 min-w-0 flex flex-col gap-3">
-                            <div className="flex items-center gap-2">
-                              <h3 className="text-sm font-semibold text-white">
-                                {trigger.trigger_name ||
-                                  formatTriggerSlug(trigger.trigger_slug)}
-                              </h3>
-                              <div
-                                className={`px-2 py-0.5 rounded text-[10px] font-medium tracking-wider uppercase ${trigger.is_enabled ? "bg-emerald-500/10 text-emerald-500" : "bg-neutral-500/10 text-neutral-500"}`}
-                              >
-                                {trigger.is_enabled ? "Active" : "Paused"}
-                              </div>
-                              {trigger.is_auto && (
-                                <div className="relative group/auto">
-                                  <div className="px-2 py-0.5 rounded text-[10px] font-medium tracking-wider uppercase bg-blue-500/10 text-blue-400 cursor-default flex items-center gap-1">
-                                    Auto
-                                  </div>
+                          {isExpanded && (
+                            <div className="ml-4 mt-2 space-y-1.5">
+                              {loadingTriggers ? (
+                                <div className="flex items-center justify-center py-4">
+                                  <Loader2
+                                    strokeWidth={1.5}
+                                    size={16}
+                                    className="animate-spin text-muted-foreground"
+                                  />
                                 </div>
-                              )}
-                              {getTriggerDescription(trigger.trigger_slug) && (
-                                <p className="text-xs text-neutral-500">
-                                  {getTriggerDescription(trigger.trigger_slug)}
+                              ) : availableTriggers.length > 0 ? (
+                                availableTriggers.map((trigger) => (
+                                  <div
+                                    key={trigger.slug}
+                                    className="flex items-center gap-3 bg-muted/50 border border-border rounded-lg px-3 py-2.5"
+                                  >
+                                    <Zap
+                                      strokeWidth={1.5}
+                                      size={14}
+                                      className="text-muted-foreground flex-shrink-0"
+                                    />
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-center gap-2">
+                                        <p className="text-sm text-foreground truncate">
+                                          {formatTriggerSlug(trigger.slug) ||
+                                            trigger.displayName}
+                                        </p>
+                                        <TriggerTypeBadge type={trigger.type} />
+                                      </div>
+                                      {(() => {
+                                        const desc =
+                                          getTriggerDescription(trigger.slug) ||
+                                          trigger.description;
+                                        return desc ? (
+                                          <p className="text-xs text-muted-foreground truncate mt-0.5">
+                                            {desc}
+                                          </p>
+                                        ) : null;
+                                      })()}
+                                    </div>
+                                    <Button
+                                      size="sm"
+                                      onClick={() => openConfigModal(trigger)}
+                                      disabled={creating === trigger.slug}
+                                    >
+                                      {creating === trigger.slug ? (
+                                        <Loader2
+                                          strokeWidth={1.5}
+                                          size={12}
+                                          className="animate-spin"
+                                        />
+                                      ) : (
+                                        <Plus strokeWidth={1.5} size={12} />
+                                      )}
+                                      Add
+                                    </Button>
+                                  </div>
+                                ))
+                              ) : (
+                                <p className="text-xs text-muted-foreground py-3 px-2">
+                                  No triggers available for this app
                                 </p>
                               )}
                             </div>
-
-                            {/* Visual Flow Map */}
-                            <div className="flex items-center gap-3">
-                              <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-neutral-900 border border-white/10">
-                                {(() => {
-                                  const logo =
-                                    integrations.find(
-                                      (i) =>
-                                        i.appName.toLowerCase() === toolkitKey,
-                                    )?.logo || getLogo(toolkitKey) || undefined;
-                                  return logo ? (
-                                    <img
-                                      src={logo}
-                                      alt={toolkitName}
-                                      className="w-4 h-4 rounded object-contain"
-                                    />
-                                  ) : (
-                                    <div
-                                      className="w-4 h-4 rounded flex items-center justify-center text-white font-bold text-[8px]"
-                                      style={{ backgroundColor: color }}
-                                    >
-                                      {(toolkitName || "").charAt(0)}
-                                    </div>
-                                  );
-                                })()}
-                                <span className="text-xs font-medium text-neutral-400">
-                                  {toolkitName}
-                                </span>
-                              </div>
-                              <ArrowRight
-                                strokeWidth={1.5}
-                                size={14}
-                                className="text-neutral-500"
-                              />
-                              <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-white/10 border border-white/30/20">
-                                <Zap
-                                  strokeWidth={1.5}
-                                  size={14}
-                                  className="text-white"
-                                />
-                                <span className="text-xs font-medium text-white">
-                                  CalmPilot
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Right: Actions & Stats */}
-                          <div className="flex sm:flex-col items-center sm:items-end justify-between w-full sm:w-auto gap-3">
-                            <div className="flex items-center gap-1 bg-neutral-900 border border-white/10 rounded-lg p-0.5">
-                              <button
-                                onClick={() => {
-                                  if (trigger.is_enabled && trigger.is_auto) {
-                                    setPauseWarningTrigger(trigger);
-                                  } else {
-                                    handleToggle(trigger);
-                                  }
-                                }}
-                                disabled={isToggling}
-                                className={`p-1.5 rounded-md transition-colors ${trigger.is_enabled ? "hover:bg-amber-500/10 text-neutral-500 hover:text-amber-500" : "hover:bg-emerald-500/10 text-neutral-500 hover:text-emerald-500"}`}
-                                title={trigger.is_enabled ? "Pause" : "Resume"}
-                              >
-                                {isToggling ? (
-                                  <Loader2
-                                    strokeWidth={1.5}
-                                    size={14}
-                                    className="animate-spin"
-                                  />
-                                ) : trigger.is_enabled ? (
-                                  <Pause strokeWidth={1.5} size={14} />
-                                ) : (
-                                  <Play strokeWidth={1.5} size={14} />
-                                )}
-                              </button>
-                              <div className="w-px h-4 bg-white/10" />
-                              <button
-                                onClick={() => setConfirmDeleteId(trigger.id)}
-                                disabled={isDeleting}
-                                className="p-1.5 rounded-md hover:bg-red-500/10 transition-colors text-neutral-500 hover:text-red-500"
-                                title="Delete"
-                              >
-                                {isDeleting ? (
-                                  <Loader2
-                                    strokeWidth={1.5}
-                                    size={14}
-                                    className="animate-spin"
-                                  />
-                                ) : (
-                                  <Trash2 strokeWidth={1.5} size={14} />
-                                )}
-                              </button>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <div className="flex items-center gap-1.5 text-[11px] text-neutral-500 bg-neutral-900 px-2 py-1 rounded-md">
-                                <Activity strokeWidth={1.5} size={12} />
-                                <span>{trigger.event_count || 0}</span>
-                              </div>
-                              {trigger.error_count > 0 && (
-                                <Link
-                                  href={`/dashboard/feed?q=${encodeURIComponent(trigger.trigger_slug)}`}
-                                  className="flex items-center gap-1 text-[11px] text-red-400 bg-red-500/10 hover:bg-red-500/20 px-2 py-1 rounded-md transition-colors"
-                                  title="View errors in Feed"
-                                >
-                                  <X strokeWidth={1.5} size={12} />
-                                  <span>
-                                    {trigger.error_count} error
-                                    {trigger.error_count !== 1 ? "s" : ""}
-                                  </span>
-                                </Link>
-                              )}
-                              <button
-                                onClick={() => {
-                                  if (expandedTriggerId === trigger.id) {
-                                    setExpandedTriggerId(null);
-                                  } else {
-                                    setExpandedTriggerId(trigger.id);
-                                    loadTriggerEvents(trigger.id);
-                                  }
-                                }}
-                                className={`flex items-center gap-1 text-[11px] px-2 py-1 rounded-md transition-colors ${
-                                  expandedTriggerId === trigger.id
-                                    ? "bg-white/10 text-white"
-                                    : "bg-neutral-900 text-neutral-500 hover:text-neutral-400"
-                                }`}
-                                title="View events"
-                              >
-                                <Clock strokeWidth={1.5} size={12} />
-                                <span>Events</span>
-                              </button>
-                            </div>
-                          </div>
+                          )}
                         </div>
-
-                        {/* Expandable Event Log */}
-                        {expandedTriggerId === trigger.id && (
-                          <div className="mt-3 pt-3 border-t border-white/10">
-                            <div className="flex items-center justify-between mb-2">
-                              <p className="text-[11px] font-medium text-neutral-500 uppercase tracking-wider">
-                                Recent Events
-                              </p>
-                            </div>
-                            {loadingEvents ? (
-                              <div className="flex items-center justify-center py-4">
-                                <Loader2
-                                  strokeWidth={1.5}
-                                  className="animate-spin text-neutral-500"
-                                  size={14}
-                                />
-                              </div>
-                            ) : triggerEvents.length === 0 ? (
-                              <p className="text-[11px] text-neutral-500 py-2">
-                                No events recorded for this trigger.
-                              </p>
-                            ) : (
-                              <div className="space-y-1.5 max-h-48 overflow-y-auto">
-                                {triggerEvents.map((ev) => {
-                                  const preview = extractPayloadPreview(
-                                    ev.payload,
-                                  );
-                                  return (
-                                    <div
-                                      key={ev.id}
-                                      className="flex flex-col gap-0.5 text-[11px] px-2.5 py-2 rounded-md bg-neutral-900"
-                                    >
-                                      <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-2 min-w-0">
-                                          <div
-                                            className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
-                                              ev.status === "processed"
-                                                ? "bg-emerald-500"
-                                                : ev.status === "error"
-                                                  ? "bg-red-500"
-                                                  : ev.status === "skipped"
-                                                    ? "bg-amber-500"
-                                                    : "bg-neutral-500"
-                                            }`}
-                                          />
-                                          <span className="font-medium text-neutral-400">
-                                            {ev.status}
-                                          </span>
-                                        </div>
-                                        <span className="text-neutral-500 tabular-nums ml-2 flex-shrink-0">
-                                          {new Date(
-                                            ev.created_at,
-                                          ).toLocaleString(undefined, {
-                                            month: "short",
-                                            day: "numeric",
-                                            hour: "2-digit",
-                                            minute: "2-digit",
-                                          })}
-                                        </span>
-                                      </div>
-                                      {ev.error ? (
-                                        <p className="text-red-400 truncate pl-3.5">
-                                          {ev.error}
-                                        </p>
-                                      ) : preview ? (
-                                        <p className="text-neutral-500 truncate pl-3.5">
-                                          {preview}
-                                        </p>
-                                      ) : null}
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-            ) : viewTab === "triggers" ? (
-              /* ─── Empty State ──────────────────────────────── */
-              !showCreatePanel && (
-                <div className="text-center py-20 px-4 border border-dashed border-white/10 rounded-xl bg-black/50 relative overflow-hidden">
-                  <div
-                    aria-hidden="true"
-                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md opacity-20 pointer-events-none"
-                  >
-                    <svg
-                      viewBox="0 0 400 100"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        d="M50 50h100c20 0 20-30 40-30s20 30 40 30h120"
-                        stroke="url(#dash-gradient)"
-                        strokeWidth="2"
-                        strokeDasharray="4 4"
-                      />
-                      <defs>
-                        <linearGradient
-                          id="dash-gradient"
-                          x1="0"
-                          y1="0"
-                          x2="400"
-                          y2="0"
-                          gradientUnits="userSpaceOnUse"
-                        >
-                          <stop stopColor="white" stopOpacity="0" />
-                          <stop offset="0.5" stopColor="white" />
-                          <stop offset="1" stopColor="white" stopOpacity="0" />
-                        </linearGradient>
-                      </defs>
-                    </svg>
-                  </div>
-
-                  <div className="relative z-10 flex flex-col items-center gap-6">
-                    <div className="flex items-center justify-center gap-4">
-                      <div className="w-12 h-12 rounded-xl bg-[#24292e] border border-white/10 flex items-center justify-center shadow-lg transform -rotate-6">
-                        <img
-                          src="/images/github-142-svgrepo-com.svg"
-                          alt="GitHub"
-                          className="w-6 h-6 object-contain"
-                        />
-                      </div>
-                      <div className="w-14 h-14 rounded-xl bg-white/10 border border-white/30/20 flex items-center justify-center shadow-[0_0_30px_rgba(255,255,255,0.05)]">
-                        <Zap
-                          strokeWidth={1.5}
-                          size={24}
-                          className="text-white"
-                        />
-                      </div>
-                      <div className="w-12 h-12 rounded-xl bg-[#ECB22E] border border-white/10 flex items-center justify-center shadow-lg transform rotate-6">
-                        <img
-                          src="/images/slack-svgrepo-com.svg"
-                          alt="Slack"
-                          className="w-6 h-6 object-contain grayscale-[0.2]"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-2 max-w-md mx-auto">
-                      <h3 className="text-xl font-medium text-white">
-                        Build your first automation
-                      </h3>
-                      <p className="text-sm text-neutral-500 leading-relaxed">
-                        Triggers quietly watch for events across your connected
-                        apps and execute workflows automatically. Set one up to
-                        get started.
-                      </p>
-                    </div>
-
-                    {integrations.length > 0 ? (
-                      <button
-                        onClick={() => setShowCreatePanel(true)}
-                        className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white text-black text-xs font-semibold hover:bg-neutral-100 transition-colors"
-                      >
-                        <Plus strokeWidth={1.5} size={16} />
-                        Create Trigger
-                      </button>
-                    ) : (
-                      <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-neutral-900 border border-white/10 text-sm text-neutral-500">
-                        <span>Connect an app in</span>
-                        <a
-                          href="/dashboard/integrations"
-                          className="text-white font-medium hover:underline"
-                        >
-                          Integrations
-                        </a>
-                      </div>
-                    )}
+                      );
+                    })}
                   </div>
                 </div>
-              )
-            ) : null}
-          </>
-        )}
-      </div>
-    </div>
+              </Sheet>
 
-    <ConfirmDialog
-      open={!!confirmDeleteId}
-      title="Delete trigger?"
-      description="This trigger will be permanently removed and any active automations relying on it will stop working immediately."
-      confirmLabel="Delete"
-      cancelLabel="Cancel"
-      variant="danger"
-      onConfirm={() => { if (confirmDeleteId) handleDelete(confirmDeleteId); setConfirmDeleteId(null); }}
-      onCancel={() => setConfirmDeleteId(null)}
-    />
+              {/* Suggested Templates */}
+              {!searchQuery && userTriggers.length < 5 && (
+                <div className="mb-10 space-y-4">
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    Start with a Template
+                  </p>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {[
+                      {
+                        title: "Slack on new PR",
+                        desc: "Notify a channel when a GitHub Pull Request is opened.",
+                        apps: ["github", "slack"],
+                      },
+                      {
+                        title: "Notion release notes",
+                        desc: "Draft a document when Linear issues are marked 'Done'.",
+                        apps: ["linear", "notion"],
+                      },
+                      {
+                        title: "Gmail triage",
+                        desc: "Auto-label and summarize high-priority incoming emails.",
+                        apps: ["gmail"],
+                      },
+                    ].map((tmpl, i) => (
+                      <button
+                        key={i}
+                        onClick={() => setShowCreatePanel(true)}
+                        className="text-left border border-border rounded-xl p-4 hover:bg-muted/50 lift pressable group"
+                      >
+                        <div className="flex items-center gap-2 mb-3">
+                          <div className="flex -space-x-2">
+                            {tmpl.apps.map((app, j) => {
+                              const logo = getLogo(
+                                app.toLowerCase().replace(/\s+/g, ""),
+                              );
+                              return (
+                                <AppLogo
+                                  key={j}
+                                  logo={logo || undefined}
+                                  appKey={app}
+                                  displayName={app}
+                                  size="sm"
+                                  className="w-6 h-6 border-2 border-background bg-background relative z-10"
+                                />
+                              );
+                            })}
+                          </div>
+                          <div className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Plus
+                              strokeWidth={1.5}
+                              size={16}
+                              className="text-foreground"
+                            />
+                          </div>
+                        </div>
+                        <h4 className="text-sm font-medium text-foreground mb-1">
+                          {tmpl.title}
+                        </h4>
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                          {tmpl.desc}
+                        </p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Activity Tab */}
+              {viewTab === "activity" && userTriggers.length > 0 && (
+                <div className="space-y-3">
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    Recent Events
+                  </p>
+                  {loadingActivity ? (
+                    <div className="flex items-center justify-center py-16">
+                      <Loader2
+                        strokeWidth={1.5}
+                        className="animate-spin text-muted-foreground"
+                        size={20}
+                      />
+                    </div>
+                  ) : activityEvents.length === 0 ? (
+                    <div className="text-center py-12 border border-dashed border-border rounded-xl">
+                      <Clock
+                        strokeWidth={1.5}
+                        size={24}
+                        className="mx-auto text-muted-foreground mb-2"
+                      />
+                      <p className="text-sm text-muted-foreground">
+                        No trigger events recorded yet.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {activityEvents.map((ev) => (
+                        <div
+                          key={ev.id}
+                          className="border border-border rounded-xl px-4 py-3 flex items-center justify-between gap-3"
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div
+                              className={`w-2 h-2 rounded-full flex-shrink-0 ${ev.status === "processed" ? "bg-emerald-500" : ev.status === "error" ? "bg-destructive" : ev.status === "skipped" ? "bg-amber-500" : "bg-muted-foreground"}`}
+                            />
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium text-foreground truncate">
+                                {formatTriggerSlug(
+                                  ev.trigger_slug || ev.event_type,
+                                )}
+                              </p>
+                              {ev.error && (
+                                <p className="text-[11px] text-destructive truncate">
+                                  {ev.error}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3 flex-shrink-0">
+                            {ev.processing_time_ms != null && (
+                              <span className="text-[11px] text-muted-foreground tabular-nums">
+                                {ev.processing_time_ms}ms
+                              </span>
+                            )}
+                            <span className="text-[11px] text-muted-foreground tabular-nums whitespace-nowrap">
+                              {new Date(ev.created_at).toLocaleString(
+                                undefined,
+                                {
+                                  month: "short",
+                                  day: "numeric",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                },
+                              )}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Active Triggers */}
+              {viewTab === "triggers" && userTriggers.length > 0 ? (
+                <div className="space-y-4">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                      Active Automations
+                    </p>
+                    <div className="relative w-full sm:w-64">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-muted-foreground">
+                        <Search strokeWidth={1.5} size={14} />
+                      </div>
+                      <Input
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder="Search triggers..."
+                        className="pl-9"
+                      />
+                    </div>
+                  </div>
+
+                  {filteredTriggers.length === 0 ? (
+                    <div className="text-center py-12">
+                      <p className="text-sm text-muted-foreground">
+                        No active triggers match your search.
+                      </p>
+                    </div>
+                  ) : (
+                    filteredTriggers.map((trigger) => {
+                      const toolkitKey = trigger.toolkit?.toLowerCase() || "";
+                      const toolkitName = trigger.toolkit;
+                      const isToggling = togglingId === trigger.id;
+                      const isDeleting = deletingId === trigger.id;
+
+                      return (
+                        <div
+                          key={trigger.id}
+                          className={`border border-border rounded-xl px-4 sm:px-5 py-4 lift hover:border-foreground/20 ${!trigger.is_enabled ? "opacity-60 grayscale-[0.5]" : ""}`}
+                        >
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                            <div className="flex-1 min-w-0 flex flex-col gap-3">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <h3 className="text-sm font-semibold text-foreground">
+                                  {trigger.trigger_name ||
+                                    formatTriggerSlug(trigger.trigger_slug)}
+                                </h3>
+                                <Badge
+                                  variant="outline"
+                                  className={
+                                    trigger.is_enabled
+                                      ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
+                                      : "bg-muted text-muted-foreground border-border"
+                                  }
+                                >
+                                  {trigger.is_enabled ? "Active" : "Paused"}
+                                </Badge>
+                                {trigger.is_auto && (
+                                  <Badge
+                                    variant="outline"
+                                    className="bg-blue-500/10 text-blue-400 border-blue-500/20"
+                                  >
+                                    Auto
+                                  </Badge>
+                                )}
+                                {getTriggerDescription(
+                                  trigger.trigger_slug,
+                                ) && (
+                                  <p className="text-xs text-muted-foreground">
+                                    {getTriggerDescription(
+                                      trigger.trigger_slug,
+                                    )}
+                                  </p>
+                                )}
+                              </div>
+
+                              {/* Visual Flow */}
+                              <div className="flex items-center gap-3">
+                                <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-muted border border-border">
+                                  {(() => {
+                                    const logo =
+                                      integrations.find(
+                                        (i) =>
+                                          i.appName.toLowerCase() ===
+                                          toolkitKey,
+                                      )?.logo ||
+                                      getLogo(toolkitKey) ||
+                                      undefined;
+                                    return (
+                                      <AppLogo
+                                        logo={logo}
+                                        appKey={toolkitKey}
+                                        displayName={toolkitName || "App"}
+                                        size="sm"
+                                        className="w-4 h-4"
+                                      />
+                                    );
+                                  })()}
+                                  <span className="text-xs font-medium text-muted-foreground">
+                                    {toolkitName}
+                                  </span>
+                                </div>
+                                <ArrowRight
+                                  strokeWidth={1.5}
+                                  size={14}
+                                  className="text-muted-foreground"
+                                />
+                                <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-muted border border-border">
+                                  <Zap
+                                    strokeWidth={1.5}
+                                    size={14}
+                                    className="text-foreground"
+                                  />
+                                  <span className="text-xs font-medium text-foreground">
+                                    CalmPilot
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Actions */}
+                            <div className="flex sm:flex-col items-center sm:items-end justify-between w-full sm:w-auto gap-3">
+                              <div className="flex items-center gap-1 bg-muted border border-border rounded-lg p-0.5">
+                                <Tooltip>
+                                  <TooltipTrigger>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon-xs"
+                                      onClick={() => {
+                                        if (
+                                          trigger.is_enabled &&
+                                          trigger.is_auto
+                                        )
+                                          setPauseWarningTrigger(trigger);
+                                        else handleToggle(trigger);
+                                      }}
+                                      disabled={isToggling}
+                                    >
+                                      {isToggling ? (
+                                        <Loader2
+                                          strokeWidth={1.5}
+                                          size={14}
+                                          className="animate-spin"
+                                        />
+                                      ) : trigger.is_enabled ? (
+                                        <Pause strokeWidth={1.5} size={14} />
+                                      ) : (
+                                        <Play strokeWidth={1.5} size={14} />
+                                      )}
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    {trigger.is_enabled ? "Pause" : "Resume"}
+                                  </TooltipContent>
+                                </Tooltip>
+                                <div className="w-px h-4 bg-border" />
+                                <Tooltip>
+                                  <TooltipTrigger>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon-xs"
+                                      onClick={() =>
+                                        setConfirmDeleteId(trigger.id)
+                                      }
+                                      disabled={isDeleting}
+                                      className="hover:text-destructive"
+                                    >
+                                      {isDeleting ? (
+                                        <Loader2
+                                          strokeWidth={1.5}
+                                          size={14}
+                                          className="animate-spin"
+                                        />
+                                      ) : (
+                                        <Trash2 strokeWidth={1.5} size={14} />
+                                      )}
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>Delete</TooltipContent>
+                                </Tooltip>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Badge
+                                  variant="secondary"
+                                  className="text-[11px]"
+                                >
+                                  <Activity strokeWidth={1.5} size={12} />
+                                  {trigger.event_count || 0}
+                                </Badge>
+                                {trigger.error_count > 0 && (
+                                  <Link
+                                    href={`/dashboard/feed?q=${encodeURIComponent(trigger.trigger_slug)}`}
+                                  >
+                                    <Badge
+                                      variant="destructive"
+                                      className="text-[11px]"
+                                    >
+                                      <X strokeWidth={1.5} size={12} />
+                                      {trigger.error_count} error
+                                      {trigger.error_count !== 1 ? "s" : ""}
+                                    </Badge>
+                                  </Link>
+                                )}
+                                <Button
+                                  variant={
+                                    expandedTriggerId === trigger.id
+                                      ? "secondary"
+                                      : "ghost"
+                                  }
+                                  size="xs"
+                                  onClick={() => {
+                                    if (expandedTriggerId === trigger.id)
+                                      setExpandedTriggerId(null);
+                                    else {
+                                      setExpandedTriggerId(trigger.id);
+                                      loadTriggerEvents(trigger.id);
+                                    }
+                                  }}
+                                >
+                                  <Clock strokeWidth={1.5} size={12} />
+                                  Events
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Expandable Event Log */}
+                          {expandedTriggerId === trigger.id && (
+                            <div className="mt-3 pt-3 border-t border-border">
+                              <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-2">
+                                Recent Events
+                              </p>
+                              {loadingEvents ? (
+                                <div className="flex items-center justify-center py-4">
+                                  <Loader2
+                                    strokeWidth={1.5}
+                                    className="animate-spin text-muted-foreground"
+                                    size={14}
+                                  />
+                                </div>
+                              ) : triggerEvents.length === 0 ? (
+                                <p className="text-[11px] text-muted-foreground py-2">
+                                  No events recorded for this trigger.
+                                </p>
+                              ) : (
+                                <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                                  {triggerEvents.map((ev) => {
+                                    const preview = extractPayloadPreview(
+                                      ev.payload,
+                                    );
+                                    return (
+                                      <div
+                                        key={ev.id}
+                                        className="flex flex-col gap-0.5 text-[11px] px-2.5 py-2 rounded-md bg-muted"
+                                      >
+                                        <div className="flex items-center justify-between">
+                                          <div className="flex items-center gap-2 min-w-0">
+                                            <div
+                                              className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${ev.status === "processed" ? "bg-emerald-500" : ev.status === "error" ? "bg-destructive" : ev.status === "skipped" ? "bg-amber-500" : "bg-muted-foreground"}`}
+                                            />
+                                            <span className="font-medium text-muted-foreground">
+                                              {ev.status}
+                                            </span>
+                                          </div>
+                                          <span className="text-muted-foreground tabular-nums ml-2 flex-shrink-0">
+                                            {new Date(
+                                              ev.created_at,
+                                            ).toLocaleString(undefined, {
+                                              month: "short",
+                                              day: "numeric",
+                                              hour: "2-digit",
+                                              minute: "2-digit",
+                                            })}
+                                          </span>
+                                        </div>
+                                        {ev.error ? (
+                                          <p className="text-destructive truncate pl-3.5">
+                                            {ev.error}
+                                          </p>
+                                        ) : preview ? (
+                                          <p className="text-muted-foreground truncate pl-3.5">
+                                            {preview}
+                                          </p>
+                                        ) : null}
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              ) : viewTab === "triggers" ? (
+                /* Empty State */
+                !showCreatePanel && (
+                  <div className="text-center py-20 px-4 border border-dashed border-border rounded-xl relative overflow-hidden">
+                    <div
+                      aria-hidden="true"
+                      className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md opacity-20 pointer-events-none"
+                    >
+                      <svg
+                        viewBox="0 0 400 100"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M50 50h100c20 0 20-30 40-30s20 30 40 30h120"
+                          stroke="url(#dash-gradient)"
+                          strokeWidth="2"
+                          strokeDasharray="4 4"
+                        />
+                        <defs>
+                          <linearGradient
+                            id="dash-gradient"
+                            x1="0"
+                            y1="0"
+                            x2="400"
+                            y2="0"
+                            gradientUnits="userSpaceOnUse"
+                          >
+                            <stop stopColor="white" stopOpacity="0" />
+                            <stop offset="0.5" stopColor="white" />
+                            <stop
+                              offset="1"
+                              stopColor="white"
+                              stopOpacity="0"
+                            />
+                          </linearGradient>
+                        </defs>
+                      </svg>
+                    </div>
+                    <div className="relative z-10 flex flex-col items-center gap-6">
+                      <div className="w-12 h-12 rounded-2xl bg-muted border border-border flex items-center justify-center">
+                        <Zap
+                          strokeWidth={1.5}
+                          size={20}
+                          className="text-muted-foreground"
+                        />
+                      </div>
+                      <div className="space-y-2 max-w-md mx-auto">
+                        <h3 className="text-lg font-medium text-foreground">
+                          Build your first automation
+                        </h3>
+                        <p className="text-sm text-muted-foreground leading-relaxed">
+                          Triggers quietly watch for events across your
+                          connected apps and execute workflows automatically.
+                        </p>
+                      </div>
+                      {integrations.length > 0 ? (
+                        <Button onClick={() => setShowCreatePanel(true)}>
+                          <Plus strokeWidth={1.5} size={16} />
+                          Create Trigger
+                        </Button>
+                      ) : (
+                        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-muted border border-border text-sm text-muted-foreground">
+                          <span>Connect an app in</span>
+                          <a
+                            href="/dashboard/integrations"
+                            className="text-foreground font-medium hover:underline"
+                          >
+                            Integrations
+                          </a>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )
+              ) : null}
+            </>
+          )}
+        </div>
+      </div>
+
+      <ConfirmDialog
+        open={!!confirmDeleteId}
+        title="Delete trigger?"
+        description="This trigger will be permanently removed and any active automations relying on it will stop working immediately."
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        variant="danger"
+        onConfirm={() => {
+          if (confirmDeleteId) handleDelete(confirmDeleteId);
+          setConfirmDeleteId(null);
+        }}
+        onCancel={() => setConfirmDeleteId(null)}
+      />
     </>
   );
 }
