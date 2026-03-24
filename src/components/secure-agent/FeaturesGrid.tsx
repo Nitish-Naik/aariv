@@ -27,6 +27,8 @@ const row2 = [
 ];
 
 function LogoMarquee() {
+  const lightBadgeLogos = new Set(["GitHub", "Stripe", "Notion"]);
+
   return (
     <div
       className="mt-6 overflow-hidden relative"
@@ -57,14 +59,16 @@ function LogoMarquee() {
           <div
             key={i}
             title={app.name}
-            className="w-10 h-10 rounded-xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center shrink-0"
+            className="w-10 h-10 rounded-xl bg-card/90 border border-border/60 flex items-center justify-center shrink-0"
           >
             <Image
               src={app.src}
               alt={app.name}
               width={20}
               height={20}
-              className="opacity-85"
+              className={`w-5 h-5 opacity-100 ${
+                lightBadgeLogos.has(app.name) ? "rounded-md bg-white p-0.5" : ""
+              }`}
             />
           </div>
         ))}
@@ -76,14 +80,16 @@ function LogoMarquee() {
           <div
             key={i}
             title={app.name}
-            className="w-10 h-10 rounded-xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center shrink-0"
+            className="w-10 h-10 rounded-xl bg-card/90 border border-border/60 flex items-center justify-center shrink-0"
           >
             <Image
               src={app.src}
               alt={app.name}
               width={20}
               height={20}
-              className="opacity-85"
+              className={`w-5 h-5 opacity-100 ${
+                lightBadgeLogos.has(app.name) ? "rounded-md bg-white p-0.5" : ""
+              }`}
             />
           </div>
         ))}
@@ -109,7 +115,7 @@ const pillars = [
     headline: "Your 3am colleague.",
     body: "CalmPilot runs on a schedule. Triggers fire when events happen. You wake up to a morning briefing — inbox triaged, Slack summarized, PRs reviewed — all done while you slept.",
     visual: (
-      <div className="mt-6 rounded-xl bg-white/[0.03] border border-white/[0.06] px-4 py-3 space-y-2.5">
+      <div className="mt-6 rounded-xl bg-muted/30 border border-border px-4 py-3 space-y-2.5">
         {[
           "Drafted replies to 7 customer emails",
           "Summarized #product in Slack (34 msgs)",
@@ -117,7 +123,7 @@ const pillars = [
         ].map((item, i) => (
           <div
             key={i}
-            className="flex items-center gap-2.5 text-[13px] text-zinc-400"
+            className="flex items-center gap-2.5 text-[13px] text-foreground/80"
           >
             <div className="w-4 h-4 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center shrink-0">
               <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
@@ -125,7 +131,7 @@ const pillars = [
             {item}
           </div>
         ))}
-        <div className="pt-1 text-[11px] text-zinc-600 flex items-center gap-1.5">
+        <div className="pt-1 text-[11px] text-muted-foreground flex items-center gap-1.5">
           <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
           Completed overnight · 6:42 AM
         </div>
@@ -145,14 +151,14 @@ const pillars = [
         <p className="text-[11px] text-amber-400 font-semibold uppercase tracking-wider">
           Needs your review
         </p>
-        <p className="text-[13px] text-zinc-300">
+        <p className="text-[13px] text-foreground/80">
           Send follow-up to 84 leads in HubSpot
         </p>
         <div className="flex gap-2 pt-1.5">
           <div className="px-3 py-1.5 rounded-lg bg-white text-zinc-950 text-xs font-semibold cursor-default select-none">
             Approve
           </div>
-          <div className="px-3 py-1.5 rounded-lg bg-white/[0.06] border border-white/10 text-zinc-400 text-xs cursor-default select-none">
+          <div className="px-3 py-1.5 rounded-lg bg-muted/50 border border-border text-muted-foreground text-xs cursor-default select-none">
             Dismiss
           </div>
         </div>
@@ -177,7 +183,7 @@ const pillars = [
         ].map((label) => (
           <div
             key={label}
-            className="flex items-center gap-2 text-[12px] text-zinc-400"
+            className="flex items-center gap-2 text-[12px] text-muted-foreground"
           >
             <div className="w-4 h-4 rounded-full bg-violet-500/10 border border-violet-500/20 flex items-center justify-center shrink-0">
               <svg
@@ -207,7 +213,7 @@ const pillars = [
 
 export default function FeaturesGrid() {
   return (
-    <section className="py-28 bg-black relative overflow-hidden">
+    <section className="py-28 bg-background relative overflow-hidden">
       <div
         aria-hidden="true"
         className="absolute top-0 left-0 w-full h-24 bg-gradient-to-b from-black to-transparent z-10 pointer-events-none"
@@ -219,7 +225,7 @@ export default function FeaturesGrid() {
             initial={{ opacity: 0, y: 12 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-xs text-zinc-500 uppercase tracking-widest mb-3 font-medium"
+            className="text-xs text-muted-foreground uppercase tracking-widest mb-3 font-medium"
           >
             Built different
           </motion.p>
@@ -228,10 +234,10 @@ export default function FeaturesGrid() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.05 }}
-            className="text-3xl md:text-4xl font-bold text-white tracking-tight"
+            className="text-3xl md:text-4xl font-bold text-foreground tracking-tight"
           >
             Stop doing work{" "}
-            <span className="text-zinc-500">that shouldn't need you.</span>
+            <span className="text-muted-foreground">that shouldn't need you.</span>
           </motion.h2>
         </div>
 
@@ -247,7 +253,7 @@ export default function FeaturesGrid() {
                 duration: 0.55,
                 ease: [0.16, 1, 0.3, 1],
               }}
-              className={`${p.span} group relative rounded-2xl bg-zinc-950 border border-white/[0.07] ${p.border} transition-colors duration-300 p-7 overflow-hidden`}
+              className={`${p.span} group relative rounded-2xl bg-card border border-border ${p.border} transition-colors duration-300 p-7 overflow-hidden`}
             >
               <div
                 className={`absolute top-0 left-0 right-0 h-32 bg-gradient-to-b ${p.accent} pointer-events-none`}
@@ -255,18 +261,18 @@ export default function FeaturesGrid() {
 
               <div className="relative z-10">
                 <div className="flex items-center gap-2.5 mb-5">
-                  <div className="w-8 h-8 rounded-lg bg-white/[0.04] border border-white/[0.08] flex items-center justify-center">
+                  <div className="w-8 h-8 rounded-lg bg-muted/40 border border-border flex items-center justify-center">
                     {p.icon}
                   </div>
-                  <span className="text-[11px] text-zinc-500 font-medium uppercase tracking-widest">
+                  <span className="text-[11px] text-muted-foreground font-medium uppercase tracking-widest">
                     {p.eyebrow}
                   </span>
                 </div>
 
-                <h3 className="text-xl font-semibold text-white tracking-tight mb-3">
+                <h3 className="text-xl font-semibold text-foreground tracking-tight mb-3">
                   {p.headline}
                 </h3>
-                <p className="text-zinc-400 text-[14px] leading-relaxed">
+                <p className="text-muted-foreground text-[14px] leading-relaxed">
                   {p.body}
                 </p>
 

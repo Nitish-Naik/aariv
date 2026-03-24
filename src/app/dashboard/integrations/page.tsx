@@ -1,7 +1,6 @@
 "use client";
 
 import { ConfirmDialog } from "@/components/ConfirmDialog";
-import { Breadcrumb } from "@/components/dashboard/Breadcrumb";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/context/ToastContext";
 import { api } from "@/lib/api";
@@ -676,7 +675,6 @@ export default function IntegrationsPage() {
       {/* Page header */}
       <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-border flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
         <div>
-          <Breadcrumb />
           <h1 className="text-sm font-semibold text-foreground">
             Integrations
           </h1>

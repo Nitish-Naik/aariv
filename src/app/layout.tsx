@@ -3,10 +3,11 @@ import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import { Providers } from "./providers";
 
-const inter = Inter({ subsets: ['latin'], variable: '--font-sans' });
+const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://calmpilot.app"),
@@ -80,9 +81,7 @@ export const metadata: Metadata = {
     title: "CalmPilot",
   },
   icons: {
-    icon: [
-      { url: "/icons/icon-192.svg", type: "image/svg+xml" },
-    ],
+    icon: [{ url: "/icons/icon-192.svg", type: "image/svg+xml" }],
     apple: "/icons/icon-192.svg",
   },
   robots: {
@@ -193,6 +192,10 @@ const faqJsonLd = {
   ],
 };
 
+const simpleAnalyticsEnabled =
+  process.env.NODE_ENV === "production" ||
+  process.env.NEXT_PUBLIC_SIMPLE_ANALYTICS_ENABLED === "true";
+
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
@@ -210,7 +213,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" suppressHydrationWarning className={cn("font-sans", inter.variable)}>
+    <html
+      lang="en"
+      suppressHydrationWarning
+      className={cn("font-sans", inter.variable)}
+    >
       <head>
         <script
           type="application/ld+json"
@@ -224,6 +231,22 @@ export default function RootLayout({
       <body className="antialiased overflow-x-hidden">
         <Providers>{children}</Providers>
 
+        {simpleAnalyticsEnabled && (
+          <>
+            <Script
+              src="https://scripts.simpleanalyticscdn.com/latest.js"
+              strategy="afterInteractive"
+              data-collect-dnt="true"
+            />
+            <noscript>
+              <img
+                src="https://queue.simpleanalyticscdn.com/noscript.gif?collect-dnt=true"
+                alt=""
+                referrerPolicy="no-referrer-when-downgrade"
+              />
+            </noscript>
+          </>
+        )}
         <Analytics />
         <SpeedInsights />
         <script

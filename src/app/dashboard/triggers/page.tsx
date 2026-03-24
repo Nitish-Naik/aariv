@@ -1,7 +1,6 @@
 "use client";
 
 import { ConfirmDialog } from "@/components/ConfirmDialog";
-import { Breadcrumb } from "@/components/dashboard/Breadcrumb";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -684,7 +683,6 @@ export default function TriggersPage() {
         {/* Page header */}
         <div className="px-4 sm:px-6 py-4 border-b border-border flex items-center justify-between shrink-0">
           <div>
-            <Breadcrumb />
             <h1 className="text-sm font-semibold text-foreground">
               Automations
             </h1>

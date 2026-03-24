@@ -35,7 +35,7 @@ export default function HowItWorks() {
     ];
 
     return (
-        <section className="py-32 bg-black relative overflow-hidden">
+        <section className="py-32 bg-background relative overflow-hidden">
             <div aria-hidden="true" className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl h-[400px] bg-indigo-500/5 rounded-[100%] blur-[120px] pointer-events-none z-0" />
 
             <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
@@ -44,7 +44,7 @@ export default function HowItWorks() {
                         initial={{ opacity: 0, scale: 0.9 }}
                         whileInView={{ opacity: 1, scale: 1 }}
                         viewport={{ once: true }}
-                        className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-zinc-400 text-sm font-medium mb-6"
+                        className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-muted/40 border border-border text-muted-foreground text-sm font-medium mb-6"
                     >
                         <span>How it works</span>
                     </motion.div>
@@ -53,7 +53,7 @@ export default function HowItWorks() {
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
                         transition={{ delay: 0.1 }}
-                        className="text-4xl md:text-5xl font-semibold text-white tracking-tight mb-5 font-sans"
+                        className="text-4xl md:text-5xl font-semibold text-foreground tracking-tight mb-5 font-sans"
                     >
                         Up and running in minutes.
                     </motion.h2>
@@ -62,7 +62,7 @@ export default function HowItWorks() {
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
                         transition={{ delay: 0.2 }}
-                        className="text-lg text-zinc-400 font-light max-w-xl mx-auto leading-relaxed"
+                        className="text-lg text-muted-foreground font-light max-w-xl mx-auto leading-relaxed"
                     >
                         No engineers needed. No configuration rabbit holes. Three steps and your AI is working for you.
                     </motion.p>
@@ -80,16 +80,16 @@ export default function HowItWorks() {
                             whileInView={{ opacity: 1, y: 0 }}
                             viewport={{ once: true }}
                             transition={{ delay: i * 0.15, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-                            className="relative bg-black border border-white/10 rounded-xl p-8 hover:bg-neutral-900 transition-colors"
+                            className="relative bg-background border border-border rounded-xl p-8 hover:bg-muted transition-colors"
                         >
                             <div className="flex items-start justify-between mb-6">
                                 <div className={`w-12 h-12 rounded-2xl border flex items-center justify-center shadow-lg ${colorMap[step.color]}`}>
                                     {step.icon}
                                 </div>
-                                <span className="text-4xl font-bold text-white/5 font-mono">{step.number}</span>
+                                <span className="text-4xl font-bold text-foreground/5 font-mono">{step.number}</span>
                             </div>
-                            <h3 className="text-lg font-semibold text-white mb-3 tracking-tight">{step.title}</h3>
-                            <p className="text-zinc-400 font-light leading-relaxed text-sm">{step.description}</p>
+                            <h3 className="text-lg font-semibold text-foreground mb-3 tracking-tight">{step.title}</h3>
+                            <p className="text-muted-foreground font-light leading-relaxed text-sm">{step.description}</p>
                         </motion.div>
                     ))}
                 </div>

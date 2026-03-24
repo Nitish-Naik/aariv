@@ -76,22 +76,22 @@ const comparisons = [
 
 export default function WhatIsCalmPilot() {
   return (
-    <section className="py-24 lg:py-32 bg-zinc-950 border-t border-white/5">
+    <section className="py-24 lg:py-32 bg-card border-t border-border">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
         >
-          <h2 className="text-3xl md:text-4xl font-semibold text-white mb-8 tracking-tight">
+          <h2 className="text-3xl md:text-4xl font-semibold text-foreground mb-8 tracking-tight">
             What is CalmPilot?
           </h2>
 
-          <div className="space-y-5 text-zinc-300 leading-relaxed text-lg font-light mb-16">
+          <div className="space-y-5 text-foreground/80 leading-relaxed text-lg font-light mb-16">
             <p>
-              <strong className="text-white font-medium">CalmPilot</strong> is
+              <strong className="text-foreground font-medium">CalmPilot</strong> is
               an{" "}
-              <strong className="text-white font-medium">
+              <strong className="text-foreground font-medium">
                 AI-powered digital proxy
               </strong>{" "}
               — a 24/7 AI agent that connects to your apps through secure OAuth
@@ -111,7 +111,7 @@ export default function WhatIsCalmPilot() {
           </div>
 
           {/* Capabilities grid */}
-          <h3 className="text-xl font-semibold text-white mb-6">
+          <h3 className="text-xl font-semibold text-foreground mb-6">
             Key capabilities
           </h3>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-16">
@@ -122,12 +122,12 @@ export default function WhatIsCalmPilot() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.06 }}
-                className="bg-black border border-white/10 rounded-xl p-5"
+                className="bg-background border border-border rounded-xl p-5"
               >
-                <div className="text-sm font-semibold text-white mb-2">
+                <div className="text-sm font-semibold text-foreground mb-2">
                   {cap.label}
                 </div>
-                <div className="text-sm text-zinc-400 font-light leading-relaxed">
+                <div className="text-sm text-muted-foreground font-light leading-relaxed">
                   {cap.desc}
                 </div>
               </motion.div>
@@ -135,23 +135,23 @@ export default function WhatIsCalmPilot() {
           </div>
 
           {/* Comparison table */}
-          <h3 className="text-xl font-semibold text-white mb-6">
+          <h3 className="text-xl font-semibold text-foreground mb-6">
             CalmPilot vs the alternatives
           </h3>
-          <div className="overflow-x-auto rounded-2xl border border-white/5">
+          <div className="overflow-x-auto rounded-2xl border border-border">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-black border-b border-white/10">
-                  <th className="text-left px-6 py-4 text-zinc-400 font-medium">
+                <tr className="bg-background border-b border-border">
+                  <th className="text-left px-6 py-4 text-muted-foreground font-medium">
                     Feature
                   </th>
                   <th className="px-6 py-4 text-indigo-400 font-semibold text-center">
                     CalmPilot
                   </th>
-                  <th className="px-6 py-4 text-zinc-500 font-medium text-center">
+                  <th className="px-6 py-4 text-muted-foreground font-medium text-center">
                     ChatGPT
                   </th>
-                  <th className="px-6 py-4 text-zinc-500 font-medium text-center">
+                  <th className="px-6 py-4 text-muted-foreground font-medium text-center">
                     Zapier
                   </th>
                 </tr>
@@ -160,28 +160,28 @@ export default function WhatIsCalmPilot() {
                 {comparisons.map((row, i) => (
                   <tr
                     key={i}
-                    className="border-b border-white/5 last:border-0 hover:bg-white/[0.01] transition-colors"
+                    className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors"
                   >
-                    <td className="px-6 py-4 text-zinc-300">{row.feature}</td>
+                    <td className="px-6 py-4 text-foreground/80">{row.feature}</td>
                     <td className="px-6 py-4 text-center">
                       {row.calmpilot ? (
                         <span className="text-emerald-400 font-bold">✓</span>
                       ) : (
-                        <span className="text-zinc-700">—</span>
+                        <span className="text-muted-foreground">—</span>
                       )}
                     </td>
                     <td className="px-6 py-4 text-center">
                       {row.chatgpt ? (
                         <span className="text-emerald-400 font-bold">✓</span>
                       ) : (
-                        <span className="text-zinc-700">—</span>
+                        <span className="text-muted-foreground">—</span>
                       )}
                     </td>
                     <td className="px-6 py-4 text-center">
                       {row.zapier ? (
                         <span className="text-emerald-400 font-bold">✓</span>
                       ) : (
-                        <span className="text-zinc-700">—</span>
+                        <span className="text-muted-foreground">—</span>
                       )}
                     </td>
                   </tr>

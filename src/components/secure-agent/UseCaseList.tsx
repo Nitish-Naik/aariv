@@ -14,7 +14,7 @@ export default function UseCaseList() {
   ];
 
   return (
-    <section className="py-20 sm:py-32 bg-black relative overflow-hidden">
+    <section className="py-20 sm:py-32 bg-background relative overflow-hidden">
       {/* Ambient Background Glows */}
       <div
         aria-hidden="true"
@@ -37,7 +37,7 @@ export default function UseCaseList() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.1 }}
-            className="text-3xl sm:text-4xl md:text-5xl font-semibold text-white tracking-tight mb-4 sm:mb-6 font-sans"
+            className="text-3xl sm:text-4xl md:text-5xl font-semibold text-foreground tracking-tight mb-4 sm:mb-6 font-sans"
           >
             Prepared, never rushed.
           </motion.h2>
@@ -46,7 +46,7 @@ export default function UseCaseList() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.2 }}
-            className="text-base sm:text-lg md:text-xl text-zinc-400 font-light max-w-2xl mx-auto leading-relaxed"
+            className="text-base sm:text-lg md:text-xl text-muted-foreground font-light max-w-2xl mx-auto leading-relaxed"
           >
             Optional for power users: provide a natural language prompt and the
             agent orchestrates workflows across your tools while you focus on
@@ -54,22 +54,22 @@ export default function UseCaseList() {
           </motion.p>
         </div>
 
-        <div className="bg-black border border-white/10 rounded-xl p-1.5 sm:p-2 md:p-3 shadow-2xl relative overflow-hidden">
+        <div className="bg-background border border-border rounded-xl p-1.5 sm:p-2 md:p-3 shadow-2xl relative overflow-hidden">
           {/* Inner glowing ring */}
           <div className="absolute inset-0 rounded-[2rem] ring-1 ring-inset ring-white/5 pointer-events-none" />
 
           {/* Simulated Terminal Window */}
-          <div className="bg-black rounded-lg border border-white/5 overflow-hidden flex flex-col h-full relative z-10">
+          <div className="bg-background rounded-lg border border-border overflow-hidden flex flex-col h-full relative z-10">
             {/* Terminal Header */}
-            <div className="h-11 sm:h-12 border-b border-white/5 flex items-center px-3 sm:px-4 bg-white/[0.02]">
+            <div className="h-11 sm:h-12 border-b border-border flex items-center px-3 sm:px-4 bg-muted/25">
               <div className="flex gap-2 mr-4">
                 <div className="w-3 h-3 rounded-full bg-zinc-800" />
                 <div className="w-3 h-3 rounded-full bg-zinc-800" />
                 <div className="w-3 h-3 rounded-full bg-zinc-800" />
               </div>
-              <div className="flex items-center gap-2 px-2.5 sm:px-3 py-1 rounded-md bg-white/5 border border-white/5 mx-auto -ml-6 sm:-ml-8">
+              <div className="flex items-center gap-2 px-2.5 sm:px-3 py-1 rounded-md bg-muted/40 border border-border mx-auto -ml-6 sm:-ml-8">
                 <Logo className="w-4 h-4 opacity-50" />
-                <span className="text-xs text-zinc-400 font-mono">
+                <span className="text-xs text-muted-foreground font-mono">
                   calmpilot_cli
                 </span>
               </div>
@@ -84,7 +84,7 @@ export default function UseCaseList() {
                   whileInView={{ opacity: 1, x: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: idx * 0.15, duration: 0.5 }}
-                  className="group flex items-start gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl hover:bg-white/[0.02] transition-colors relative"
+                  className="group flex items-start gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl hover:bg-muted/25 transition-colors relative"
                 >
                   {/* Line Indicator */}
                   <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-0 bg-indigo-500 group-hover:h-1/2 transition-all rounded-r-full" />
@@ -96,7 +96,7 @@ export default function UseCaseList() {
                     />
                   </div>
                   <div className="flex-1">
-                    <p className="text-zinc-300 text-[13px] sm:text-[15px] leading-7 sm:leading-relaxed font-sans sm:font-mono group-hover:text-white transition-colors">
+                    <p className="text-foreground/80 text-[13px] sm:text-[15px] leading-7 sm:leading-relaxed font-sans sm:font-mono group-hover:text-foreground transition-colors">
                       <span className="text-indigo-400 font-bold mr-2">❯</span>
                       {`"${prompt}"`}
                     </p>
@@ -104,7 +104,7 @@ export default function UseCaseList() {
                   <div className="hidden sm:block opacity-0 group-hover:opacity-100 transition-opacity self-center">
                     <ArrowRight
                       strokeWidth={1.5}
-                      className="w-5 h-5 text-zinc-500"
+                      className="w-5 h-5 text-muted-foreground"
                     />
                   </div>
                 </motion.div>

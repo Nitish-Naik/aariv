@@ -28,7 +28,7 @@ const points = [
 
 export default function SecurityBand() {
     return (
-        <section className="py-24 bg-zinc-950 border-t border-white/[0.05] relative overflow-hidden">
+        <section className="py-24 bg-card border-t border-border relative overflow-hidden">
             {/* Subtle background glow */}
             <div
                 aria-hidden="true"
@@ -55,17 +55,17 @@ export default function SecurityBand() {
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
                         transition={{ delay: 0.05 }}
-                        className="text-3xl md:text-4xl font-bold text-white tracking-tight mb-4"
+                        className="text-3xl md:text-4xl font-bold text-foreground tracking-tight mb-4"
                     >
                         It acts on your behalf.{" "}
-                        <span className="text-zinc-500">Not in your name.</span>
+                        <span className="text-muted-foreground">Not in your name.</span>
                     </motion.h2>
                     <motion.p
                         initial={{ opacity: 0, y: 16 }}
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
                         transition={{ delay: 0.1 }}
-                        className="text-zinc-400 text-[15px] leading-relaxed"
+                        className="text-muted-foreground text-[15px] leading-relaxed"
                     >
                         CalmPilot never stores passwords, never touches your machine, and pauses before anything irreversible. You stay in control — even when you&apos;re not watching.
                     </motion.p>
@@ -79,13 +79,13 @@ export default function SecurityBand() {
                             whileInView={{ opacity: 1, y: 0 }}
                             viewport={{ once: true }}
                             transition={{ delay: i * 0.08, duration: 0.5 }}
-                            className="rounded-2xl bg-black border border-white/[0.07] hover:border-violet-500/20 transition-colors duration-300 p-6"
+                            className="rounded-2xl bg-background border border-border hover:border-violet-500/20 transition-colors duration-300 p-6"
                         >
                             <div className="w-9 h-9 rounded-xl bg-violet-500/10 border border-violet-500/15 flex items-center justify-center mb-5">
                                 {pt.icon}
                             </div>
-                            <h3 className="text-sm font-semibold text-white mb-2">{pt.title}</h3>
-                            <p className="text-zinc-500 text-[13px] leading-relaxed">{pt.body}</p>
+                            <h3 className="text-sm font-semibold text-foreground mb-2">{pt.title}</h3>
+                            <p className="text-muted-foreground text-[13px] leading-relaxed">{pt.body}</p>
                         </motion.div>
                     ))}
                 </div>

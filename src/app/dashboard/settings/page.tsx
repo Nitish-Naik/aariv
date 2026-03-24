@@ -1,7 +1,6 @@
 "use client";
 
 import { ConfirmDialog } from "@/components/ConfirmDialog";
-import { Breadcrumb } from "@/components/dashboard/Breadcrumb";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 import { useToast } from "@/context/ToastContext";
@@ -846,7 +845,6 @@ export default function SettingsPage() {
       {/* Page header */}
       <div className="px-4 sm:px-6 py-4 border-b border-border flex items-center justify-between shrink-0">
         <div>
-          <Breadcrumb />
           <h1 className="text-sm font-semibold text-foreground">Settings</h1>
           <p className="text-xs text-muted-foreground mt-0.5">
             Manage your account, preferences, and data.

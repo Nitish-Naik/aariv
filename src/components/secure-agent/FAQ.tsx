@@ -53,7 +53,7 @@ const faqs = [
 
 export default function FAQ() {
   return (
-    <section className="py-24 lg:py-32 bg-black border-t border-white/10">
+    <section className="py-24 lg:py-32 bg-background border-t border-border">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -61,10 +61,10 @@ export default function FAQ() {
           viewport={{ once: true }}
           className="text-center mb-16 space-y-4"
         >
-          <h2 className="text-3xl md:text-4xl font-semibold text-white tracking-tight">
+          <h2 className="text-3xl md:text-4xl font-semibold text-foreground tracking-tight">
             Frequently asked questions
           </h2>
-          <p className="text-zinc-400 font-light">
+          <p className="text-muted-foreground font-light">
             Everything you need to know about CalmPilot.
           </p>
         </motion.div>
@@ -84,12 +84,12 @@ export default function FAQ() {
             >
               <AccordionItem
                 value={`item-${idx}`}
-                className="border border-white/10 rounded-xl overflow-hidden bg-black px-1 data-[state=open]:bg-neutral-900 transition-colors"
+                className="border border-border rounded-xl overflow-hidden bg-background px-1 data-[state=open]:bg-card transition-colors"
               >
-                <AccordionTrigger className="w-full text-left px-5 py-5 text-white font-medium hover:no-underline [&[data-state=open]]:text-indigo-400">
+                <AccordionTrigger className="w-full text-left px-5 py-5 text-foreground font-medium hover:no-underline [&[data-state=open]]:text-indigo-400">
                   {faq.question}
                 </AccordionTrigger>
-                <AccordionContent className="px-5 pb-5 text-neutral-400 leading-relaxed text-sm">
+                <AccordionContent className="px-5 pb-5 text-muted-foreground leading-relaxed text-sm">
                   {faq.answer}
                 </AccordionContent>
               </AccordionItem>

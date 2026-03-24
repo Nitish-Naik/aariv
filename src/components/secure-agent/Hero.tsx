@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { trackEvent } from "@/lib/analytics";
 import { motion } from "framer-motion";
 import {
     AlertCircle,
@@ -103,6 +104,10 @@ export default function Hero() {
 
       if (!res.ok) {
         setError(data.detail || "Something went wrong");
+        trackEvent("waitlist_join_failed", {
+          source: "hero",
+          has_ref: Boolean(urlRef),
+        });
         return;
       }
 
@@ -111,8 +116,16 @@ export default function Hero() {
       setTotal(data.total);
       setRefCode(data.referral_code);
       setRefCount(data.referral_count || 0);
+      trackEvent("waitlist_joined", {
+        source: "hero",
+        has_ref: Boolean(urlRef),
+      });
     } catch {
       setError("Could not connect. Please try again.");
+      trackEvent("waitlist_join_failed", {
+        source: "hero",
+        has_ref: Boolean(urlRef),
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -122,6 +135,7 @@ export default function Hero() {
     if (!refCode) return;
     const link = `${window.location.origin}?ref=${refCode}`;
     navigator.clipboard.writeText(link);
+    trackEvent("waitlist_referral_link_copied", { source: "hero" });
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }
@@ -129,7 +143,7 @@ export default function Hero() {
   return (
     <section
       id="waitlist"
-      className="relative overflow-hidden pt-14 pb-16 lg:pt-16 lg:pb-20 bg-black selection:bg-neutral-800"
+      className="relative overflow-hidden pt-14 pb-16 lg:pt-16 lg:pb-20 bg-background selection:bg-neutral-800"
     >
       {/* Background — subtle grid */}
       <div
@@ -154,7 +168,7 @@ export default function Hero() {
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
-              className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-neutral-900 border border-white/10 text-neutral-400 text-xs font-medium uppercase tracking-wider"
+              className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-card border border-border text-muted-foreground text-xs font-medium uppercase tracking-wider"
             >
               <Logo className="w-3.5 h-3.5" />
               <span>AI-powered digital proxy</span>
@@ -170,7 +184,7 @@ export default function Hero() {
                   delay: 0.1,
                   ease: [0.16, 1, 0.3, 1],
                 }}
-                className="text-[2.35rem] sm:text-5xl lg:text-7xl font-bold tracking-tight text-white leading-[1.02] sm:leading-[0.98]"
+                className="text-[2.35rem] sm:text-5xl lg:text-7xl font-bold tracking-tight text-foreground leading-[1.02] sm:leading-[0.98]"
               >
                 Your AI handles
                 <br />
@@ -184,7 +198,7 @@ export default function Hero() {
                   delay: 0.2,
                   ease: [0.16, 1, 0.3, 1],
                 }}
-                className="text-[1.85rem] sm:text-4xl lg:text-5xl font-serif font-medium italic text-zinc-500 leading-[1.14] sm:leading-[1.08] pt-0.5 sm:pt-1"
+                className="text-[1.85rem] sm:text-4xl lg:text-5xl font-serif font-medium italic text-muted-foreground leading-[1.14] sm:leading-[1.08] pt-0.5 sm:pt-1"
               >
                 You just review.
               </motion.p>
@@ -197,11 +211,11 @@ export default function Hero() {
               transition={{ duration: 0.6, delay: 0.3 }}
               className="space-y-2.5"
             >
-              <p className="text-base sm:text-lg text-zinc-400 leading-relaxed font-light">
+              <p className="text-base sm:text-lg text-muted-foreground leading-relaxed font-light">
                 Connect 1000+ apps via OAuth, then let your agent run while you
                 sleep.
               </p>
-              <ul className="text-sm sm:text-[15px] text-zinc-500 leading-relaxed space-y-1.5">
+              <ul className="text-sm sm:text-[15px] text-muted-foreground leading-relaxed space-y-1.5">
                 <li>- Secure OAuth connections. No passwords stored.</li>
                 <li>- Describe workflows in plain English.</li>
                 <li>
@@ -228,7 +242,7 @@ export default function Hero() {
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="Enter your email"
                       required
-                      className="h-10 sm:max-w-[280px] bg-black border-white/20 text-white placeholder:text-neutral-500 focus-visible:ring-1 focus-visible:ring-white focus-visible:border-white transition-all text-sm rounded-md"
+                      className="h-10 sm:max-w-[280px] bg-background border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:border-ring transition-all text-sm rounded-md"
                     />
                     <Button
                       type="submit"
@@ -253,19 +267,19 @@ export default function Hero() {
                   )}
                   <div className="flex items-center gap-2.5 sm:gap-3 mt-3 flex-wrap">
                     {total !== null && total > 0 && (
-                      <div className="flex items-center gap-1.5 text-sm text-zinc-500">
+                      <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
                         <Users strokeWidth={1.5} className="w-3.5 h-3.5" />
-                        {/* <span><span className="text-zinc-300 font-medium">{total.toLocaleString()}</span> on the waitlist</span> */}
+                        {/* <span><span className="text-foreground/80 font-medium">{total.toLocaleString()}</span> on the waitlist</span> */}
                       </div>
                     )}
-                    <span className="text-sm text-zinc-600">
+                    <span className="text-sm text-muted-foreground">
                       Free early access
                     </span>
                   </div>
                 </>
               ) : (
                 /* ── Post-signup: Position + Referral ── */
-                <div className="rounded-2xl bg-white/[0.04] border border-white/[0.08] p-6 space-y-4">
+                <div className="rounded-2xl bg-muted/40 border border-border p-6 space-y-4">
                   <div className="flex items-center gap-2 text-emerald-400">
                     <Check strokeWidth={1.5} className="w-5 h-5" />
                     <span className="font-semibold">
@@ -275,35 +289,35 @@ export default function Hero() {
 
                   <div className="flex items-center gap-6">
                     <div>
-                      <p className="text-3xl font-bold text-white tabular-nums">
+                      <p className="text-3xl font-bold text-foreground tabular-nums">
                         #{position}
                       </p>
-                      <p className="text-xs text-zinc-500 mt-0.5">
+                      <p className="text-xs text-muted-foreground mt-0.5">
                         Your position
                       </p>
                     </div>
-                    <div className="w-px h-10 bg-white/[0.08]" />
+                    <div className="w-px h-10 bg-border/60" />
                     <div>
-                      <p className="text-3xl font-bold text-zinc-400 tabular-nums">
+                      <p className="text-3xl font-bold text-muted-foreground tabular-nums">
                         {total?.toLocaleString()}
                       </p>
-                      <p className="text-xs text-zinc-500 mt-0.5">
+                      <p className="text-xs text-muted-foreground mt-0.5">
                         Total joined
                       </p>
                     </div>
                   </div>
 
                   {/* Skip the line */}
-                  <div className="pt-3 border-t border-white/[0.06]">
-                    <p className="text-sm text-zinc-300 font-medium mb-2">
+                  <div className="pt-3 border-t border-border">
+                    <p className="text-sm text-foreground/80 font-medium mb-2">
                       Skip the line — refer friends to move up
                     </p>
-                    <p className="text-xs text-zinc-500 mb-3">
+                    <p className="text-xs text-muted-foreground mb-3">
                       Each referral moves you up 10 spots.{" "}
                       {refCount > 0 && `You've referred ${refCount} so far.`}
                     </p>
                     <div className="flex items-center gap-2">
-                      <div className="flex-1 py-2.5 px-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-zinc-400 font-mono truncate">
+                      <div className="flex-1 py-2.5 px-3 rounded-xl bg-muted/40 border border-border text-sm text-muted-foreground font-mono truncate">
                         {`${typeof window !== "undefined" ? window.location.origin : "calmpilot.app"}?ref=${refCode}`}
                       </div>
                       <Button
@@ -334,7 +348,7 @@ export default function Hero() {
               animate={{ opacity: 1 }}
               transition={{ duration: 0.6, delay: 0.65 }}
             >
-              <p className="text-[11px] text-zinc-400 mb-3 uppercase tracking-widest">
+              <p className="text-[11px] text-muted-foreground mb-3 uppercase tracking-widest">
                 Works with your stack
               </p>
               <div className="flex items-center gap-2 flex-wrap">
@@ -345,7 +359,7 @@ export default function Hero() {
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: 0.65 + i * 0.05, duration: 0.3 }}
                     whileHover={{ y: -1 }}
-                    className="group w-9 h-9 rounded-xl bg-white/[0.05] border border-white/[0.1] flex items-center justify-center hover:bg-white/[0.1] hover:border-white/[0.16] transition-all duration-200"
+                    className="group w-9 h-9 rounded-xl bg-muted/40 border border-border flex items-center justify-center hover:bg-muted/60 hover:border-border transition-all duration-200"
                     title={app.name}
                   >
                     <Image
@@ -357,7 +371,7 @@ export default function Hero() {
                     />
                   </motion.div>
                 ))}
-                <span className="ml-2 text-xs text-zinc-300 font-medium tracking-wide">
+                <span className="ml-2 text-xs text-foreground/80 font-medium tracking-wide">
                   +1,000 more apps
                 </span>
               </div>
@@ -367,7 +381,7 @@ export default function Hero() {
           {/* ── Right Column: Morning Brief Card ── */}
           <div className="relative flex-shrink-0 w-full lg:w-auto">
             <div className="mb-2 flex justify-end">
-              <span className="text-[10px] text-zinc-500 uppercase tracking-[0.18em] font-semibold">
+              <span className="text-[10px] text-muted-foreground uppercase tracking-[0.18em] font-semibold">
                 Example output
               </span>
             </div>
@@ -379,18 +393,18 @@ export default function Hero() {
                 delay: 0.35,
                 ease: [0.16, 1, 0.3, 1],
               }}
-              className="relative w-full sm:w-[22rem] lg:w-[24rem] bg-black border border-white/10 rounded-xl shadow-sm overflow-hidden"
+              className="relative w-full sm:w-[22rem] lg:w-[24rem] bg-background border border-border rounded-xl shadow-sm overflow-hidden"
             >
               {/* Card Header */}
-              <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
+              <div className="flex items-center justify-between px-5 py-4 border-b border-border">
                 <div className="flex items-center gap-2.5">
                   <Logo className="w-5 h-5" />
-                  <span className="text-white text-sm font-semibold tracking-wide">
+                  <span className="text-foreground text-sm font-semibold tracking-wide">
                     Morning Brief
                   </span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="text-zinc-600 text-xs font-mono tabular-nums">
+                  <span className="text-muted-foreground text-xs font-mono tabular-nums">
                     6:42 AM
                   </span>
                   <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20">
@@ -404,7 +418,7 @@ export default function Hero() {
 
               {/* Brief Items */}
               <div className="px-5 pt-4 pb-3 space-y-3">
-                <p className="text-[10px] text-zinc-600 uppercase tracking-widest font-semibold mb-3">
+                <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold mb-3">
                   Completed overnight
                 </p>
                 {briefItems.map((item, i) => (
@@ -423,7 +437,7 @@ export default function Hero() {
                       strokeWidth={1.5}
                       className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5"
                     />
-                    <span className="text-zinc-300 text-[13px] leading-snug">
+                    <span className="text-foreground/80 text-[13px] leading-snug">
                       {item.text}
                     </span>
                   </motion.div>
@@ -431,7 +445,7 @@ export default function Hero() {
               </div>
 
               {/* Divider */}
-              <div className="mx-5 h-px bg-white/[0.05]" />
+              <div className="mx-5 h-px bg-muted/40" />
 
               {/* Alert */}
               <div className="mx-4 my-3 flex items-center gap-2.5 px-4 py-3 rounded-xl bg-amber-500/[0.07] border border-amber-500/15">
@@ -453,12 +467,12 @@ export default function Hero() {
                 ].map((stat, i) => (
                   <div
                     key={i}
-                    className="bg-white/[0.02] border border-white/[0.05] rounded-xl px-2 py-2.5 text-center"
+                    className="bg-muted/25 border border-border rounded-xl px-2 py-2.5 text-center"
                   >
-                    <div className="text-white text-sm font-semibold tabular-nums">
+                    <div className="text-foreground text-sm font-semibold tabular-nums">
                       {stat.value}
                     </div>
-                    <div className="text-zinc-600 text-[10px] mt-0.5 font-medium">
+                    <div className="text-muted-foreground text-[10px] mt-0.5 font-medium">
                       {stat.label}
                     </div>
                   </div>

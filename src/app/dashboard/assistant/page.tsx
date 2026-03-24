@@ -4,31 +4,31 @@ import { DataCard, PulsingAvatar } from "@/components";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { useAuth } from "@/context/AuthContext";
 import { useLogo } from "@/context/LogoContext";
+import { trackEvent } from "@/lib/analytics";
 import { api } from "@/lib/api";
 import { getAppLogo } from "@/lib/platform-logos";
 import type { ChatMessage, Conversation } from "@/lib/types";
 import { motion } from "framer-motion";
 import {
-  Check,
-  ChevronDown,
-  Clock,
-  Copy,
-  FileUp,
-  Loader2,
-  Menu,
-  MessageSquare,
-  PanelLeftClose,
-  Plus,
-  Send,
-  Shield,
-  Trash2,
-  X
+    Check,
+    ChevronDown,
+    Clock,
+    Copy,
+    FileUp,
+    Loader2,
+    Menu,
+    MessageSquare,
+    PanelLeftClose,
+    Plus,
+    Send,
+    Shield,
+    Trash2,
+    X,
 } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-
 
 // Detect completed actions in the agent's final response text
 const ACTION_PATTERNS: { re: RegExp; label: string }[] = [
@@ -387,6 +387,12 @@ function AssistantPageInner() {
     const messageText = text || inputText.trim();
     if (!messageText || !user?.id) return;
 
+    trackEvent("assistant_message_sent", {
+      model: selectedModel,
+      source: text ? "auto_prompt" : "manual",
+      is_new_chat: messages.length === 0,
+    });
+
     // Open logs panel automatically on send
     setIsLogsOpen(true);
 
@@ -489,6 +495,9 @@ function AssistantPageInner() {
                     newDataCards.push(event.data);
                     return { ...msg, data_cards: newDataCards };
                   } else if (event.type === "result") {
+                    trackEvent("assistant_message_completed", {
+                      model: selectedModel,
+                    });
                     // Only replace logs if result has actual log entries,
                     // otherwise keep the streaming logs we accumulated
                     const finalLogs =
@@ -531,12 +540,18 @@ function AssistantPageInner() {
                       completions: parseCompletions(event.data.response || ""),
                     };
                   } else if (event.type === "insufficient_credits") {
+                    trackEvent("assistant_insufficient_credits", {
+                      model: selectedModel,
+                    });
                     return {
                       ...msg,
                       content:
                         "You've run out of credits. Please add credits in **Settings** to continue using CalmPilot.\n\n[Go to Settings →](/dashboard/settings)",
                     };
                   } else if (event.type === "error") {
+                    trackEvent("assistant_message_error", {
+                      model: selectedModel,
+                    });
                     return { ...msg, content: `Error: ${event.data}` };
                   }
                   return msg;
@@ -549,6 +564,9 @@ function AssistantPageInner() {
     } catch (e: unknown) {
       // Ignore AbortError — user navigated away or sent a new message
       if (e instanceof Error && e.name !== "AbortError") {
+        trackEvent("assistant_message_error", {
+          model: selectedModel,
+        });
         setMessages((prev) =>
           prev.map((msg) =>
             msg.id === aiMessageId
