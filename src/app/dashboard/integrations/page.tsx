@@ -612,7 +612,7 @@ export default function IntegrationsPage() {
               <button
                 onClick={() => handleConnect(integration.appName, isConnected)}
                 disabled={isConnecting}
-                className="px-3 py-1 text-[11px] font-medium text-muted-foreground hover:text-foreground rounded-full border border-border hover:border-foreground/20 bg-muted/30 hover:bg-muted transition-all duration-300 disabled:opacity-50"
+                className="px-3 py-1 text-[11px] font-medium text-muted-foreground hover:text-foreground rounded-full border border-border/55 hover:border-foreground/20 bg-muted/30 hover:bg-muted transition-all duration-300 disabled:opacity-50"
               >
                 {isConnecting ? (
                   <Loader2
@@ -673,7 +673,7 @@ export default function IntegrationsPage() {
   return (
     <div className="flex flex-col min-h-screen">
       {/* Page header */}
-      <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-border flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
+      <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-border/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
         <div>
           <h1 className="text-sm font-semibold text-foreground">
             Integrations
@@ -713,13 +713,13 @@ export default function IntegrationsPage() {
             aria-label="Search integrations"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full sm:w-56 pl-8 pr-3 py-1.5 text-xs rounded-md outline-none bg-muted/50 border border-border text-foreground placeholder-muted-foreground focus:border-ring transition-colors"
+            className="w-full sm:w-56 pl-8 pr-3 py-1.5 text-xs rounded-md outline-none bg-muted/50 border border-border/55 text-foreground placeholder-muted-foreground focus:border-ring transition-colors"
           />
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="px-4 sm:px-6 border-b border-border flex items-center gap-1">
+      <div className="px-4 sm:px-6 border-b border-border/40 flex items-center gap-1">
         {(["all", "connected"] as const).map((tab) => (
           <button
             key={tab}
@@ -824,7 +824,7 @@ export default function IntegrationsPage() {
             {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
               <div
                 key={i}
-                className="rounded-[1rem] sm:rounded-[1.25rem] h-[180px] sm:h-[220px] md:h-[260px] bg-card border border-border animate-pulse"
+                className="rounded-[1rem] sm:rounded-[1.25rem] h-[180px] sm:h-[220px] md:h-[260px] bg-card border border-border/55 animate-pulse"
                 style={{ animationDelay: `${i * 80}ms` }}
               >
                 <div className="h-full p-3 sm:p-4 md:p-5 flex flex-col">
@@ -897,7 +897,7 @@ export default function IntegrationsPage() {
                       animate={{ opacity: 1, y: 0 }}
                       className="col-span-full py-16 flex flex-col items-center gap-4 text-center"
                     >
-                      <div className="w-14 h-14 rounded-2xl bg-muted border border-border flex items-center justify-center">
+                      <div className="w-14 h-14 rounded-2xl bg-muted border border-border/55 flex items-center justify-center">
                         <Grid3X3
                           strokeWidth={1.5}
                           size={22}
@@ -1048,7 +1048,7 @@ export default function IntegrationsPage() {
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 24, scale: 0.97 }}
                   transition={{ type: "spring", bounce: 0.25, duration: 0.45 }}
-                  className="relative w-full max-w-md bg-card border border-border rounded-2xl shadow-2xl overflow-hidden"
+                  className="relative w-full max-w-md bg-card border border-border/55 rounded-2xl shadow-2xl overflow-hidden"
                 >
                   {/* Subtle brand glow behind header */}
                   <div
@@ -1143,3 +1143,4 @@ export default function IntegrationsPage() {
     </div>
   );
 }
+

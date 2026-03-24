@@ -102,11 +102,7 @@ function NavItem({
       <span className="flex-1">{label}</span>
       {badge !== undefined && badge > 0 && (
         <span
-          className={`min-w-[18px] h-[18px] rounded-full text-[10px] font-semibold flex items-center justify-center px-1 leading-none ${
-            isActive
-              ? "bg-primary text-primary-foreground"
-              : "bg-muted text-foreground"
-          }`}
+          className={`min-w-[18px] h-[18px] rounded-full text-[10px] font-semibold flex items-center justify-center px-1 leading-none bg-amber-500 text-black shadow-lg`}
         >
           {badge > 99 ? "99+" : badge}
         </span>
@@ -255,9 +251,9 @@ export function Sidebar() {
   return (
     <>
       {/* ─── DESKTOP SIDEBAR ─── */}
-      <aside className="hidden md:flex flex-col w-[240px] h-screen bg-background border-r border-zinc-200 dark:border-[#1c2123] fixed left-0 top-0 z-30">
+      <aside className="hidden md:flex flex-col w-[240px] h-screen bg-background border-r border-zinc-200/55 dark:border-[#1c2123]/60 fixed left-0 top-0 z-30">
         {/* Workspace header */}
-        <div className="px-3 py-3 border-b border-zinc-200 dark:border-[#1c2123] shrink-0">
+        <div className="px-3 py-3 border-b border-zinc-200/55 dark:border-[#1c2123]/60 shrink-0">
           <div className="flex items-center gap-2.5 px-2 py-1.5">
             <div className="w-6 h-6 rounded-md bg-primary flex items-center justify-center shrink-0">
               <img
@@ -292,7 +288,7 @@ export function Sidebar() {
         </nav>
 
         {/* Bottom section */}
-        <div className="border-t border-zinc-200 dark:border-[#1c2123] px-3 py-3 space-y-0.5">
+        <div className="border-t border-zinc-200/55 dark:border-[#1c2123]/60 px-3 py-3 space-y-0.5">
           {/* {bottomNav.map((item) => (
             <NavItem key={item.href} {...item} />
           ))} */}
@@ -330,7 +326,7 @@ export function Sidebar() {
       </aside>
 
       {/* ─── MOBILE TOP BAR ─── */}
-      <header className="md:hidden fixed top-0 left-0 right-0 z-40 flex items-center justify-between px-4 h-12 bg-background border-b border-zinc-200 dark:border-[#1c2123] safe-top">
+      <header className="md:hidden fixed top-0 left-0 right-0 z-40 flex items-center justify-between px-4 h-12 bg-background border-b border-zinc-200/55 dark:border-[#1c2123]/60 safe-top">
         <div className="flex items-center gap-2">
           <div className="w-5 h-5 rounded-md bg-primary flex items-center justify-center shrink-0">
             <img
@@ -355,7 +351,7 @@ export function Sidebar() {
               className="w-7 h-7 rounded-full"
             />
           ) : (
-            <div className="w-7 h-7 rounded-full bg-muted border border-border flex items-center justify-center text-[11px] font-semibold text-foreground">
+            <div className="w-7 h-7 rounded-full bg-muted border border-border/55 flex items-center justify-center text-[11px] font-semibold text-foreground">
               {initials}
             </div>
           )}
@@ -363,7 +359,7 @@ export function Sidebar() {
       </header>
 
       {/* ─── MOBILE BOTTOM TAB BAR (improved) ─── */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 grid grid-cols-5 bg-background border-t border-zinc-200 dark:border-[#1c2123] safe-bottom">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 grid grid-cols-5 bg-background border-t border-zinc-200/55 dark:border-[#1c2123]/60 safe-bottom">
         {mobileNav.map((item) => {
           const isActive = item.exact
             ? pathname === item.href
@@ -386,7 +382,7 @@ export function Sidebar() {
               <div className="relative">
                 <Icon size={18} strokeWidth={isActive ? 2 : 1.75} />
                 {isInbox && pendingCount > 0 && (
-                  <span className="absolute -top-1.5 -right-2 min-w-[14px] h-[14px] rounded-full bg-primary text-[8px] font-bold text-primary-foreground flex items-center justify-center px-0.5 leading-none">
+                  <span className="absolute -top-1.5 -right-2 min-w-[14px] h-[14px] rounded-full bg-amber-500 text-[8px] font-bold text-black flex items-center justify-center px-0.5 leading-none shadow-lg">
                     {pendingCount > 9 ? "9+" : pendingCount}
                   </span>
                 )}
@@ -408,8 +404,8 @@ export function Sidebar() {
             className="absolute inset-0 bg-background/60 backdrop-blur-sm"
             onClick={() => setMobileMenuOpen(false)}
           />
-          <div className="absolute right-0 top-0 bottom-0 w-[260px] bg-background border-l border-zinc-200 dark:border-[#1c2123] flex flex-col animate-slide-in-right">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-200 dark:border-[#1c2123]">
+          <div className="absolute right-0 top-0 bottom-0 w-[260px] bg-background border-l border-zinc-200/55 dark:border-[#1c2123]/60 flex flex-col animate-slide-in-right">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-200/55 dark:border-[#1c2123]/60">
               <span className="text-sm font-semibold text-foreground">
                 Menu
               </span>
@@ -426,7 +422,7 @@ export function Sidebar() {
             </div>
 
             {user && (
-              <div className="px-4 py-3 border-b border-zinc-200 dark:border-[#1c2123] flex items-center gap-3">
+              <div className="px-4 py-3 border-b border-zinc-200/55 dark:border-[#1c2123]/60 flex items-center gap-3">
                 {user.avatar ? (
                   <img
                     src={user.avatar}
@@ -469,7 +465,7 @@ export function Sidebar() {
                 ))} */}
             </nav>
 
-            <div className="border-t border-zinc-200 dark:border-[#1c2123] px-3 py-3 space-y-0.5">
+            <div className="border-t border-zinc-200/55 dark:border-[#1c2123]/60 px-3 py-3 space-y-0.5">
               {balanceData && (
                 <Link
                   href="/dashboard/usage"

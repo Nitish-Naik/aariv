@@ -1,6 +1,22 @@
 "use client";
 
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 import { useToast } from "@/context/ToastContext";
@@ -8,31 +24,30 @@ import { useBilling } from "@/context/useBilling";
 import { api } from "@/lib/api";
 import { supabase } from "@/lib/supabase";
 import {
-    Activity,
-    Bell,
-    Brain,
-    Check,
-    Clock,
-    Copy,
-    Cpu,
-    CreditCard,
-    ExternalLink,
-    Gift,
-    Globe,
-    History,
-    LogOut,
-    Moon,
-    Pencil,
-    RefreshCw,
-    Shield,
-    Sparkles,
-    Sun,
-    Sunrise,
-    Trash2,
-    Users,
-    Wallet,
-    X,
-    Zap,
+  Activity,
+  Brain,
+  Check,
+  ChevronDown,
+  Clock,
+  Copy,
+  Cpu,
+  CreditCard,
+  ExternalLink,
+  Gift,
+  History,
+  LogOut,
+  Moon,
+  Pencil,
+  RefreshCw,
+  Shield,
+  Sparkles,
+  Sun,
+  Sunrise,
+  Trash2,
+  Users,
+  Wallet,
+  X,
+  Zap,
 } from "lucide-react";
 import React, { useEffect, useState } from "react";
 
@@ -67,29 +82,28 @@ const MODEL_OPTIONS = [
   },
 ] as const;
 
-const COMMON_TIMEZONES = [
-  "UTC",
-  "America/New_York",
-  "America/Chicago",
-  "America/Denver",
-  "America/Los_Angeles",
-  "America/Sao_Paulo",
-  "America/Toronto",
-  "Europe/London",
-  "Europe/Paris",
-  "Europe/Berlin",
-  "Europe/Moscow",
-  "Africa/Cairo",
-  "Africa/Lagos",
-  "Asia/Kolkata",
-  "Asia/Dubai",
-  "Asia/Singapore",
-  "Asia/Shanghai",
-  "Asia/Tokyo",
-  "Asia/Seoul",
-  "Australia/Sydney",
-  "Pacific/Auckland",
+const BRIEFING_TIME_PRESETS = [
+  { label: "5:00 AM", value: "05:00" },
+  { label: "6:00 AM", value: "06:00" },
+  { label: "10:00 AM", value: "10:00" },
 ] as const;
+
+function formatTimeLabel(value: string): string {
+  const [hRaw, mRaw] = value.split(":");
+  const h = Number(hRaw);
+  const m = Number(mRaw);
+  if (Number.isNaN(h) || Number.isNaN(m)) return value;
+  const period = h >= 12 ? "PM" : "AM";
+  const hour12 = h % 12 === 0 ? 12 : h % 12;
+  return `${hour12}:${String(m).padStart(2, "0")} ${period}`;
+}
+
+const BRIEFING_TIME_OPTIONS = Array.from({ length: 48 }, (_, i) => {
+  const hour = Math.floor(i / 2);
+  const minute = i % 2 === 0 ? 0 : 30;
+  const value = `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+  return { value, label: formatTimeLabel(value) };
+});
 
 const RETENTION_OPTIONS = [
   {
@@ -115,18 +129,6 @@ const RETENTION_OPTIONS = [
   },
 ] as const;
 
-function formatTimezoneLabel(tz: string): string {
-  try {
-    const offset =
-      new Intl.DateTimeFormat("en", { timeZoneName: "short", timeZone: tz })
-        .formatToParts(new Date())
-        .find((p) => p.type === "timeZoneName")?.value || "";
-    return `${tz.replace(/_/g, " ")}${offset ? ` (${offset})` : ""}`;
-  } catch {
-    return tz;
-  }
-}
-
 function SectionCard({
   label,
   icon: Icon,
@@ -141,7 +143,7 @@ function SectionCard({
   children: React.ReactNode;
 }) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-[260px_1fr] lg:grid-cols-[280px_1fr] gap-8 lg:gap-12 py-8 md:py-10 border-b border-border last:border-0 border-t first:border-t-0">
+    <div className="grid grid-cols-1 md:grid-cols-[260px_1fr] lg:grid-cols-[280px_1fr] gap-8 lg:gap-12 py-8 md:py-10">
       <div className="flex flex-col pr-4">
         <h2 className="text-sm font-medium text-foreground">{title}</h2>
         <p className="text-sm text-muted-foreground mt-1.5 leading-relaxed">
@@ -149,7 +151,7 @@ function SectionCard({
         </p>
       </div>
       <div className="min-w-0">
-        <div className="rounded-lg border border-border bg-card overflow-hidden shadow-sm">
+        <div className="rounded-lg ring-1 ring-inset ring-foreground/10 bg-white/[0.07] backdrop-blur-sm overflow-visible shadow-[0_10px_30px_rgba(0,0,0,0.3)]">
           {children}
         </div>
       </div>
@@ -189,6 +191,9 @@ export default function SettingsPage() {
   const [savingModel, setSavingModel] = useState(false);
 
   const [retention, setRetention] = useState<number | null>(null);
+  const [pendingRetention, setPendingRetention] = useState<
+    number | null | undefined
+  >(undefined);
   const [retSaving, setRetSaving] = useState(false);
   const [clearingHist, setClearHist] = useState(false);
   const [deleteLoading, setDeleteLoad] = useState(false);
@@ -225,10 +230,6 @@ export default function SettingsPage() {
   const [referralLoading, setReferralLoading] = useState(false);
   const [codeCopied, setCodeCopied] = useState(false);
 
-  // Timezone — auto-detected on load, user-editable
-  const [timezone, setTimezone] = useState<string>("");
-  const [savingTz, setSavingTz] = useState(false);
-
   // Auto-refill
   const [autoRefill, setAutoRefill] = useState(false);
   const [refillThreshold, setRefillThreshold] = useState(1.0);
@@ -236,8 +237,9 @@ export default function SettingsPage() {
   const [savingRefill, setSavingRefill] = useState(false);
 
   // Briefing time preference
-  const [briefingMode, setBriefingMode] = useState<"smart" | "fixed">("smart");
+  const [briefingMode, setBriefingMode] = useState<"smart" | "fixed">("fixed");
   const [briefingTime, setBriefingTime] = useState("08:00");
+  const [showCustomBriefingTime, setShowCustomBriefingTime] = useState(true);
   const [savingBriefing, setSavingBriefing] = useState(false);
 
   // Spend alert threshold
@@ -251,15 +253,13 @@ export default function SettingsPage() {
     setModel(savedModel);
     setPendingModel(savedModel);
     const bMode = (localStorage.getItem("calmpilot_briefing_mode") ||
-      "smart") as "smart" | "fixed";
+      "fixed") as "smart" | "fixed";
     const bTime = localStorage.getItem("calmpilot_briefing_time") || "08:00";
-    setBriefingMode(bMode);
+    setBriefingMode(bMode === "smart" ? "fixed" : bMode);
     setBriefingTime(bTime);
-  }, []);
-
-  // Detect local timezone once on mount (no API needed)
-  useEffect(() => {
-    setTimezone(Intl.DateTimeFormat().resolvedOptions().timeZone);
+    setShowCustomBriefingTime(
+      !BRIEFING_TIME_PRESETS.some((preset) => preset.value === bTime),
+    );
   }, []);
 
   // Seed display name from in-memory auth context immediately (no request)
@@ -286,19 +286,28 @@ export default function SettingsPage() {
             localStorage.setItem("calmpilot_model", me.preferred_model);
           }
           if (me.briefing_mode) {
-            setBriefingMode(me.briefing_mode as "smart" | "fixed");
-            localStorage.setItem("calmpilot_briefing_mode", me.briefing_mode);
+            const mode =
+              me.briefing_mode === "smart" ? "fixed" : me.briefing_mode;
+            setBriefingMode(mode as "smart" | "fixed");
+            localStorage.setItem("calmpilot_briefing_mode", mode);
           }
           if (me.briefing_time) {
             setBriefingTime(me.briefing_time);
             localStorage.setItem("calmpilot_briefing_time", me.briefing_time);
+            setShowCustomBriefingTime(
+              !BRIEFING_TIME_PRESETS.some(
+                (preset) => preset.value === me.briefing_time,
+              ),
+            );
           }
-          if (me.timezone) setTimezone(me.timezone);
           if (me.spend_alert_threshold != null)
             setSpendAlertThreshold(String(me.spend_alert_threshold));
         }
         // History retention
-        if (retentionRes) setRetention(retentionRes.retention_days);
+        if (retentionRes) {
+          setRetention(retentionRes.retention_days);
+          setPendingRetention(retentionRes.retention_days);
+        }
         // Referral
         if (codeRes?.code) setReferralCode(codeRes.code);
         if (statsRes) setReferralStats(statsRes);
@@ -373,12 +382,12 @@ export default function SettingsPage() {
 
   async function saveBriefing() {
     setSavingBriefing(true);
-    localStorage.setItem("calmpilot_briefing_mode", briefingMode);
+    localStorage.setItem("calmpilot_briefing_mode", "fixed");
     localStorage.setItem("calmpilot_briefing_time", briefingTime);
     try {
       await api.put(`/settings/briefing`, {
-        mode: briefingMode,
-        time: briefingMode === "fixed" ? briefingTime : null,
+        mode: "fixed",
+        time: briefingTime,
       });
     } catch {
       /* persisted locally even if API call fails */
@@ -387,25 +396,13 @@ export default function SettingsPage() {
     setSavingBriefing(false);
   }
 
-  async function saveTimezone(tz: string) {
-    setSavingTz(true);
-    setTimezone(tz);
-    try {
-      await api.patch("/auth/timezone", { timezone: tz });
-      flash("Timezone updated");
-    } catch {
-      flash("Failed to save timezone", false);
-    } finally {
-      setSavingTz(false);
-    }
-  }
-
   async function saveRetention(days: number | null) {
     if (!user?.id) return;
     setRetSaving(true);
     try {
       await api.put(`/history/retention/${user.id}`, { days });
       setRetention(days);
+      setPendingRetention(days);
       flash("Retention updated");
     } catch {
       flash("Failed to save", false);
@@ -545,9 +542,9 @@ export default function SettingsPage() {
               setDeleteConfirmText("");
             }}
           />
-          <div className="relative bg-muted border border-red-900/50 rounded-xl w-full max-w-sm p-7 shadow-2xl">
+          <div className="relative bg-white/[0.07] ring-1 ring-inset ring-red-500/20 rounded-xl w-full max-w-sm p-7 shadow-[0_10px_30px_rgba(0,0,0,0.3)]">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-9 h-9 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center shrink-0">
+              <div className="w-9 h-9 rounded-xl bg-red-500/10 ring-1 ring-inset ring-red-500/20 flex items-center justify-center shrink-0">
                 <Trash2 strokeWidth={1.5} size={16} className="text-red-400" />
               </div>
               <h2 className="text-base font-semibold text-foreground">
@@ -571,7 +568,7 @@ export default function SettingsPage() {
               value={deleteConfirmText}
               onChange={(e) => setDeleteConfirmText(e.target.value)}
               placeholder="DELETE"
-              className="w-full py-2.5 px-4 rounded-xl bg-background border border-border text-foreground text-sm outline-none focus:border-red-500/50 transition-colors placeholder:text-muted-foreground/60 mb-5 font-mono"
+              className="w-full py-2.5 px-4 rounded-xl bg-background ring-1 ring-inset ring-foreground/10 text-foreground text-sm outline-none focus-within:ring-red-500/30 focus-within:bg-white/[0.09] transition-colors placeholder:text-muted-foreground/60 mb-5 font-mono"
             />
             <div className="flex items-center gap-2">
               <button
@@ -579,7 +576,7 @@ export default function SettingsPage() {
                   setShowDelete(false);
                   setDeleteConfirmText("");
                 }}
-                className="flex-1 py-2.5 rounded-xl text-sm font-medium bg-muted text-muted-foreground hover:text-foreground border border-border hover:border-foreground/20 transition-colors"
+                className="flex-1 py-2.5 rounded-xl text-sm font-medium bg-white/[0.05] text-muted-foreground hover:text-foreground ring-1 ring-inset ring-foreground/10 hover:ring-foreground/20 transition-colors"
               >
                 Keep Account
               </button>
@@ -597,7 +594,7 @@ export default function SettingsPage() {
                   }
                 }}
                 disabled={deleteConfirmText !== "DELETE" || deleteLoading}
-                className="flex-1 py-2.5 rounded-xl text-sm font-medium bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 hover:border-red-500/40 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                className="flex-1 py-2.5 rounded-xl text-sm font-medium bg-red-500/10 hover:bg-red-500/20 text-red-400 ring-1 ring-inset ring-red-500/20 hover:ring-red-500/40 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 {deleteLoading ? "Deleting…" : "Delete Everything"}
               </button>
@@ -617,31 +614,17 @@ export default function SettingsPage() {
       />
 
       {/* ── Add Credits Dialog ── */}
-      {showAddCredits && (
-        <div
-          className="fixed inset-0 z-[100] flex items-center justify-center p-4"
-          role="dialog"
-          aria-modal="true"
-        >
-          <div
-            className="absolute inset-0 bg-background/80 backdrop-blur-sm"
-            onClick={() => setShowAddCredits(false)}
-          />
-          <div className="relative bg-muted border border-border rounded-xl w-full max-w-sm p-7 shadow-2xl">
-            <button
-              onClick={() => setShowAddCredits(false)}
-              className="absolute top-4 right-4 w-7 h-7 rounded-lg bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <X strokeWidth={1.5} size={14} />
-            </button>
-            <h2 className="text-base font-semibold text-foreground mb-0.5">
-              Add Credits
-            </h2>
-            <p className="text-xs text-muted-foreground mb-5">
+      <Dialog open={showAddCredits} onOpenChange={setShowAddCredits}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Credits</DialogTitle>
+            <DialogDescription>
               Choose an amount to add to your balance.
-            </p>
+            </DialogDescription>
+          </DialogHeader>
 
-            <div className="grid grid-cols-2 gap-2 mb-4">
+          <div className="space-y-5">
+            <div className="grid grid-cols-2 gap-2">
               {[10, 25, 50, 100].map((amt) => (
                 <button
                   key={amt}
@@ -649,10 +632,10 @@ export default function SettingsPage() {
                     setSelectedAmount(amt);
                     setCustomAmount("");
                   }}
-                  className={`py-2.5 rounded-xl text-sm font-medium transition-all border ${
+                  className={`py-2.5 rounded-xl text-sm font-medium transition-all ring-1 ring-inset ${
                     selectedAmount === amt && !customAmount
-                      ? "bg-amber-500/10 text-amber-400 border-amber-500/40"
-                      : "bg-background text-muted-foreground border-border hover:border-foreground/20"
+                      ? "bg-amber-500/10 text-amber-400 ring-amber-500/40"
+                      : "bg-white/[0.05] text-muted-foreground ring-foreground/10 hover:ring-foreground/20 hover:bg-white/[0.06]"
                   }`}
                 >
                   ${amt}
@@ -660,7 +643,7 @@ export default function SettingsPage() {
               ))}
             </div>
 
-            <div className="mb-5">
+            <div>
               <label className="text-xs font-medium text-foreground mb-1.5 block">
                 Custom amount
               </label>
@@ -679,18 +662,33 @@ export default function SettingsPage() {
                     setSelectedAmount(null);
                   }}
                   placeholder="5.00 – 500.00"
-                  className="w-full py-2.5 pl-7 pr-4 rounded-xl bg-background border border-border text-foreground text-sm placeholder:text-muted-foreground outline-none focus:border-ring transition-colors"
+                  className="w-full py-2.5 pl-7 pr-4 rounded-xl bg-white/[0.04] ring-1 ring-inset ring-foreground/20 text-foreground text-sm placeholder:text-muted-foreground outline-none focus-within:ring-amber-500/40 focus-within:bg-white/[0.08] transition-colors"
                 />
               </div>
               {customAmount && parseFloat(customAmount) < 5 && (
                 <p className="text-[11px] text-red-400 mt-1">Minimum $5.00</p>
               )}
+              {customAmount && parseFloat(customAmount) > 500 && (
+                <p className="text-[11px] text-red-400 mt-1">Maximum $500.00</p>
+              )}
             </div>
+          </div>
 
+          {checkoutError && (
+            <p className="text-[11px] text-red-400">{checkoutError}</p>
+          )}
+
+          <DialogFooter className="justify-center sm:justify-center items-center gap-3">
+            <button
+              onClick={() => setShowAddCredits(false)}
+              className="px-4 py-2 rounded-xl text-sm font-medium bg-muted text-muted-foreground hover:bg-muted/80 transition-colors"
+            >
+              Cancel
+            </button>
             <button
               onClick={handleCheckout}
               disabled={!checkoutValid || isCreatingCheckout}
-              className={`w-full py-3 rounded-xl font-medium text-sm flex items-center justify-center gap-2 transition-all ${
+              className={`px-4 py-2 rounded-xl text-sm font-medium flex items-center gap-2 transition-all ${
                 checkoutValid && !isCreatingCheckout
                   ? "bg-amber-500 text-black hover:bg-amber-400"
                   : "bg-muted text-muted-foreground cursor-not-allowed opacity-50"
@@ -702,17 +700,13 @@ export default function SettingsPage() {
                 <ExternalLink strokeWidth={1.5} size={13} />
               )}
             </button>
-            {checkoutError && (
-              <p className="text-[11px] text-red-400 text-center mt-2">
-                {checkoutError}
-              </p>
-            )}
-            <p className="text-[10px] text-muted-foreground text-center mt-3">
-              You will be redirected to Dodo Payments to complete your purchase.
-            </p>
-          </div>
-        </div>
-      )}
+          </DialogFooter>
+
+          <p className="text-[10px] text-muted-foreground text-center">
+            You will be redirected to Dodo Payments to complete your purchase.
+          </p>
+        </DialogContent>
+      </Dialog>
 
       {/* ── Usage History Dialog ── */}
       {showUsageHistory && (
@@ -725,14 +719,14 @@ export default function SettingsPage() {
             className="absolute inset-0 bg-background/80 backdrop-blur-sm"
             onClick={() => setShowUsageHistory(false)}
           />
-          <div className="relative bg-muted border border-border rounded-t-2xl sm:rounded-xl w-full sm:max-w-lg max-h-[85vh] flex flex-col shadow-2xl">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
+          <div className="relative bg-white/[0.07] ring-1 ring-inset ring-foreground/10 rounded-t-2xl sm:rounded-xl w-full sm:max-w-lg max-h-[85vh] flex flex-col shadow-[0_10px_30px_rgba(0,0,0,0.3)]">
+            <div className="flex items-center justify-between px-5 py-4 ring-b-1 ring-inset ring-foreground/10 shrink-0">
               <h2 className="text-base font-semibold text-foreground">
                 Usage & History
               </h2>
               <button
                 onClick={() => setShowUsageHistory(false)}
-                className="w-7 h-7 rounded-lg bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+                className="w-7 h-7 rounded-lg bg-white/[0.05] flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
               >
                 <X strokeWidth={1.5} size={14} />
               </button>
@@ -746,7 +740,7 @@ export default function SettingsPage() {
               ) : (
                 <>
                   {/* Usage Summary */}
-                  <div className="px-5 pt-5 pb-4 border-b border-border">
+                  <div className="px-5 pt-5 pb-4 ring-b-1 ring-inset ring-foreground/10">
                     <div className="flex items-center gap-2 mb-3">
                       <Activity
                         strokeWidth={1.5}
@@ -780,7 +774,7 @@ export default function SettingsPage() {
                             </div>
                           ),
                         )}
-                        <div className="flex items-center justify-between pt-2 border-t border-border">
+                        <div className="flex items-center justify-between pt-2 ring-t-1 ring-inset ring-foreground/10">
                           <p className="text-xs font-medium text-muted-foreground">
                             Total spent
                           </p>
@@ -809,7 +803,7 @@ export default function SettingsPage() {
                         {historyData.map((tx) => {
                           const isPositive = tx.amount > 0;
                           return (
-                            <div key={tx.id} className="flex items-center gap-3 py-2.5 border-b border-border last:border-0">
+                            <div key={tx.id} className="flex items-center gap-3 py-2.5 border-b border-border/40 last:border-0">
                               <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${isPositive ? "bg-emerald-500/10" : "bg-muted"}`}>
                                 {isPositive
                                   ? <ArrowUpRight size={13} className="text-emerald-400" />
@@ -843,7 +837,7 @@ export default function SettingsPage() {
       )}
 
       {/* Page header */}
-      <div className="px-4 sm:px-6 py-4 border-b border-border flex items-center justify-between shrink-0">
+      <div className="px-4 sm:px-6 py-4 ring-1 ring-inset ring-foreground/5 flex items-center justify-between shrink-0">
         <div>
           <h1 className="text-sm font-semibold text-foreground">Settings</h1>
           <p className="text-xs text-muted-foreground mt-0.5">
@@ -861,7 +855,7 @@ export default function SettingsPage() {
             title="Account Profile"
             subtitle="Your display name and connected account."
           >
-            <div className="flex items-center justify-between gap-4 px-5 py-4 border-b border-border">
+            <div className="flex items-center justify-between gap-4 px-5 py-4 ring-1 ring-inset ring-foreground/10 border-0">
               <div className="flex items-center gap-3 min-w-0">
                 <div
                   className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 overflow-hidden"
@@ -886,7 +880,7 @@ export default function SettingsPage() {
                       if (e.key === "Enter") saveProfile();
                       if (e.key === "Escape") setEditingName(false);
                     }}
-                    className="text-sm bg-background border border-border rounded-lg px-3 py-1.5 outline-none text-foreground w-48"
+                    className="text-sm bg-background ring-1 ring-inset ring-foreground/10 rounded-lg px-3 py-1.5 outline-none text-foreground w-48 focus-within:ring-foreground/20"
                   />
                 ) : (
                   <span className="text-sm text-foreground truncate">
@@ -927,7 +921,7 @@ export default function SettingsPage() {
                 <p className="text-xs text-muted-foreground mb-0.5">Email</p>
                 <p className="text-sm text-muted-foreground">{user?.email}</p>
               </div>
-              <span className="text-[10px] px-2 py-0.5 rounded-full border border-border bg-muted text-muted-foreground shrink-0">
+              <span className="text-[10px] px-2 py-0.5 rounded-full ring-1 ring-inset ring-foreground/10 bg-white/[0.05] text-muted-foreground shrink-0">
                 Google OAuth
               </span>
             </div>
@@ -941,79 +935,133 @@ export default function SettingsPage() {
             subtitle="The AI model powering your conversations. Applies to all new sessions."
           >
             <div className="p-4">
-              <div className="grid grid-cols-2 gap-3">
-                {MODEL_OPTIONS.map((m) => {
-                  const isPending = pendingModel === m.id;
-                  return (
-                    <button
-                      key={m.id}
-                      onClick={() => setPendingModel(m.id)}
-                      className={`relative flex flex-col gap-2.5 p-4 rounded-xl border text-left transition-all ${
-                        isPending
-                          ? "border-amber-500/50 bg-amber-500/[0.06]"
-                          : "border-border bg-background hover:border-foreground/20"
-                      }`}
-                    >
-                      {isPending && (
-                        <div className="absolute top-3 right-3 w-5 h-5 rounded-full bg-amber-500 flex items-center justify-center">
-                          <Check
-                            size={11}
-                            className="text-black"
-                            strokeWidth={2.5}
-                          />
-                        </div>
+              <div className="w-full">
+                <DropdownMenu>
+                  <DropdownMenuTrigger className="w-full flex items-center justify-between px-4 py-3.5 rounded-xl ring-1 ring-inset ring-foreground/10 bg-white/[0.04] hover:bg-white/[0.07] hover:ring-foreground/25 transition-all outline-none group cursor-pointer">
+                    <div className="flex items-center gap-3">
+                      {activeModel ? (
+                        <>
+                          <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-amber-500/15 ring-1 ring-inset ring-amber-500/30 shrink-0">
+                            <activeModel.icon
+                              size={14}
+                              className="text-amber-400"
+                            />
+                          </div>
+                          <div className="text-left">
+                            <p className="text-sm font-semibold text-foreground">
+                              {activeModel.tier}
+                            </p>
+                            <p className="text-[10px] font-mono text-amber-400/70">
+                              {activeModel.name}
+                            </p>
+                          </div>
+                        </>
+                      ) : (
+                        <span className="text-sm text-muted-foreground">
+                          Select a model...
+                        </span>
                       )}
-                      <div
-                        className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
-                          isPending
-                            ? "bg-amber-500/15 border border-amber-500/30"
-                            : "bg-muted border border-border"
+                    </div>
+                    <ChevronDown
+                      size={16}
+                      strokeWidth={1.5}
+                      className="text-muted-foreground group-data-[popup-open]:rotate-180 transition-transform duration-200"
+                    />
+                  </DropdownMenuTrigger>
+
+                  <DropdownMenuContent
+                    side="bottom"
+                    align="start"
+                    sideOffset={6}
+                    positionerStyle={{ width: "var(--anchor-width)" }}
+                    className="!bg-[#131313] border border-white/[0.08] shadow-[0_20px_60px_rgba(0,0,0,0.8)] rounded-2xl p-1"
+                  >
+                    <DropdownMenuGroup>
+                      {MODEL_OPTIONS.map((m) => {
+                        const isPending = pendingModel === m.id;
+                        return (
+                          <DropdownMenuItem
+                            key={m.id}
+                            closeOnClick={false}
+                            onClick={() => setPendingModel(m.id)}
+                            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer transition-all outline-none ${
+                              isPending
+                                ? "bg-amber-500/[0.08] hover:bg-amber-500/[0.12] data-[highlighted]:bg-amber-500/[0.12]"
+                                : "hover:bg-white/[0.06] data-[highlighted]:bg-white/[0.06]"
+                            }`}
+                          >
+                            <div
+                              className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ring-1 ring-inset transition-all ${
+                                isPending
+                                  ? "bg-amber-500/15 ring-amber-500/30"
+                                  : "bg-white/[0.04] ring-white/10"
+                              }`}
+                            >
+                              <m.icon
+                                size={13}
+                                className={
+                                  isPending
+                                    ? "text-amber-400"
+                                    : "text-muted-foreground"
+                                }
+                              />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-1.5">
+                                <p
+                                  className={`text-sm font-medium truncate ${isPending ? "text-amber-300" : "text-foreground"}`}
+                                >
+                                  {m.tier}
+                                </p>
+                                <span
+                                  className={`text-[10px] font-mono shrink-0 ${isPending ? "text-amber-400/60" : "text-muted-foreground/50"}`}
+                                >
+                                  {m.name}
+                                </span>
+                              </div>
+                              <p className="text-[11px] text-muted-foreground/60 truncate leading-tight">
+                                {m.detail}
+                              </p>
+                            </div>
+                            {isPending && (
+                              <Check
+                                size={13}
+                                className="text-amber-500 shrink-0"
+                                strokeWidth={2.5}
+                              />
+                            )}
+                          </DropdownMenuItem>
+                        );
+                      })}
+                    </DropdownMenuGroup>
+                    <DropdownMenuSeparator className="my-1" />
+                    <div className="px-2 py-1.5 flex items-center gap-2">
+                      <button
+                        onClick={() => setPendingModel(model)}
+                        className="flex-1 py-2 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground bg-white/[0.04] hover:bg-white/[0.07] ring-1 ring-inset ring-white/10 transition-all"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={saveModel}
+                        disabled={savingModel || !modelChanged}
+                        className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-all ${
+                          modelChanged
+                            ? "bg-amber-500 text-black hover:bg-amber-400"
+                            : "bg-white/[0.04] text-muted-foreground cursor-not-allowed ring-1 ring-inset ring-white/10"
                         }`}
                       >
-                        <m.icon
-                          size={14}
-                          className={
-                            isPending
-                              ? "text-amber-400"
-                              : "text-muted-foreground"
-                          }
-                        />
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold text-foreground pr-6">
-                          {m.tier}
-                        </p>
-                        <p
-                          className={`text-[10px] font-mono mt-0.5 ${isPending ? "text-amber-400/60" : "text-muted-foreground/60"}`}
-                        >
-                          {m.name}
-                        </p>
-                        <p
-                          className={`text-xs mt-1 leading-relaxed ${isPending ? "text-amber-400/80" : "text-muted-foreground"}`}
-                        >
-                          {m.detail}
-                        </p>
-                      </div>
-                    </button>
-                  );
-                })}
+                        {savingModel ? "Saving…" : "Save Preference"}
+                      </button>
+                    </div>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
-            <div className="flex items-center justify-between px-5 py-3.5 border-t border-border bg-background">
-              <p className="text-xs text-muted-foreground">
+            <div className="px-5 py-3">
+              <p className="text-[11px] text-muted-foreground/60">
                 Changes apply to new conversations only
               </p>
-              <button
-                onClick={saveModel}
-                disabled={savingModel || !modelChanged}
-                className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
-                  modelChanged
-                    ? "bg-amber-500 text-black hover:bg-amber-400"
-                    : "bg-muted text-muted-foreground cursor-not-allowed"
-                }`}
-              >
-                {savingModel ? "Saving…" : "Save Preference"}
-              </button>
             </div>
           </SectionCard>
 
@@ -1022,89 +1070,123 @@ export default function SettingsPage() {
             label="MORNING BRIEFING"
             icon={Sunrise}
             title="Briefing Schedule"
-            subtitle="When CalmPilot delivers your daily digest of important events."
+            subtitle="Set what time your daily briefing arrives in your local timezone."
           >
             <div className="p-4 space-y-4">
-              {/* Mode toggle */}
-              <div className="grid grid-cols-2 gap-2">
-                {(["smart", "fixed"] as const).map((mode) => (
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-2 block">
+                  Daily briefing time
+                </label>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {BRIEFING_TIME_PRESETS.map((preset) => (
+                    <button
+                      key={preset.value}
+                      onClick={() => {
+                        setBriefingMode("fixed");
+                        setBriefingTime(preset.value);
+                        setShowCustomBriefingTime(false);
+                      }}
+                      className={`flex items-center justify-center gap-2 p-3 rounded-xl ring-1 ring-inset text-sm font-semibold transition-all ${
+                        briefingTime === preset.value && !showCustomBriefingTime
+                          ? "ring-amber-500/40 bg-amber-500/[0.08] text-foreground"
+                          : "ring-foreground/10 bg-white/[0.04] text-muted-foreground hover:ring-foreground/20 hover:bg-white/[0.06]"
+                      }`}
+                    >
+                      {preset.label}
+                    </button>
+                  ))}
                   <button
-                    key={mode}
-                    onClick={() => setBriefingMode(mode)}
-                    className={`flex flex-col gap-1.5 p-3.5 rounded-xl border text-left transition-all ${
-                      briefingMode === mode
-                        ? "border-amber-500/50 bg-amber-500/[0.06]"
-                        : "border-border bg-background hover:border-foreground/20"
+                    onClick={() => {
+                      setBriefingMode("fixed");
+                      setShowCustomBriefingTime(true);
+                    }}
+                    className={`flex items-center justify-center gap-2 p-3 rounded-xl ring-1 ring-inset text-sm font-semibold transition-all ${
+                      showCustomBriefingTime
+                        ? "ring-amber-500/40 bg-amber-500/[0.08] text-foreground"
+                        : "ring-foreground/10 bg-white/[0.04] text-muted-foreground hover:ring-foreground/20 hover:bg-white/[0.06]"
                     }`}
                   >
-                    <div className="flex items-center justify-between">
-                      <p
-                        className={`text-sm font-semibold ${briefingMode === mode ? "text-foreground" : "text-muted-foreground"}`}
-                      >
-                        {mode === "smart" ? "Smart" : "Fixed Time"}
-                      </p>
-                      {briefingMode === mode && (
-                        <div className="w-4 h-4 rounded-full bg-amber-500 flex items-center justify-center">
-                          <Check
-                            size={9}
-                            className="text-black"
-                            strokeWidth={3}
-                          />
-                        </div>
-                      )}
-                    </div>
-                    <p
-                      className={`text-xs leading-relaxed ${briefingMode === mode ? "text-amber-400/70" : "text-muted-foreground"}`}
-                    >
-                      {mode === "smart"
-                        ? "Learns when you're usually active and delivers at the right moment"
-                        : "Delivers at a specific time you choose every day"}
-                    </p>
+                    Custom
                   </button>
-                ))}
+                </div>
               </div>
 
-              {/* Fixed time picker */}
-              {briefingMode === "fixed" && (
+              {showCustomBriefingTime && (
                 <div>
                   <label className="text-xs font-medium text-muted-foreground mb-1.5 block">
-                    Delivery time
+                    Custom time
                   </label>
-                  <input
-                    type="time"
-                    value={briefingTime}
-                    onChange={(e) => setBriefingTime(e.target.value)}
-                    className="w-full py-2.5 px-4 rounded-xl bg-background border border-border text-foreground text-sm outline-none focus:border-amber-500/50 transition-colors [color-scheme:dark]"
-                  />
-                  <p className="text-[11px] text-muted-foreground mt-1.5">
-                    Briefing will be sent at{" "}
-                    <span className="text-foreground/80 font-medium">
-                      {briefingTime}
-                    </span>{" "}
-                    in your local timezone
-                  </p>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger className="w-full flex items-center justify-between px-4 py-3.5 rounded-xl ring-1 ring-inset ring-foreground/10 bg-white/[0.04] hover:bg-white/[0.07] hover:ring-foreground/25 transition-all outline-none group cursor-pointer">
+                      <span className="text-sm text-foreground font-medium">
+                        {formatTimeLabel(briefingTime)}
+                      </span>
+                      <ChevronDown
+                        size={16}
+                        strokeWidth={1.5}
+                        className="text-muted-foreground group-data-[popup-open]:rotate-180 transition-transform duration-200"
+                      />
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent
+                      side="bottom"
+                      align="start"
+                      sideOffset={6}
+                      positionerStyle={{ width: "var(--anchor-width)" }}
+                      className="!bg-[#131313] border border-white/[0.08] shadow-[0_20px_60px_rgba(0,0,0,0.8)] rounded-2xl p-1 max-h-64 overflow-y-auto"
+                    >
+                      <DropdownMenuGroup>
+                        {BRIEFING_TIME_OPTIONS.map((option) => {
+                          const selected = briefingTime === option.value;
+                          return (
+                            <DropdownMenuItem
+                              key={option.value}
+                              onClick={() => setBriefingTime(option.value)}
+                              className={`flex items-center justify-between px-3 py-2.5 rounded-xl cursor-pointer transition-all outline-none ${
+                                selected
+                                  ? "bg-amber-500/[0.08] hover:bg-amber-500/[0.12] data-[highlighted]:bg-amber-500/[0.12]"
+                                  : "hover:bg-white/[0.06] data-[highlighted]:bg-white/[0.06]"
+                              }`}
+                            >
+                              <span
+                                className={`text-sm ${selected ? "text-amber-300" : "text-foreground"}`}
+                              >
+                                {option.label}
+                              </span>
+                              {selected && (
+                                <Check
+                                  size={13}
+                                  strokeWidth={2.5}
+                                  className="text-amber-500"
+                                />
+                              )}
+                            </DropdownMenuItem>
+                          );
+                        })}
+                      </DropdownMenuGroup>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               )}
 
-              {briefingMode === "smart" && (
-                <div className="flex items-start gap-2.5 px-3.5 py-3 rounded-xl bg-muted border border-border">
-                  <Sunrise
-                    strokeWidth={1.5}
-                    size={13}
-                    className="text-amber-400/70 mt-0.5 shrink-0"
-                  />
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    CalmPilot tracks when you typically read your briefing and
-                    adjusts delivery timing automatically over time.
-                  </p>
-                </div>
-              )}
+              <div className="flex items-start gap-2.5 px-3.5 py-3 rounded-xl bg-white/[0.04] ring-1 ring-inset ring-foreground/10">
+                <Sunrise
+                  strokeWidth={1.5}
+                  size={13}
+                  className="text-amber-400/70 mt-0.5 shrink-0"
+                />
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  We use your detected local timezone automatically. Daily
+                  briefing is currently set for{" "}
+                  <span className="text-foreground/85 font-medium">
+                    {briefingTime}
+                  </span>
+                  .
+                </p>
+              </div>
             </div>
-            <div className="flex items-center justify-between px-5 py-3.5 border-t border-border bg-background">
+            <div className="flex items-center justify-between px-5 py-3.5 ring-t-1 ring-inset ring-foreground/10">
               <p className="text-xs text-muted-foreground">
-                {briefingMode === "smart"
-                  ? "Pattern adapts after a few days"
-                  : "Applies from tomorrow"}
+                Applies from tomorrow
               </p>
               <button
                 onClick={saveBriefing}
@@ -1116,97 +1198,130 @@ export default function SettingsPage() {
             </div>
           </SectionCard>
 
-          {/* ── Timezone ── */}
-          <SectionCard
-            label="TIMEZONE"
-            icon={Globe}
-            title="Your Timezone"
-            subtitle="Used for briefing schedules, calendar times, and activity logs."
-          >
-            <div className="p-5">
-              <label className="text-xs font-medium text-muted-foreground mb-2 block">
-                Select your timezone
-              </label>
-              <select
-                value={timezone}
-                onChange={(e) => saveTimezone(e.target.value)}
-                disabled={savingTz}
-                className="w-full py-2.5 px-4 rounded-xl bg-background border border-border text-foreground text-sm outline-none focus:border-ring transition-colors disabled:opacity-50 [color-scheme:dark]"
-              >
-                {COMMON_TIMEZONES.map((tz) => (
-                  <option key={tz} value={tz}>
-                    {formatTimezoneLabel(tz)}
-                  </option>
-                ))}
-                {/* Show current if not in list */}
-                {timezone &&
-                  !(COMMON_TIMEZONES as readonly string[]).includes(
-                    timezone,
-                  ) && (
-                    <option value={timezone}>
-                      {formatTimezoneLabel(timezone)}
-                    </option>
-                  )}
-              </select>
-              <p className="text-[11px] text-muted-foreground mt-2">
-                Auto-detected as{" "}
-                <span className="text-foreground/80">
-                  {Intl.DateTimeFormat().resolvedOptions().timeZone}
-                </span>
-              </p>
-            </div>
-          </SectionCard>
-
-          {/* ── History & Privacy ── */}
           <SectionCard
             label="HISTORY & PRIVACY"
             icon={Shield}
             title="Conversation History"
             subtitle="How long CalmPilot remembers your chats. Runs a nightly cleanup."
           >
-            <div className="p-6">
-              <div className="space-y-3">
-                {RETENTION_OPTIONS.map((opt) => {
-                  const sel = retention === opt.value;
-                  return (
-                    <button
-                      key={String(opt.value)}
-                      onClick={() => saveRetention(opt.value)}
-                      disabled={retSaving}
-                      className={`w-full flex items-start gap-4 p-4 rounded-lg border text-left transition-all disabled:opacity-40 ${sel ? "border-amber-500/50 bg-amber-500/[0.04]" : "border-border bg-background hover:border-foreground/20"}`}
-                    >
-                      <div
-                        className={`mt-0.5 w-[18px] h-[18px] rounded-full border-2 shrink-0 flex items-center justify-center transition-colors ${sel ? "border-amber-500 bg-amber-500" : "border-border"}`}
-                      >
-                        {sel && (
-                          <div className="w-2 h-2 rounded-full bg-background" />
-                        )}
-                      </div>
-                      <div>
-                        <p
-                          className={`text-sm font-medium ${sel ? "text-foreground" : "text-muted-foreground"}`}
-                        >
-                          {opt.label}
-                        </p>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          {opt.description}
-                        </p>
-                      </div>
-                    </button>
+            <div className="p-4">
+              <div className="w-full">
+                {(() => {
+                  const activePending =
+                    pendingRetention !== undefined
+                      ? pendingRetention
+                      : retention;
+                  const activeOpt = RETENTION_OPTIONS.find(
+                    (o) => o.value === activePending,
                   );
-                })}
+                  const retChanged = activePending !== retention;
+                  return (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger className="w-full flex items-center justify-between px-4 py-3.5 rounded-xl ring-1 ring-inset ring-foreground/10 bg-white/[0.04] hover:bg-white/[0.07] hover:ring-foreground/25 transition-all outline-none group cursor-pointer">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-amber-500/15 ring-1 ring-inset ring-amber-500/30 shrink-0">
+                            <Clock size={14} className="text-amber-400" />
+                          </div>
+                          <div className="text-left">
+                            <p className="text-sm font-semibold text-foreground">
+                              {activeOpt ? activeOpt.label : "Select…"}
+                            </p>
+                            <p className="text-[10px] text-muted-foreground/60">
+                              {activeOpt ? activeOpt.description : ""}
+                            </p>
+                          </div>
+                        </div>
+                        <ChevronDown
+                          size={16}
+                          strokeWidth={1.5}
+                          className="text-muted-foreground group-data-[popup-open]:rotate-180 transition-transform duration-200 shrink-0"
+                        />
+                      </DropdownMenuTrigger>
+
+                      <DropdownMenuContent
+                        side="bottom"
+                        align="start"
+                        sideOffset={6}
+                        positionerStyle={{ width: "var(--anchor-width)" }}
+                        className="!bg-[#131313] border border-white/[0.08] shadow-[0_20px_60px_rgba(0,0,0,0.8)] rounded-2xl p-1"
+                      >
+                        <DropdownMenuGroup>
+                          {RETENTION_OPTIONS.map((opt) => {
+                            const isPending = activePending === opt.value;
+                            return (
+                              <DropdownMenuItem
+                                key={String(opt.value)}
+                                closeOnClick={false}
+                                onClick={() => setPendingRetention(opt.value)}
+                                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer transition-all outline-none ${
+                                  isPending
+                                    ? "bg-amber-500/[0.08] hover:bg-amber-500/[0.12] data-[highlighted]:bg-amber-500/[0.12]"
+                                    : "hover:bg-white/[0.06] data-[highlighted]:bg-white/[0.06]"
+                                }`}
+                              >
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-1.5">
+                                    <p
+                                      className={`text-sm font-medium truncate ${isPending ? "text-amber-300" : "text-foreground"}`}
+                                    >
+                                      {opt.label}
+                                    </p>
+                                  </div>
+                                  <p className="text-[11px] text-muted-foreground/60 truncate leading-tight">
+                                    {opt.description}
+                                  </p>
+                                </div>
+                                {isPending && (
+                                  <Check
+                                    size={13}
+                                    className="text-amber-500 shrink-0"
+                                    strokeWidth={2.5}
+                                  />
+                                )}
+                              </DropdownMenuItem>
+                            );
+                          })}
+                        </DropdownMenuGroup>
+                        <DropdownMenuSeparator className="my-1" />
+                        <div className="px-2 py-1.5 flex items-center gap-2">
+                          <button
+                            onClick={() => setPendingRetention(retention)}
+                            className="flex-1 py-2 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground bg-white/[0.04] hover:bg-white/[0.07] ring-1 ring-inset ring-white/10 transition-all"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            onClick={async () => {
+                              if (activePending !== undefined) {
+                                await saveRetention(activePending);
+                              }
+                            }}
+                            disabled={retSaving || !retChanged}
+                            className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-all ${
+                              retChanged
+                                ? "bg-amber-500 text-black hover:bg-amber-400"
+                                : "bg-white/[0.04] text-muted-foreground cursor-not-allowed ring-1 ring-inset ring-white/10"
+                            }`}
+                          >
+                            {retSaving ? "Saving…" : "Save Preference"}
+                          </button>
+                        </div>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  );
+                })()}
               </div>
-              <div className="px-5 py-3.5 flex items-start gap-2">
-                <Clock
-                  strokeWidth={1.5}
-                  size={12}
-                  className="text-muted-foreground shrink-0 mt-0.5"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Applies to chat conversations only. Trigger events and
-                  activity feed are kept for 90 days regardless.
-                </p>
-              </div>
+            </div>
+            <div className="px-5 py-3 flex items-start gap-2">
+              <Clock
+                strokeWidth={1.5}
+                size={12}
+                className="text-muted-foreground shrink-0 mt-0.5"
+              />
+              <p className="text-[11px] text-muted-foreground/60">
+                Applies to chat conversations only. Trigger events and activity
+                feed are kept for 90 days regardless.
+              </p>
             </div>
           </SectionCard>
 
@@ -1243,13 +1358,13 @@ export default function SettingsPage() {
                 <div className="flex flex-col gap-2 shrink-0">
                   <button
                     onClick={() => setShowAddCredits(true)}
-                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-border bg-background text-sm font-medium text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-colors whitespace-nowrap"
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl ring-1 ring-inset ring-foreground/10 bg-white/[0.05] text-sm font-medium text-muted-foreground hover:text-foreground hover:ring-foreground/20 transition-colors whitespace-nowrap"
                   >
                     <Wallet strokeWidth={1.5} size={13} /> Add Credits
                   </button>
                   <button
                     onClick={() => setShowUsageHistory(true)}
-                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-border bg-background text-sm font-medium text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-colors whitespace-nowrap"
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl ring-1 ring-inset ring-foreground/10 bg-white/[0.05] text-sm font-medium text-muted-foreground hover:text-foreground hover:ring-foreground/20 transition-colors whitespace-nowrap"
                   >
                     <History strokeWidth={1.5} size={13} /> View History
                   </button>
@@ -1258,7 +1373,7 @@ export default function SettingsPage() {
             </div>
 
             {/* Auto-refill */}
-            <div className="px-5 py-4 border-t border-border">
+            <div className="px-5 py-4 ring-t-1 ring-inset ring-foreground/10">
               <div className="flex items-center justify-between mb-1">
                 <div className="flex items-center gap-2">
                   <RefreshCw
@@ -1272,7 +1387,7 @@ export default function SettingsPage() {
                 </div>
                 <button
                   onClick={() => setAutoRefill((v) => !v)}
-                  className={`relative w-10 h-6 rounded-full transition-colors shrink-0 ${autoRefill ? "bg-amber-500" : "bg-muted border border-border"}`}
+                  className={`relative w-10 h-6 rounded-full transition-colors shrink-0 ${autoRefill ? "bg-amber-500" : "bg-white/[0.05] ring-1 ring-inset ring-foreground/10"}`}
                   aria-pressed={autoRefill}
                 >
                   <span
@@ -1305,7 +1420,7 @@ export default function SettingsPage() {
                           onChange={(e) =>
                             setRefillThreshold(parseFloat(e.target.value) || 0)
                           }
-                          className="w-full py-2.5 pl-7 pr-3 rounded-xl bg-background border border-border text-foreground text-sm outline-none focus:border-ring transition-colors"
+                          className="w-full py-2.5 pl-7 pr-3 rounded-xl bg-background ring-1 ring-inset ring-foreground/10 text-foreground text-sm outline-none focus-within:ring-foreground/20 focus-within:bg-white/[0.06] transition-colors"
                         />
                       </div>
                     </div>
@@ -1326,7 +1441,7 @@ export default function SettingsPage() {
                           onChange={(e) =>
                             setRefillAmount(parseFloat(e.target.value) || 0)
                           }
-                          className="w-full py-2.5 pl-7 pr-3 rounded-xl bg-background border border-border text-foreground text-sm outline-none focus:border-ring transition-colors"
+                          className="w-full py-2.5 pl-7 pr-3 rounded-xl bg-background ring-1 ring-inset ring-foreground/10 text-foreground text-sm outline-none focus-within:ring-foreground/20 focus-within:bg-white/[0.06] transition-colors"
                         />
                       </div>
                     </div>
@@ -1353,7 +1468,7 @@ export default function SettingsPage() {
             </div>
 
             {/* Spend alert */}
-            <div className="px-5 py-4 border-t border-border">
+            {/* <div className="px-5 py-4 ring-t-1 ring-inset ring-foreground/10">
               <div className="flex items-center gap-2 mb-1">
                 <Bell
                   strokeWidth={1.5}
@@ -1380,7 +1495,7 @@ export default function SettingsPage() {
                     placeholder="e.g. 10"
                     value={spendAlertThreshold}
                     onChange={(e) => setSpendAlertThreshold(e.target.value)}
-                    className="w-full py-2.5 pl-7 pr-3 rounded-xl bg-background border border-border text-foreground text-sm outline-none focus:border-ring transition-colors"
+                    className="w-full py-2.5 pl-7 pr-3 rounded-xl bg-background ring-1 ring-inset ring-foreground/10 text-foreground text-sm outline-none focus-within:ring-foreground/20 focus-within:bg-white/[0.06] transition-colors"
                   />
                 </div>
                 <button
@@ -1391,7 +1506,7 @@ export default function SettingsPage() {
                   {savingSpendAlert ? "Saving…" : "Save"}
                 </button>
               </div>
-            </div>
+            </div> */}
           </SectionCard>
 
           {/* ── Referral Program ── */}
@@ -1414,7 +1529,7 @@ export default function SettingsPage() {
                       Your Referral Link
                     </p>
                     <div className="flex items-center gap-2">
-                      <div className="flex-1 py-2.5 px-3.5 rounded-xl bg-background border border-border text-sm text-muted-foreground font-mono truncate">
+                      <div className="flex-1 py-2.5 px-3.5 rounded-xl bg-white/[0.05] ring-1 ring-inset ring-foreground/10 text-sm text-muted-foreground font-mono truncate">
                         {referralCode
                           ? `${typeof window !== "undefined" ? window.location.origin : "calmpilot.app"}/login?ref=${referralCode}`
                           : "Loading..."}
@@ -1441,7 +1556,7 @@ export default function SettingsPage() {
                   {/* Stats */}
                   {referralStats && (
                     <div className="grid grid-cols-3 gap-3">
-                      <div className="rounded-xl bg-background border border-border p-3.5 text-center">
+                      <div className="rounded-xl bg-white/[0.05] ring-1 ring-inset ring-foreground/10 p-3.5 text-center">
                         <div className="flex items-center justify-center gap-1 mb-1">
                           <Users
                             strokeWidth={1.5}
@@ -1456,7 +1571,7 @@ export default function SettingsPage() {
                           Successful
                         </p>
                       </div>
-                      <div className="rounded-xl bg-background border border-border p-3.5 text-center">
+                      <div className="rounded-xl bg-white/[0.05] ring-1 ring-inset ring-foreground/10 p-3.5 text-center">
                         <div className="flex items-center justify-center gap-1 mb-1">
                           <Wallet
                             strokeWidth={1.5}
@@ -1471,7 +1586,7 @@ export default function SettingsPage() {
                           Earned
                         </p>
                       </div>
-                      <div className="rounded-xl bg-background border border-border p-3.5 text-center">
+                      <div className="rounded-xl bg-white/[0.05] ring-1 ring-inset ring-foreground/10 p-3.5 text-center">
                         <div className="flex items-center justify-center gap-1 mb-1">
                           <Gift
                             strokeWidth={1.5}
@@ -1490,7 +1605,7 @@ export default function SettingsPage() {
                   )}
 
                   {/* How it works */}
-                  <div className="mt-4 pt-4 border-t border-border">
+                  <div className="mt-4 pt-4 ring-t-1 ring-inset ring-foreground/10">
                     <p className="text-xs font-medium text-muted-foreground mb-2">
                       How it works
                     </p>
@@ -1535,7 +1650,7 @@ export default function SettingsPage() {
               </div>
               <button
                 onClick={toggleTheme}
-                className={`relative w-12 h-7 rounded-full transition-colors shrink-0 ${isDark ? "bg-amber-500" : "bg-muted border border-border"}`}
+                className={`relative w-12 h-7 rounded-full transition-colors shrink-0 ${isDark ? "bg-amber-500" : "bg-white/[0.05] ring-1 ring-inset ring-foreground/10"}`}
                 aria-pressed={isDark}
               >
                 <span
@@ -1560,7 +1675,7 @@ export default function SettingsPage() {
           </SectionCard>
 
           {/* ── Notifications (stub) ── */}
-          <SectionCard
+          {/* <SectionCard
             label="NOTIFICATIONS"
             icon={Bell}
             title="Notifications"
@@ -1577,7 +1692,7 @@ export default function SettingsPage() {
                   key={label}
                   className="flex items-center gap-3 opacity-40 cursor-not-allowed select-none"
                 >
-                  <div className="w-4 h-4 rounded border border-border bg-background shrink-0" />
+                  <div className="w-4 h-4 rounded ring-1 ring-inset ring-foreground/10 bg-background shrink-0" />
                   <p className="text-sm text-muted-foreground">{label}</p>
                 </div>
               ))}
@@ -1585,7 +1700,7 @@ export default function SettingsPage() {
                 Coming soon — notifications are not yet available.
               </p>
             </div>
-          </SectionCard>
+          </SectionCard> */}
 
           {/* ── Advanced ── */}
           <div>
@@ -1593,9 +1708,9 @@ export default function SettingsPage() {
               ADVANCED
             </p>
             <div className="space-y-3">
-              <div className="rounded-xl border border-border bg-muted overflow-hidden">
-                <div className="flex items-center gap-3.5 px-5 py-4 border-b border-border">
-                  <div className="w-9 h-9 rounded-xl bg-muted border border-border flex items-center justify-center shrink-0">
+              <div className="rounded-xl ring-1 ring-inset ring-foreground/10 bg-white/[0.05] overflow-hidden">
+                <div className="flex items-center gap-3.5 px-5 py-4 ring-b-1 ring-inset ring-foreground/10">
+                  <div className="w-9 h-9 rounded-xl bg-white/[0.05] ring-1 ring-inset ring-foreground/10 flex items-center justify-center shrink-0">
                     <LogOut
                       strokeWidth={1.5}
                       size={15}
@@ -1617,14 +1732,14 @@ export default function SettingsPage() {
                   </p>
                   <button
                     onClick={() => setShowSignOut(true)}
-                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-border bg-background text-sm font-medium text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-colors shrink-0 whitespace-nowrap"
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl ring-1 ring-inset ring-foreground/10 bg-white/[0.05] text-sm font-medium text-muted-foreground hover:text-foreground hover:ring-foreground/20 transition-colors shrink-0 whitespace-nowrap"
                   >
                     <LogOut strokeWidth={1.5} size={13} /> Sign Out
                   </button>
                 </div>
               </div>
 
-              <div className="rounded-xl border border-border bg-muted overflow-hidden">
+              <div className="rounded-xl ring-1 ring-inset ring-foreground/10 bg-white/[0.05] overflow-hidden">
                 <div className="flex items-center justify-between gap-6 px-5 py-4">
                   <div>
                     <p className="text-sm font-medium text-foreground">
@@ -1637,7 +1752,7 @@ export default function SettingsPage() {
                   <button
                     onClick={() => setShowClearHist(true)}
                     disabled={clearingHist}
-                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-border bg-background text-sm font-medium text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-colors shrink-0 whitespace-nowrap disabled:opacity-40"
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl ring-1 ring-inset ring-foreground/10 bg-white/[0.05] text-sm font-medium text-muted-foreground hover:text-foreground hover:ring-foreground/20 transition-colors shrink-0 whitespace-nowrap disabled:opacity-40"
                   >
                     <Trash2 strokeWidth={1.5} size={13} />{" "}
                     {clearingHist ? "Clearing…" : "Clear History"}
@@ -1690,3 +1805,4 @@ export default function SettingsPage() {
     </div>
   );
 }
+

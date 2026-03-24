@@ -16,7 +16,7 @@ export default function Footer() {
               </span>
             </div>
             <p className="text-sm text-muted-foreground max-w-sm">
-              Your AI-powered digital proxy for 1000+ apps.
+              Your AI-powered digital proxy for 500+ apps.
             </p>
           </div>
 

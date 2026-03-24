@@ -3,12 +3,12 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -19,29 +19,29 @@ import { api } from "@/lib/api";
 import { getAppColor } from "@/lib/appMeta";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-    Activity,
-    AlertTriangle,
-    ArrowDownAZ,
-    Calendar,
-    Check,
-    CheckSquare,
-    ChevronDown,
-    Clock,
-    Cloud,
-    GitPullRequest,
-    Inbox,
-    Loader2,
-    Mail,
-    MessageSquare,
-    Search,
-    ShieldAlert,
-    ShieldCheck,
-    ShieldQuestion,
-    SlidersHorizontal,
-    Square,
-    Trash2,
-    X,
-    XCircle,
+  Activity,
+  AlertTriangle,
+  ArrowDownAZ,
+  Calendar,
+  Check,
+  CheckSquare,
+  ChevronDown,
+  Clock,
+  Cloud,
+  GitPullRequest,
+  Inbox,
+  Loader2,
+  Mail,
+  MessageSquare,
+  Search,
+  ShieldAlert,
+  ShieldCheck,
+  ShieldQuestion,
+  SlidersHorizontal,
+  Square,
+  Trash2,
+  X,
+  XCircle,
 } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -141,9 +141,9 @@ function EventPayloadPanel({ payload }: { payload: EventPayload }) {
 
   if (type.includes("GMAIL") || data.subject || data.from) {
     return (
-      <div className="mt-3 rounded-xl bg-muted/40 border border-border overflow-hidden">
+      <div className="mt-3 rounded-xl bg-muted/35 ring-1 ring-inset ring-border/20 overflow-hidden">
         {!!data.from && (
-          <div className="flex gap-3 px-4 py-2.5 text-[11px] border-b border-border">
+          <div className="flex gap-3 px-4 py-2.5 text-[11px] border-b border-white/[0.03]">
             <span className="text-muted-foreground font-medium shrink-0 w-[72px]">
               From
             </span>
@@ -153,7 +153,7 @@ function EventPayloadPanel({ payload }: { payload: EventPayload }) {
           </div>
         )}
         {!!data.subject && (
-          <div className="flex gap-3 px-4 py-2.5 text-[11px] border-b border-border">
+          <div className="flex gap-3 px-4 py-2.5 text-[11px] border-b border-white/[0.03]">
             <span className="text-muted-foreground font-medium shrink-0 w-[72px]">
               Subject
             </span>
@@ -176,9 +176,9 @@ function EventPayloadPanel({ payload }: { payload: EventPayload }) {
 
   if (type.includes("SLACK") || data.channel_name || data.text) {
     return (
-      <div className="mt-3 rounded-xl bg-muted/40 border border-border overflow-hidden">
+      <div className="mt-3 rounded-xl bg-muted/35 ring-1 ring-inset ring-border/20 overflow-hidden">
         {!!data.channel_name && (
-          <div className="flex gap-3 px-4 py-2.5 text-[11px] border-b border-border">
+          <div className="flex gap-3 px-4 py-2.5 text-[11px] border-b border-white/[0.03]">
             <span className="text-muted-foreground font-medium shrink-0 w-[72px]">
               Channel
             </span>
@@ -218,7 +218,7 @@ function EventPayloadPanel({ payload }: { payload: EventPayload }) {
     }
   };
   return (
-    <div className="mt-3 rounded-xl bg-muted/40 border border-border divide-y divide-border overflow-hidden">
+    <div className="mt-3 rounded-xl bg-muted/35 ring-1 ring-inset ring-white/[0.03] divide-y divide-white/[0.03] overflow-hidden">
       {entries.map(([key, value]) => (
         <div key={key} className="flex gap-3 px-4 py-2.5 text-[11px]">
           <span className="text-muted-foreground font-medium shrink-0 w-[130px] truncate">
@@ -257,7 +257,7 @@ function ContextPanel({ ctx }: { ctx: Record<string, unknown> }) {
   };
 
   return (
-    <div className="mt-2 rounded-xl bg-muted/30 border border-border divide-y divide-border overflow-hidden">
+    <div className="mt-2 rounded-xl bg-muted/25 ring-1 ring-inset ring-white/[0.03] divide-y divide-white/[0.03] overflow-hidden">
       {entries.map(([key, value]) => (
         <div key={key} className="flex gap-3 px-4 py-2 text-[11px]">
           <span className="text-muted-foreground font-medium shrink-0 w-[130px] truncate">
@@ -651,18 +651,21 @@ export default function ReviewPage() {
   if (loading) {
     return (
       <div className="flex flex-col min-h-screen">
-        <div className="px-6 py-4 border-b border-border shrink-0 space-y-1.5">
+        <div className="px-6 py-4 border-b border-white/[0.02] shrink-0 space-y-1.5">
           <Skeleton className="h-3.5 w-12" />
           <Skeleton className="h-2.5 w-32" />
         </div>
-        <div className="px-6 border-b border-border flex items-center gap-3 h-10">
+        <div className="px-6 border-b border-white/[0.02] flex items-center gap-3 h-10">
           {[1, 2, 3].map((i) => (
             <Skeleton key={i} className="h-2.5 w-14" />
           ))}
         </div>
         <div>
           {[1, 2, 3].map((i) => (
-            <div key={i} className="border-b border-border px-6 py-4 space-y-2">
+            <div
+              key={i}
+              className="border-b border-white/[0.02] px-6 py-4 space-y-2"
+            >
               <div className="flex items-center gap-2.5">
                 <Skeleton className="w-1.5 h-1.5 rounded-full" />
                 <Skeleton className="h-2.5 w-14" />
@@ -680,7 +683,7 @@ export default function ReviewPage() {
   return (
     <div className="flex flex-col min-h-screen">
       {/* Page header */}
-      <div className="px-4 sm:px-6 py-4 border-b border-border flex items-center justify-between shrink-0">
+      <div className="px-4 sm:px-6 py-4 border-b border-white/[0.02] flex items-center justify-between shrink-0">
         <div>
           <h1 className="text-sm font-semibold text-foreground">Inbox</h1>
           <p className="text-xs text-muted-foreground mt-0.5">
@@ -740,7 +743,7 @@ export default function ReviewPage() {
       </div>
 
       {/* Filter tabs */}
-      <div className="px-4 sm:px-6 border-b border-border flex items-center gap-1">
+      <div className="px-4 sm:px-6 border-b border-white/[0.02] flex items-center gap-1">
         {(["pending", "resolved", "all"] as ViewFilter[]).map((filter) => (
           <button
             key={filter}
@@ -892,7 +895,7 @@ export default function ReviewPage() {
             animate={{ opacity: 1 }}
             className="flex flex-col items-center justify-center w-full mt-20 text-center gap-4"
           >
-            <div className="w-12 h-12 rounded-2xl bg-muted border border-border flex items-center justify-center">
+            <div className="w-12 h-12 rounded-2xl bg-muted border border-border/55 flex items-center justify-center">
               <Cloud
                 strokeWidth={1.5}
                 size={20}
@@ -942,7 +945,7 @@ export default function ReviewPage() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -8 }}
                   transition={{ duration: 0.18 }}
-                  className="flex items-center justify-between px-4 sm:px-6 py-2.5 border-b border-border bg-muted/50"
+                  className="flex items-center justify-between px-4 sm:px-6 py-2.5 border-b border-white/[0.02] bg-muted/30"
                 >
                   <div className="flex items-center gap-3">
                     <Button
@@ -1015,7 +1018,7 @@ export default function ReviewPage() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0, x: -40, transition: { duration: 0.2 } }}
-                    className={`border-b border-border px-4 sm:px-6 py-4 hover:bg-muted/30 transition-all ${item.id === highlightItemId ? "ring-2 ring-primary/50 bg-primary/5" : ""}`}
+                    className={`border-b border-white/[0.02] px-4 sm:px-6 py-4 hover:bg-white/[0.02] transition-all ${item.id === highlightItemId ? "ring-2 ring-inset ring-primary/30 bg-primary/[0.04]" : ""}`}
                   >
                     {/* Top row */}
                     <div className="flex items-center gap-2.5 mb-2">

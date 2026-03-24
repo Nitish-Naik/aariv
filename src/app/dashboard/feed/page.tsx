@@ -403,7 +403,7 @@ export default function FeedPage() {
   return (
     <div className="flex flex-col min-h-screen">
       {/* Page header */}
-      <div className="px-4 sm:px-6 py-4 border-b border-border flex items-center justify-between shrink-0">
+      <div className="px-4 sm:px-6 py-4 border-b border-border/40 flex items-center justify-between shrink-0">
         <div>
           <h1 className="text-sm font-semibold text-foreground">Activity</h1>
           <p className="text-xs text-muted-foreground mt-0.5">
@@ -492,7 +492,7 @@ export default function FeedPage() {
 
         {/* Stats strip */}
         {!loading && events.length > 0 && (
-          <div className="grid grid-cols-2 md:grid-cols-4 border border-border rounded-lg mb-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 border border-border/55 rounded-lg mb-6">
             {[
               { label: "Events", value: stats.total, color: "text-foreground" },
               {
@@ -510,7 +510,7 @@ export default function FeedPage() {
             ].map((s, i) => (
               <div
                 key={s.label}
-                className={`px-5 py-4 ${i < 3 ? "border-r border-border" : ""}`}
+                className={`px-5 py-4 ${i < 3 ? "border-r border-border/40" : ""}`}
               >
                 <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-1">
                   {s.label}
@@ -656,7 +656,7 @@ export default function FeedPage() {
         {loading ? (
           <div className="space-y-4">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="border border-border rounded-xl p-5">
+              <div key={i} className="border border-border/55 rounded-xl p-5">
                 <div className="flex items-start gap-4">
                   <Skeleton className="w-10 h-10 rounded-xl" />
                   <div className="flex-1 space-y-3 pt-1">
@@ -684,7 +684,7 @@ export default function FeedPage() {
         ) : filtered.length === 0 ? (
           /* No Results */
           <div className="flex flex-col items-center justify-center py-24 text-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-muted border border-border flex items-center justify-center">
+            <div className="w-12 h-12 rounded-2xl bg-muted border border-border/55 flex items-center justify-center">
               <Search
                 strokeWidth={1.5}
                 size={20}
@@ -748,7 +748,7 @@ export default function FeedPage() {
                           animate={{ opacity: 1, scale: 1, y: 0 }}
                           exit={{ opacity: 0, scale: 0.96 }}
                           transition={{ duration: 0.2, ease: "easeOut" }}
-                          className="group relative border border-border rounded-xl px-4 sm:px-5 py-4 hover:border-foreground/10 hover:bg-muted/30 lift pressable shadow-sm"
+                          className="group relative border border-border/55 rounded-xl px-4 sm:px-5 py-4 hover:border-foreground/10 hover:bg-muted/30 lift pressable shadow-sm"
                         >
                           <div className="flex items-start gap-4">
                             <FeedAppIcon
@@ -842,7 +842,7 @@ export default function FeedPage() {
                                     transition={{ duration: 0.2 }}
                                     className="overflow-hidden"
                                   >
-                                    <div className="mt-3 pt-3 border-t border-border space-y-2.5">
+                                    <div className="mt-3 pt-3 border-t border-border/40 space-y-2.5">
                                       <div className="grid grid-cols-[100px_1fr] gap-x-3 gap-y-1.5 text-[11px]">
                                         <span className="text-muted-foreground/60 font-medium">
                                           Event ID
@@ -902,7 +902,7 @@ export default function FeedPage() {
                             </div>
 
                             {/* Right: time + processing */}
-                            <div className="flex flex-col items-end gap-1.5 shrink-0 pl-4 border-l border-border h-full min-h-[40px] justify-center">
+                            <div className="flex flex-col items-end gap-1.5 shrink-0 pl-4 border-l border-border/40 h-full min-h-[40px] justify-center">
                               <span className="text-[11px] font-medium text-muted-foreground tabular-nums whitespace-nowrap">
                                 {timeAgo(evt.createdAt)}
                               </span>
@@ -938,3 +938,4 @@ export default function FeedPage() {
     </div>
   );
 }
+

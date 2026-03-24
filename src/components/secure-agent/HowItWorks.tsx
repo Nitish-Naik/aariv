@@ -15,7 +15,7 @@ export default function HowItWorks() {
             number: "01",
             icon: <Link2 strokeWidth={1.5} className="w-6 h-6 text-indigo-400" />,
             title: "Connect your apps",
-            description: "Link Gmail, Slack, Notion, GitHub and 1000+ more in one click. Pure OAuth — no passwords, no API keys, no config files.",
+            description: "Link Gmail, Slack, Notion, GitHub and 500+ more in one click. Pure OAuth — no passwords, no API keys, no config files.",
             color: "indigo",
         },
         {

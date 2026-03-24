@@ -12,17 +12,17 @@ const faqs = [
   {
     question: "What is CalmPilot?",
     answer:
-      "CalmPilot is an AI-powered digital proxy that connects to over 1000 apps through secure OAuth integrations and quietly handles your work 24/7. It automates workflows, sends daily briefings, manages smart triggers, and provides an AI chat assistant — all while keeping you in control with human-in-the-loop approval for sensitive actions.",
+      "CalmPilot is an AI-powered digital proxy that connects to over 500 apps through secure OAuth integrations and quietly handles your work 24/7. It automates workflows, sends daily briefings, manages smart triggers, and provides an AI chat assistant — all while keeping you in control with human-in-the-loop approval for sensitive actions.",
   },
   {
     question: "How does CalmPilot differ from Zapier or Make?",
     answer:
-      "Unlike Zapier or Make which require you to build workflows manually step by step, CalmPilot uses natural language AI to understand what you need and orchestrate complex multi-step workflows automatically. Just describe what you want in plain English and CalmPilot handles the rest across 1000+ OAuth integrations.",
+      "Unlike Zapier or Make which require you to build workflows manually step by step, CalmPilot uses natural language AI to understand what you need and orchestrate complex multi-step workflows automatically. Just describe what you want in plain English and CalmPilot handles the rest across 500+ OAuth integrations.",
   },
   {
     question: "What apps does CalmPilot integrate with?",
     answer:
-      "CalmPilot integrates with 1000+ apps including Gmail, Slack, Notion, GitHub, Linear, Jira, Google Calendar, Google Drive, Stripe, Airtable, Asana, Trello, Discord, HubSpot, Todoist, and many more. All integrations use OAuth for secure, password-free connections you can revoke at any time.",
+      "CalmPilot integrates with 500+ apps including Gmail, Slack, Notion, GitHub, Linear, Jira, Google Calendar, Google Drive, Stripe, Airtable, Asana, Trello, Discord, HubSpot, Todoist, and many more. All integrations use OAuth for secure, password-free connections you can revoke at any time.",
   },
   {
     question: "Is CalmPilot secure?",

@@ -212,7 +212,7 @@ export default function Hero() {
               className="space-y-2.5"
             >
               <p className="text-base sm:text-lg text-muted-foreground leading-relaxed font-light">
-                Connect 1000+ apps via OAuth, then let your agent run while you
+                Connect 500+ apps via OAuth, then let your agent run while you
                 sleep.
               </p>
               <ul className="text-sm sm:text-[15px] text-muted-foreground leading-relaxed space-y-1.5">
@@ -372,7 +372,7 @@ export default function Hero() {
                   </motion.div>
                 ))}
                 <span className="ml-2 text-xs text-foreground/80 font-medium tracking-wide">
-                  +1,000 more apps
+                  +500 more apps
                 </span>
               </div>
             </motion.div>

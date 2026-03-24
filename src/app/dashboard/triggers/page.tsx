@@ -681,7 +681,7 @@ export default function TriggersPage() {
         </Dialog>
 
         {/* Page header */}
-        <div className="px-4 sm:px-6 py-4 border-b border-border flex items-center justify-between shrink-0">
+        <div className="px-4 sm:px-6 py-4 border-b border-border/40 flex items-center justify-between shrink-0">
           <div>
             <h1 className="text-sm font-semibold text-foreground">
               Automations
@@ -703,7 +703,7 @@ export default function TriggersPage() {
 
         {/* View tabs */}
         {!loading && userTriggers.length > 0 && (
-          <div className="px-4 sm:px-6 border-b border-border flex items-center gap-1">
+          <div className="px-4 sm:px-6 border-b border-border/40 flex items-center gap-1">
             {(["triggers", "activity"] as const).map((tab) => (
               <button
                 key={tab}
@@ -718,7 +718,7 @@ export default function TriggersPage() {
 
         {/* Stats strip */}
         {stats && stats.total > 0 && !loading && (
-          <div className="grid grid-cols-2 md:grid-cols-4 border-b border-border">
+          <div className="grid grid-cols-2 md:grid-cols-4 border-b border-border/40">
             {[
               {
                 label: "Active",
@@ -746,7 +746,7 @@ export default function TriggersPage() {
             ].map((s, i) => (
               <div
                 key={s.label}
-                className={`px-6 py-4 ${i < 3 ? "border-r border-border" : ""}`}
+                className={`px-6 py-4 ${i < 3 ? "border-r border-border/40" : ""}`}
               >
                 <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-1">
                   {s.label}
@@ -765,7 +765,7 @@ export default function TriggersPage() {
               {[1, 2, 3].map((i) => (
                 <div
                   key={i}
-                  className="border border-border rounded-xl px-4 sm:px-5 py-4"
+                  className="border border-border/55 rounded-xl px-4 sm:px-5 py-4"
                 >
                   <div className="flex items-start gap-3">
                     <Skeleton className="w-9 h-9 rounded-lg" />
@@ -799,7 +799,7 @@ export default function TriggersPage() {
                             onClick={() =>
                               loadAvailableTriggers(integration.appName)
                             }
-                            className="w-full flex items-center gap-3 border border-border rounded-xl px-4 py-3 hover:bg-muted/50 transition-colors"
+                            className="w-full flex items-center gap-3 border border-border/55 rounded-xl px-4 py-3 hover:bg-muted/50 transition-colors"
                           >
                             <AppLogo
                               logo={
@@ -843,7 +843,7 @@ export default function TriggersPage() {
                                 availableTriggers.map((trigger) => (
                                   <div
                                     key={trigger.slug}
-                                    className="flex items-center gap-3 bg-muted/50 border border-border rounded-lg px-3 py-2.5"
+                                    className="flex items-center gap-3 bg-muted/50 border border-border/55 rounded-lg px-3 py-2.5"
                                   >
                                     <Zap
                                       strokeWidth={1.5}
@@ -928,7 +928,7 @@ export default function TriggersPage() {
                       <button
                         key={i}
                         onClick={() => setShowCreatePanel(true)}
-                        className="text-left border border-border rounded-xl p-4 hover:bg-muted/50 lift pressable group"
+                        className="text-left border border-border/55 rounded-xl p-4 hover:bg-muted/50 lift pressable group"
                       >
                         <div className="flex items-center gap-2 mb-3">
                           <div className="flex -space-x-2">
@@ -998,7 +998,7 @@ export default function TriggersPage() {
                       {activityEvents.map((ev) => (
                         <div
                           key={ev.id}
-                          className="border border-border rounded-xl px-4 py-3 flex items-center justify-between gap-3"
+                          className="border border-border/55 rounded-xl px-4 py-3 flex items-center justify-between gap-3"
                         >
                           <div className="flex items-center gap-3 min-w-0">
                             <div
@@ -1078,7 +1078,7 @@ export default function TriggersPage() {
                       return (
                         <div
                           key={trigger.id}
-                          className={`border border-border rounded-xl px-4 sm:px-5 py-4 lift hover:border-foreground/20 ${!trigger.is_enabled ? "opacity-60 grayscale-[0.5]" : ""}`}
+                          className={`border border-border/55 rounded-xl px-4 sm:px-5 py-4 lift hover:border-foreground/20 ${!trigger.is_enabled ? "opacity-60 grayscale-[0.5]" : ""}`}
                         >
                           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                             <div className="flex-1 min-w-0 flex flex-col gap-3">
@@ -1118,7 +1118,7 @@ export default function TriggersPage() {
 
                               {/* Visual Flow */}
                               <div className="flex items-center gap-3">
-                                <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-muted border border-border">
+                                <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-muted border border-border/55">
                                   {(() => {
                                     const logo =
                                       integrations.find(
@@ -1147,7 +1147,7 @@ export default function TriggersPage() {
                                   size={14}
                                   className="text-muted-foreground"
                                 />
-                                <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-muted border border-border">
+                                <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-muted border border-border/55">
                                   <Zap
                                     strokeWidth={1.5}
                                     size={14}
@@ -1162,7 +1162,7 @@ export default function TriggersPage() {
 
                             {/* Actions */}
                             <div className="flex sm:flex-col items-center sm:items-end justify-between w-full sm:w-auto gap-3">
-                              <div className="flex items-center gap-1 bg-muted border border-border rounded-lg p-0.5">
+                              <div className="flex items-center gap-1 bg-muted border border-border/55 rounded-lg p-0.5">
                                 <Tooltip>
                                   <TooltipTrigger>
                                     <Button
@@ -1268,7 +1268,7 @@ export default function TriggersPage() {
 
                           {/* Expandable Event Log */}
                           {expandedTriggerId === trigger.id && (
-                            <div className="mt-3 pt-3 border-t border-border">
+                            <div className="mt-3 pt-3 border-t border-border/40">
                               <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-2">
                                 Recent Events
                               </p>
@@ -1376,7 +1376,7 @@ export default function TriggersPage() {
                       </svg>
                     </div>
                     <div className="relative z-10 flex flex-col items-center gap-6">
-                      <div className="w-12 h-12 rounded-2xl bg-muted border border-border flex items-center justify-center">
+                      <div className="w-12 h-12 rounded-2xl bg-muted border border-border/55 flex items-center justify-center">
                         <Zap
                           strokeWidth={1.5}
                           size={20}
@@ -1398,7 +1398,7 @@ export default function TriggersPage() {
                           Create Trigger
                         </Button>
                       ) : (
-                        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-muted border border-border text-sm text-muted-foreground">
+                        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-muted border border-border/55 text-sm text-muted-foreground">
                           <span>Connect an app in</span>
                           <a
                             href="/dashboard/integrations"
@@ -1433,3 +1433,4 @@ export default function TriggersPage() {
     </>
   );
 }
+

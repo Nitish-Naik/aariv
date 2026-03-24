@@ -148,7 +148,7 @@ function StatCard({
     ring: "ring-border",
   };
   const inner = (
-    <Card className="border border-border bg-card hover:bg-muted/50 transition-colors cursor-pointer group shadow-none">
+    <Card className="border border-border/55 bg-card hover:bg-muted/50 transition-colors cursor-pointer group shadow-none">
       <CardContent className="p-4 flex items-center gap-4">
         <div
           className={`w-10 h-10 rounded-xl ${colors.bg} flex items-center justify-center shrink-0`}
@@ -215,7 +215,7 @@ function ProposalRow({
   const reviewLink = `/dashboard/review?q=${encodeURIComponent(proposal.title)}`;
 
   return (
-    <div className="flex items-start gap-3 px-4 py-3.5 border-b border-border last:border-0 hover:bg-muted/40 transition-colors group relative">
+    <div className="flex items-start gap-3 px-4 py-3.5 border-b border-border/40 last:border-0 hover:bg-muted/40 transition-colors group relative">
       {/* Priority bar */}
       <div
         className={`absolute left-0 top-3 bottom-3 w-0.5 rounded-r-full ${p.bar}`}
@@ -519,7 +519,7 @@ function CalendarSection({ todayEvents }: { todayEvents: CalendarEvent[] }) {
   );
 
   return (
-    <Card className="h-full flex flex-col border border-border bg-card overflow-hidden">
+    <Card className="h-full flex flex-col border border-border/55 bg-card overflow-hidden">
       <div className="px-4 pt-4 pb-0">
         <div className="flex items-center gap-2 mb-3">
           <div className="w-7 h-7 rounded-xl bg-gradient-to-br from-violet-500/30 to-violet-500/10 flex items-center justify-center">
@@ -530,7 +530,7 @@ function CalendarSection({ todayEvents }: { todayEvents: CalendarEvent[] }) {
           </span>
         </div>
 
-        <div className="flex items-center gap-0 border-b border-border">
+        <div className="flex items-center gap-0 border-b border-border/40">
           {(["today", "week"] as const).map((v) => {
             const active = view === v;
             const count = v === "today" ? todayCount : weekCount;
@@ -589,7 +589,7 @@ function CalendarSection({ todayEvents }: { todayEvents: CalendarEvent[] }) {
             {[1, 2, 3, 4].map((i) => (
               <div
                 key={i}
-                className="rounded-xl bg-card p-3 flex items-center gap-3 border border-border"
+                className="rounded-xl bg-card p-3 flex items-center gap-3 border border-border/55"
               >
                 <Skeleton className="h-9 w-[3px] rounded-full" />
                 <div className="flex-1 space-y-2">
@@ -689,7 +689,7 @@ function OnboardingState({ firstName }: { firstName: string }) {
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="px-6 py-4 border-b border-border flex items-center justify-between shrink-0">
+      <div className="px-6 py-4 border-b border-border/40 flex items-center justify-between shrink-0">
         <div>
           <h1 className="text-sm font-semibold text-foreground">Overview</h1>
           <p className="text-xs text-muted-foreground mt-0.5">{formatDate()}</p>
@@ -715,8 +715,8 @@ function OnboardingState({ firstName }: { firstName: string }) {
         </div>
 
         {/* App list */}
-        <Card className="w-full mb-5 border border-border bg-card">
-          <CardContent className="p-0 divide-y divide-border">
+        <Card className="w-full mb-5 border border-border/55 bg-card">
+          <CardContent className="p-0 divide-y divide-border/40">
             {RECOMMENDED_APPS.map((app) => (
               <button
                 key={app.slug}
@@ -797,7 +797,7 @@ function CalmState({
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="px-6 py-4 border-b border-border flex items-center justify-between shrink-0">
+      <div className="px-6 py-4 border-b border-border/40 flex items-center justify-between shrink-0">
         <div>
           <h1 className="text-sm font-semibold text-foreground">Overview</h1>
           <p className="text-xs text-muted-foreground mt-0.5">{formatDate()}</p>
@@ -922,7 +922,7 @@ function CalmState({
 
         {/* Insight */}
         {insight && (
-          <Card className="mt-4 max-w-sm w-full text-left border border-border bg-card">
+          <Card className="mt-4 max-w-sm w-full text-left border border-border/55 bg-card">
             <CardContent className="p-4 flex items-start gap-3">
               <Sparkles
                 strokeWidth={1.75}
@@ -970,7 +970,7 @@ function ActiveState({
   return (
     <div className="flex flex-col">
       {/* Header */}
-      <div className="px-6 py-4 border-b border-border flex items-center justify-between shrink-0">
+      <div className="px-6 py-4 border-b border-border/40 flex items-center justify-between shrink-0">
         <div>
           <h1 className="text-sm font-semibold text-foreground">
             {getGreeting()}, {firstName}
@@ -1017,8 +1017,8 @@ function ActiveState({
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 p-4 min-h-0">
         {/* Left: Proposals */}
         <div className="lg:col-span-3">
-          <Card className="h-full flex flex-col border border-border bg-card">
-            <CardHeader className="px-4 py-3 border-b border-border flex-row items-center justify-between space-y-0">
+          <Card className="h-full flex flex-col border border-border/55 bg-card">
+            <CardHeader className="px-4 py-3 border-b border-border/40 flex-row items-center justify-between space-y-0">
               <CardTitle className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest">
                 Proposals
                 {proposals.length > 0 && (
@@ -1071,7 +1071,7 @@ function ActiveState({
 
             {/* Insight */}
             {insight && (
-              <div className="px-4 py-3 border-t border-border flex items-start gap-3">
+              <div className="px-4 py-3 border-t border-border/40 flex items-start gap-3">
                 <Sparkles
                   strokeWidth={1.75}
                   size={13}
@@ -1100,7 +1100,7 @@ function LoadingSkeleton({ firstName }: { firstName?: string }) {
   return (
     <div className="flex flex-col">
       {/* Header */}
-      <div className="px-6 py-4 border-b border-border flex items-center justify-between shrink-0">
+      <div className="px-6 py-4 border-b border-border/40 flex items-center justify-between shrink-0">
         <div>
           <h1 className="text-sm font-semibold text-foreground">Overview</h1>
           <p className="text-xs text-muted-foreground mt-0.5">{formatDate()}</p>
@@ -1295,7 +1295,7 @@ export default function DashboardHome() {
 
   /* Nudge banner */
   const nudgeBanner = showNudge ? (
-    <div className="mx-4 mb-4 rounded-xl border border-border bg-muted/40 px-4 py-3 flex items-center gap-4">
+    <div className="mx-4 mb-4 rounded-xl border border-border/55 bg-muted/40 px-4 py-3 flex items-center gap-4">
       <div className="flex-1 min-w-0">
         <p className="text-xs font-medium text-foreground">
           Want a fuller brief?
@@ -1356,3 +1356,4 @@ export default function DashboardHome() {
     </>
   );
 }
+

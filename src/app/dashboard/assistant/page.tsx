@@ -10,20 +10,20 @@ import { getAppLogo } from "@/lib/platform-logos";
 import type { ChatMessage, Conversation } from "@/lib/types";
 import { motion } from "framer-motion";
 import {
-    Check,
-    ChevronDown,
-    Clock,
-    Copy,
-    FileUp,
-    Loader2,
-    Menu,
-    MessageSquare,
-    PanelLeftClose,
-    Plus,
-    Send,
-    Shield,
-    Trash2,
-    X,
+  Check,
+  ChevronDown,
+  Clock,
+  Copy,
+  FileUp,
+  Loader2,
+  Menu,
+  MessageSquare,
+  PanelLeftClose,
+  Plus,
+  Send,
+  Shield,
+  Trash2,
+  X,
 } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
@@ -609,14 +609,14 @@ function AssistantPageInner() {
 
       {/* ── LEFT SIDEBAR (Chat History) ── */}
       <aside
-        className={`fixed lg:static top-0 left-0 h-full z-40 flex flex-col bg-background border-r border-border transition-all duration-300 ease-in-out ${
+        className={`fixed lg:static top-0 left-0 h-full z-40 flex flex-col bg-background/85 backdrop-blur-sm transition-all duration-300 ease-in-out ${
           isSidebarOpen
             ? "w-72 translate-x-0"
             : "w-0 -translate-x-full lg:translate-x-0 lg:w-0 overflow-hidden"
         }`}
       >
         {/* Sidebar Header */}
-        <div className="h-16 flex items-center justify-between px-4 border-b border-border shrink-0">
+        <div className="h-16 flex items-center justify-between px-4 shrink-0">
           <span className="text-sm font-semibold text-foreground tracking-wide">
             Chat History
           </span>
@@ -689,7 +689,7 @@ function AssistantPageInner() {
 
         {/* Manage History Section */}
         {conversations.length > 0 && (
-          <div className="border-t border-border shrink-0">
+          <div className="shrink-0">
             <button
               onClick={() => setIsDeleteMenuOpen(!isDeleteMenuOpen)}
               className="w-full flex items-center justify-between px-4 py-3 text-sm text-muted-foreground hover:text-foreground hover:bg-muted/30 transition-colors"
@@ -707,7 +707,7 @@ function AssistantPageInner() {
             {isDeleteMenuOpen && (
               <div className="bg-muted/30 pb-2">
                 {/* Auto-delete retention setting */}
-                <div className="px-4 py-3 border-b border-border">
+                <div className="px-4 py-3">
                   <div className="flex items-center gap-2 mb-2">
                     <Clock
                       strokeWidth={1.5}
@@ -740,7 +740,7 @@ function AssistantPageInner() {
                         disabled={retentionSaving}
                         className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-all ${
                           retentionDays === opt.value
-                            ? "bg-primary text-primary-foreground"
+                            ? "bg-blue-500 text-white ring-1 ring-blue-400 shadow-sm shadow-blue-500/30"
                             : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
                         } disabled:opacity-50`}
                       >
@@ -774,7 +774,7 @@ function AssistantPageInner() {
                 ))}
                 <button
                   onClick={() => setDeleteConfirm({ type: "all" })}
-                  className="w-full flex items-center gap-2 px-5 py-2 text-xs text-red-500 font-medium hover:bg-red-400/10 transition-colors border-t border-border"
+                  className="w-full flex items-center gap-2 px-5 py-2 text-xs text-red-500 font-medium hover:bg-red-400/10 transition-colors"
                 >
                   <Trash2 strokeWidth={1.5} size={12} />
                   Delete Everything
@@ -795,7 +795,7 @@ function AssistantPageInner() {
       >
         {/* Drag & Drop Overlay */}
         {isDragOver && (
-          <div className="absolute inset-0 z-20 flex items-center justify-center bg-background/90 backdrop-blur-sm border-2 border-dashed border-border rounded-xl m-4 pointer-events-none">
+          <div className="absolute inset-0 z-20 flex items-center justify-center bg-background/90 backdrop-blur-sm rounded-xl m-4 pointer-events-none ring-1 ring-inset ring-foreground/15">
             <div className="flex flex-col items-center gap-3 text-foreground">
               <FileUp size={40} strokeWidth={1.5} />
               <span className="text-lg font-medium">Drop files here</span>
@@ -807,7 +807,7 @@ function AssistantPageInner() {
         )}
 
         {/* Header */}
-        <div className="px-4 sm:px-6 flex items-center justify-between h-14 sm:h-16 border-b border-border shrink-0">
+        <div className="px-4 sm:px-6 flex items-center justify-between h-14 sm:h-16 shrink-0">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
@@ -845,7 +845,7 @@ function AssistantPageInner() {
               />
             </div>
             {/* Mobile-only activity label (logs panel is desktop-only) */}
-            <div className="lg:hidden px-4 py-1.5 flex items-center gap-2 bg-background border-b border-border">
+            <div className="lg:hidden px-4 py-1.5 flex items-center gap-2 bg-background/90 backdrop-blur-sm">
               <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/30 animate-pulse shrink-0" />
               <span className="text-[11px] text-muted-foreground truncate">
                 {(() => {
@@ -894,7 +894,7 @@ function AssistantPageInner() {
                   e.preventDefault();
                   handleSend();
                 }}
-                className="w-full max-w-xl flex items-center gap-3 rounded-3xl bg-card border border-border px-4 py-3 shadow-xl transition-all focus-within:border-foreground/20"
+                className="w-full max-w-xl flex items-center gap-3 rounded-3xl bg-white/[0.07] backdrop-blur-sm px-4 py-3 shadow-[0_10px_30px_rgba(0,0,0,0.28)] transition-all focus-within:bg-white/[0.11] focus-within:shadow-[0_14px_36px_rgba(0,0,0,0.34)]"
               >
                 <label className="flex items-center justify-center shrink-0 w-7 h-7 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer">
                   <Plus strokeWidth={2} size={17} />
@@ -966,7 +966,7 @@ function AssistantPageInner() {
                         setInputText(chip.message);
                         inputRef.current?.focus();
                       }}
-                      className="px-4 py-2.5 rounded-full bg-muted border border-border text-sm text-muted-foreground hover:text-foreground hover:border-border transition-all"
+                      className="px-4 py-2.5 rounded-full bg-white/[0.07] backdrop-blur-sm text-sm text-foreground/90 shadow-[0_6px_18px_rgba(0,0,0,0.22)] hover:text-foreground hover:bg-white/[0.11] hover:-translate-y-px hover:shadow-[0_10px_24px_rgba(0,0,0,0.28)] transition-all"
                     >
                       {chip.label}
                     </button>
@@ -1010,7 +1010,7 @@ function AssistantPageInner() {
                       }`}
                     >
                       <div
-                        className={`rounded-xl px-4 py-3 shadow-sm ${isUser ? "max-w-[85%] bg-muted border border-border" : "w-full bg-transparent"}`}
+                        className={`rounded-2xl px-4 py-3 shadow-sm ${isUser ? "max-w-[85%] bg-gradient-to-br from-sky-500/18 to-indigo-500/12 ring-1 ring-inset ring-sky-400/25 shadow-[0_10px_30px_rgba(0,0,0,0.28)]" : "w-full bg-transparent"}`}
                       >
                         {/* Content */}
                         {isUser ? (
@@ -1067,7 +1067,7 @@ function AssistantPageInner() {
                                       const logoUrl =
                                         getLogo(appSlug) || getAppLogo(appSlug);
                                       return (
-                                        <div className="flex items-center gap-3 w-full my-2 px-4 py-3 rounded-xl bg-background border border-border hover:border-border/40 transition-colors">
+                                        <div className="flex items-center gap-3 w-full my-2 px-4 py-3 rounded-xl bg-card/70 backdrop-blur-sm ring-1 ring-inset ring-foreground/10 hover:bg-card/90 transition-colors shadow-[0_8px_24px_rgba(0,0,0,0.18)]">
                                           {logoUrl ? (
                                             <img
                                               src={logoUrl}
@@ -1184,7 +1184,7 @@ function AssistantPageInner() {
                                     </th>
                                   ),
                                   td: ({ children }) => (
-                                    <td className="px-3 py-2 border-b border-border">
+                                    <td className="px-3 py-2 border-b border-border/40">
                                       {children}
                                     </td>
                                   ),
@@ -1198,7 +1198,7 @@ function AssistantPageInner() {
                                 {msg.completions.map((label) => (
                                   <span
                                     key={label}
-                                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-green-500/10 text-green-400 border border-green-500/20"
+                                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-500/14 text-emerald-300 ring-1 ring-inset ring-emerald-400/35 shadow-[0_4px_12px_rgba(16,185,129,0.18)]"
                                   >
                                     <Check strokeWidth={2.5} size={10} />
                                     {label}
@@ -1299,7 +1299,7 @@ function AssistantPageInner() {
 
                         {/* Copy button for AI messages */}
                         {!isUser && msg.content && (
-                          <div className="flex justify-end mt-1 -mb-1">
+                          <div className="flex justify-start mt-1 -mb-1">
                             <button
                               onClick={() =>
                                 handleCopyMessage(msg.id, msg.content)
@@ -1332,7 +1332,7 @@ function AssistantPageInner() {
                               return (
                                 <div
                                   key={idx}
-                                  className="flex items-center gap-3 w-full px-4 py-3 rounded-xl bg-background border border-border hover:border-border/40 transition-colors"
+                                  className="flex items-center gap-3 w-full px-4 py-3 rounded-xl bg-card/70 backdrop-blur-sm ring-1 ring-inset ring-foreground/10 hover:bg-card/90 transition-colors shadow-[0_8px_24px_rgba(0,0,0,0.18)]"
                                 >
                                   {logoUrl ? (
                                     <img
@@ -1412,7 +1412,7 @@ function AssistantPageInner() {
             <div className="max-w-2xl mx-auto w-full relative">
               {/* Model Toggle */}
               {/* <div className="flex items-center gap-1 mb-2.5 ml-1">
-              <div className="inline-flex items-center bg-muted border border-border rounded-full p-0.5">
+              <div className="inline-flex items-center bg-muted border border-border/55 rounded-full p-0.5">
                 <button
                   type="button"
                   onClick={() => { setSelectedModel("gpt-4o-mini"); localStorage.setItem("calmpilot_model", "gpt-4o-mini"); }}
@@ -1445,7 +1445,7 @@ function AssistantPageInner() {
                   e.preventDefault();
                   handleSend();
                 }}
-                className="flex items-center gap-3 rounded-3xl bg-card border border-border px-4 py-3 shadow-xl transition-all focus-within:border-foreground/20"
+                className="flex items-center gap-3 rounded-3xl bg-white/[0.07] backdrop-blur-sm px-4 py-3 shadow-[0_10px_30px_rgba(0,0,0,0.28)] transition-all focus-within:bg-white/[0.11] focus-within:shadow-[0_14px_36px_rgba(0,0,0,0.34)]"
               >
                 <label className="flex items-center justify-center shrink-0 w-7 h-7 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer">
                   <Plus strokeWidth={2} size={17} />
@@ -1514,12 +1514,12 @@ function AssistantPageInner() {
       {/* ─── RIGHT PANEL (TOOL EXECUTION LOGS) ─── */}
 
       {/* <div
-        className={`fixed lg:static top-0 right-0 h-full bg-[#111111] z-40 transition-all duration-300 ease-in-out transform flex flex-col border-l border-border ${isLogsOpen
+        className={`fixed lg:static top-0 right-0 h-full bg-[#111111] z-40 transition-all duration-300 ease-in-out transform flex flex-col border-l border-border/40 ${isLogsOpen
             ? "translate-x-0 w-[320px] lg:w-[40%]"
             : "translate-x-full lg:translate-x-0 lg:w-0 lg:overflow-hidden lg:border-none"
           }`}
       >
-        <div className="h-16 flex items-center justify-between px-6 border-b border-border bg-[#1A1A1A]/80 backdrop-blur shrink-0">
+        <div className="h-16 flex items-center justify-between px-6 border-b border-border/40 bg-[#1A1A1A]/80 backdrop-blur shrink-0">
           <div className="flex items-center gap-2">
             <Terminal strokeWidth={1.5} size={16} className="text-muted-foreground" />
             <span className="text-xs font-mono font-medium tracking-wider text-foreground/80 uppercase">
@@ -1588,3 +1588,4 @@ export default function AssistantPage() {
     </Suspense>
   );
 }
+

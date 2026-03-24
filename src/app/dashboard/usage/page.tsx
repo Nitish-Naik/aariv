@@ -1,20 +1,28 @@
 "use client";
 
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useAuth } from "@/context/AuthContext";
 import { useBilling } from "@/context/useBilling";
 import { api } from "@/lib/api";
 import {
-    Activity,
-    ArrowDownRight,
-    ArrowUpRight,
-    Check,
-    CreditCard,
-    ExternalLink,
-    History,
-    RefreshCw,
-    Wallet,
-    X,
-    Zap,
+  Activity,
+  ArrowDownRight,
+  ArrowUpRight,
+  Check,
+  CreditCard,
+  ExternalLink,
+  History,
+  RefreshCw,
+  Wallet,
+  X,
+  Zap,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
@@ -179,7 +187,7 @@ export default function UsagePage() {
         <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] xl:grid-cols-[280px_1fr] gap-8 lg:gap-12">
           <div className="space-y-6 flex flex-col">
             {/* ─── Credit Balance ─── */}
-            <section className="bg-card border border-border shadow-sm rounded-lg p-6">
+            <section className="bg-card border border-border/55 shadow-sm rounded-lg p-6">
               <div className="flex items-start justify-between mb-5">
                 <div>
                   <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">
@@ -237,7 +245,7 @@ export default function UsagePage() {
                 </button>
                 <button
                   onClick={() => setShowAutoRefill(true)}
-                  className="px-4 py-2 bg-background text-muted-foreground text-xs font-medium rounded-lg hover:text-foreground transition-colors flex items-center gap-1.5 border border-border"
+                  className="px-4 py-2 bg-background text-muted-foreground text-xs font-medium rounded-lg hover:text-foreground transition-colors flex items-center gap-1.5 border border-border/55"
                 >
                   <RefreshCw strokeWidth={1.5} size={12} />
                   {balanceData?.auto_refill_enabled
@@ -251,8 +259,8 @@ export default function UsagePage() {
             </section>
 
             {/* ─── Usage Summary ─── */}
-            <section className="bg-card border border-border shadow-sm rounded-lg overflow-hidden flex-1">
-              <div className="px-6 py-5 border-b border-border">
+            <section className="bg-card border border-border/55 shadow-sm rounded-lg overflow-hidden flex-1">
+              <div className="px-6 py-5 border-b border-border/40">
                 <div className="flex items-center gap-2">
                   <Activity
                     strokeWidth={1.5}
@@ -269,7 +277,7 @@ export default function UsagePage() {
               </div>
 
               {usageData && Object.keys(usageData.summary).length > 0 ? (
-                <div className="divide-y divide-border">
+                <div className="divide-y divide-border/40">
                   {Object.entries(usageData.summary).map(
                     ([model, data]: [string, any]) => {
                       const { label, hint } = getModelLabel(model);
@@ -327,8 +335,8 @@ export default function UsagePage() {
             </section>
 
             {/* ─── Spending History ─── */}
-            <section className="bg-card border border-border rounded-xl overflow-hidden">
-              <div className="px-6 py-4 border-b border-border">
+            <section className="bg-card border border-border/55 rounded-xl overflow-hidden">
+              <div className="px-6 py-4 border-b border-border/40">
                 <div className="flex items-center gap-2">
                   <History
                     strokeWidth={1.5}
@@ -346,7 +354,7 @@ export default function UsagePage() {
                   {groupedHistory.map(({ dateLabel, rows, total }) => (
                     <div key={dateLabel}>
                       {/* Day header */}
-                      <div className="flex items-center justify-between px-6 py-2 border-b border-border bg-background/60">
+                      <div className="flex items-center justify-between px-6 py-2 border-b border-border/40 bg-background/60">
                         <p className="text-[11px] font-medium text-muted-foreground">
                           {dateLabel}
                         </p>
@@ -358,7 +366,7 @@ export default function UsagePage() {
                         </p>
                       </div>
                       {/* Rows for this day */}
-                      <div className="divide-y divide-border">
+                      <div className="divide-y divide-border/40">
                         {rows.map((tx) => {
                           const isPositive = tx.amount > 0;
                           return (
@@ -438,7 +446,7 @@ export default function UsagePage() {
               className="absolute inset-0 bg-background/80 backdrop-blur-sm"
               onClick={() => setShowAutoRefill(false)}
             />
-            <div className="relative bg-card border border-border rounded-xl w-full max-w-sm p-7 shadow-2xl">
+            <div className="relative bg-card border border-border/55 rounded-xl w-full max-w-sm p-7 shadow-2xl">
               <button
                 onClick={() => setShowAutoRefill(false)}
                 className="absolute top-4 right-4 w-7 h-7 rounded-lg bg-background flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
@@ -495,7 +503,7 @@ export default function UsagePage() {
                       step={0.5}
                       value={refillThreshold}
                       onChange={(e) => setRefillThreshold(e.target.value)}
-                      className="w-full py-2.5 pl-7 pr-4 rounded-xl bg-background border border-border text-foreground text-sm outline-none focus:border-foreground/30 transition-colors"
+                      className="w-full py-2.5 pl-7 pr-4 rounded-xl bg-background border border-border/55 text-foreground text-sm outline-none focus:border-foreground/30 transition-colors"
                     />
                   </div>
                   <p className="text-[11px] text-muted-foreground mt-1">
@@ -528,7 +536,7 @@ export default function UsagePage() {
                       step={1}
                       value={refillAmount}
                       onChange={(e) => setRefillAmount(e.target.value)}
-                      className="w-full py-2.5 pl-7 pr-4 rounded-xl bg-background border border-border text-foreground text-sm outline-none focus:border-foreground/30 transition-colors"
+                      className="w-full py-2.5 pl-7 pr-4 rounded-xl bg-background border border-border/55 text-foreground text-sm outline-none focus:border-foreground/30 transition-colors"
                     />
                   </div>
                 </div>
@@ -559,33 +567,17 @@ export default function UsagePage() {
         )}
 
         {/* ─── Add Credits Modal ─── */}
-        {showAddCredits && (
-          <div
-            className="fixed inset-0 z-[100] flex items-center justify-center p-4"
-            role="dialog"
-            aria-modal="true"
-          >
-            <div
-              className="absolute inset-0 bg-background/80 backdrop-blur-sm"
-              onClick={() => setShowAddCredits(false)}
-            />
-            <div className="relative bg-card border border-border rounded-xl w-full max-w-sm p-7 shadow-2xl">
-              <button
-                onClick={() => setShowAddCredits(false)}
-                className="absolute top-4 right-4 w-7 h-7 rounded-lg bg-background flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <X strokeWidth={1.5} size={14} />
-              </button>
-
-              <h2 className="text-lg font-medium text-foreground mb-0.5">
-                Add Credits
-              </h2>
-              <p className="text-xs text-muted-foreground mb-5">
+        <Dialog open={showAddCredits} onOpenChange={setShowAddCredits}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Add Credits</DialogTitle>
+              <DialogDescription>
                 Choose an amount to add to your balance.
-              </p>
+              </DialogDescription>
+            </DialogHeader>
 
-              {/* Preset */}
-              <div className="grid grid-cols-2 gap-2 mb-5">
+            <div className="space-y-5">
+              <div className="grid grid-cols-2 gap-2">
                 {[10, 25, 50, 100].map((amt) => (
                   <button
                     key={amt}
@@ -593,15 +585,18 @@ export default function UsagePage() {
                       setSelectedAmount(amt);
                       setCustomAmount("");
                     }}
-                    className={`py-2.5 rounded-xl text-sm font-medium transition-all border ${selectedAmount === amt && !customAmount ? "bg-muted text-foreground border-foreground/30" : "bg-background text-muted-foreground border-border hover:border-foreground/30"}`}
+                    className={`py-2.5 rounded-xl text-sm font-medium transition-all ring-1 ring-inset ${
+                      selectedAmount === amt && !customAmount
+                        ? "bg-amber-500/10 text-amber-400 ring-amber-500/40"
+                        : "bg-white/[0.05] text-muted-foreground ring-foreground/10 hover:ring-foreground/20 hover:bg-white/[0.06]"
+                    }`}
                   >
                     ${amt}
                   </button>
                 ))}
               </div>
 
-              {/* Custom */}
-              <div className="mb-5">
+              <div>
                 <label className="text-xs font-medium text-foreground mb-1.5 block">
                   Custom amount
                 </label>
@@ -619,18 +614,27 @@ export default function UsagePage() {
                       setCustomAmount(e.target.value);
                       setSelectedAmount(null);
                     }}
-                    placeholder="5.00 - 500.00"
-                    className="w-full py-2.5 pl-7 pr-4 rounded-xl bg-background border border-border text-foreground text-sm placeholder:text-muted-foreground outline-none focus:border-foreground/30 transition-colors"
+                    placeholder="5.00 – 500.00"
+                    className="w-full py-2.5 pl-7 pr-4 rounded-xl bg-background ring-1 ring-inset ring-foreground/10 text-foreground text-sm placeholder:text-muted-foreground outline-none focus-within:ring-foreground/20 focus-within:bg-white/[0.06] transition-colors"
                   />
                 </div>
                 {customAmount && parseFloat(customAmount) < 5 && (
-                  <p className="text-[11px] text-red-400 mt-1.5">
-                    Minimum $5.00
-                  </p>
+                  <p className="text-[11px] text-red-400 mt-1">Minimum $5.00</p>
                 )}
               </div>
+            </div>
 
-              {/* Pay */}
+            {checkoutError && (
+              <p className="text-[11px] text-red-400">{checkoutError}</p>
+            )}
+
+            <DialogFooter>
+              <button
+                onClick={() => setShowAddCredits(false)}
+                className="px-4 py-2 rounded-xl text-sm font-medium bg-muted text-muted-foreground hover:bg-muted/80 transition-colors"
+              >
+                Cancel
+              </button>
               {(() => {
                 const amount = customAmount
                   ? parseFloat(customAmount)
@@ -641,59 +645,52 @@ export default function UsagePage() {
                   amount >= 5 &&
                   amount <= 500;
                 return (
-                  <>
-                    <button
-                      onClick={async () => {
-                        if (!isValid || isCreatingCheckout) return;
-                        setCheckoutError(null);
-                        setIsCreatingCheckout(true);
-                        try {
-                          const data = await api.post(
-                            "/billing/create-checkout",
-                            { amount },
-                          );
-                          if (data?.checkout_url) {
-                            window.location.href = data.checkout_url;
-                          } else {
-                            setCheckoutError(
-                              "No checkout URL returned. Please try again.",
-                            );
-                          }
-                        } catch (e: any) {
+                  <button
+                    onClick={async () => {
+                      if (!isValid || isCreatingCheckout) return;
+                      setCheckoutError(null);
+                      setIsCreatingCheckout(true);
+                      try {
+                        const data = await api.post(
+                          "/billing/create-checkout",
+                          { amount },
+                        );
+                        if (data?.checkout_url) {
+                          window.location.href = data.checkout_url;
+                        } else {
                           setCheckoutError(
-                            e?.message ||
-                              "Failed to start checkout. Please try again.",
+                            "No checkout URL returned. Please try again.",
                           );
-                        } finally {
-                          setIsCreatingCheckout(false);
                         }
-                      }}
-                      disabled={!isValid || isCreatingCheckout}
-                      className={`w-full py-3 rounded-xl font-medium text-sm flex items-center justify-center gap-2 transition-opacity ${isValid && !isCreatingCheckout ? "bg-muted text-foreground hover:opacity-80 cursor-pointer" : "bg-background text-muted-foreground cursor-not-allowed opacity-50"}`}
-                    >
-                      <CreditCard strokeWidth={1.5} size={15} />
-                      {isCreatingCheckout ? "Redirecting..." : "Pay with Dodo"}
-                      {!isCreatingCheckout && (
-                        <ExternalLink strokeWidth={1.5} size={13} />
-                      )}
-                    </button>
-                    {checkoutError && (
-                      <p className="text-[11px] text-red-400 text-center mt-1.5">
-                        {checkoutError}
-                      </p>
+                      } catch (e: any) {
+                        setCheckoutError(
+                          e?.message ||
+                            "Failed to start checkout. Please try again.",
+                        );
+                      } finally {
+                        setIsCreatingCheckout(false);
+                      }
+                    }}
+                    disabled={!isValid || isCreatingCheckout}
+                    className={`px-4 py-2 rounded-xl text-sm font-medium flex items-center gap-2 transition-all ${
+                      isValid && !isCreatingCheckout
+                        ? "bg-amber-500 text-black hover:bg-amber-400"
+                        : "bg-muted text-muted-foreground cursor-not-allowed opacity-50"
+                    }`}
+                  >
+                    <CreditCard strokeWidth={1.5} size={15} />
+                    {isCreatingCheckout ? "Redirecting…" : "Pay with Dodo"}
+                    {!isCreatingCheckout && (
+                      <ExternalLink strokeWidth={1.5} size={13} />
                     )}
-                  </>
+                  </button>
                 );
               })()}
-
-              <p className="text-[10px] text-muted-foreground text-center mt-3">
-                You will be redirected to Dodo Payments to complete your
-                purchase.
-              </p>
-            </div>
-          </div>
-        )}
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
 }
+

@@ -21,7 +21,7 @@ const capabilities = [
   },
   {
     label: "Integration Management",
-    desc: "Connect and manage 1000+ apps from a single secure dashboard via OAuth.",
+    desc: "Connect and manage 500+ apps from a single secure dashboard via OAuth.",
   },
   {
     label: "24/7 Autonomous Operation",
