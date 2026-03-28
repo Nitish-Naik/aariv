@@ -1,11 +1,11 @@
 "use client";
 
 import { EmptyState } from "@/components/dashboard/EmptyState";
-import { useUpgradeDialog } from "@/components/UpgradeDialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useUpgradeDialog } from "@/components/UpgradeDialog";
 import { useAuth } from "@/context/AuthContext";
 import { useLogo } from "@/context/LogoContext";
 import { api } from "@/lib/api";
@@ -407,7 +407,9 @@ export default function FeedPage() {
       {/* Page header */}
       <div className="px-5 sm:px-6 py-4 sm:py-5 border-b border-white/[0.06] flex items-center justify-between shrink-0">
         <div>
-          <h1 className="text-base font-semibold text-white tracking-[-0.01em]">Activity</h1>
+          <h1 className="text-base font-semibold text-white tracking-[-0.01em]">
+            Activity
+          </h1>
           <p className="text-[12px] text-zinc-500 mt-0.5">
             Everything your triggers captured, in one timeline
           </p>
@@ -639,11 +641,7 @@ export default function FeedPage() {
               </p>
             </div>
             {error === "INSUFFICIENT_CREDITS" ? (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => openUpgrade()}
-              >
+              <Button variant="outline" size="sm" onClick={() => openUpgrade()}>
                 Upgrade
               </Button>
             ) : (
@@ -658,7 +656,10 @@ export default function FeedPage() {
         {loading ? (
           <div className="space-y-4">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="border border-white/[0.07] rounded-xl p-5">
+              <div
+                key={i}
+                className="border border-white/[0.07] rounded-xl p-5"
+              >
                 <div className="flex items-start gap-4">
                   <Skeleton className="w-10 h-10 rounded-xl" />
                   <div className="flex-1 space-y-3 pt-1">
@@ -940,4 +941,3 @@ export default function FeedPage() {
     </div>
   );
 }
-

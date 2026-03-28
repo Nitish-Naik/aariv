@@ -1,26 +1,26 @@
 "use client";
 
 import { ConfirmDialog } from "@/components/ConfirmDialog";
-import { useUpgradeDialog } from "@/components/UpgradeDialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Sheet } from "@/components/ui/Sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-    Tooltip,
-    TooltipContent,
-    TooltipTrigger,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useUpgradeDialog } from "@/components/UpgradeDialog";
 import { useAuth } from "@/context/AuthContext";
 import { useLogo } from "@/context/LogoContext";
 import { useToast } from "@/context/ToastContext";
@@ -28,22 +28,21 @@ import { useBilling } from "@/context/useBilling";
 import { api } from "@/lib/api";
 import { formatTriggerSlug, getTriggerDescription } from "@/lib/appMeta";
 import {
-    Activity,
-    ArrowRight,
-    ChevronDown,
-    ChevronRight,
-    Clock,
-    Globe,
-    Info,
-    Loader2,
-    Pause,
-    Play,
-    Plus,
-    RefreshCw,
-    Search,
-    Trash2,
-    X,
-    Zap
+  Activity,
+  ArrowRight,
+  ChevronDown,
+  ChevronRight,
+  Clock,
+  Globe,
+  Info,
+  Loader2,
+  Pause,
+  Play,
+  Plus,
+  RefreshCw,
+  Search,
+  X,
+  Zap
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -622,7 +621,9 @@ export default function TriggersPage() {
     if (!searchQuery) return userTriggers;
     const q = searchQuery.toLowerCase();
     return userTriggers.filter((t) => {
-      const name = formatTriggerSlug(t.trigger_slug || t.trigger_name || "").toLowerCase();
+      const name = formatTriggerSlug(
+        t.trigger_slug || t.trigger_name || "",
+      ).toLowerCase();
       const app = (t.toolkit || "").toLowerCase();
       return name.includes(q) || app.includes(q);
     });
@@ -668,14 +669,17 @@ export default function TriggersPage() {
           <div className="flex items-center gap-2.5">
             {isFree && !loading && (
               <button
-                onClick={() => userTriggers.filter(t => t.is_enabled).length >= 3 && openUpgrade("trigger_limit")}
+                onClick={() =>
+                  userTriggers.filter((t) => t.is_enabled).length >= 3 &&
+                  openUpgrade("trigger_limit")
+                }
                 className={`text-[11px] font-medium px-2.5 py-1 rounded-full transition-colors ${
-                  (userTriggers.filter(t => t.is_enabled).length) >= 3
+                  userTriggers.filter((t) => t.is_enabled).length >= 3
                     ? "bg-red-500/10 text-red-400 ring-1 ring-inset ring-red-500/20 cursor-pointer hover:bg-red-500/20"
                     : "bg-white/[0.06] text-muted-foreground ring-1 ring-inset ring-white/[0.08] cursor-default"
                 }`}
               >
-                {userTriggers.filter(t => t.is_enabled).length}/3 triggers
+                {userTriggers.filter((t) => t.is_enabled).length}/3 triggers
               </button>
             )}
             {/* + New button removed — triggers are auto-created when apps connect */}
@@ -1001,7 +1005,11 @@ export default function TriggersPage() {
                             <div className="flex-1 min-w-0 flex flex-col gap-3">
                               <div className="flex items-center gap-2 flex-wrap">
                                 <h3 className="text-sm font-semibold text-foreground">
-                                  {formatTriggerSlug(trigger.trigger_slug || trigger.trigger_name || "")}
+                                  {formatTriggerSlug(
+                                    trigger.trigger_slug ||
+                                      trigger.trigger_name ||
+                                      "",
+                                  )}
                                 </h3>
                                 <Badge
                                   variant="outline"
@@ -1326,4 +1334,3 @@ export default function TriggersPage() {
     </>
   );
 }
-

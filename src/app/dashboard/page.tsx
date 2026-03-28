@@ -1,30 +1,29 @@
 "use client";
 
 import { useUpgradeDialog } from "@/components/UpgradeDialog";
-import { Button } from "@/components/ui/button";
 import { WeeklyStats } from "@/components/dashboard/WeeklyStats";
+import { Logo } from "@/components/secure-agent/Logo";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/context/AuthContext";
-import { useBilling } from "@/context/useBilling";
 import { useLogo } from "@/context/LogoContext";
-import { Logo } from "@/components/secure-agent/Logo";
+import { useBilling } from "@/context/useBilling";
 import { trackEvent } from "@/lib/analytics";
 import { api } from "@/lib/api";
-import { supabase } from "@/lib/supabase";
 import { getAppColor, getAppIcon } from "@/lib/appMeta";
 import { usePromptStore } from "@/lib/prompt-store";
+import { supabase } from "@/lib/supabase";
 import {
   ArrowRight,
   Calendar,
   CheckCircle2,
-  Loader2,
   Mail,
   MessageSquare,
   Plug,
   RefreshCw,
   Sparkles,
   X,
-  Zap,
+  Zap
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -173,7 +172,9 @@ function Metric({
         {value}
       </p>
       <div className="flex items-center gap-1.5 mt-2">
-        {dotColor && <span className={`w-1.5 h-1.5 rounded-full ${dotColor}`} />}
+        {dotColor && (
+          <span className={`w-1.5 h-1.5 rounded-full ${dotColor}`} />
+        )}
         <p className="text-xs text-muted-foreground font-medium">{label}</p>
         {href && (
           <ArrowRight
@@ -252,7 +253,12 @@ function ProposalItem({
 /* ─── Calendar Event Row ─────────────────────────────────── */
 
 const EVENT_ACCENT_COLORS = [
-  "#818cf8", "#38bdf8", "#34d399", "#fb923c", "#f472b6", "#a78bfa",
+  "#818cf8",
+  "#38bdf8",
+  "#34d399",
+  "#fb923c",
+  "#f472b6",
+  "#a78bfa",
 ];
 
 function getEventColor(eventId: string, overrideColor?: string | null): string {
@@ -273,8 +279,12 @@ function getMinutesFromMidnight(iso: string): number {
 }
 
 /** Assign overlap columns to events so concurrent ones sit side-by-side. */
-function assignColumns(events: { startMin: number; endMin: number; index: number }[]): { col: number; totalCols: number }[] {
-  const sorted = [...events].sort((a, b) => a.startMin - b.startMin || a.endMin - b.endMin);
+function assignColumns(
+  events: { startMin: number; endMin: number; index: number }[],
+): { col: number; totalCols: number }[] {
+  const sorted = [...events].sort(
+    (a, b) => a.startMin - b.startMin || a.endMin - b.endMin,
+  );
   const result: { col: number; totalCols: number }[] = new Array(events.length);
   const groups: number[][] = []; // groups of overlapping event indices
 
@@ -325,7 +335,13 @@ function assignColumns(events: { startMin: number; endMin: number; index: number
   return result;
 }
 
-function TimelineView({ events, showNowLine: showNow = false }: { events: CalendarEvent[]; showNowLine?: boolean }) {
+function TimelineView({
+  events,
+  showNowLine: showNow = false,
+}: {
+  events: CalendarEvent[];
+  showNowLine?: boolean;
+}) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const now = new Date();
   const currentMinutes = now.getHours() * 60 + now.getMinutes();
@@ -340,11 +356,15 @@ function TimelineView({ events, showNowLine: showNow = false }: { events: Calend
   let startHour = 7;
   let endHour = 20;
   if (timelineEvents.length > 0) {
-    const earliest = Math.min(...timelineEvents.map((e) => new Date(e.startTime).getHours()));
-    const latest = Math.max(...timelineEvents.map((e) => {
-      const end = e.endTime ? new Date(e.endTime) : new Date(e.startTime);
-      return end.getHours() + (end.getMinutes() > 0 ? 1 : 0);
-    }));
+    const earliest = Math.min(
+      ...timelineEvents.map((e) => new Date(e.startTime).getHours()),
+    );
+    const latest = Math.max(
+      ...timelineEvents.map((e) => {
+        const end = e.endTime ? new Date(e.endTime) : new Date(e.startTime);
+        return end.getHours() + (end.getMinutes() > 0 ? 1 : 0);
+      }),
+    );
     startHour = Math.max(0, Math.min(earliest - 1, 7));
     endHour = Math.min(24, Math.max(latest + 1, 20));
   }
@@ -355,7 +375,9 @@ function TimelineView({ events, showNowLine: showNow = false }: { events: Calend
   // Prepare event positions for overlap detection
   const eventPositions = timelineEvents.map((e, i) => {
     const startMin = getMinutesFromMidnight(e.startTime);
-    const endMin = e.endTime ? getMinutesFromMidnight(e.endTime) : startMin + 30;
+    const endMin = e.endTime
+      ? getMinutesFromMidnight(e.endTime)
+      : startMin + 30;
     return { startMin, endMin: Math.max(endMin, startMin + 15), index: i };
   });
   const columns = assignColumns(eventPositions);
@@ -364,18 +386,27 @@ function TimelineView({ events, showNowLine: showNow = false }: { events: Calend
   useEffect(() => {
     if (scrollRef.current) {
       if (showNow) {
-        const scrollTo = Math.max(0, ((now.getHours() - startHour - 1) * HOUR_HEIGHT));
+        const scrollTo = Math.max(
+          0,
+          (now.getHours() - startHour - 1) * HOUR_HEIGHT,
+        );
         scrollRef.current.scrollTop = scrollTo;
       } else if (timelineEvents.length > 0) {
         const firstHour = new Date(timelineEvents[0].startTime).getHours();
-        scrollRef.current.scrollTop = Math.max(0, (firstHour - startHour - 1) * HOUR_HEIGHT);
+        scrollRef.current.scrollTop = Math.max(
+          0,
+          (firstHour - startHour - 1) * HOUR_HEIGHT,
+        );
       }
     }
   }, []);
 
   // Current time indicator
   const nowTop = ((currentMinutes - startHour * 60) / 60) * HOUR_HEIGHT;
-  const showNowLine = showNow && currentMinutes >= startHour * 60 && currentMinutes <= endHour * 60;
+  const showNowLine =
+    showNow &&
+    currentMinutes >= startHour * 60 &&
+    currentMinutes <= endHour * 60;
 
   return (
     <div
@@ -383,11 +414,21 @@ function TimelineView({ events, showNowLine: showNow = false }: { events: Calend
       className="relative overflow-y-auto"
       style={{ maxHeight: "480px" }}
     >
-      <div className="relative pb-8" style={{ height: `${timelineHeight + 44}px` }}>
+      <div
+        className="relative pb-8"
+        style={{ height: `${timelineHeight + 44}px` }}
+      >
         {/* Hour grid lines */}
         {Array.from({ length: totalHours }, (_, i) => {
           const hour = startHour + i;
-          const label = hour === 0 ? "12 AM" : hour < 12 ? `${hour} AM` : hour === 12 ? "12 PM" : `${hour - 12} PM`;
+          const label =
+            hour === 0
+              ? "12 AM"
+              : hour < 12
+                ? `${hour} AM`
+                : hour === 12
+                  ? "12 PM"
+                  : `${hour - 12} PM`;
           return (
             <div
               key={hour}
@@ -422,9 +463,10 @@ function TimelineView({ events, showNowLine: showNow = false }: { events: Calend
           const height = (duration / 60) * HOUR_HEIGHT;
           const color = getEventColor(event.id, event.color);
           const isPast = new Date(event.endTime || event.startTime) < now;
-          const durationLabel = duration >= 60
-            ? `${Math.floor(duration / 60)} hr${duration % 60 > 0 ? ` ${duration % 60}m` : ""}`
-            : `${duration} min`;
+          const durationLabel =
+            duration >= 60
+              ? `${Math.floor(duration / 60)} hr${duration % 60 > 0 ? ` ${duration % 60}m` : ""}`
+              : `${duration} min`;
           const location = event.location;
 
           // Column layout: divide the event area among overlapping events
@@ -452,7 +494,8 @@ function TimelineView({ events, showNowLine: showNow = false }: { events: Calend
               </p>
               {height >= 36 && (
                 <p className="text-[10px] text-muted-foreground mt-0.5 truncate">
-                  {durationLabel}{location ? ` · ${location}` : ""}
+                  {durationLabel}
+                  {location ? ` · ${location}` : ""}
                 </p>
               )}
             </div>
@@ -464,29 +507,46 @@ function TimelineView({ events, showNowLine: showNow = false }: { events: Calend
 }
 
 /* Simple list row for week view */
-function EventRow({ event, isNext }: { event: CalendarEvent; isNext?: boolean }) {
+function EventRow({
+  event,
+  isNext,
+}: {
+  event: CalendarEvent;
+  isNext?: boolean;
+}) {
   const isPast = new Date(event.endTime || event.startTime) < new Date();
   const time = formatTime(event.startTime);
   const endTime = event.endTime ? formatTime(event.endTime) : "";
   const accentColor = getEventColor(event.id, event.color);
 
   return (
-    <div className={`flex items-start gap-3 py-2.5 ${isPast ? "opacity-30" : ""}`}>
+    <div
+      className={`flex items-start gap-3 py-2.5 ${isPast ? "opacity-30" : ""}`}
+    >
       <div
         className="w-[2px] rounded-full shrink-0 mt-1"
-        style={{ height: endTime ? "32px" : "18px", backgroundColor: accentColor }}
+        style={{
+          height: endTime ? "32px" : "18px",
+          backgroundColor: accentColor,
+        }}
       />
       <div className="flex-1 min-w-0">
         <p className="text-[13px] font-medium text-foreground leading-snug truncate">
           {event.title}
         </p>
         <div className="flex items-center gap-1 mt-0.5">
-          {isNext && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />}
-          <span className="text-[11px] text-muted-foreground tabular-nums">{time}</span>
+          {isNext && (
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
+          )}
+          <span className="text-[11px] text-muted-foreground tabular-nums">
+            {time}
+          </span>
           {endTime && (
             <>
               <span className="text-[10px] text-muted-foreground/60">—</span>
-              <span className="text-[11px] text-muted-foreground/60 tabular-nums">{endTime}</span>
+              <span className="text-[11px] text-muted-foreground/60 tabular-nums">
+                {endTime}
+              </span>
             </>
           )}
         </div>
@@ -503,7 +563,10 @@ function CalendarConnectPrompt() {
   const month = now.getMonth();
   const today = now.getDate();
 
-  const monthName = now.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+  const monthName = now.toLocaleDateString("en-US", {
+    month: "long",
+    year: "numeric",
+  });
   const firstDay = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
 
@@ -516,10 +579,15 @@ function CalendarConnectPrompt() {
     <div className="flex flex-col items-center py-6 text-center">
       {/* Mini calendar */}
       <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4 mb-6 w-[220px]">
-        <p className="text-[13px] font-semibold text-foreground mb-3">{monthName}</p>
+        <p className="text-[13px] font-semibold text-foreground mb-3">
+          {monthName}
+        </p>
         <div className="grid grid-cols-7 gap-0">
           {["S", "M", "T", "W", "T", "F", "S"].map((d, i) => (
-            <span key={i} className="text-[10px] text-muted-foreground/50 font-medium text-center py-1">
+            <span
+              key={i}
+              className="text-[10px] text-muted-foreground/50 font-medium text-center py-1"
+            >
               {d}
             </span>
           ))}
@@ -545,7 +613,8 @@ function CalendarConnectPrompt() {
         Your schedule awaits
       </h4>
       <p className="text-sm text-muted-foreground leading-relaxed max-w-[260px] mb-5">
-        Connect Google Calendar to see your day at a glance. CalmPilot reads your calendar but never modifies it.
+        Connect Google Calendar to see your day at a glance. CalmPilot reads
+        your calendar but never modifies it.
       </p>
 
       {/* CTA */}
@@ -567,9 +636,30 @@ function CalendarConnectPrompt() {
 
 type CalendarView = "today" | "tomorrow" | "week";
 
-const DAY_LABELS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+const DAY_LABELS = [
+  "Sunday",
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+];
 const DAY_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-const MONTH_LABELS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const MONTH_LABELS = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+];
 
 function formatDayHeading(dateStr: string) {
   const d = new Date(dateStr + "T00:00:00");
@@ -577,16 +667,29 @@ function formatDayHeading(dateStr: string) {
   today.setHours(0, 0, 0, 0);
   const diff = Math.round((d.getTime() - today.getTime()) / 86400000);
   const sub = `${DAY_SHORT[d.getDay()]}, ${MONTH_LABELS[d.getMonth()]} ${d.getDate()}`;
-  if (diff === 0) return { label: "Today", sub, isToday: true, isTomorrow: false };
-  if (diff === 1) return { label: "Tomorrow", sub, isToday: false, isTomorrow: true };
-  return { label: DAY_LABELS[d.getDay()], sub, isToday: false, isTomorrow: false };
+  if (diff === 0)
+    return { label: "Today", sub, isToday: true, isTomorrow: false };
+  if (diff === 1)
+    return { label: "Tomorrow", sub, isToday: false, isTomorrow: true };
+  return {
+    label: DAY_LABELS[d.getDay()],
+    sub,
+    isToday: false,
+    isTomorrow: false,
+  };
 }
 
-function ScheduleSection({ calendarConnected = true }: { calendarConnected?: boolean }) {
+function ScheduleSection({
+  calendarConnected = true,
+}: {
+  calendarConnected?: boolean;
+}) {
   const [view, setView] = useState<CalendarView>("today");
   const [todayEvents, setTodayEvents] = useState<CalendarEvent[]>([]);
   const [tomorrowEvents, setTomorrowEvents] = useState<CalendarEvent[]>([]);
-  const [weekEvents, setWeekEvents] = useState<Record<string, CalendarEvent[]>>({});
+  const [weekEvents, setWeekEvents] = useState<Record<string, CalendarEvent[]>>(
+    {},
+  );
   const [loadingToday, setLoadingToday] = useState(false);
   const [loadingTomorrow, setLoadingTomorrow] = useState(false);
   const [loadingWeek, setLoadingWeek] = useState(false);
@@ -707,7 +810,9 @@ function ScheduleSection({ calendarConnected = true }: { calendarConnected?: boo
             <TimelineView events={tomorrowEvents} />
           ) : (
             <div className="flex flex-col items-center py-10 text-center">
-              <p className="text-sm text-muted-foreground">Nothing scheduled tomorrow</p>
+              <p className="text-sm text-muted-foreground">
+                Nothing scheduled tomorrow
+              </p>
             </div>
           )
         ) : loadingWeek ? (
@@ -733,22 +838,33 @@ function ScheduleSection({ calendarConnected = true }: { calendarConnected?: boo
                   return d < new Date();
                 })();
                 return (
-                  <div key={dateKey} className={`mb-2 ${isDayPast ? "opacity-40" : ""}`}>
+                  <div
+                    key={dateKey}
+                    className={`mb-2 ${isDayPast ? "opacity-40" : ""}`}
+                  >
                     <div className="flex items-center gap-2 mb-1 mt-3 first:mt-0">
                       <span
                         className={`text-[11px] font-medium ${
-                          heading.isToday ? "text-violet-400" : heading.isTomorrow ? "text-amber-400" : "text-muted-foreground"
+                          heading.isToday
+                            ? "text-violet-400"
+                            : heading.isTomorrow
+                              ? "text-amber-400"
+                              : "text-muted-foreground"
                         }`}
                       >
                         {heading.label}
                       </span>
-                      <span className="text-[10px] text-muted-foreground/60">{heading.sub}</span>
+                      <span className="text-[10px] text-muted-foreground/60">
+                        {heading.sub}
+                      </span>
                     </div>
                     {events.map((event, i) => (
                       <EventRow
                         key={event.id}
                         event={event}
-                        isNext={heading.isToday && i === findNextEventIndex(events)}
+                        isNext={
+                          heading.isToday && i === findNextEventIndex(events)
+                        }
                       />
                     ))}
                   </div>
@@ -779,7 +895,8 @@ const RECOMMENDED_APPS = [
   {
     slug: "googlecalendar",
     name: "Google Calendar",
-    description: "Track meetings, schedule events, and stay on top of your day.",
+    description:
+      "Track meetings, schedule events, and stay on top of your day.",
     color: "#4285F4",
     icon: <Calendar strokeWidth={1.75} size={16} />,
     free: true,
@@ -787,7 +904,8 @@ const RECOMMENDED_APPS = [
   {
     slug: "slack",
     name: "Slack",
-    description: "Monitor channels, respond to messages, and manage notifications.",
+    description:
+      "Monitor channels, respond to messages, and manage notifications.",
     color: "#E01E5A",
     icon: <MessageSquare strokeWidth={1.75} size={16} />,
     free: false,
@@ -818,7 +936,9 @@ function OnboardingState({ firstName }: { firstName: string }) {
           {RECOMMENDED_APPS.map((app) => (
             <button
               key={app.slug}
-              onClick={() => router.push(`/dashboard/integrations?connect=${app.slug}`)}
+              onClick={() =>
+                router.push(`/dashboard/integrations?connect=${app.slug}`)
+              }
               className="w-full flex items-center gap-4 py-5 hover:bg-white/[0.02] transition-colors text-left group -mx-2 px-2 rounded-xl"
             >
               <DashboardAppLogo
@@ -829,8 +949,12 @@ function OnboardingState({ firstName }: { firstName: string }) {
                 className="w-11 h-11 rounded-xl shrink-0"
               />
               <div className="flex-1 min-w-0">
-                <p className="text-base font-medium text-foreground">{app.name}</p>
-                <p className="text-sm text-muted-foreground mt-0.5 truncate">{app.description}</p>
+                <p className="text-base font-medium text-foreground">
+                  {app.name}
+                </p>
+                <p className="text-sm text-muted-foreground mt-0.5 truncate">
+                  {app.description}
+                </p>
               </div>
               <ArrowRight
                 size={16}
@@ -887,8 +1011,9 @@ function CalmState({
   const remainingMeetings = countRemainingMeetings(calendarEvents);
 
   // Contextual status based on actual data
-  const statusLine = briefing?.subtitle
-    || (remainingMeetings === 0 && reviewCounts.total === 0
+  const statusLine =
+    briefing?.subtitle ||
+    (remainingMeetings === 0 && reviewCounts.total === 0
       ? "Your day is clear. Nothing needs your attention."
       : remainingMeetings > 0
         ? `You have ${remainingMeetings} meeting${remainingMeetings > 1 ? "s" : ""} left today.`
@@ -898,7 +1023,6 @@ function CalmState({
     <div className="flex flex-col h-full">
       {/* Two-column: greeting+context left, schedule right — both top-aligned */}
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-0">
-
         {/* ── Left ────────────────────────────────────────────── */}
         <div className="flex flex-col px-6 sm:px-8 pt-8 sm:pt-10 pb-6 relative">
           {onRefresh && (
@@ -907,7 +1031,10 @@ function CalmState({
               disabled={refreshing}
               className="absolute top-8 sm:top-10 right-6 sm:right-8 w-8 h-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-white/[0.04] transition-all"
             >
-              <RefreshCw size={14} className={refreshing ? "animate-spin" : ""} />
+              <RefreshCw
+                size={14}
+                className={refreshing ? "animate-spin" : ""}
+              />
             </button>
           )}
 
@@ -915,9 +1042,7 @@ function CalmState({
           <h1 className="text-xl font-semibold text-foreground tracking-[-0.01em]">
             {getGreeting()}, {firstName}
           </h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            {statusLine}
-          </p>
+          <p className="text-sm text-muted-foreground mt-0.5">{statusLine}</p>
 
           {/* Compact stats row */}
           <div className="flex items-center gap-6 mt-8">
@@ -931,16 +1056,33 @@ function CalmState({
               </div>
             )} */}
             {reviewCounts.total > 0 && (
-              <Link href="/dashboard/review" className="flex items-center gap-2 group">
-                <CheckCircle2 strokeWidth={1.5} size={14} className="text-muted-foreground" />
+              <Link
+                href="/dashboard/review"
+                className="flex items-center gap-2 group"
+              >
+                <CheckCircle2
+                  strokeWidth={1.5}
+                  size={14}
+                  className="text-muted-foreground"
+                />
                 <span className="text-sm text-muted-foreground group-hover:text-foreground transition-colors">
-                  <span className="font-semibold text-foreground">{reviewCounts.total}</span> to review
+                  <span className="font-semibold text-foreground">
+                    {reviewCounts.total}
+                  </span>{" "}
+                  to review
                 </span>
               </Link>
             )}
             {!calendarConnected && (
-              <Link href="/dashboard/integrations" className="flex items-center gap-2 group">
-                <Calendar strokeWidth={1.5} size={14} className="text-muted-foreground" />
+              <Link
+                href="/dashboard/integrations"
+                className="flex items-center gap-2 group"
+              >
+                <Calendar
+                  strokeWidth={1.5}
+                  size={14}
+                  className="text-muted-foreground"
+                />
                 <span className="text-sm text-indigo-400 group-hover:text-indigo-300 font-medium transition-colors">
                   Connect calendar
                 </span>
@@ -985,8 +1127,14 @@ function CalmState({
           {insight && (
             <div className="mt-auto pt-8">
               <div className="flex items-start gap-3 border-t border-border pt-4">
-                <Sparkles strokeWidth={1.5} size={12} className="text-indigo-400/50 shrink-0 mt-0.5" />
-                <p className="text-xs text-muted-foreground leading-relaxed">{insight}</p>
+                <Sparkles
+                  strokeWidth={1.5}
+                  size={12}
+                  className="text-indigo-400/50 shrink-0 mt-0.5"
+                />
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  {insight}
+                </p>
               </div>
             </div>
           )}
@@ -1044,7 +1192,9 @@ function ActiveState({
         <h1 className="text-xl font-semibold text-foreground tracking-[-0.01em]">
           {getGreeting()}, {firstName}
         </h1>
-        <p className="text-sm text-muted-foreground mt-0.5">{briefing.subtitle}</p>
+        <p className="text-sm text-muted-foreground mt-0.5">
+          {briefing.subtitle}
+        </p>
       </div>
 
       {/* Metrics — commented out for now
@@ -1074,7 +1224,9 @@ function ActiveState({
             <h3 className="text-base font-medium text-foreground">
               Needs your attention
               {proposals.length > 0 && (
-                <span className="ml-2 text-sm text-muted-foreground">{proposals.length}</span>
+                <span className="ml-2 text-sm text-muted-foreground">
+                  {proposals.length}
+                </span>
               )}
             </h3>
             {reviewCounts.total > 0 && (
@@ -1100,7 +1252,11 @@ function ActiveState({
             </div>
           ) : (
             <div className="flex flex-col items-center py-12 text-center">
-              <CheckCircle2 strokeWidth={1.25} size={24} className="text-emerald-400/40 mb-3" />
+              <CheckCircle2
+                strokeWidth={1.25}
+                size={24}
+                className="text-emerald-400/40 mb-3"
+              />
               <p className="text-sm text-muted-foreground">All caught up</p>
             </div>
           )}
@@ -1108,8 +1264,14 @@ function ActiveState({
           {/* Insight */}
           {insight && (
             <div className="mt-6 pt-4 border-t border-border flex items-start gap-3">
-              <Sparkles strokeWidth={1.5} size={12} className="text-indigo-400/50 shrink-0 mt-0.5" />
-              <p className="text-xs text-muted-foreground leading-relaxed">{insight}</p>
+              <Sparkles
+                strokeWidth={1.5}
+                size={12}
+                className="text-indigo-400/50 shrink-0 mt-0.5"
+              />
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                {insight}
+              </p>
             </div>
           )}
         </div>
@@ -1155,7 +1317,9 @@ function LoadingSkeleton({ firstName }: { firstName?: string }) {
             <p className="text-sm font-medium text-foreground mb-1">
               Preparing your briefing{firstName ? `, ${firstName}` : ""}...
             </p>
-            <p className="text-xs text-muted-foreground">Your digital proxy is handling it.</p>
+            <p className="text-xs text-muted-foreground">
+              Your digital proxy is handling it.
+            </p>
           </div>
         </div>
 
@@ -1174,7 +1338,10 @@ function LoadingSkeleton({ firstName }: { firstName?: string }) {
           {/* Timeline hour rows */}
           <div className="space-y-0">
             {[1, 2, 3, 4, 5, 6].map((i) => (
-              <div key={i} className="flex items-start gap-3 py-3 border-t border-white/[0.04]">
+              <div
+                key={i}
+                className="flex items-start gap-3 py-3 border-t border-white/[0.04]"
+              >
                 <Skeleton className="h-3 w-10 shrink-0 mt-0.5" />
                 {i === 2 || i === 4 ? (
                   <Skeleton className="h-14 flex-1 rounded-lg" />
@@ -1246,23 +1413,29 @@ export default function DashboardHome() {
           return;
         }
         setHasConnections(true);
-        trackEvent("dashboard_loaded", { connected_apps: apps.length, tier: isFree ? "free" : "paid" });
+        trackEvent("dashboard_loaded", {
+          connected_apps: apps.length,
+          tier: isFree ? "free" : "paid",
+        });
 
         const [data, reviewData] = await Promise.all([
-          api.get(`/dashboard/briefing${silent ? "?force=true" : ""}`).catch((e: unknown) => {
-            if (e instanceof Error && e.message.includes("403")) {
-              return {
-                is_calm: true,
-                subtitle: "Your free briefing trial has ended. Upgrade to get daily AI briefings.",
-                counts: { emails: 0, events: 0 },
-                events: [],
-                proposals: [],
-                insight: null,
-                _needs_upgrade: true,
-              };
-            }
-            throw e;
-          }),
+          api
+            .get(`/dashboard/briefing${silent ? "?force=true" : ""}`)
+            .catch((e: unknown) => {
+              if (e instanceof Error && e.message.includes("403")) {
+                return {
+                  is_calm: true,
+                  subtitle:
+                    "Your free briefing trial has ended. Upgrade to get daily AI briefings.",
+                  counts: { emails: 0, events: 0 },
+                  events: [],
+                  proposals: [],
+                  insight: null,
+                  _needs_upgrade: true,
+                };
+              }
+              throw e;
+            }),
           api.get(`/review?status=pending`).catch(() => null),
         ]);
         if (data) {
@@ -1314,7 +1487,7 @@ export default function DashboardHome() {
           if (slug.startsWith("GOOGLECALENDAR")) {
             fetchBriefingRef.current?.(true);
           }
-        }
+        },
       )
       .subscribe();
 
@@ -1368,8 +1541,12 @@ export default function DashboardHome() {
           <div className="text-center space-y-5 max-w-xs">
             <Logo className="w-10 h-10 mx-auto opacity-50" />
             <div>
-              <h3 className="text-base font-semibold text-foreground mb-1">Plan limit reached</h3>
-              <p className="text-sm text-muted-foreground">Upgrade your plan to continue using CalmPilot.</p>
+              <h3 className="text-base font-semibold text-foreground mb-1">
+                Plan limit reached
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                Upgrade your plan to continue using CalmPilot.
+              </p>
             </div>
             <Button size="sm" className="gap-2" onClick={() => openUpgrade()}>
               <Sparkles strokeWidth={1.75} size={13} />
@@ -1379,7 +1556,11 @@ export default function DashboardHome() {
         ) : (
           <div className="text-center space-y-4">
             <p className="text-sm text-muted-foreground">{error}</p>
-            <Button size="sm" onClick={() => fetchBriefing(true)} className="gap-2">
+            <Button
+              size="sm"
+              onClick={() => fetchBriefing(true)}
+              className="gap-2"
+            >
               <RefreshCw strokeWidth={1.75} size={13} />
               Try again
             </Button>
@@ -1419,15 +1600,20 @@ export default function DashboardHome() {
   ) : null;
 
   // New events banner
-  const newEventsBanner = newEventCount > 0 ? (
-    <button
-      onClick={() => { setNewEventCount(0); fetchBriefing(true); }}
-      className="mx-6 sm:mx-8 mt-3 w-[calc(100%-3rem)] sm:w-[calc(100%-4rem)] flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-indigo-500/[0.05] text-[13px] text-indigo-300 hover:bg-indigo-500/[0.08] transition-colors"
-    >
-      <RefreshCw size={12} strokeWidth={1.5} />
-      {newEventCount} new {newEventCount === 1 ? "event" : "events"} — tap to refresh
-    </button>
-  ) : null;
+  const newEventsBanner =
+    newEventCount > 0 ? (
+      <button
+        onClick={() => {
+          setNewEventCount(0);
+          fetchBriefing(true);
+        }}
+        className="mx-6 sm:mx-8 mt-3 w-[calc(100%-3rem)] sm:w-[calc(100%-4rem)] flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-indigo-500/[0.05] text-[13px] text-indigo-300 hover:bg-indigo-500/[0.08] transition-colors"
+      >
+        <RefreshCw size={12} strokeWidth={1.5} />
+        {newEventCount} new {newEventCount === 1 ? "event" : "events"} — tap to
+        refresh
+      </button>
+    ) : null;
 
   if (!briefing || briefing.is_calm) {
     return (
@@ -1436,7 +1622,10 @@ export default function DashboardHome() {
           firstName={firstName}
           briefing={briefing}
           reviewCounts={reviewCounts}
-          onRefresh={() => { setNewEventCount(0); fetchBriefing(true); }}
+          onRefresh={() => {
+            setNewEventCount(0);
+            fetchBriefing(true);
+          }}
           refreshing={refreshing}
           userId={user?.id}
           connectedApps={connectedApps}
@@ -1454,7 +1643,10 @@ export default function DashboardHome() {
         briefing={briefing}
         logoMap={logoMap}
         reviewCounts={reviewCounts}
-        onRefresh={() => { setNewEventCount(0); fetchBriefing(true); }}
+        onRefresh={() => {
+          setNewEventCount(0);
+          fetchBriefing(true);
+        }}
         refreshing={refreshing}
       />
       {nudgeBanner}

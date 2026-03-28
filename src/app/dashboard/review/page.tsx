@@ -4,12 +4,12 @@ import { useUpgradeDialog } from "@/components/UpgradeDialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -21,30 +21,30 @@ import { getAppColor } from "@/lib/appMeta";
 import { usePromptStore } from "@/lib/prompt-store";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  AlertTriangle,
-  ArrowDownAZ,
-  ArrowRight,
-  Calendar,
-  Check,
-  CheckSquare,
-  ChevronDown,
-  Clock,
-  Cloud,
-  // GitPullRequest removed — GitHub not available for launch
-  Inbox,
-  Loader2,
-  Mail,
-  MessageSquare,
-  Search,
-  ShieldAlert,
-  ShieldCheck,
-  ShieldQuestion,
-  SlidersHorizontal,
-  Square,
-  Trash2,
-  X,
-  XCircle,
-  Zap,
+    AlertTriangle,
+    ArrowDownAZ,
+    ArrowRight,
+    Calendar,
+    Check,
+    CheckSquare,
+    ChevronDown,
+    Clock,
+    Cloud,
+    // GitPullRequest removed — GitHub not available for launch
+    Inbox,
+    Loader2,
+    Mail,
+    MessageSquare,
+    Search,
+    ShieldAlert,
+    ShieldCheck,
+    ShieldQuestion,
+    SlidersHorizontal,
+    Square,
+    Trash2,
+    X,
+    XCircle,
+    Zap,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -617,7 +617,10 @@ export default function ReviewPage() {
     // App / category filter
     if (categoryFilter !== "all") {
       result = result.filter(
-        (i) => i.source_app === categoryFilter || i.source_app?.toLowerCase() === categoryFilter.toLowerCase() || i.category === categoryFilter
+        (i) =>
+          i.source_app === categoryFilter ||
+          i.source_app?.toLowerCase() === categoryFilter.toLowerCase() ||
+          i.category === categoryFilter,
       );
     }
 
@@ -694,7 +697,9 @@ export default function ReviewPage() {
       {/* Page header */}
       <div className="px-5 sm:px-6 py-4 sm:py-5 border-b border-white/[0.06] flex items-center justify-between shrink-0">
         <div>
-          <h1 className="text-base font-semibold text-white tracking-[-0.01em]">Inbox</h1>
+          <h1 className="text-base font-semibold text-white tracking-[-0.01em]">
+            Inbox
+          </h1>
           <p className="text-[12px] text-zinc-500 mt-0.5">
             {viewFilter === "pending"
               ? counts.total === 0
@@ -780,11 +785,17 @@ export default function ReviewPage() {
 
       {/* App filter pills */}
       {(() => {
-        const apps = Array.from(new Set(items.map((i) => i.source_app).filter(Boolean))).sort();
+        const apps = Array.from(
+          new Set(items.map((i) => i.source_app).filter(Boolean)),
+        ).sort();
         if (apps.length === 0) return null;
         const appLabels: Record<string, string> = {
-          gmail: "Email", googlecalendar: "Calendar", slack: "Slack",
-          github: "GitHub", notion: "Notion", linear: "Linear",
+          gmail: "Email",
+          googlecalendar: "Calendar",
+          slack: "Slack",
+          github: "GitHub",
+          notion: "Notion",
+          linear: "Linear",
         };
         return (
           <div className="px-5 sm:px-6 py-2.5 flex items-center gap-2 border-b border-white/[0.04]">
@@ -801,7 +812,9 @@ export default function ReviewPage() {
             {apps.map((app) => (
               <button
                 key={app}
-                onClick={() => setCategoryFilter(categoryFilter === app ? "all" : app)}
+                onClick={() =>
+                  setCategoryFilter(categoryFilter === app ? "all" : app)
+                }
                 className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all duration-200 ${
                   categoryFilter === app
                     ? "bg-white/[0.08] border-white/[0.12] text-foreground"
@@ -923,11 +936,7 @@ export default function ReviewPage() {
                 : error}
             </p>
             {error === "INSUFFICIENT_CREDITS" && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => openUpgrade()}
-              >
+              <Button variant="outline" size="sm" onClick={() => openUpgrade()}>
                 Upgrade
               </Button>
             )}

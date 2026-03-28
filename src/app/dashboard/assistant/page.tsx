@@ -5,11 +5,12 @@ import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { useUpgradeDialog } from "@/components/UpgradeDialog";
 import { Logo } from "@/components/secure-agent/Logo";
 import { useAuth } from "@/context/AuthContext";
-import { useBilling } from "@/context/useBilling";
 import { useLogo } from "@/context/LogoContext";
+import { useBilling } from "@/context/useBilling";
 import { trackEvent } from "@/lib/analytics";
 import { api } from "@/lib/api";
 import { getAppLogo } from "@/lib/platform-logos";
+import { usePromptStore } from "@/lib/prompt-store";
 import type { ChatMessage, Conversation } from "@/lib/types";
 import { motion } from "framer-motion";
 import {
@@ -20,21 +21,14 @@ import {
   FileUp,
   Loader2,
   Menu,
-  MessageSquare,
-  Link2,
-  PanelLeftClose,
   Plus,
   Send,
   Shield,
-  Sparkles,
   Trash2,
-  X,
-  Zap,
+  X
 } from "lucide-react";
-import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
-import { usePromptStore } from "@/lib/prompt-store";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
@@ -150,7 +144,10 @@ function AssistantPageInner() {
   // Persist active conversation ID so refresh resumes the same chat
   useEffect(() => {
     if (activeConversationId) {
-      localStorage.setItem("calmpilot_active_conversation", activeConversationId);
+      localStorage.setItem(
+        "calmpilot_active_conversation",
+        activeConversationId,
+      );
     } else {
       localStorage.removeItem("calmpilot_active_conversation");
     }
@@ -206,13 +203,16 @@ function AssistantPageInner() {
   const [connectedApps, setConnectedApps] = useState<string[]>([]);
   useEffect(() => {
     if (!user?.id) return;
-    api.get("/integrations").then((data) => {
-      const apps = data?.integrations || [];
-      const connected = apps
-        .filter((a: any) => a.status === "connected")
-        .map((a: any) => a.appName?.toLowerCase() || "");
-      setConnectedApps(connected);
-    }).catch(() => {});
+    api
+      .get("/integrations")
+      .then((data) => {
+        const apps = data?.integrations || [];
+        const connected = apps
+          .filter((a: any) => a.status === "connected")
+          .map((a: any) => a.appName?.toLowerCase() || "");
+        setConnectedApps(connected);
+      })
+      .catch(() => {});
   }, [user?.id]);
 
   // Fetch dynamic suggestion chips based on connected apps
@@ -601,7 +601,10 @@ function AssistantPageInner() {
                       logs: finalLogs,
                       completions: parseCompletions(event.data.response || ""),
                     };
-                  } else if (event.type === "insufficient_credits" || event.type === "chat_quota_exceeded") {
+                  } else if (
+                    event.type === "insufficient_credits" ||
+                    event.type === "chat_quota_exceeded"
+                  ) {
                     openUpgrade("chat_limit");
                     const limit = event.data?.limit ?? 50;
                     return {
@@ -612,16 +615,26 @@ function AssistantPageInner() {
                     trackEvent("assistant_message_error", {
                       model: selectedModel,
                     });
-                    const rawError = typeof event.data === "string" ? event.data : JSON.stringify(event.data);
-                    let friendlyError = "Something went wrong. Please try again.";
+                    const rawError =
+                      typeof event.data === "string"
+                        ? event.data
+                        : JSON.stringify(event.data);
+                    let friendlyError =
+                      "Something went wrong. Please try again.";
                     if (/timeout|timed out/i.test(rawError)) {
-                      friendlyError = "That took too long. Try a simpler request or try again.";
+                      friendlyError =
+                        "That took too long. Try a simpler request or try again.";
                     } else if (/auth|connect|unauthorized/i.test(rawError)) {
-                      friendlyError = "I couldn't access that app. Make sure it's connected in **[Integrations](/dashboard/integrations)**.";
+                      friendlyError =
+                        "I couldn't access that app. Make sure it's connected in **[Integrations](/dashboard/integrations)**.";
                     } else if (/rate.?limit/i.test(rawError)) {
-                      friendlyError = "Too many requests. Wait a moment and try again.";
-                    } else if (/invalid.*toolkit|toolkit.*not found/i.test(rawError)) {
-                      friendlyError = "That app isn't available. Connect it from **[Integrations](/dashboard/integrations)**.";
+                      friendlyError =
+                        "Too many requests. Wait a moment and try again.";
+                    } else if (
+                      /invalid.*toolkit|toolkit.*not found/i.test(rawError)
+                    ) {
+                      friendlyError =
+                        "That app isn't available. Connect it from **[Integrations](/dashboard/integrations)**.";
                     }
                     return { ...msg, content: friendlyError };
                   }
@@ -742,7 +755,10 @@ function AssistantPageInner() {
                 if (days === 0) return "Today";
                 if (days === 1) return "Yesterday";
                 if (days < 7) return `${days} days ago`;
-                return new Date(conv.updated_at).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+                return new Date(conv.updated_at).toLocaleDateString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                });
               })();
               return (
                 <div
@@ -758,9 +774,13 @@ function AssistantPageInner() {
                   }}
                 >
                   <div className="flex items-center justify-between gap-2">
-                    <span className={`text-[13px] font-medium truncate ${
-                      activeConversationId === conv.id ? "text-foreground" : "text-muted-foreground"
-                    }`}>
+                    <span
+                      className={`text-[13px] font-medium truncate ${
+                        activeConversationId === conv.id
+                          ? "text-foreground"
+                          : "text-muted-foreground"
+                      }`}
+                    >
                       {conv.title}
                     </span>
                     <button
@@ -778,7 +798,9 @@ function AssistantPageInner() {
                     </button>
                   </div>
                   {relTime && (
-                    <span className="text-[10px] text-muted-foreground/60 mt-0.5">{relTime}</span>
+                    <span className="text-[10px] text-muted-foreground/60 mt-0.5">
+                      {relTime}
+                    </span>
                   )}
                 </div>
               );
@@ -916,8 +938,14 @@ function AssistantPageInner() {
           if (used >= limit) {
             return (
               <div className="flex items-center justify-between gap-3 px-4 py-2 bg-indigo-500/[0.07] border-b border-indigo-500/[0.12] text-indigo-300 text-xs font-medium shrink-0">
-                <span>You&apos;ve used all <strong>{limit} messages</strong> this month.</span>
-                <button onClick={() => openUpgrade("chat_limit")} className="shrink-0 px-3 py-1 rounded-full bg-indigo-500/15 hover:bg-indigo-500/25 text-xs font-semibold transition-all">
+                <span>
+                  You&apos;ve used all <strong>{limit} messages</strong> this
+                  month.
+                </span>
+                <button
+                  onClick={() => openUpgrade("chat_limit")}
+                  className="shrink-0 px-3 py-1 rounded-full bg-indigo-500/15 hover:bg-indigo-500/25 text-xs font-semibold transition-all"
+                >
                   Upgrade →
                 </button>
               </div>
@@ -926,8 +954,16 @@ function AssistantPageInner() {
           if (pct >= 0.5) {
             return (
               <div className="flex items-center justify-between gap-3 px-4 py-2 bg-amber-500/[0.06] border-b border-amber-500/[0.1] text-amber-400/80 text-xs font-medium shrink-0">
-                <span><strong>{remaining} of {limit}</strong> messages remaining this month.</span>
-                <button onClick={() => openUpgrade("chat_limit")} className="shrink-0 px-3 py-1 rounded-full bg-amber-500/10 hover:bg-amber-500/20 text-xs font-semibold transition-all">
+                <span>
+                  <strong>
+                    {remaining} of {limit}
+                  </strong>{" "}
+                  messages remaining this month.
+                </span>
+                <button
+                  onClick={() => openUpgrade("chat_limit")}
+                  className="shrink-0 px-3 py-1 rounded-full bg-amber-500/10 hover:bg-amber-500/20 text-xs font-semibold transition-all"
+                >
                   Upgrade →
                 </button>
               </div>
@@ -1003,7 +1039,6 @@ function AssistantPageInner() {
         ) : messages.length === 0 ? (
           <div className="flex-1 flex flex-col items-center justify-center px-4 sm:px-8">
             <div className="flex flex-col items-center text-center max-w-lg w-full">
-
               {/* Logo */}
               <Logo className="w-12 h-12 mb-6" />
 
@@ -1020,10 +1055,23 @@ function AssistantPageInner() {
                 {(suggestions.length > 0
                   ? suggestions.slice(0, 4)
                   : [
-                      { label: "What's on my calendar tomorrow?", message: "What's on my calendar tomorrow?" },
-                      { label: "Help me draft a reply", message: "Help me draft a reply to my latest email" },
-                      { label: "Check my emails", message: "Check my recent emails and summarize them" },
-                      { label: "Block focus time", message: "Block 2 hours of focus time on my calendar this week" },
+                      {
+                        label: "What's on my calendar tomorrow?",
+                        message: "What's on my calendar tomorrow?",
+                      },
+                      {
+                        label: "Help me draft a reply",
+                        message: "Help me draft a reply to my latest email",
+                      },
+                      {
+                        label: "Check my emails",
+                        message: "Check my recent emails and summarize them",
+                      },
+                      {
+                        label: "Block focus time",
+                        message:
+                          "Block 2 hours of focus time on my calendar this week",
+                      },
                     ]
                 ).map((chip, i) => (
                   <button
@@ -1035,7 +1083,10 @@ function AssistantPageInner() {
                     className="flex flex-col items-start gap-2 p-4 rounded-xl border border-white/[0.06] bg-white/[0.02] text-left hover:bg-white/[0.05] hover:border-white/[0.1] transition-all duration-200 group"
                   >
                     <span className="text-[13px] text-muted-foreground group-hover:text-foreground transition-colors leading-snug">
-                      {chip.label.replace(/^(?:[\uD83C-\uDBFF][\uDC00-\uDFFF]|[\u2600-\u27BF]|\u200D|\uFE0F)+\s*/, "")}
+                      {chip.label.replace(
+                        /^(?:[\uD83C-\uDBFF][\uDC00-\uDFFF]|[\u2600-\u27BF]|\u200D|\uFE0F)+\s*/,
+                        "",
+                      )}
                     </span>
                   </button>
                 ))}
@@ -1059,11 +1110,18 @@ function AssistantPageInner() {
                         <ReactMarkdown
                           components={{
                             a: ({ href, children }) => (
-                              <a href={href} className="font-semibold underline underline-offset-2 hover:text-amber-300 transition-colors">
+                              <a
+                                href={href}
+                                className="font-semibold underline underline-offset-2 hover:text-amber-300 transition-colors"
+                              >
                                 {children}
                               </a>
                             ),
-                            strong: ({ children }) => <strong className="font-semibold text-amber-300">{children}</strong>,
+                            strong: ({ children }) => (
+                              <strong className="font-semibold text-amber-300">
+                                {children}
+                              </strong>
+                            ),
                             p: ({ children }) => <span>{children}</span>,
                           }}
                         >
@@ -1337,18 +1395,23 @@ function AssistantPageInner() {
                                     )
                                     .map((log, i) => {
                                       const isRunning =
-                                        log.status === "running" || log.status === "loading";
+                                        log.status === "running" ||
+                                        log.status === "loading";
                                       const isDone =
                                         log.status === "completed" ||
                                         log.status === "success";
                                       const isFailed =
                                         log.status === "failed" ||
                                         log.status === "error";
-                                      const label = (log.label || "Working...")
-                                        .replace(/composio[_ ]?/gi, "")
-                                        .replace(/^Thinking:\s*/i, "")
-                                        .replace(/^Using\s*\.\.\.$/, "Working...")
-                                        .trim() || "Working...";
+                                      const label =
+                                        (log.label || "Working...")
+                                          .replace(/composio[_ ]?/gi, "")
+                                          .replace(/^Thinking:\s*/i, "")
+                                          .replace(
+                                            /^Using\s*\.\.\.$/,
+                                            "Working...",
+                                          )
+                                          .trim() || "Working...";
                                       return (
                                         <motion.div
                                           key={i}
@@ -1392,23 +1455,49 @@ function AssistantPageInner() {
                         {!isUser && msg.content && (
                           <div className="flex items-center gap-1 mt-1 -mb-1">
                             {/* Retry button — shown when response is an error */}
-                            {/something went wrong|try again|couldn't access|isn't available|took too long/i.test(msg.content) && (
+                            {/something went wrong|try again|couldn't access|isn't available|took too long/i.test(
+                              msg.content,
+                            ) && (
                               <button
                                 onClick={() => {
                                   // Find the user message before this AI message
-                                  const idx = messages.findIndex((m) => m.id === msg.id);
-                                  const prevUserMsg = idx > 0 ? messages[idx - 1] : null;
-                                  if (prevUserMsg?.role === "user" && prevUserMsg.content) {
+                                  const idx = messages.findIndex(
+                                    (m) => m.id === msg.id,
+                                  );
+                                  const prevUserMsg =
+                                    idx > 0 ? messages[idx - 1] : null;
+                                  if (
+                                    prevUserMsg?.role === "user" &&
+                                    prevUserMsg.content
+                                  ) {
                                     // Remove the failed AI message and resend
-                                    setMessages((prev) => prev.filter((m) => m.id !== msg.id));
-                                    handleSendRef.current?.(prevUserMsg.content);
+                                    setMessages((prev) =>
+                                      prev.filter((m) => m.id !== msg.id),
+                                    );
+                                    handleSendRef.current?.(
+                                      prevUserMsg.content,
+                                    );
                                   }
                                 }}
                                 disabled={isLoading}
                                 className="flex items-center gap-1 px-2 py-1 rounded-md text-xs text-amber-400/80 hover:text-amber-400 hover:bg-amber-500/10 transition-all disabled:opacity-30"
                                 title="Retry"
                               >
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg>
+                                <svg
+                                  width="12"
+                                  height="12"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                >
+                                  <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
+                                  <path d="M21 3v5h-5" />
+                                  <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
+                                  <path d="M3 21v-5h5" />
+                                </svg>
                                 Retry
                               </button>
                             )}
@@ -1465,14 +1554,22 @@ function AssistantPageInner() {
                                     onClick={async () => {
                                       // Use OUR connect flow (with callback) instead of Composio's direct URL
                                       // This ensures /api/callback fires and auto-setup runs server-side
-                                      const appSlug = action.appName.toLowerCase().replace(/[\s-]/g, "");
+                                      const appSlug = action.appName
+                                        .toLowerCase()
+                                        .replace(/[\s-]/g, "");
                                       try {
-                                        const connectData = await api.post("/integrations/connect", {
-                                          userId: user!.id,
-                                          appName: appSlug,
-                                          platform: "web",
-                                        });
-                                        const ourUrl = connectData.url || connectData.redirectUrl || action.url;
+                                        const connectData = await api.post(
+                                          "/integrations/connect",
+                                          {
+                                            userId: user!.id,
+                                            appName: appSlug,
+                                            platform: "web",
+                                          },
+                                        );
+                                        const ourUrl =
+                                          connectData.url ||
+                                          connectData.redirectUrl ||
+                                          action.url;
                                         const popup = window.open(
                                           ourUrl,
                                           "composio_connect",
@@ -1483,22 +1580,46 @@ function AssistantPageInner() {
                                             clearInterval(pollTimer);
                                             // Refresh connected apps list
                                             if (user?.id) {
-                                              api.get("/integrations").then((data: any) => {
-                                                const apps = data?.integrations || [];
-                                                const connected = apps
-                                                  .filter((a: any) => a.status === "connected")
-                                                  .map((a: any) => a.appName?.toLowerCase() || "");
-                                                setConnectedApps(connected);
-                                              }).catch(() => {});
-                                              api.get(`/chat/suggestions/${user.id}`).then((res: any) => {
-                                                if (res?.suggestions) setSuggestions(res.suggestions);
-                                              }).catch(() => {});
+                                              api
+                                                .get("/integrations")
+                                                .then((data: any) => {
+                                                  const apps =
+                                                    data?.integrations || [];
+                                                  const connected = apps
+                                                    .filter(
+                                                      (a: any) =>
+                                                        a.status ===
+                                                        "connected",
+                                                    )
+                                                    .map(
+                                                      (a: any) =>
+                                                        a.appName?.toLowerCase() ||
+                                                        "",
+                                                    );
+                                                  setConnectedApps(connected);
+                                                })
+                                                .catch(() => {});
+                                              api
+                                                .get(
+                                                  `/chat/suggestions/${user.id}`,
+                                                )
+                                                .then((res: any) => {
+                                                  if (res?.suggestions)
+                                                    setSuggestions(
+                                                      res.suggestions,
+                                                    );
+                                                })
+                                                .catch(() => {});
                                             }
                                           }
                                         }, 1000);
                                       } catch {
                                         // Fallback: open Composio URL directly if our connect fails
-                                        window.open(action.url, "composio_connect", "width=600,height=700,left=200,top=100");
+                                        window.open(
+                                          action.url,
+                                          "composio_connect",
+                                          "width=600,height=700,left=200,top=100",
+                                        );
                                       }
                                     }}
                                     className="shrink-0 px-4 py-1.5 rounded-full bg-white text-black text-xs font-semibold hover:bg-zinc-100 transition-all duration-200 active:scale-[0.97]"
@@ -1534,7 +1655,7 @@ function AssistantPageInner() {
         )}
 
         {/* Input Area — always visible */}
-        {(
+        {
           <div className="px-4 sm:px-6 py-3 shrink-0 relative border-t border-white/[0.04]">
             <div className="max-w-2xl mx-auto w-full relative">
               <form
@@ -1605,7 +1726,7 @@ function AssistantPageInner() {
               </form>
             </div>
           </div>
-        )}
+        }
       </div>
 
       <ConfirmDialog
@@ -1649,4 +1770,3 @@ export default function AssistantPage() {
     </Suspense>
   );
 }
-
