@@ -4,7 +4,7 @@ import { createBrowserClient } from "@supabase/ssr";
 import { trackEvent } from "@/lib/analytics";
 import { ArrowRight, Check, Loader2, Sparkles, Zap } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL!;
 
@@ -121,7 +121,7 @@ function PlanPicker({ onSelect }: { onSelect: (plan: string) => void }) {
   );
 }
 
-export default function CheckoutPage() {
+function CheckoutContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const planParam = searchParams.get("plan");
@@ -208,5 +208,18 @@ export default function CheckoutPage() {
       <Loader2 className="w-5 h-5 text-white/40 animate-spin" />
       <p className="text-white/35 text-sm">Redirecting to checkout…</p>
     </div>
+  );
+}
+
+export default function CheckoutPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-black flex flex-col items-center justify-center gap-3">
+        <Loader2 className="w-5 h-5 text-white/40 animate-spin" />
+        <p className="text-white/35 text-sm">Loading…</p>
+      </div>
+    }>
+      <CheckoutContent />
+    </Suspense>
   );
 }
