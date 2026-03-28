@@ -1,7 +1,7 @@
 # CalmPilot - AI-Powered Digital Proxy
 
 ## About
-CalmPilot is an AI-powered digital proxy that connects to 1000+ apps via secure OAuth integrations and quietly handles your work 24/7. Think of it as a digital twin that acts on your behalf across your entire app ecosystem.
+CalmPilot is an AI-powered digital proxy that connects to your Gmail, Calendar & Slack via secure OAuth and quietly handles your work 24/7. Think of it as a digital twin that acts on your behalf across your core work apps.
 
 ## Website
 https://calmpilot.app
@@ -13,7 +13,7 @@ A quieter way to get work done.
 CalmPilot acts as a 24/7 AI agent that connects to all your work apps through OAuth and autonomously executes tasks on your behalf. It reads emails, triages inboxes, drafts replies, creates tasks, updates databases, sends daily briefings, and handles routine workflows — all without demanding your attention.
 
 ## Key Features
-- 1000+ app integrations via OAuth (Gmail, Slack, Notion, GitHub, Linear, Jira, Google Calendar, Stripe, Airtable, Asana, Trello, Discord, HubSpot, and more)
+- Gmail, Google Calendar & Slack integrations via OAuth (more integrations coming soon based on user demand)
 - Daily AI-powered briefings summarizing activity across all connected apps
 - Smart triggers for event-driven automation across multiple apps
 - Review queue with human-in-the-loop approval for sensitive or destructive actions

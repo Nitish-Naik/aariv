@@ -9,7 +9,7 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "AI Assistant Integrations — CalmPilot",
   description:
-    "CalmPilot connects to 500+ apps via OAuth. Browse AI automation integrations for Gmail, Slack, Notion, GitHub, Google Calendar, HubSpot, Linear, Airtable, and more.",
+    "CalmPilot connects to Gmail, Google Calendar & Slack via OAuth. Browse AI automation integrations that handle your daily work.",
   keywords: [
     "AI assistant integrations",
     "AI automation apps",
@@ -27,7 +27,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "AI Assistant Integrations — CalmPilot",
     description:
-      "Browse 500+ AI automation integrations. Connect your apps and let CalmPilot handle the work.",
+      "Browse AI automation integrations. Connect your apps and let CalmPilot handle the work.",
     url: "https://calmpilot.app/integrations",
     type: "website",
     siteName: "CalmPilot",
@@ -44,7 +44,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "AI Assistant Integrations — CalmPilot",
     description:
-      "Browse 500+ AI automation integrations. Connect your apps and let CalmPilot handle the work.",
+      "Browse AI automation integrations. Connect your apps and let CalmPilot handle the work.",
     images: ["/opengraph-image"],
   },
 };
@@ -57,7 +57,7 @@ export default function IntegrationsPage() {
     "@type": "CollectionPage",
     name: "CalmPilot Integrations",
     description:
-      "AI automation integrations for 500+ apps including Gmail, Slack, Notion, GitHub, and more.",
+      "AI automation integrations for Gmail, Google Calendar & Slack — with more coming soon.",
     url: "https://calmpilot.app/integrations",
     breadcrumb: {
       "@type": "BreadcrumbList",
@@ -85,7 +85,7 @@ export default function IntegrationsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-200 font-sans selection:bg-zinc-800">
+    <div className="min-h-screen bg-black text-zinc-200 font-sans selection:bg-zinc-800">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -111,8 +111,8 @@ export default function IntegrationsPage() {
               AI Assistant for Every App You Use
             </h1>
             <p className="text-base sm:text-lg text-zinc-400 max-w-xl mx-auto mb-8 sm:mb-10 leading-relaxed">
-              CalmPilot connects to 500+ apps via OAuth and automates your work
-              — no passwords, no setup, no manual entry.
+              CalmPilot connects to Gmail, Calendar & Slack via OAuth and automates your work
+              — no passwords, no setup, no manual entry. More integrations coming soon.
             </p>
             <Link
               href="/login"
@@ -173,14 +173,13 @@ export default function IntegrationsPage() {
           <div className="max-w-5xl mx-auto">
             <div className="rounded-2xl bg-zinc-900/60 border border-white/[0.06] p-6 sm:p-8 text-center">
               <p className="text-2xl sm:text-3xl font-bold text-white mb-2">
-                500+
+                More Coming Soon
               </p>
               <p className="text-zinc-400 text-sm mb-1">
-                apps available via CalmPilot
+                We're adding integrations based on user demand
               </p>
               <p className="text-zinc-600 text-xs">
-                Including Salesforce, Jira, Confluence, Zoom, Calendly, Shopify,
-                and hundreds more.
+                Request an integration and we'll prioritize it for you.
               </p>
             </div>
           </div>

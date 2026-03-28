@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 
 export default function PrivacyPage() {
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-200">
+    <div className="min-h-screen bg-black text-zinc-200">
       <div className="max-w-3xl mx-auto px-6 py-20">
         {/* Back */}
         <Link
@@ -51,7 +51,7 @@ export default function PrivacyPage() {
               </div>
               <div>
                 <h3 className="text-base font-medium text-zinc-300 mb-2">Usage Data</h3>
-                <p>We collect information about how you use the Service (actions taken, credits used, features accessed) to improve the product and calculate billing.</p>
+                <p>We collect information about how you use the Service (actions taken, messages sent, features accessed) to improve the product and manage your subscription.</p>
               </div>
             </div>
           </section>
@@ -62,7 +62,7 @@ export default function PrivacyPage() {
               <li>To authenticate you and maintain your account</li>
               <li>To execute AI automations and tasks on your behalf</li>
               <li>To generate daily briefings and summaries</li>
-              <li>To calculate and process credit usage and billing</li>
+              <li>To manage your subscription and track usage</li>
               <li>To improve the reliability and performance of the Service</li>
               <li>To communicate important updates about your account or the Service</li>
             </ul>

@@ -144,6 +144,56 @@ export const APP_META: Record<string, AppMeta> = {
     color: "#6C2BD9",
     icon: <Mic strokeWidth={1.5} size={15} />,
   },
+  googletasks: {
+    label: "Google Tasks",
+    color: "#4285F4",
+    icon: <CheckSquare strokeWidth={1.5} size={15} />,
+  },
+  googlemeet: {
+    label: "Google Meet",
+    color: "#00897B",
+    icon: <MessageSquare strokeWidth={1.5} size={15} />,
+  },
+  confluence: {
+    label: "Confluence",
+    color: "#172B4D",
+    icon: <FileText strokeWidth={1.5} size={15} />,
+  },
+  airtable: {
+    label: "Airtable",
+    color: "#18BFFF",
+    icon: <FileText strokeWidth={1.5} size={15} />,
+  },
+  asana: {
+    label: "Asana",
+    color: "#F06A6A",
+    icon: <CheckSquare strokeWidth={1.5} size={15} />,
+  },
+  mailchimp: {
+    label: "Mailchimp",
+    color: "#FFE01B",
+    icon: <Mail strokeWidth={1.5} size={15} />,
+  },
+  zendesk: {
+    label: "Zendesk",
+    color: "#03363D",
+    icon: <Inbox strokeWidth={1.5} size={15} />,
+  },
+  zoom: {
+    label: "Zoom",
+    color: "#2D8CFF",
+    icon: <MessageSquare strokeWidth={1.5} size={15} />,
+  },
+  box: {
+    label: "Box",
+    color: "#0061D5",
+    icon: <FolderOpen strokeWidth={1.5} size={15} />,
+  },
+  microsoft_teams: {
+    label: "Microsoft Teams",
+    color: "#6264A7",
+    icon: <MessageSquare strokeWidth={1.5} size={15} />,
+  },
 };
 
 /** Fallback meta for unknown apps. */
@@ -176,31 +226,42 @@ export function getAppIcon(slug: string): ReactNode {
  * Keep these concise: they appear inline next to the app label.
  */
 export const TRIGGER_LABELS: Record<string, string> = {
-  // Gmail
-  GMAIL_NEW_GMAIL_MESSAGE: "New email",
-  GMAIL_NEW_GMAIL_MESSAGE_TRIGGER: "New email",
-  GMAIL_NEW_THREAD: "New thread",
-  GMAIL_NEW_LABEL: "Label applied",
-  GMAIL_MESSAGE_SENT: "Email sent",
+  // Gmail — what CalmPilot does when this fires
+  GMAIL_NEW_GMAIL_MESSAGE: "Summarize new emails & flag urgent ones",
+  GMAIL_NEW_GMAIL_MESSAGE_TRIGGER: "Summarize new emails & flag urgent ones",
+  GMAIL_EMAIL_SENT_TRIGGER: "Track emails you send",
+  GMAIL_NEW_THREAD: "Alert on new email threads",
+  GMAIL_NEW_LABEL: "Track label changes",
+  GMAIL_MESSAGE_SENT: "Track emails you send",
 
-  // Google Calendar
-  GOOGLECALENDAR_EVENT_CREATED: "Event created",
-  GOOGLECALENDAR_EVENT_UPDATED: "Event updated",
-  GOOGLECALENDAR_EVENT_DELETED: "Event deleted",
-  GOOGLECALENDAR_NEW_EVENT: "New event",
-  GOOGLECALENDAR_UPDATED_EVENT: "Event updated",
-  GOOGLE_CALENDAR_NEW_EVENT: "New event",
+  // Google Calendar — what CalmPilot does when this fires
+  GOOGLECALENDAR_GOOGLE_CALENDAR_EVENT_CREATED_TRIGGER: "Alert when new meetings are added",
+  GOOGLECALENDAR_GOOGLE_CALENDAR_EVENT_UPDATED_TRIGGER: "Alert when meetings are rescheduled",
+  GOOGLECALENDAR_EVENT_STARTING_SOON_TRIGGER: "Notify you 10 min before meetings",
+  GOOGLECALENDAR_EVENT_CANCELED_DELETED_TRIGGER: "Alert when meetings are cancelled",
+  GOOGLECALENDAR_ATTENDEE_RESPONSE_CHANGED_TRIGGER: "Track attendee RSVPs",
+  GOOGLECALENDAR_GOOGLE_CALENDAR_EVENT_SYNC_TRIGGER: "Keep your calendar in sync",
+  GOOGLECALENDAR_GOOGLE_CALENDAR_EVENT_CHANGE_TRIGGER: "Track all calendar changes",
+  // Legacy aliases
+  GOOGLECALENDAR_EVENT_CREATED: "Alert when new meetings are added",
+  GOOGLECALENDAR_EVENT_UPDATED: "Alert when meetings are rescheduled",
+  GOOGLECALENDAR_EVENT_DELETED: "Alert when meetings are cancelled",
+  GOOGLECALENDAR_NEW_EVENT: "Alert when new meetings are added",
+  GOOGLECALENDAR_UPDATED_EVENT: "Alert when meetings are rescheduled",
+  GOOGLE_CALENDAR_NEW_EVENT: "Alert when new meetings are added",
+  GOOGLECALENDAR_GOOGLE_CALENDAR_EVENT_DELETED_TRIGGER: "Alert when meetings are cancelled",
 
-  // Slack
-  SLACK_RECEIVE_MESSAGE: "New message",
-  SLACK_NEW_MESSAGE: "New message",
-  SLACK_BOT_MENTION: "Mentioned in Slack",
-  SLACK_DIRECT_MESSAGE: "Direct message",
-  SLACK_REACTION_ADDED: "Reaction added",
-  SLACK_CHANNEL_CREATED: "Channel created",
-  SLACK_MEMBER_JOINED_CHANNEL: "Member joined",
-  SLACK_MEMBER_LEFT_CHANNEL: "Member left",
-  SLACK_NEW_MESSAGE_IN_THREAD: "Thread reply",
+  // Slack — what CalmPilot does when this fires
+  SLACK_RECEIVE_MESSAGE: "Summarize important channel messages",
+  SLACK_RECEIVE_DIRECT_MESSAGE: "Alert on new direct messages",
+  SLACK_NEW_MESSAGE: "Summarize important messages",
+  SLACK_BOT_MENTION: "Alert when you're mentioned",
+  SLACK_DIRECT_MESSAGE: "Alert on new direct messages",
+  SLACK_REACTION_ADDED: "Track reactions on your messages",
+  SLACK_CHANNEL_CREATED: "Alert on new channels",
+  SLACK_MEMBER_JOINED_CHANNEL: "Track who joins channels",
+  SLACK_MEMBER_LEFT_CHANNEL: "Track who leaves channels",
+  SLACK_NEW_MESSAGE_IN_THREAD: "Summarize thread replies",
 
   // GitHub
   GITHUB_PULL_REQUEST: "Pull request",
@@ -269,10 +330,11 @@ export function formatTriggerSlug(slug: string): string {
   const explicit = TRIGGER_LABELS[slug.toUpperCase()];
   if (explicit) return explicit;
 
-  // Fallback: strip leading APP_ prefix (e.g. GMAIL_NEW_... → NEW_...)
-  // then convert remaining underscores to title case
+  // Fallback: strip app prefix, TRIGGER suffix, and duplicate app names
   return slug
-    .replace(/^[A-Z]+_/, "")       // drop first segment (app name)
+    .replace(/^(GMAIL|GOOGLECALENDAR|SLACK|GITHUB|NOTION|LINEAR|JIRA|DISCORD|TRELLO|ASANA|TODOIST|AIRTABLE|HUBSPOT|STRIPE|ZOOM|OUTLOOK|SALESFORCE|PIPEDRIVE|ZENDESK|BOX|CONFLUENCE|MAILCHIMP|YOUTUBE|SPOTIFY|GOOGLEDRIVE|GOOGLESHEETS|GOOGLEDOCS|GOOGLETASKS|GOOGLEMEET|MICROSOFT_TEAMS)_/i, "")
+    .replace(/_TRIGGER$/i, "")
+    .replace(/^(GOOGLE_CALENDAR|GOOGLE_DOCS|GOOGLE_SHEETS|GOOGLE_DRIVE|GOOGLE_TASKS|GOOGLE_MEET)_/i, "")
     .replace(/_/g, " ")
     .toLowerCase()
     .replace(/\b\w/g, (c) => c.toUpperCase());

@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
-import { Analytics } from "@vercel/analytics/next";
-import { SpeedInsights } from "@vercel/speed-insights/next";
+import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/react";
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import Script from "next/script";
@@ -16,7 +16,7 @@ export const metadata: Metadata = {
     template: "%s | CalmPilot",
   },
   description:
-    "CalmPilot is an AI-powered digital proxy that connects to 1000+ apps via OAuth and quietly handles your work 24/7. Automate workflows, get daily briefings, manage integrations, and let AI handle repetitive tasks while you focus on what matters.",
+    "CalmPilot is an AI-powered digital proxy that connects to your Gmail, Calendar & Slack via OAuth and quietly handles your work 24/7. Get daily briefings, automate email triage, and let AI handle repetitive tasks while you focus on what matters.",
   keywords: [
     "AI agent",
     "AI automation",
@@ -55,7 +55,7 @@ export const metadata: Metadata = {
     url: "https://calmpilot.app",
     title: "CalmPilot | AI-Powered Digital Proxy for Work Automation",
     description:
-      "CalmPilot connects to 1000+ apps via OAuth and quietly handles your work 24/7. Automate emails, manage tasks, get daily briefings — all without lifting a finger.",
+      "CalmPilot connects to your Gmail, Calendar & Slack via OAuth and quietly handles your work 24/7. Automate emails, manage meetings, get daily briefings — all without lifting a finger.",
     siteName: "CalmPilot",
     images: [
       {
@@ -70,7 +70,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "CalmPilot | A quieter way to get work done",
     description:
-      "An AI-powered digital proxy that connects to 1000+ apps and quietly handles your work 24/7. Daily briefings, smart triggers, automated workflows.",
+      "An AI-powered digital proxy that connects to your Gmail, Calendar & Slack and quietly handles your work 24/7. Daily briefings, smart triggers, automated workflows.",
     images: ["/opengraph-image"],
     creator: "@calmpilot",
   },
@@ -112,10 +112,10 @@ const jsonLd = {
         priceCurrency: "USD",
       },
       description:
-        "CalmPilot is a 24/7 AI-powered digital proxy that connects to 1000+ apps via OAuth and quietly handles your work. Features include daily briefings, smart triggers, automated workflows, review queue, and AI chat assistant.",
+        "CalmPilot is a 24/7 AI-powered digital proxy that connects to your Gmail, Calendar & Slack via OAuth and quietly handles your work. Features include daily briefings, smart triggers, automated workflows, review queue, and AI chat assistant.",
       url: "https://calmpilot.app",
       featureList: [
-        "1000+ app integrations via OAuth",
+        "Gmail, Calendar & Slack integrations via OAuth",
         "Daily AI-powered briefings",
         "Smart triggers and automation",
         "Review queue with human-in-the-loop approval",
@@ -154,7 +154,7 @@ const faqJsonLd = {
       name: "What is CalmPilot?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "CalmPilot is an AI-powered digital proxy that connects to over 1000 apps through secure OAuth integrations and quietly handles your work 24/7. It automates workflows, sends daily briefings, manages smart triggers, and provides an AI chat assistant — all while keeping you in control with human-in-the-loop approval for sensitive actions.",
+        text: "CalmPilot is an AI-powered digital proxy that connects to your Gmail, Calendar & Slack through secure OAuth and quietly handles your work 24/7. It automates email triage, sends daily briefings, manages smart triggers, and provides an AI chat assistant — all while keeping you in control with human-in-the-loop approval for sensitive actions.",
       },
     },
     {
@@ -162,7 +162,7 @@ const faqJsonLd = {
       name: "How does CalmPilot differ from Zapier or Make?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Unlike Zapier or Make which require you to build workflows manually, CalmPilot uses natural language AI to understand what you need and orchestrate complex multi-step workflows automatically across 1000+ OAuth integrations with sandboxed execution.",
+        text: "Unlike Zapier or Make which require you to build workflows manually, CalmPilot uses natural language AI to understand what you need and orchestrate complex multi-step workflows automatically across your connected apps with sandboxed execution.",
       },
     },
     {
@@ -170,7 +170,7 @@ const faqJsonLd = {
       name: "What apps does CalmPilot integrate with?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "CalmPilot integrates with 1000+ apps including Gmail, Slack, Notion, GitHub, Linear, Jira, Google Calendar, Google Drive, Stripe, Airtable, Asana, Trello, Discord, HubSpot, and many more via OAuth.",
+        text: "CalmPilot integrates with Gmail, Google Calendar, and Slack via OAuth — with more integrations coming soon. All connections are secure, password-free, and revocable at any time.",
       },
     },
     {
@@ -202,8 +202,8 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f7f6f4" },
-    { media: "(prefers-color-scheme: dark)", color: "#0c0c0e" },
+    { media: "(prefers-color-scheme: light)", color: "#000000" },
+    { media: "(prefers-color-scheme: dark)", color: "#000000" },
   ],
 };
 

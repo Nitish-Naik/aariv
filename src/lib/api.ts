@@ -23,7 +23,12 @@ async function handleResponse(response: Response) {
   }
 
   if (response.status === 402) {
-    throw new Error("INSUFFICIENT_CREDITS");
+    const errorData = await response.json().catch(() => ({}));
+    const detail = errorData.detail;
+    const code = typeof detail === "object" ? detail?.code : undefined;
+    const err = new Error(code || "QUOTA_EXCEEDED");
+    (err as any).response = { status: 402, data: errorData };
+    throw err;
   }
 
   if (!response.ok) {

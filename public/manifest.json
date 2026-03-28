@@ -1,7 +1,7 @@
 {
   "name": "CalmPilot — A quieter way to get work done",
   "short_name": "CalmPilot",
-  "description": "CalmPilot is an AI-powered digital proxy that connects to 1000+ apps via OAuth and quietly handles your work 24/7. Automate workflows, get daily briefings, and let AI manage tasks while you focus on what matters.",
+  "description": "CalmPilot is an AI-powered digital proxy that connects to your Gmail, Calendar & Slack via OAuth and quietly handles your work 24/7. Get daily briefings, automate email triage, and let AI manage tasks while you focus on what matters.",
   "start_url": "/dashboard",
   "display": "standalone",
   "background_color": "#0c0c0e",

@@ -62,7 +62,7 @@ export interface User {
   name: string;
   avatar?: string;
   googleId: string;
-  subscriptionTier?: "free" | "pro";
+  subscriptionTier?: "free" | "starter" | "pro";
 }
 
 export interface AuthAction {
@@ -106,7 +106,7 @@ export interface DataCardGroup {
 
 export interface ChatMessage {
   id: string;
-  role: "user" | "assistant";
+  role: "user" | "assistant" | "system";
   content: string;
   timestamp: Date;
   suggestions?: string[];

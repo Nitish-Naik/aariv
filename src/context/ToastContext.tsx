@@ -29,27 +29,12 @@ const ToastContext = createContext<ToastContextValue>({
   info: () => {},
 });
 
-/* ─── Toast config ────────────────────────────────────── */
+/* ─── Toast icon config ──────────────────────────────── */
 
-const TOAST_CONFIG: Record<ToastType, { icon: typeof Check; bg: string; border: string; text: string }> = {
-  success: {
-    icon: Check,
-    bg: "bg-emerald-500/10",
-    border: "border-emerald-500/20",
-    text: "text-emerald-400",
-  },
-  error: {
-    icon: AlertTriangle,
-    bg: "bg-destructive/10",
-    border: "border-destructive/20",
-    text: "text-destructive",
-  },
-  info: {
-    icon: Info,
-    bg: "bg-primary/10",
-    border: "border-primary/20",
-    text: "text-primary",
-  },
+const TOAST_ICON: Record<ToastType, { icon: typeof Check; color: string }> = {
+  success: { icon: Check, color: "text-emerald-400" },
+  error: { icon: AlertTriangle, color: "text-red-400" },
+  info: { icon: Info, color: "text-blue-400" },
 };
 
 /* ─── Provider ────────────────────────────────────────── */
@@ -81,30 +66,29 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     <ToastContext.Provider value={value}>
       {children}
 
-      {/* Toast container — fixed top-right */}
-      <div className="fixed top-4 right-4 z-[200] flex flex-col gap-2 pointer-events-none max-w-sm w-full">
+      {/* Toast container — fixed bottom-center (Apple-style) */}
+      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[200] flex flex-col items-center gap-2 pointer-events-none">
         <AnimatePresence>
           {toasts.map((t) => {
-            const config = TOAST_CONFIG[t.type];
-            const Icon = config.icon;
+            const { icon: Icon, color } = TOAST_ICON[t.type];
             return (
               <motion.div
                 key={t.id}
-                initial={{ opacity: 0, y: -8, scale: 0.96 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -8, scale: 0.96 }}
-                transition={{ duration: 0.2, ease: "easeOut" }}
-                className={`pointer-events-auto flex items-start gap-3 px-4 py-3 rounded-xl border shadow-lg backdrop-blur-sm ${config.bg} ${config.border}`}
+                initial={{ opacity: 0, y: 16, scale: 0.95, filter: "blur(4px)" }}
+                animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
+                exit={{ opacity: 0, y: 8, scale: 0.95, filter: "blur(4px)" }}
+                transition={{ duration: 0.25, ease: [0.25, 0.46, 0.45, 0.94] }}
+                className="pointer-events-auto flex items-center gap-2.5 pl-4 pr-3 py-2.5 rounded-full bg-zinc-900/90 backdrop-blur-xl border border-white/[0.08] shadow-[0_8px_32px_rgba(0,0,0,0.5)]"
               >
-                <Icon strokeWidth={1.75} size={16} className={`${config.text} shrink-0 mt-0.5`} />
-                <p className={`text-sm font-medium flex-1 ${config.text}`}>
+                <Icon strokeWidth={2} size={14} className={color} />
+                <p className="text-[13px] font-medium text-white whitespace-nowrap">
                   {t.message}
                 </p>
                 <button
                   onClick={() => removeToast(t.id)}
-                  className="shrink-0 text-muted-foreground hover:text-foreground transition-colors"
+                  className="ml-1 w-5 h-5 rounded-full flex items-center justify-center text-zinc-500 hover:text-white hover:bg-white/[0.08] transition-all duration-150"
                 >
-                  <X strokeWidth={1.5} size={14} />
+                  <X strokeWidth={2} size={11} />
                 </button>
               </motion.div>
             );

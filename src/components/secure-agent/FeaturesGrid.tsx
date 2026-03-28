@@ -4,277 +4,176 @@ import { motion } from "framer-motion";
 import { Clock, Lock, ShieldCheck, Zap } from "lucide-react";
 import Image from "next/image";
 
-const row1 = [
-  { src: "/images/google-gmail-svgrepo-com.svg", name: "Gmail" },
-  { src: "/images/slack-svgrepo-com.svg", name: "Slack" },
-  { src: "/images/notion-svgrepo-com.svg", name: "Notion" },
-  { src: "/images/github-142-svgrepo-com.svg", name: "GitHub" },
-  { src: "/images/stripe-v2-svgrepo-com.svg", name: "Stripe" },
-  { src: "/images/linear-svgrepo-com.svg", name: "Linear" },
-  { src: "/images/google-calendar-svgrepo-com.svg", name: "Calendar" },
-  { src: "/images/hubspot-svgrepo-com.svg", name: "HubSpot" },
-];
-
-const row2 = [
-  { src: "/images/airtable-svgrepo-com.svg", name: "Airtable" },
-  { src: "/images/asana-svgrepo-com.svg", name: "Asana" },
-  { src: "/images/atlassian-svgrepo-com.svg", name: "Jira" },
-  { src: "/images/discord-icon-svgrepo-com.svg", name: "Discord" },
-  { src: "/images/todoist-svgrepo-com.svg", name: "Todoist" },
-  { src: "/images/trello-svgrepo-com.svg", name: "Trello" },
-  { src: "/images/google-drive-svgrepo-com.svg", name: "Drive" },
-  { src: "/images/notion-svgrepo-com.svg", name: "Notion" },
-];
-
-function LogoMarquee() {
-  const lightBadgeLogos = new Set(["GitHub", "Stripe", "Notion"]);
+function AppBadges() {
+  const apps = [
+    { src: "/images/google-gmail-svgrepo-com.svg", name: "Gmail" },
+    { src: "/images/google-calendar-svgrepo-com.svg", name: "Calendar" },
+    { src: "/images/slack-svgrepo-com.svg", name: "Slack" },
+  ];
 
   return (
-    <div
-      className="mt-6 overflow-hidden relative"
-      style={{
-        maskImage:
-          "linear-gradient(to right, transparent, black 15%, black 85%, transparent)",
-        WebkitMaskImage:
-          "linear-gradient(to right, transparent, black 15%, black 85%, transparent)",
-      }}
-    >
-      <style>{`
-                @keyframes marquee-left {
-                    0% { transform: translateX(0); }
-                    100% { transform: translateX(-50%); }
-                }
-                @keyframes marquee-right {
-                    0% { transform: translateX(-50%); }
-                    100% { transform: translateX(0); }
-                }
-                .marquee-left { animation: marquee-left 24s linear infinite; }
-                .marquee-right { animation: marquee-right 24s linear infinite; }
-                .marquee-left:hover, .marquee-right:hover { animation-play-state: paused; }
-            `}</style>
-
-      {/* Row 1 — scrolls left */}
-      <div className="flex gap-2 mb-2 marquee-left w-max">
-        {[...row1, ...row1].map((app, i) => (
-          <div
-            key={i}
-            title={app.name}
-            className="w-10 h-10 rounded-xl bg-card/90 border border-border/60 flex items-center justify-center shrink-0"
-          >
-            <Image
-              src={app.src}
-              alt={app.name}
-              width={20}
-              height={20}
-              className={`w-5 h-5 opacity-100 ${
-                lightBadgeLogos.has(app.name) ? "rounded-md bg-white p-0.5" : ""
-              }`}
-            />
-          </div>
-        ))}
-      </div>
-
-      {/* Row 2 — scrolls right */}
-      <div className="flex gap-2 marquee-right w-max">
-        {[...row2, ...row2].map((app, i) => (
-          <div
-            key={i}
-            title={app.name}
-            className="w-10 h-10 rounded-xl bg-card/90 border border-border/60 flex items-center justify-center shrink-0"
-          >
-            <Image
-              src={app.src}
-              alt={app.name}
-              width={20}
-              height={20}
-              className={`w-5 h-5 opacity-100 ${
-                lightBadgeLogos.has(app.name) ? "rounded-md bg-white p-0.5" : ""
-              }`}
-            />
-          </div>
-        ))}
-      </div>
+    <div className="mt-6 flex items-center gap-3">
+      {apps.map((app, i) => (
+        <div
+          key={i}
+          className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/[0.03] border border-white/[0.06]"
+        >
+          <Image src={app.src} alt={app.name} width={18} height={18} className="w-[18px] h-[18px]" />
+          <span className="text-xs text-zinc-300 font-medium">{app.name}</span>
+        </div>
+      ))}
+      <span className="text-[11px] text-zinc-600 font-medium">+ more soon</span>
     </div>
   );
 }
 
 const pillars = [
   {
-    icon: <Zap className="w-5 h-5 text-indigo-400" strokeWidth={1.5} />,
-    eyebrow: "500+ integrations",
-    headline: "Connects to everything you already use.",
-    body: "Gmail, Slack, Notion, GitHub, Stripe, Linear and 500+ more — all wired through a single OAuth flow. No API keys. No setup sprawl. Just connect and describe what you want done.",
-    visual: <LogoMarquee />,
-    accent: "from-indigo-500/10 to-transparent",
-    border: "hover:border-indigo-500/20",
+    icon: <Zap className="w-5 h-5" strokeWidth={1.5} />,
+    iconColor: "text-indigo-400",
+    iconBg: "bg-indigo-500/10",
+    eyebrow: "Core integrations",
+    headline: "The apps that matter most.",
+    body: "Gmail, Google Calendar & Slack — connected through a single OAuth flow. No API keys. No config files. Just click and your AI starts working.",
+    visual: <AppBadges />,
+    accent: "from-indigo-500/[0.06] to-transparent",
     span: "lg:col-span-2",
   },
   {
-    icon: <Clock className="w-5 h-5 text-emerald-400" strokeWidth={1.5} />,
+    icon: <Clock className="w-5 h-5" strokeWidth={1.5} />,
+    iconColor: "text-emerald-400",
+    iconBg: "bg-emerald-500/10",
     eyebrow: "24/7 autonomous",
     headline: "Your 3am colleague.",
-    body: "CalmPilot runs on a schedule. Triggers fire when events happen. You wake up to a morning briefing — inbox triaged, Slack summarized, PRs reviewed — all done while you slept.",
+    body: "Triggers fire when events happen. You wake up to a morning briefing — inbox triaged, Slack summarized, calendar conflicts resolved.",
     visual: (
-      <div className="mt-6 rounded-xl bg-muted/30 border border-border px-4 py-3 space-y-2.5">
+      <div className="mt-6 rounded-xl bg-white/[0.03] border border-white/[0.05] px-4 py-3 space-y-2.5">
         {[
           "Drafted replies to 7 customer emails",
           "Summarized #product in Slack (34 msgs)",
-          "Reviewed 2 open PRs · left comments",
+          "Resolved calendar conflict at 2pm",
         ].map((item, i) => (
-          <div
-            key={i}
-            className="flex items-center gap-2.5 text-[13px] text-foreground/80"
-          >
-            <div className="w-4 h-4 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center shrink-0">
-              <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-            </div>
+          <div key={i} className="flex items-center gap-2.5 text-[13px] text-zinc-300">
+            <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
             {item}
           </div>
         ))}
-        <div className="pt-1 text-[11px] text-muted-foreground flex items-center gap-1.5">
+        <div className="pt-1 text-[11px] text-zinc-600 flex items-center gap-1.5">
           <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
           Completed overnight · 6:42 AM
         </div>
       </div>
     ),
-    accent: "from-emerald-500/10 to-transparent",
-    border: "hover:border-emerald-500/20",
+    accent: "from-emerald-500/[0.06] to-transparent",
     span: "lg:col-span-1",
   },
   {
-    icon: <ShieldCheck className="w-5 h-5 text-amber-400" strokeWidth={1.5} />,
+    icon: <ShieldCheck className="w-5 h-5" strokeWidth={1.5} />,
+    iconColor: "text-amber-400",
+    iconBg: "bg-amber-500/10",
     eyebrow: "Human-in-the-loop",
     headline: "AI acts. You approve.",
-    body: "Sensitive actions — mass emails, database writes, bulk deletes — pause for your review. CalmPilot surfaces them in a queue. You decide. Then it executes.",
+    body: "Sensitive actions pause for your review. You decide. Then it executes.",
     visual: (
-      <div className="mt-6 rounded-xl bg-amber-500/[0.05] border border-amber-500/15 px-4 py-3 space-y-1.5">
+      <div className="mt-6 rounded-xl bg-amber-500/[0.04] border border-amber-500/10 px-4 py-3 space-y-1.5">
         <p className="text-[11px] text-amber-400 font-semibold uppercase tracking-wider">
           Needs your review
         </p>
-        <p className="text-[13px] text-foreground/80">
-          Send follow-up to 84 leads in HubSpot
+        <p className="text-[13px] text-zinc-300">
+          Send follow-up email to 12 investor contacts
         </p>
         <div className="flex gap-2 pt-1.5">
-          <div className="px-3 py-1.5 rounded-lg bg-white text-zinc-950 text-xs font-semibold cursor-default select-none">
+          <div className="px-3 py-1.5 rounded-full bg-white text-zinc-950 text-xs font-semibold cursor-default select-none">
             Approve
           </div>
-          <div className="px-3 py-1.5 rounded-lg bg-muted/50 border border-border text-muted-foreground text-xs cursor-default select-none">
+          <div className="px-3 py-1.5 rounded-full bg-white/[0.06] border border-white/[0.06] text-zinc-400 text-xs cursor-default select-none">
             Dismiss
           </div>
         </div>
       </div>
     ),
-    accent: "from-amber-500/10 to-transparent",
-    border: "hover:border-amber-500/20",
+    accent: "from-amber-500/[0.06] to-transparent",
     span: "lg:col-span-1",
   },
   {
-    icon: <Lock className="w-5 h-5 text-violet-400" strokeWidth={1.5} />,
+    icon: <Lock className="w-5 h-5" strokeWidth={1.5} />,
+    iconColor: "text-violet-400",
+    iconBg: "bg-violet-500/10",
     eyebrow: "Security-first",
     headline: "OAuth only. No passwords. Ever.",
-    body: "Your credentials never touch our servers. Grant access with one click, revoke it just as fast. Every action runs in an isolated sandbox — your machine stays completely unbothered.",
+    body: "Your credentials never touch our servers. Every action runs in an isolated sandbox. Revoke access anytime with one click.",
     visual: (
-      <div className="mt-6 grid grid-cols-2 gap-2">
-        {[
-          "OAuth-only auth",
-          "No passwords stored",
-          "Sandboxed execution",
-          "Revoke any time",
-        ].map((label) => (
-          <div
-            key={label}
-            className="flex items-center gap-2 text-[12px] text-muted-foreground"
-          >
-            <div className="w-4 h-4 rounded-full bg-violet-500/10 border border-violet-500/20 flex items-center justify-center shrink-0">
-              <svg
-                className="w-2.5 h-2.5 text-violet-400"
-                viewBox="0 0 10 10"
-                fill="none"
-              >
-                <path
-                  d="M2 5l2.5 2.5 3.5-4"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
+      <div className="mt-6 grid grid-cols-2 gap-2.5">
+        {["OAuth-only auth", "No passwords stored", "Sandboxed execution", "Revoke any time"].map(
+          (label) => (
+            <div key={label} className="flex items-center gap-2 text-[12px] text-zinc-400">
+              <div className="w-4 h-4 rounded-full bg-violet-500/10 flex items-center justify-center shrink-0">
+                <svg className="w-2.5 h-2.5 text-violet-400" viewBox="0 0 10 10" fill="none">
+                  <path d="M2 5l2.5 2.5 3.5-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </div>
+              {label}
             </div>
-            {label}
-          </div>
-        ))}
+          )
+        )}
       </div>
     ),
-    accent: "from-violet-500/10 to-transparent",
-    border: "hover:border-violet-500/20",
+    accent: "from-violet-500/[0.06] to-transparent",
     span: "lg:col-span-2",
   },
 ];
 
 export default function FeaturesGrid() {
   return (
-    <section className="py-28 bg-background relative overflow-hidden">
-      <div
-        aria-hidden="true"
-        className="absolute top-0 left-0 w-full h-24 bg-gradient-to-b from-black to-transparent z-10 pointer-events-none"
-      />
-
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative z-20">
-        <div className="text-center max-w-xl mx-auto mb-20">
+    <section id="features" className="py-24 sm:py-32 bg-black relative overflow-hidden">
+      <div className="max-w-5xl mx-auto px-6 sm:px-8 lg:px-12 relative z-10">
+        <div className="text-center max-w-xl mx-auto mb-16 sm:mb-20">
           <motion.p
-            initial={{ opacity: 0, y: 12 }}
-            whileInView={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
-            className="text-xs text-muted-foreground uppercase tracking-widest mb-3 font-medium"
+            className="text-indigo-400 text-sm font-medium tracking-wide mb-4"
           >
-            Built different
+            Features
           </motion.p>
           <motion.h2
             initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.05 }}
-            className="text-3xl md:text-4xl font-bold text-foreground tracking-tight"
+            className="text-3xl sm:text-4xl font-bold text-white tracking-[-0.03em]"
           >
             Stop doing work{" "}
-            <span className="text-muted-foreground">that shouldn't need you.</span>
+            <span className="text-zinc-500">that shouldn't need you.</span>
           </motion.h2>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {pillars.map((p, i) => (
             <motion.div
               key={i}
               initial={{ opacity: 0, y: 24 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-60px" }}
-              transition={{
-                delay: i * 0.08,
-                duration: 0.55,
-                ease: [0.16, 1, 0.3, 1],
-              }}
-              className={`${p.span} group relative rounded-2xl bg-card border border-border ${p.border} transition-colors duration-300 p-7 overflow-hidden`}
+              transition={{ delay: i * 0.06, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+              className={`${p.span} group relative rounded-2xl bg-white/[0.015] border border-white/[0.06] hover:border-white/[0.1] transition-all duration-300 p-7 overflow-hidden`}
             >
-              <div
-                className={`absolute top-0 left-0 right-0 h-32 bg-gradient-to-b ${p.accent} pointer-events-none`}
-              />
+              <div className={`absolute top-0 left-0 right-0 h-32 bg-gradient-to-b ${p.accent} pointer-events-none`} />
 
               <div className="relative z-10">
                 <div className="flex items-center gap-2.5 mb-5">
-                  <div className="w-8 h-8 rounded-lg bg-muted/40 border border-border flex items-center justify-center">
+                  <div className={`w-9 h-9 rounded-xl ${p.iconBg} flex items-center justify-center ${p.iconColor}`}>
                     {p.icon}
                   </div>
-                  <span className="text-[11px] text-muted-foreground font-medium uppercase tracking-widest">
+                  <span className="text-[11px] text-zinc-500 font-medium uppercase tracking-[0.12em]">
                     {p.eyebrow}
                   </span>
                 </div>
 
-                <h3 className="text-xl font-semibold text-foreground tracking-tight mb-3">
+                <h3 className="text-lg font-semibold text-white tracking-[-0.01em] mb-2.5">
                   {p.headline}
                 </h3>
-                <p className="text-muted-foreground text-[14px] leading-relaxed">
-                  {p.body}
-                </p>
+                <p className="text-zinc-400 text-sm leading-relaxed">{p.body}</p>
 
                 {p.visual}
               </div>

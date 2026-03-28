@@ -12,17 +12,17 @@ const faqs = [
   {
     question: "What is CalmPilot?",
     answer:
-      "CalmPilot is an AI-powered digital proxy that connects to over 500 apps through secure OAuth integrations and quietly handles your work 24/7. It automates workflows, sends daily briefings, manages smart triggers, and provides an AI chat assistant — all while keeping you in control with human-in-the-loop approval for sensitive actions.",
+      "CalmPilot is an AI-powered digital proxy that connects to your Gmail, Calendar & Slack through secure OAuth and quietly handles your work 24/7. It automates email triage, sends daily briefings, manages smart triggers, and provides an AI chat assistant — all while keeping you in control with human-in-the-loop approval for sensitive actions.",
   },
   {
     question: "How does CalmPilot differ from Zapier or Make?",
     answer:
-      "Unlike Zapier or Make which require you to build workflows manually step by step, CalmPilot uses natural language AI to understand what you need and orchestrate complex multi-step workflows automatically. Just describe what you want in plain English and CalmPilot handles the rest across 500+ OAuth integrations.",
+      "Unlike Zapier or Make which require you to build workflows manually step by step, CalmPilot uses natural language AI to understand what you need and orchestrate complex multi-step workflows automatically. Just describe what you want in plain English and CalmPilot handles the rest across your connected apps.",
   },
   {
     question: "What apps does CalmPilot integrate with?",
     answer:
-      "CalmPilot integrates with 500+ apps including Gmail, Slack, Notion, GitHub, Linear, Jira, Google Calendar, Google Drive, Stripe, Airtable, Asana, Trello, Discord, HubSpot, Todoist, and many more. All integrations use OAuth for secure, password-free connections you can revoke at any time.",
+      "CalmPilot currently integrates with Gmail, Google Calendar, and Slack — the three apps that matter most for daily work. All integrations use OAuth for secure, password-free connections you can revoke at any time. More integrations are coming soon based on user demand.",
   },
   {
     question: "Is CalmPilot secure?",
@@ -42,7 +42,7 @@ const faqs = [
   {
     question: "What are smart triggers in CalmPilot?",
     answer:
-      "Smart triggers are automated rules that tell CalmPilot to take action when specific events occur across your connected apps. For example: when a customer email arrives in Gmail, automatically draft a reply and log it in Notion. Triggers can chain multiple apps together in a single workflow.",
+      "Smart triggers are automated rules that tell CalmPilot to take action when specific events occur across your connected apps. For example: when a customer email arrives in Gmail, automatically draft a reply. When a meeting starts in 10 minutes, send a prep summary to Slack. Triggers work across Gmail, Calendar, and Slack.",
   },
   {
     question: "Is CalmPilot free to use?",
@@ -53,7 +53,8 @@ const faqs = [
 
 export default function FAQ() {
   return (
-    <section className="py-24 lg:py-32 bg-background border-t border-border">
+    <section id="faq" className="py-24 lg:py-32 bg-background relative">
+      <div aria-hidden="true" className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white/[0.1] to-transparent" />
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -84,7 +85,7 @@ export default function FAQ() {
             >
               <AccordionItem
                 value={`item-${idx}`}
-                className="border border-border rounded-xl overflow-hidden bg-background px-1 data-[state=open]:bg-card transition-colors"
+                className="border border-white/[0.07] rounded-xl overflow-hidden bg-white/[0.01] px-1 data-[state=open]:bg-white/[0.04] transition-colors"
               >
                 <AccordionTrigger className="w-full text-left px-5 py-5 text-foreground font-medium hover:no-underline [&[data-state=open]]:text-indigo-400">
                   {faq.question}

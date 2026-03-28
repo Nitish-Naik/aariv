@@ -53,7 +53,7 @@ function DialogContent({
       <DialogPrimitive.Popup
         data-slot="dialog-content"
         className={cn(
-          "fixed top-1/2 left-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-5 rounded-3xl border border-border bg-background p-6 text-sm text-foreground shadow-xl ring-1 ring-border/40 duration-200 outline-none dark:border-white/10 dark:bg-card/95 dark:shadow-[0_24px_90px_rgba(0,0,0,0.55)] dark:ring-white/5 sm:max-w-lg data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
+          "fixed top-1/2 left-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-5 rounded-3xl border border-white/[0.08] bg-background p-6 text-sm text-foreground shadow-floating ring-1 ring-border/40 duration-200 outline-none sm:max-w-lg data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
           className,
         )}
         {...props}
@@ -65,7 +65,7 @@ function DialogContent({
             render={
               <Button
                 variant="ghost"
-                className="absolute top-3 right-3 rounded-full border border-border text-muted-foreground hover:text-foreground dark:border-white/10"
+                className="absolute top-3 right-3 rounded-full border border-white/[0.08] text-muted-foreground hover:text-foreground"
                 size="icon-sm"
               />
             }
@@ -101,7 +101,7 @@ function DialogFooter({
     <div
       data-slot="dialog-footer"
       className={cn(
-        "-mx-6 -mb-6 flex flex-col-reverse gap-2 rounded-b-3xl border-t border-border bg-muted/30 p-4 sm:flex-row sm:justify-end dark:border-white/10 dark:bg-card/70",
+        "-mx-6 -mb-6 flex flex-col-reverse gap-2 rounded-b-3xl border-t border-white/[0.08] bg-muted/30 p-4 sm:flex-row sm:justify-end",
         className,
       )}
       {...props}

@@ -92,18 +92,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         avatar: mappedUser.avatar,
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       });
-
-      // Apply referral code if one was stored from the login page
-      const refCode = localStorage.getItem("calmpilot_referral_code");
-      if (refCode) {
-        try {
-          await api.post("/referral/apply", { code: refCode });
-        } catch {
-          // Silently ignore — user may have already applied or code invalid
-        } finally {
-          localStorage.removeItem("calmpilot_referral_code");
-        }
-      }
     } catch {
       // Backend sync failure is non-fatal — user can still use the app
     }

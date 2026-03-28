@@ -1,6 +1,7 @@
 "use client";
 
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { useUpgradeDialog } from "@/components/UpgradeDialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,6 +24,7 @@ import {
 import { useAuth } from "@/context/AuthContext";
 import { useLogo } from "@/context/LogoContext";
 import { useToast } from "@/context/ToastContext";
+import { useBilling } from "@/context/useBilling";
 import { api } from "@/lib/api";
 import { formatTriggerSlug, getTriggerDescription } from "@/lib/appMeta";
 import {
@@ -44,6 +46,7 @@ import {
     Zap
 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
 /* ─── Types ──────────────────────────────────────────────────────── */
@@ -240,6 +243,7 @@ function ConfigFormModal({
   onClose: () => void;
   isSubmitting?: boolean;
 }) {
+  const { openUpgrade } = useUpgradeDialog();
   const schema = trigger.config || { properties: {}, required: [] };
   const fields = Object.entries(schema.properties || {});
   const required = schema.required || [];
@@ -367,13 +371,13 @@ function ConfigFormModal({
             >
               {error === "INSUFFICIENT_CREDITS" ? (
                 <>
-                  You&apos;re out of credits.{" "}
-                  <a
-                    href="/dashboard/settings"
-                    className="underline hover:text-amber-300"
+                  Plan limit reached.{" "}
+                  <button
+                    onClick={openUpgrade}
+                    className="underline hover:text-indigo-300"
                   >
-                    Add Credits →
-                  </a>
+                    Upgrade →
+                  </button>
                 </>
               ) : (
                 error
@@ -411,6 +415,11 @@ function ConfigFormModal({
 export default function TriggersPage() {
   const { user } = useAuth();
   const { getLogo } = useLogo();
+  const { openUpgrade } = useUpgradeDialog();
+  const { balanceData } = useBilling();
+  const router = useRouter();
+  const tier = balanceData?.subscription_tier ?? "free";
+  const isFree = tier === "free";
   const [userTriggers, setUserTriggers] = useState<UserTrigger[]>([]);
   const [integrations, setIntegrations] = useState<Integration[]>([]);
   const [availableTriggers, setAvailableTriggers] = useState<
@@ -544,7 +553,11 @@ export default function TriggersPage() {
         "success",
       );
     } catch (e: any) {
-      showToastMsg(e?.message || "Failed to update trigger", "error");
+      if (e?.message === "TRIGGER_LIMIT" || e?.response?.status === 402) {
+        openUpgrade("trigger_limit");
+      } else {
+        showToastMsg(e?.message || "Failed to update trigger", "error");
+      }
     } finally {
       setTogglingId(null);
     }
@@ -609,9 +622,7 @@ export default function TriggersPage() {
     if (!searchQuery) return userTriggers;
     const q = searchQuery.toLowerCase();
     return userTriggers.filter((t) => {
-      const name = (
-        t.trigger_name || formatTriggerSlug(t.trigger_slug)
-      ).toLowerCase();
+      const name = formatTriggerSlug(t.trigger_slug || t.trigger_name || "").toLowerCase();
       const app = (t.toolkit || "").toLowerCase();
       return name.includes(q) || app.includes(q);
     });
@@ -630,85 +641,55 @@ export default function TriggersPage() {
           />
         )}
 
-        {/* Pause Warning — shadcn Dialog */}
-        <Dialog
+        {/* Pause Warning */}
+        <ConfirmDialog
           open={!!pauseWarningTrigger}
-          onOpenChange={(open) => {
-            if (!open) setPauseWarningTrigger(null);
+          title="Pause this automation?"
+          description={`${formatTriggerSlug(pauseWarningTrigger?.trigger_slug || pauseWarningTrigger?.trigger_name || "")} runs automatically to keep your daily briefings updated. Pausing it will stop new events from appearing in your briefing until you resume.`}
+          confirmLabel="Pause anyway"
+          cancelLabel="Cancel"
+          onConfirm={() => {
+            if (pauseWarningTrigger) handleToggle(pauseWarningTrigger);
+            setPauseWarningTrigger(null);
           }}
-        >
-          <DialogContent showCloseButton={false} className="sm:max-w-sm">
-            <DialogHeader>
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-amber-500/10 flex items-center justify-center shrink-0">
-                  <Pause
-                    strokeWidth={1.5}
-                    size={16}
-                    className="text-amber-400"
-                  />
-                </div>
-                <DialogTitle>Pause this automation?</DialogTitle>
-              </div>
-              <DialogDescription>
-                <span className="font-medium text-foreground">
-                  {pauseWarningTrigger?.trigger_name ||
-                    formatTriggerSlug(pauseWarningTrigger?.trigger_slug || "")}
-                </span>{" "}
-                runs automatically to keep your daily briefings updated. Pausing
-                it will stop new events from appearing in your briefing until
-                you resume.
-              </DialogDescription>
-            </DialogHeader>
-            <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => setPauseWarningTrigger(null)}
-              >
-                Cancel
-              </Button>
-              <Button
-                variant="outline"
-                className="bg-amber-500/10 text-amber-400 border-amber-500/20 hover:bg-amber-500/20"
-                onClick={() => {
-                  if (pauseWarningTrigger) handleToggle(pauseWarningTrigger);
-                  setPauseWarningTrigger(null);
-                }}
-              >
-                Pause anyway
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+          onCancel={() => setPauseWarningTrigger(null)}
+        />
 
         {/* Page header */}
-        <div className="px-4 sm:px-6 py-4 border-b border-border/40 flex items-center justify-between shrink-0">
+        <div className="px-5 sm:px-6 py-4 sm:py-5 border-b border-white/[0.06] flex items-center justify-between shrink-0">
           <div>
-            <h1 className="text-sm font-semibold text-foreground">
+            <h1 className="text-base font-semibold text-white tracking-[-0.01em]">
               Automations
             </h1>
-            <p className="text-xs text-muted-foreground mt-0.5">
+            <p className="text-[12px] text-zinc-500 mt-0.5">
               Triggers that watch for events across your connected apps
             </p>
           </div>
-          {!loading && integrations.length > 0 && (
-            <Button
-              size="sm"
-              onClick={() => setShowCreatePanel(!showCreatePanel)}
-            >
-              <Plus strokeWidth={1.5} size={14} />
-              New
-            </Button>
-          )}
+          <div className="flex items-center gap-2.5">
+            {isFree && !loading && (
+              <button
+                onClick={() => userTriggers.filter(t => t.is_enabled).length >= 3 && openUpgrade("trigger_limit")}
+                className={`text-[11px] font-medium px-2.5 py-1 rounded-full transition-colors ${
+                  (userTriggers.filter(t => t.is_enabled).length) >= 3
+                    ? "bg-red-500/10 text-red-400 ring-1 ring-inset ring-red-500/20 cursor-pointer hover:bg-red-500/20"
+                    : "bg-white/[0.06] text-muted-foreground ring-1 ring-inset ring-white/[0.08] cursor-default"
+                }`}
+              >
+                {userTriggers.filter(t => t.is_enabled).length}/3 triggers
+              </button>
+            )}
+            {/* + New button removed — triggers are auto-created when apps connect */}
+          </div>
         </div>
 
         {/* View tabs */}
         {!loading && userTriggers.length > 0 && (
-          <div className="px-4 sm:px-6 border-b border-border/40 flex items-center gap-1">
+          <div className="px-4 sm:px-6 border-b border-white/[0.06] flex items-center gap-1">
             {(["triggers", "activity"] as const).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setViewTab(tab)}
-                className={`px-3 py-3 text-xs font-medium transition-colors border-b-2 -mb-px ${viewTab === tab ? "text-foreground border-foreground" : "text-muted-foreground hover:text-foreground/80 border-transparent"}`}
+                className={`px-3 py-3 text-xs font-medium transition-colors border-b-2 -mb-px ${viewTab === tab ? "text-foreground border-indigo-500" : "text-muted-foreground hover:text-foreground/80 border-transparent"}`}
               >
                 {tab === "triggers" ? "Triggers" : "Activity Log"}
               </button>
@@ -718,7 +699,7 @@ export default function TriggersPage() {
 
         {/* Stats strip */}
         {stats && stats.total > 0 && !loading && (
-          <div className="grid grid-cols-2 md:grid-cols-4 border-b border-border/40">
+          <div className="grid grid-cols-2 md:grid-cols-4 border-b border-white/[0.06]">
             {[
               {
                 label: "Active",
@@ -746,7 +727,7 @@ export default function TriggersPage() {
             ].map((s, i) => (
               <div
                 key={s.label}
-                className={`px-6 py-4 ${i < 3 ? "border-r border-border/40" : ""}`}
+                className={`px-6 py-4 ${i < 3 ? "border-r border-white/[0.06]" : ""}`}
               >
                 <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-1">
                   {s.label}
@@ -765,7 +746,7 @@ export default function TriggersPage() {
               {[1, 2, 3].map((i) => (
                 <div
                   key={i}
-                  className="border border-border/55 rounded-xl px-4 sm:px-5 py-4"
+                  className="border border-white/[0.07] rounded-xl px-4 sm:px-5 py-4"
                 >
                   <div className="flex items-start gap-3">
                     <Skeleton className="w-9 h-9 rounded-lg" />
@@ -799,7 +780,7 @@ export default function TriggersPage() {
                             onClick={() =>
                               loadAvailableTriggers(integration.appName)
                             }
-                            className="w-full flex items-center gap-3 border border-border/55 rounded-xl px-4 py-3 hover:bg-muted/50 transition-colors"
+                            className="w-full flex items-center gap-3 border border-white/[0.07] rounded-xl px-4 py-3 hover:bg-muted/50 transition-colors"
                           >
                             <AppLogo
                               logo={
@@ -843,7 +824,7 @@ export default function TriggersPage() {
                                 availableTriggers.map((trigger) => (
                                   <div
                                     key={trigger.slug}
-                                    className="flex items-center gap-3 bg-muted/50 border border-border/55 rounded-lg px-3 py-2.5"
+                                    className="flex items-center gap-3 bg-muted/50 border border-white/[0.07] rounded-lg px-3 py-2.5"
                                   >
                                     <Zap
                                       strokeWidth={1.5}
@@ -902,71 +883,7 @@ export default function TriggersPage() {
               </Sheet>
 
               {/* Suggested Templates */}
-              {!searchQuery && userTriggers.length < 5 && (
-                <div className="mb-10 space-y-4">
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    Start with a Template
-                  </p>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {[
-                      {
-                        title: "Slack on new PR",
-                        desc: "Notify a channel when a GitHub Pull Request is opened.",
-                        apps: ["github", "slack"],
-                      },
-                      {
-                        title: "Notion release notes",
-                        desc: "Draft a document when Linear issues are marked 'Done'.",
-                        apps: ["linear", "notion"],
-                      },
-                      {
-                        title: "Gmail triage",
-                        desc: "Auto-label and summarize high-priority incoming emails.",
-                        apps: ["gmail"],
-                      },
-                    ].map((tmpl, i) => (
-                      <button
-                        key={i}
-                        onClick={() => setShowCreatePanel(true)}
-                        className="text-left border border-border/55 rounded-xl p-4 hover:bg-muted/50 lift pressable group"
-                      >
-                        <div className="flex items-center gap-2 mb-3">
-                          <div className="flex -space-x-2">
-                            {tmpl.apps.map((app, j) => {
-                              const logo = getLogo(
-                                app.toLowerCase().replace(/\s+/g, ""),
-                              );
-                              return (
-                                <AppLogo
-                                  key={j}
-                                  logo={logo || undefined}
-                                  appKey={app}
-                                  displayName={app}
-                                  size="sm"
-                                  className="w-6 h-6 border-2 border-background bg-background relative z-10"
-                                />
-                              );
-                            })}
-                          </div>
-                          <div className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity">
-                            <Plus
-                              strokeWidth={1.5}
-                              size={16}
-                              className="text-foreground"
-                            />
-                          </div>
-                        </div>
-                        <h4 className="text-sm font-medium text-foreground mb-1">
-                          {tmpl.title}
-                        </h4>
-                        <p className="text-xs text-muted-foreground leading-relaxed">
-                          {tmpl.desc}
-                        </p>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
+              {/* Templates removed — triggers are auto-created when apps connect */}
 
               {/* Activity Tab */}
               {viewTab === "activity" && userTriggers.length > 0 && (
@@ -983,7 +900,7 @@ export default function TriggersPage() {
                       />
                     </div>
                   ) : activityEvents.length === 0 ? (
-                    <div className="text-center py-12 border border-dashed border-border rounded-xl">
+                    <div className="text-center py-12 border border-dashed border-white/[0.08] rounded-xl">
                       <Clock
                         strokeWidth={1.5}
                         size={24}
@@ -998,7 +915,7 @@ export default function TriggersPage() {
                       {activityEvents.map((ev) => (
                         <div
                           key={ev.id}
-                          className="border border-border/55 rounded-xl px-4 py-3 flex items-center justify-between gap-3"
+                          className="border border-white/[0.07] rounded-xl px-4 py-3 flex items-center justify-between gap-3"
                         >
                           <div className="flex items-center gap-3 min-w-0">
                             <div
@@ -1078,21 +995,20 @@ export default function TriggersPage() {
                       return (
                         <div
                           key={trigger.id}
-                          className={`border border-border/55 rounded-xl px-4 sm:px-5 py-4 lift hover:border-foreground/20 ${!trigger.is_enabled ? "opacity-60 grayscale-[0.5]" : ""}`}
+                          className={`border border-white/[0.07] rounded-xl px-4 sm:px-5 py-4 lift hover:border-foreground/20 ${!trigger.is_enabled ? "opacity-60 grayscale-[0.5]" : ""}`}
                         >
                           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                             <div className="flex-1 min-w-0 flex flex-col gap-3">
                               <div className="flex items-center gap-2 flex-wrap">
                                 <h3 className="text-sm font-semibold text-foreground">
-                                  {trigger.trigger_name ||
-                                    formatTriggerSlug(trigger.trigger_slug)}
+                                  {formatTriggerSlug(trigger.trigger_slug || trigger.trigger_name || "")}
                                 </h3>
                                 <Badge
                                   variant="outline"
                                   className={
                                     trigger.is_enabled
                                       ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
-                                      : "bg-muted text-muted-foreground border-border"
+                                      : "bg-muted text-muted-foreground border-white/[0.08]"
                                   }
                                 >
                                   {trigger.is_enabled ? "Active" : "Paused"}
@@ -1118,7 +1034,7 @@ export default function TriggersPage() {
 
                               {/* Visual Flow */}
                               <div className="flex items-center gap-3">
-                                <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-muted border border-border/55">
+                                <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-muted border border-white/[0.07]">
                                   {(() => {
                                     const logo =
                                       integrations.find(
@@ -1147,7 +1063,7 @@ export default function TriggersPage() {
                                   size={14}
                                   className="text-muted-foreground"
                                 />
-                                <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-muted border border-border/55">
+                                <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-muted border border-white/[0.07]">
                                   <Zap
                                     strokeWidth={1.5}
                                     size={14}
@@ -1162,7 +1078,7 @@ export default function TriggersPage() {
 
                             {/* Actions */}
                             <div className="flex sm:flex-col items-center sm:items-end justify-between w-full sm:w-auto gap-3">
-                              <div className="flex items-center gap-1 bg-muted border border-border/55 rounded-lg p-0.5">
+                              <div className="flex items-center gap-1 bg-muted border border-white/[0.07] rounded-lg p-0.5">
                                 <Tooltip>
                                   <TooltipTrigger>
                                     <Button
@@ -1195,31 +1111,8 @@ export default function TriggersPage() {
                                     {trigger.is_enabled ? "Pause" : "Resume"}
                                   </TooltipContent>
                                 </Tooltip>
-                                <div className="w-px h-4 bg-border" />
-                                <Tooltip>
-                                  <TooltipTrigger>
-                                    <Button
-                                      variant="ghost"
-                                      size="icon-xs"
-                                      onClick={() =>
-                                        setConfirmDeleteId(trigger.id)
-                                      }
-                                      disabled={isDeleting}
-                                      className="hover:text-destructive"
-                                    >
-                                      {isDeleting ? (
-                                        <Loader2
-                                          strokeWidth={1.5}
-                                          size={14}
-                                          className="animate-spin"
-                                        />
-                                      ) : (
-                                        <Trash2 strokeWidth={1.5} size={14} />
-                                      )}
-                                    </Button>
-                                  </TooltipTrigger>
-                                  <TooltipContent>Delete</TooltipContent>
-                                </Tooltip>
+                                {/* Delete button removed — triggers are auto-managed.
+                                   Disconnect the app to remove its triggers. */}
                               </div>
                               <div className="flex items-center gap-2">
                                 <Badge
@@ -1268,7 +1161,7 @@ export default function TriggersPage() {
 
                           {/* Expandable Event Log */}
                           {expandedTriggerId === trigger.id && (
-                            <div className="mt-3 pt-3 border-t border-border/40">
+                            <div className="mt-3 pt-3 border-t border-white/[0.06]">
                               <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-2">
                                 Recent Events
                               </p>
@@ -1339,7 +1232,7 @@ export default function TriggersPage() {
               ) : viewTab === "triggers" ? (
                 /* Empty State */
                 !showCreatePanel && (
-                  <div className="text-center py-20 px-4 border border-dashed border-border rounded-xl relative overflow-hidden">
+                  <div className="text-center py-20 px-4 border border-dashed border-white/[0.08] rounded-xl relative overflow-hidden">
                     <div
                       aria-hidden="true"
                       className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md opacity-20 pointer-events-none"
@@ -1376,7 +1269,7 @@ export default function TriggersPage() {
                       </svg>
                     </div>
                     <div className="relative z-10 flex flex-col items-center gap-6">
-                      <div className="w-12 h-12 rounded-2xl bg-muted border border-border/55 flex items-center justify-center">
+                      <div className="w-12 h-12 rounded-2xl bg-muted border border-white/[0.07] flex items-center justify-center">
                         <Zap
                           strokeWidth={1.5}
                           size={20}
@@ -1398,7 +1291,7 @@ export default function TriggersPage() {
                           Create Trigger
                         </Button>
                       ) : (
-                        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-muted border border-border/55 text-sm text-muted-foreground">
+                        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-muted border border-white/[0.07] text-sm text-muted-foreground">
                           <span>Connect an app in</span>
                           <a
                             href="/dashboard/integrations"

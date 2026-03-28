@@ -80,7 +80,7 @@ export default async function Image() {
             color: "#6366f1",
           }}
         >
-          <span>1000+ Apps</span>
+          <span>Gmail + Calendar + Slack</span>
           <span style={{ color: "#333" }}>•</span>
           <span>AI-Powered</span>
           <span style={{ color: "#333" }}>•</span>

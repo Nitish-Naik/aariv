@@ -2,7 +2,10 @@
 
 import { DataCard, PulsingAvatar } from "@/components";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { useUpgradeDialog } from "@/components/UpgradeDialog";
+import { Logo } from "@/components/secure-agent/Logo";
 import { useAuth } from "@/context/AuthContext";
+import { useBilling } from "@/context/useBilling";
 import { useLogo } from "@/context/LogoContext";
 import { trackEvent } from "@/lib/analytics";
 import { api } from "@/lib/api";
@@ -18,58 +21,64 @@ import {
   Loader2,
   Menu,
   MessageSquare,
+  Link2,
   PanelLeftClose,
   Plus,
   Send,
   Shield,
+  Sparkles,
   Trash2,
   X,
+  Zap,
 } from "lucide-react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { usePromptStore } from "@/lib/prompt-store";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
 // Detect completed actions in the agent's final response text
 const ACTION_PATTERNS: { re: RegExp; label: string }[] = [
   {
-    re: /\b(sent|send|emailed)\b.{0,40}\b(email|message)\b/i,
+    re: /\b(have sent|has been sent|successfully sent|email sent|sent the email|sent your email|emailed)\b/i,
     label: "Email sent",
   },
   {
-    re: /\b(created|scheduled|added)\b.{0,40}\b(meeting|event|calendar)\b/i,
+    re: /\b(have created|has been created|successfully created|successfully scheduled|event created|meeting created)\b/i,
     label: "Meeting created",
   },
   {
-    re: /\b(sent|posted|messaged)\b.{0,40}\bslack\b/i,
+    re: /\b(have sent|has been sent|successfully sent|posted to|sent the message).{0,20}\bslack\b/i,
     label: "Slack message sent",
   },
   {
-    re: /\bslack\b.{0,40}\b(sent|posted|messaged)\b/i,
+    re: /\bslack\b.{0,20}\b(has been sent|successfully sent|message sent|posted)\b/i,
     label: "Slack message sent",
   },
+  // ── Commented out: only Gmail, Calendar, Slack active for launch ──
+  // {
+  //   re: /\b(created|filed|opened)\b.{0,40}\b(issue|ticket|pr|pull request)\b/i,
+  //   label: "Issue created",
+  // },
+  // {
+  //   re: /\b(created|added|made)\b.{0,40}\b(task|to.?do)\b/i,
+  //   label: "Task created",
+  // },
+  // {
+  //   re: /\b(created|wrote|added)\b.{0,40}\b(note|page|document|doc)\b/i,
+  //   label: "Note created",
+  // },
   {
-    re: /\b(created|filed|opened)\b.{0,40}\b(issue|ticket|pr|pull request)\b/i,
-    label: "Issue created",
-  },
-  {
-    re: /\b(created|added|made)\b.{0,40}\b(task|to.?do)\b/i,
-    label: "Task created",
-  },
-  {
-    re: /\b(created|wrote|added)\b.{0,40}\b(note|page|document|doc)\b/i,
-    label: "Note created",
-  },
-  {
-    re: /\b(deleted|removed|archived)\b.{0,40}\b(email|message|file|event)\b/i,
+    re: /\b(have deleted|has been deleted|successfully deleted|successfully removed|successfully archived)\b/i,
     label: "Item deleted",
   },
   {
-    re: /\b(updated|edited|modified)\b.{0,40}\b(event|task|issue|page)\b/i,
+    re: /\b(have updated|has been updated|successfully updated|successfully edited|successfully modified)\b/i,
     label: "Item updated",
   },
   {
-    re: /\b(replied|responded)\b.{0,40}\b(email|message|thread)\b/i,
+    re: /\b(have replied|has been replied|successfully replied|reply has been sent|reply sent)\b/i,
     label: "Reply sent",
   },
 ];
@@ -88,7 +97,11 @@ function parseCompletions(response: string): string[] {
 
 function AssistantPageInner() {
   const { user } = useAuth();
+  const { balanceData, refetch: refetchBilling } = useBilling();
+  const { openUpgrade } = useUpgradeDialog();
   const { getLogo } = useLogo();
+  // Track whether we've shown the soft-wall nudge this session
+  const nudgeSentRef = useRef(false);
   const searchParams = useSearchParams();
   const promptAutoSentRef = useRef(false);
   const handleSendRef = useRef<(text?: string) => void>(() => {});
@@ -96,7 +109,12 @@ function AssistantPageInner() {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeConversationId, setActiveConversationId] = useState<
     string | null
-  >(null);
+  >(() => {
+    if (typeof window === "undefined") return null;
+    // If a prompt is pending (from Zustand or URL), start fresh
+    if (usePromptStore.getState().pendingPrompt) return null;
+    return localStorage.getItem("calmpilot_active_conversation") || null;
+  });
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<{
     type: "single" | "all" | "range";
@@ -110,15 +128,14 @@ function AssistantPageInner() {
 
   const [inputText, setInputText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [isLogsOpen, setIsLogsOpen] = useState(true); // Right panel toggle
   const [selectedModel, setSelectedModel] = useState("gpt-4o");
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
+  // upgradeReason state removed — uses useUpgradeDialog() context instead
   const [suggestions, setSuggestions] = useState<
     { label: string; message: string }[]
   >([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const logsEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const dragCounter = useRef(0);
   const streamAbortRef = useRef<AbortController | null>(null);
@@ -129,6 +146,15 @@ function AssistantPageInner() {
       streamAbortRef.current?.abort();
     };
   }, []);
+
+  // Persist active conversation ID so refresh resumes the same chat
+  useEffect(() => {
+    if (activeConversationId) {
+      localStorage.setItem("calmpilot_active_conversation", activeConversationId);
+    } else {
+      localStorage.removeItem("calmpilot_active_conversation");
+    }
+  }, [activeConversationId]);
 
   // Auto-scroll to bottom of chat
   useEffect(() => {
@@ -147,14 +173,47 @@ function AssistantPageInner() {
     return () => window.removeEventListener("calmpilot-model-change", handler);
   }, []);
 
-  // Auto-send ?prompt= param from proposal action buttons on the home page
-  const autoPrompt = searchParams.get("prompt");
-  const [autoPromptPending, setAutoPromptPending] = useState(false);
-
+  // Consume pending prompts from Zustand store — inject into input field
   useEffect(() => {
-    if (!user?.id || !autoPrompt || promptAutoSentRef.current) return;
-    setAutoPromptPending(true);
-  }, [user?.id, autoPrompt]);
+    if (!user?.id) return;
+
+    const tryConsume = () => {
+      const { pendingPrompt, clearPendingPrompt } = usePromptStore.getState();
+      if (!pendingPrompt) return;
+      clearPendingPrompt();
+      // Just set the text and let React handle the rest
+      setActiveConversationId(null);
+      setMessages([]);
+      setInputText(pendingPrompt);
+      // Focus input and auto-submit after React renders
+      requestAnimationFrame(() => {
+        inputRef.current?.focus();
+        // Auto-submit the form
+        handleSendRef.current(pendingPrompt);
+      });
+    };
+
+    tryConsume();
+
+    const unsub = usePromptStore.subscribe((state) => {
+      if (state.pendingPrompt) tryConsume();
+    });
+
+    return () => unsub();
+  }, [user?.id]);
+
+  // Track connected apps for empty-state UX
+  const [connectedApps, setConnectedApps] = useState<string[]>([]);
+  useEffect(() => {
+    if (!user?.id) return;
+    api.get("/integrations").then((data) => {
+      const apps = data?.integrations || [];
+      const connected = apps
+        .filter((a: any) => a.status === "connected")
+        .map((a: any) => a.appName?.toLowerCase() || "");
+      setConnectedApps(connected);
+    }).catch(() => {});
+  }, [user?.id]);
 
   // Fetch dynamic suggestion chips based on connected apps
   useEffect(() => {
@@ -191,20 +250,26 @@ function AssistantPageInner() {
   // Extract all logs to render in the right panel sequentially
   const allLogs = messages.flatMap((msg) => msg.logs || []).filter(Boolean);
 
-  // Auto-scroll logs
-  useEffect(() => {
-    logsEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [allLogs]);
-
-  // Fetch conversations on load
+  // Fetch conversations on load — restore active conversation if one was persisted
   useEffect(() => {
     if (!user?.id) return;
     const fetchHistory = async () => {
       try {
         const data = await api.get(`/history/conversations/${user.id}`);
         setConversations(data);
-        // Always start with a fresh new chat — previous chats available in sidebar
-        setMessages([]);
+
+        // If a prompt is pending or being processed, don't interfere
+        if (isLoading || messages.length > 0 || inputText.trim()) return;
+
+        const restoredId = activeConversationId;
+        if (restoredId && data.some((c: Conversation) => c.id === restoredId)) {
+          // Conversation exists — messages will load via the activeConversationId effect
+        } else if (restoredId) {
+          setActiveConversationId(null);
+          setMessages([]);
+        } else {
+          setMessages([]);
+        }
       } catch {
         // Non-fatal — start with empty conversation list
       }
@@ -393,9 +458,6 @@ function AssistantPageInner() {
       is_new_chat: messages.length === 0,
     });
 
-    // Open logs panel automatically on send
-    setIsLogsOpen(true);
-
     const msgTimestamp = `${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
     const userMessage: ChatMessage = {
       id: msgTimestamp,
@@ -539,20 +601,29 @@ function AssistantPageInner() {
                       logs: finalLogs,
                       completions: parseCompletions(event.data.response || ""),
                     };
-                  } else if (event.type === "insufficient_credits") {
-                    trackEvent("assistant_insufficient_credits", {
-                      model: selectedModel,
-                    });
+                  } else if (event.type === "insufficient_credits" || event.type === "chat_quota_exceeded") {
+                    openUpgrade("chat_limit");
+                    const limit = event.data?.limit ?? 50;
                     return {
                       ...msg,
-                      content:
-                        "You've run out of credits. Please add credits in **Settings** to continue using CalmPilot.\n\n[Go to Settings →](/dashboard/settings)",
+                      content: `You've used all **${limit} messages** this month. Upgrade your plan or wait for your quota to reset.`,
                     };
                   } else if (event.type === "error") {
                     trackEvent("assistant_message_error", {
                       model: selectedModel,
                     });
-                    return { ...msg, content: `Error: ${event.data}` };
+                    const rawError = typeof event.data === "string" ? event.data : JSON.stringify(event.data);
+                    let friendlyError = "Something went wrong. Please try again.";
+                    if (/timeout|timed out/i.test(rawError)) {
+                      friendlyError = "That took too long. Try a simpler request or try again.";
+                    } else if (/auth|connect|unauthorized/i.test(rawError)) {
+                      friendlyError = "I couldn't access that app. Make sure it's connected in **[Integrations](/dashboard/integrations)**.";
+                    } else if (/rate.?limit/i.test(rawError)) {
+                      friendlyError = "Too many requests. Wait a moment and try again.";
+                    } else if (/invalid.*toolkit|toolkit.*not found/i.test(rawError)) {
+                      friendlyError = "That app isn't available. Connect it from **[Integrations](/dashboard/integrations)**.";
+                    }
+                    return { ...msg, content: friendlyError };
                   }
                   return msg;
                 }),
@@ -572,9 +643,7 @@ function AssistantPageInner() {
             msg.id === aiMessageId
               ? {
                   ...msg,
-                  content:
-                    "Sorry, I encountered an error: " +
-                    (e.message || "Unknown error"),
+                  content: "Something went wrong. Please try again.",
                 }
               : msg,
           ),
@@ -583,22 +652,43 @@ function AssistantPageInner() {
     } finally {
       setIsLoading(false);
       inputRef.current?.focus();
+
+      // Soft wall: after a completed response, refresh billing data and show
+      // a one-time in-chat nudge when a free user crosses the 50% mark (25/50).
+      try {
+        const bd = await refetchBilling();
+        if (
+          bd &&
+          !nudgeSentRef.current &&
+          bd.subscription_tier === "free" &&
+          bd.chat_messages_used >= Math.floor(bd.chat_messages_limit / 2) &&
+          bd.chat_messages_used < bd.chat_messages_limit
+        ) {
+          nudgeSentRef.current = true;
+          const remaining = bd.chat_messages_limit - bd.chat_messages_used;
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: `nudge_${Date.now()}`,
+              role: "system" as const,
+              content: `You have **${remaining} messages** left this month.`,
+              timestamp: new Date(),
+            },
+          ]);
+        }
+      } catch {
+        // non-fatal
+      }
     }
   };
 
   // Keep ref in sync so useEffect closures always call the latest version
   handleSendRef.current = handleSend;
 
-  // Fire auto-prompt after handleSend is ready
-  useEffect(() => {
-    if (!autoPromptPending || !autoPrompt || promptAutoSentRef.current) return;
-    promptAutoSentRef.current = true;
-    setAutoPromptPending(false);
-    handleSendRef.current(autoPrompt);
-  }, [autoPromptPending, autoPrompt]);
+  // (prompt firing handled by event listener in useEffect above)
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
+    <div className="flex overflow-hidden bg-background fixed inset-0 md:left-[220px] top-[48px] md:top-0 z-10">
       {/* ── SIDEBAR OVERLAY (mobile) ── */}
       {isSidebarOpen && (
         <div
@@ -607,83 +697,92 @@ function AssistantPageInner() {
         />
       )}
 
-      {/* ── LEFT SIDEBAR (Chat History) ── */}
+      {/* ── RIGHT SIDEBAR (Chat History) ── */}
       <aside
-        className={`fixed lg:static top-0 left-0 h-full z-40 flex flex-col bg-background/85 backdrop-blur-sm transition-all duration-300 ease-in-out ${
+        className={`fixed lg:static top-0 right-0 h-full z-40 flex flex-col bg-[#111111] border-l border-white/[0.06] transition-all duration-300 ease-in-out order-last ${
           isSidebarOpen
             ? "w-72 translate-x-0"
-            : "w-0 -translate-x-full lg:translate-x-0 lg:w-0 overflow-hidden"
+            : "w-0 translate-x-full lg:translate-x-0 lg:w-64 overflow-hidden"
         }`}
       >
         {/* Sidebar Header */}
-        <div className="h-16 flex items-center justify-between px-4 shrink-0">
-          <span className="text-sm font-semibold text-foreground tracking-wide">
-            Chat History
+        <div className="h-14 flex items-center justify-between px-4 shrink-0 border-b border-white/[0.06]">
+          <span className="text-sm font-semibold text-foreground tracking-[-0.01em]">
+            History
           </span>
-          <button
-            onClick={() => setIsSidebarOpen(false)}
-            className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
-          >
-            <PanelLeftClose strokeWidth={1.5} size={18} />
-          </button>
-        </div>
-
-        {/* New Chat Button */}
-        <div className="px-3 pt-3 pb-1">
-          <button
-            onClick={handleNewChat}
-            className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium text-foreground bg-muted/50 hover:bg-primary hover:text-primary-foreground transition-colors"
-          >
-            <Plus strokeWidth={1.5} size={16} />
-            New Chat
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={handleNewChat}
+              className="p-1.5 rounded-full text-muted-foreground hover:text-foreground hover:bg-white/[0.06] transition-all duration-200"
+              title="New chat"
+            >
+              <Plus strokeWidth={1.5} size={16} />
+            </button>
+            <button
+              onClick={() => setIsSidebarOpen(false)}
+              className="p-1.5 rounded-full text-muted-foreground hover:text-foreground hover:bg-white/[0.06] transition-all duration-200 lg:hidden"
+            >
+              <X strokeWidth={1.5} size={16} />
+            </button>
+          </div>
         </div>
 
         {/* Conversations List */}
         <div className="flex-1 overflow-y-auto px-2 py-2 space-y-0.5">
           {conversations.length === 0 ? (
-            <div className="px-3 py-6 text-xs text-muted-foreground italic text-center">
-              No recent chats.
+            <div className="px-3 py-8 text-xs text-zinc-600 text-center">
+              No conversations yet
             </div>
           ) : (
-            conversations.map((conv) => (
-              <div
-                key={conv.id}
-                className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-left transition-colors group/conv cursor-pointer ${
-                  activeConversationId === conv.id
-                    ? "bg-muted text-foreground"
-                    : "text-muted-foreground hover:bg-muted/50"
-                }`}
-              >
-                <button
+            conversations.map((conv) => {
+              const relTime = (() => {
+                if (!conv.updated_at) return "";
+                const diff = Date.now() - new Date(conv.updated_at).getTime();
+                const days = Math.floor(diff / 86400000);
+                if (days === 0) return "Today";
+                if (days === 1) return "Yesterday";
+                if (days < 7) return `${days} days ago`;
+                return new Date(conv.updated_at).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+              })();
+              return (
+                <div
+                  key={conv.id}
+                  className={`w-full flex flex-col px-3 py-2.5 rounded-xl text-left transition-all duration-200 group/conv cursor-pointer ${
+                    activeConversationId === conv.id
+                      ? "bg-white/[0.06] border-l-2 border-indigo-400"
+                      : "hover:bg-white/[0.04] border-l-2 border-transparent"
+                  }`}
                   onClick={() => {
                     setActiveConversationId(conv.id);
                     setIsSidebarOpen(false);
                   }}
-                  className="flex items-center gap-2.5 flex-1 min-w-0"
                 >
-                  <MessageSquare
-                    strokeWidth={1.5}
-                    size={14}
-                    className="shrink-0 opacity-50"
-                  />
-                  <span className="text-[13px] truncate">{conv.title}</span>
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setDeleteConfirm({
-                      type: "single",
-                      conversationId: conv.id,
-                    });
-                  }}
-                  className="shrink-0 p-1 rounded-md opacity-0 group-hover/conv:opacity-100 text-muted-foreground hover:text-red-400 hover:bg-red-400/10 transition-all"
-                  title="Delete conversation"
-                >
-                  <Trash2 strokeWidth={1.5} size={13} />
-                </button>
-              </div>
-            ))
+                  <div className="flex items-center justify-between gap-2">
+                    <span className={`text-[13px] font-medium truncate ${
+                      activeConversationId === conv.id ? "text-foreground" : "text-muted-foreground"
+                    }`}>
+                      {conv.title}
+                    </span>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDeleteConfirm({
+                          type: "single",
+                          conversationId: conv.id,
+                        });
+                      }}
+                      className="shrink-0 p-1 rounded-md opacity-0 group-hover/conv:opacity-100 text-muted-foreground hover:text-red-400 hover:bg-red-400/10 transition-all"
+                      title="Delete conversation"
+                    >
+                      <Trash2 strokeWidth={1.5} size={13} />
+                    </button>
+                  </div>
+                  {relTime && (
+                    <span className="text-[10px] text-muted-foreground/60 mt-0.5">{relTime}</span>
+                  )}
+                </div>
+              );
+            })
           )}
         </div>
 
@@ -692,7 +791,7 @@ function AssistantPageInner() {
           <div className="shrink-0">
             <button
               onClick={() => setIsDeleteMenuOpen(!isDeleteMenuOpen)}
-              className="w-full flex items-center justify-between px-4 py-3 text-sm text-muted-foreground hover:text-foreground hover:bg-muted/30 transition-colors"
+              className="w-full flex items-center justify-between px-4 py-3 text-sm text-zinc-500 hover:text-white hover:bg-white/[0.04] transition-all duration-200"
             >
               <span className="flex items-center gap-2 text-xs font-medium">
                 <Shield strokeWidth={1.5} size={14} className="opacity-60" />
@@ -787,7 +886,7 @@ function AssistantPageInner() {
 
       {/* ─── MAIN CHAT PANEL ─── */}
       <div
-        className="flex flex-col h-full flex-1 bg-background relative"
+        className="flex flex-col h-full flex-1 bg-background relative overflow-hidden"
         onDragEnter={handleDragEnter}
         onDragLeave={handleDragLeave}
         onDragOver={handleDragOver}
@@ -806,27 +905,60 @@ function AssistantPageInner() {
           </div>
         )}
 
+        {/* Quota banner — only for free users approaching/at limit */}
+        {(() => {
+          const tier = balanceData?.subscription_tier ?? "free";
+          if (tier !== "free" || !balanceData) return null;
+          const used = balanceData.chat_messages_used ?? 0;
+          const limit = balanceData.chat_messages_limit ?? 50;
+          const remaining = limit - used;
+          const pct = limit > 0 ? used / limit : 0;
+          if (used >= limit) {
+            return (
+              <div className="flex items-center justify-between gap-3 px-4 py-2 bg-indigo-500/[0.07] border-b border-indigo-500/[0.12] text-indigo-300 text-xs font-medium shrink-0">
+                <span>You&apos;ve used all <strong>{limit} messages</strong> this month.</span>
+                <button onClick={() => openUpgrade("chat_limit")} className="shrink-0 px-3 py-1 rounded-full bg-indigo-500/15 hover:bg-indigo-500/25 text-xs font-semibold transition-all">
+                  Upgrade →
+                </button>
+              </div>
+            );
+          }
+          if (pct >= 0.5) {
+            return (
+              <div className="flex items-center justify-between gap-3 px-4 py-2 bg-amber-500/[0.06] border-b border-amber-500/[0.1] text-amber-400/80 text-xs font-medium shrink-0">
+                <span><strong>{remaining} of {limit}</strong> messages remaining this month.</span>
+                <button onClick={() => openUpgrade("chat_limit")} className="shrink-0 px-3 py-1 rounded-full bg-amber-500/10 hover:bg-amber-500/20 text-xs font-semibold transition-all">
+                  Upgrade →
+                </button>
+              </div>
+            );
+          }
+          return null;
+        })()}
+
         {/* Header */}
         <div className="px-4 sm:px-6 flex items-center justify-between h-14 sm:h-16 shrink-0">
           <div className="flex items-center gap-3">
-            <button
-              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
-              title={isSidebarOpen ? "Close sidebar" : "Open sidebar"}
-            >
-              <Menu strokeWidth={1.5} size={18} />
-            </button>
-            <h1 className="text-lg font-serif font-semibold text-foreground">
+            <h1 className="text-base font-semibold text-foreground tracking-[-0.01em]">
               Assistant
             </h1>
           </div>
-          <button
-            onClick={handleNewChat}
-            className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
-            title="New chat"
-          >
-            <Plus strokeWidth={1.5} size={18} />
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={handleNewChat}
+              className="p-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-white/[0.06] transition-all duration-200"
+              title="New chat"
+            >
+              <Plus strokeWidth={1.5} size={18} />
+            </button>
+            <button
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+              className="p-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-white/[0.06] transition-all duration-200 lg:hidden"
+              title="History"
+            >
+              <Menu strokeWidth={1.5} size={18} />
+            </button>
+          </div>
         </div>
 
         {/* ─── Run Status Bar ─── */}
@@ -861,7 +993,7 @@ function AssistantPageInner() {
         )}
 
         {/* Empty State — Centered landing */}
-        {messages.length === 0 && autoPromptPending ? (
+        {messages.length === 0 && isLoading ? (
           <div className="flex-1 flex flex-col items-center justify-center px-4">
             <div className="flex items-center gap-3 text-muted-foreground">
               <Loader2 className="animate-spin" size={20} />
@@ -870,109 +1002,44 @@ function AssistantPageInner() {
           </div>
         ) : messages.length === 0 ? (
           <div className="flex-1 flex flex-col items-center justify-center px-4 sm:px-8">
-            <div className="flex flex-col items-center text-center max-w-2xl w-full space-y-6">
-              {/* Gradient headline */}
-              <h1
-                className="text-3xl sm:text-4xl font-bold tracking-tight"
-                style={{
-                  background:
-                    "linear-gradient(90deg, #60a5fa, #a78bfa, #f472b6, #fb923c)",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                }}
-              >
-                Chat with 500+ Apps
+            <div className="flex flex-col items-center text-center max-w-lg w-full">
+
+              {/* Logo */}
+              <Logo className="w-12 h-12 mb-6" />
+
+              {/* Heading */}
+              <h1 className="text-xl font-semibold text-foreground tracking-[-0.01em] mb-1.5">
+                Here when you need me
               </h1>
-              <p className="text-sm text-muted-foreground -mt-2">
-                Connect your favorite tools and let CalmPilot automate your
-                work.
+              <p className="text-sm text-muted-foreground mb-8">
+                Ask anything, or try one of these:
               </p>
 
-              {/* Centered input */}
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  handleSend();
-                }}
-                className="w-full max-w-xl flex items-center gap-3 rounded-3xl bg-white/[0.07] backdrop-blur-sm px-4 py-3 shadow-[0_10px_30px_rgba(0,0,0,0.28)] transition-all focus-within:bg-white/[0.11] focus-within:shadow-[0_14px_36px_rgba(0,0,0,0.34)]"
-              >
-                <label className="flex items-center justify-center shrink-0 w-7 h-7 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer">
-                  <Plus strokeWidth={2} size={17} />
-                  <input
-                    type="file"
-                    className="hidden"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (!file) return;
-                      const reader = new FileReader();
-                      reader.onload = (ev) => {
-                        const text = ev.target?.result as string;
-                        setInputText(
-                          (prev) =>
-                            prev +
-                            (prev ? "\n\n" : "") +
-                            `[File: ${file.name}]\n${text}`,
-                        );
-                        inputRef.current?.focus();
-                      };
-                      reader.readAsText(file);
+              {/* 2x2 Suggestion cards */}
+              <div className="grid grid-cols-2 gap-3 w-full max-w-md mb-8">
+                {(suggestions.length > 0
+                  ? suggestions.slice(0, 4)
+                  : [
+                      { label: "What's on my calendar tomorrow?", message: "What's on my calendar tomorrow?" },
+                      { label: "Help me draft a reply", message: "Help me draft a reply to my latest email" },
+                      { label: "Check my emails", message: "Check my recent emails and summarize them" },
+                      { label: "Block focus time", message: "Block 2 hours of focus time on my calendar this week" },
+                    ]
+                ).map((chip, i) => (
+                  <button
+                    key={i}
+                    onClick={() => {
+                      setInputText(chip.message);
+                      setTimeout(() => handleSend(), 50);
                     }}
-                  />
-                </label>
-                <textarea
-                  ref={inputRef}
-                  value={inputText}
-                  onChange={(e) => setInputText(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
-                      e.preventDefault();
-                      handleSend();
-                    }
-                  }}
-                  placeholder="Ask me anything..."
-                  disabled={isLoading}
-                  rows={1}
-                  className="flex-1 bg-transparent text-[15px] text-foreground placeholder:text-muted-foreground resize-none outline-none disabled:opacity-50 leading-6"
-                  style={{
-                    height: "24px",
-                    minHeight: "24px",
-                    maxHeight: "168px",
-                    overflowY: "hidden",
-                  }}
-                  onInput={(e) => {
-                    const el = e.currentTarget;
-                    el.style.height = "24px";
-                    const next = Math.min(el.scrollHeight, 168);
-                    el.style.height = next + "px";
-                    el.style.overflowY = next >= 168 ? "auto" : "hidden";
-                  }}
-                />
-                <button
-                  type="submit"
-                  disabled={!inputText.trim() || isLoading}
-                  className="flex items-center justify-center shrink-0 w-7 h-7 rounded-full bg-white text-black hover:bg-white/90 transition-colors disabled:opacity-25 disabled:cursor-not-allowed"
-                >
-                  <Send strokeWidth={2} size={13} />
-                </button>
-              </form>
-
-              {/* Suggestion chips */}
-              {suggestions.length > 0 && (
-                <div className="flex flex-wrap justify-center gap-2 mt-2">
-                  {suggestions.map((chip, i) => (
-                    <button
-                      key={i}
-                      onClick={() => {
-                        setInputText(chip.message);
-                        inputRef.current?.focus();
-                      }}
-                      className="px-4 py-2.5 rounded-full bg-white/[0.07] backdrop-blur-sm text-sm text-foreground/90 shadow-[0_6px_18px_rgba(0,0,0,0.22)] hover:text-foreground hover:bg-white/[0.11] hover:-translate-y-px hover:shadow-[0_10px_24px_rgba(0,0,0,0.28)] transition-all"
-                    >
-                      {chip.label}
-                    </button>
-                  ))}
-                </div>
-              )}
+                    className="flex flex-col items-start gap-2 p-4 rounded-xl border border-white/[0.06] bg-white/[0.02] text-left hover:bg-white/[0.05] hover:border-white/[0.1] transition-all duration-200 group"
+                  >
+                    <span className="text-[13px] text-muted-foreground group-hover:text-foreground transition-colors leading-snug">
+                      {chip.label.replace(/^[\p{Emoji_Presentation}\p{Extended_Pictographic}\u200d\ufe0f]+\s*/u, "")}
+                    </span>
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         ) : (
@@ -981,9 +1048,33 @@ function AssistantPageInner() {
             <div className="max-w-2xl mx-auto w-full space-y-5">
               {messages.map((msg) => {
                 const isUser = msg.role === "user";
+                const isSystem = msg.role === "system";
                 const isThinking = !msg.content && (msg.logs?.length || 0) > 0;
 
-                // Only render the AI bubble if it has text ORauth actions OR if it's currently thinking
+                // ── System nudge — distinct inline pill style ─────────────
+                if (isSystem) {
+                  return (
+                    <div key={msg.id} className="flex justify-center">
+                      <div className="max-w-sm text-center px-4 py-2.5 rounded-xl bg-amber-500/[0.06] border border-amber-500/[0.15] text-xs text-amber-400/90">
+                        <ReactMarkdown
+                          components={{
+                            a: ({ href, children }) => (
+                              <a href={href} className="font-semibold underline underline-offset-2 hover:text-amber-300 transition-colors">
+                                {children}
+                              </a>
+                            ),
+                            strong: ({ children }) => <strong className="font-semibold text-amber-300">{children}</strong>,
+                            p: ({ children }) => <span>{children}</span>,
+                          }}
+                        >
+                          {msg.content}
+                        </ReactMarkdown>
+                      </div>
+                    </div>
+                  );
+                }
+
+                // Only render the AI bubble if it has text OR auth actions OR if it's currently thinking
                 const shouldRenderAiBubble =
                   msg.content ||
                   (msg.auth_actions && msg.auth_actions.length > 0) ||
@@ -1010,7 +1101,7 @@ function AssistantPageInner() {
                       }`}
                     >
                       <div
-                        className={`rounded-2xl px-4 py-3 shadow-sm ${isUser ? "max-w-[85%] bg-gradient-to-br from-sky-500/18 to-indigo-500/12 ring-1 ring-inset ring-sky-400/25 shadow-[0_10px_30px_rgba(0,0,0,0.28)]" : "w-full bg-transparent"}`}
+                        className={`rounded-2xl px-4 py-3 ${isUser ? "max-w-[85%] bg-white/[0.06] border border-white/[0.08]" : "w-full bg-transparent"}`}
                       >
                         {/* Content */}
                         {isUser ? (
@@ -1067,7 +1158,7 @@ function AssistantPageInner() {
                                       const logoUrl =
                                         getLogo(appSlug) || getAppLogo(appSlug);
                                       return (
-                                        <div className="flex items-center gap-3 w-full my-2 px-4 py-3 rounded-xl bg-card/70 backdrop-blur-sm ring-1 ring-inset ring-foreground/10 hover:bg-card/90 transition-colors shadow-[0_8px_24px_rgba(0,0,0,0.18)]">
+                                        <div className="flex items-center gap-3 w-full my-2 px-4 py-3 rounded-xl bg-card/70 backdrop-blur-sm ring-1 ring-inset ring-white/[0.08] hover:bg-card/90 transition-colors shadow-[0_8px_24px_rgba(0,0,0,0.18)]">
                                           {logoUrl ? (
                                             <img
                                               src={logoUrl}
@@ -1092,7 +1183,7 @@ function AssistantPageInner() {
                                                 "width=600,height=700,left=200,top=100",
                                               );
                                             }}
-                                            className="shrink-0 px-4 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/80 transition-colors"
+                                            className="shrink-0 px-4 py-1.5 rounded-full bg-white text-black text-xs font-semibold hover:bg-zinc-100 transition-all duration-200 active:scale-[0.97]"
                                           >
                                             Connect
                                           </button>
@@ -1149,12 +1240,12 @@ function AssistantPageInner() {
                                     );
                                   },
                                   blockquote: ({ children }) => (
-                                    <blockquote className="border-l-[3px] border-border pl-4 my-3 text-muted-foreground">
+                                    <blockquote className="border-l-[3px] border-white/[0.08] pl-4 my-3 text-muted-foreground">
                                       {children}
                                     </blockquote>
                                   ),
                                   hr: () => (
-                                    <hr className="border-border my-4" />
+                                    <hr className="border-white/[0.08] my-4" />
                                   ),
                                   h1: ({ children }) => (
                                     <h1 className="text-xl font-semibold mt-4 mb-2">
@@ -1179,12 +1270,12 @@ function AssistantPageInner() {
                                     </div>
                                   ),
                                   th: ({ children }) => (
-                                    <th className="px-3 py-2 text-left border-b-2 border-border font-semibold text-sm">
+                                    <th className="px-3 py-2 text-left border-b-2 border-white/[0.08] font-semibold text-sm">
                                       {children}
                                     </th>
                                   ),
                                   td: ({ children }) => (
-                                    <td className="px-3 py-2 border-b border-border/40">
+                                    <td className="px-3 py-2 border-b border-white/[0.06]">
                                       {children}
                                     </td>
                                   ),
@@ -1246,18 +1337,18 @@ function AssistantPageInner() {
                                     )
                                     .map((log, i) => {
                                       const isRunning =
-                                        log.status === "running";
+                                        log.status === "running" || log.status === "loading";
                                       const isDone =
                                         log.status === "completed" ||
                                         log.status === "success";
                                       const isFailed =
                                         log.status === "failed" ||
                                         log.status === "error";
-                                      const label = log.label
-                                        .replace(/composio_?/gi, "")
-                                        .replace(/composio\s*/gi, "")
-                                        .replace(/_/g, " ")
-                                        .trim();
+                                      const label = (log.label || "Working...")
+                                        .replace(/composio[_ ]?/gi, "")
+                                        .replace(/^Thinking:\s*/i, "")
+                                        .replace(/^Using\s*\.\.\.$/, "Working...")
+                                        .trim() || "Working...";
                                       return (
                                         <motion.div
                                           key={i}
@@ -1297,9 +1388,31 @@ function AssistantPageInner() {
                           )
                         )}
 
-                        {/* Copy button for AI messages */}
+                        {/* Action buttons for AI messages */}
                         {!isUser && msg.content && (
-                          <div className="flex justify-start mt-1 -mb-1">
+                          <div className="flex items-center gap-1 mt-1 -mb-1">
+                            {/* Retry button — shown when response is an error */}
+                            {/something went wrong|try again|couldn't access|isn't available|took too long/i.test(msg.content) && (
+                              <button
+                                onClick={() => {
+                                  // Find the user message before this AI message
+                                  const idx = messages.findIndex((m) => m.id === msg.id);
+                                  const prevUserMsg = idx > 0 ? messages[idx - 1] : null;
+                                  if (prevUserMsg?.role === "user" && prevUserMsg.content) {
+                                    // Remove the failed AI message and resend
+                                    setMessages((prev) => prev.filter((m) => m.id !== msg.id));
+                                    handleSendRef.current?.(prevUserMsg.content);
+                                  }
+                                }}
+                                disabled={isLoading}
+                                className="flex items-center gap-1 px-2 py-1 rounded-md text-xs text-amber-400/80 hover:text-amber-400 hover:bg-amber-500/10 transition-all disabled:opacity-30"
+                                title="Retry"
+                              >
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg>
+                                Retry
+                              </button>
+                            )}
+                            {/* Copy button */}
                             <button
                               onClick={() =>
                                 handleCopyMessage(msg.id, msg.content)
@@ -1332,7 +1445,7 @@ function AssistantPageInner() {
                               return (
                                 <div
                                   key={idx}
-                                  className="flex items-center gap-3 w-full px-4 py-3 rounded-xl bg-card/70 backdrop-blur-sm ring-1 ring-inset ring-foreground/10 hover:bg-card/90 transition-colors shadow-[0_8px_24px_rgba(0,0,0,0.18)]"
+                                  className="flex items-center gap-3 w-full px-4 py-3 rounded-xl bg-card/70 backdrop-blur-sm ring-1 ring-inset ring-white/[0.08] hover:bg-card/90 transition-colors shadow-[0_8px_24px_rgba(0,0,0,0.18)]"
                                 >
                                   {logoUrl ? (
                                     <img
@@ -1349,32 +1462,46 @@ function AssistantPageInner() {
                                     Connect to {action.appName}
                                   </span>
                                   <button
-                                    onClick={() => {
-                                      const popup = window.open(
-                                        action.url,
-                                        "composio_connect",
-                                        "width=600,height=700,left=200,top=100",
-                                      );
-                                      const pollTimer = setInterval(() => {
-                                        if (!popup || popup.closed) {
-                                          clearInterval(pollTimer);
-                                          if (user?.id) {
-                                            api
-                                              .get(
-                                                `/chat/suggestions/${user.id}`,
-                                              )
-                                              .then((res) => {
-                                                if (res?.suggestions)
-                                                  setSuggestions(
-                                                    res.suggestions,
-                                                  );
-                                              })
-                                              .catch(() => {});
+                                    onClick={async () => {
+                                      // Use OUR connect flow (with callback) instead of Composio's direct URL
+                                      // This ensures /api/callback fires and auto-setup runs server-side
+                                      const appSlug = action.appName.toLowerCase().replace(/[\s-]/g, "");
+                                      try {
+                                        const connectData = await api.post("/integrations/connect", {
+                                          userId: user!.id,
+                                          appName: appSlug,
+                                          platform: "web",
+                                        });
+                                        const ourUrl = connectData.url || connectData.redirectUrl || action.url;
+                                        const popup = window.open(
+                                          ourUrl,
+                                          "composio_connect",
+                                          "width=600,height=700,left=200,top=100",
+                                        );
+                                        const pollTimer = setInterval(() => {
+                                          if (!popup || popup.closed) {
+                                            clearInterval(pollTimer);
+                                            // Refresh connected apps list
+                                            if (user?.id) {
+                                              api.get("/integrations").then((data: any) => {
+                                                const apps = data?.integrations || [];
+                                                const connected = apps
+                                                  .filter((a: any) => a.status === "connected")
+                                                  .map((a: any) => a.appName?.toLowerCase() || "");
+                                                setConnectedApps(connected);
+                                              }).catch(() => {});
+                                              api.get(`/chat/suggestions/${user.id}`).then((res: any) => {
+                                                if (res?.suggestions) setSuggestions(res.suggestions);
+                                              }).catch(() => {});
+                                            }
                                           }
-                                        }
-                                      }, 1000);
+                                        }, 1000);
+                                      } catch {
+                                        // Fallback: open Composio URL directly if our connect fails
+                                        window.open(action.url, "composio_connect", "width=600,height=700,left=200,top=100");
+                                      }
                                     }}
-                                    className="shrink-0 px-4 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/80 transition-colors"
+                                    className="shrink-0 px-4 py-1.5 rounded-full bg-white text-black text-xs font-semibold hover:bg-zinc-100 transition-all duration-200 active:scale-[0.97]"
                                   >
                                     Connect
                                   </button>
@@ -1406,40 +1533,10 @@ function AssistantPageInner() {
           </div>
         )}
 
-        {/* Input Area — hidden on empty state since input is in the hero */}
-        {messages.length > 0 && (
-          <div className="px-4 sm:px-6 pt-3 pb-4 shrink-0 relative bg-gradient-to-t from-black to-transparent via-black">
+        {/* Input Area — always visible */}
+        {(
+          <div className="px-4 sm:px-6 py-3 shrink-0 relative border-t border-white/[0.04]">
             <div className="max-w-2xl mx-auto w-full relative">
-              {/* Model Toggle */}
-              {/* <div className="flex items-center gap-1 mb-2.5 ml-1">
-              <div className="inline-flex items-center bg-muted border border-border/55 rounded-full p-0.5">
-                <button
-                  type="button"
-                  onClick={() => { setSelectedModel("gpt-4o-mini"); localStorage.setItem("calmpilot_model", "gpt-4o-mini"); }}
-                  className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-all duration-200 ${selectedModel.includes("mini")
-                    ? "bg-[rgba(255,255,255,0.1)] text-amber-400 shadow-sm"
-                    : "text-muted-foreground hover:text-muted-foreground"
-                    }`}
-                >
-                  <Zap size={12} />
-                  Fast
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { setSelectedModel("gpt-4o"); localStorage.setItem("calmpilot_model", "gpt-4o"); }}
-                  className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-all duration-200 ${!selectedModel.includes("mini")
-                    ? "bg-[rgba(255,255,255,0.1)] text-purple-400 shadow-sm"
-                    : "text-muted-foreground hover:text-muted-foreground"
-                    }`}
-                >
-                  <Brain size={12} />
-                  Smart
-                </button>
-              </div>
-              <span className="text-[10px] text-muted-foreground ml-2">
-                {selectedModel.includes("mini") ? "Quicker responses, lower cost" : "Better reasoning, more accurate"}
-              </span>
-            </div> */}
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
@@ -1448,7 +1545,7 @@ function AssistantPageInner() {
                 className="flex items-center gap-3 rounded-3xl bg-white/[0.07] backdrop-blur-sm px-4 py-3 shadow-[0_10px_30px_rgba(0,0,0,0.28)] transition-all focus-within:bg-white/[0.11] focus-within:shadow-[0_14px_36px_rgba(0,0,0,0.34)]"
               >
                 <label className="flex items-center justify-center shrink-0 w-7 h-7 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer">
-                  <Plus strokeWidth={2} size={17} />
+                  {/* <Plus strokeWidth={2} size={17} /> */}
                   <input
                     type="file"
                     className="hidden"
@@ -1510,42 +1607,6 @@ function AssistantPageInner() {
           </div>
         )}
       </div>
-
-      {/* ─── RIGHT PANEL (TOOL EXECUTION LOGS) ─── */}
-
-      {/* <div
-        className={`fixed lg:static top-0 right-0 h-full bg-[#111111] z-40 transition-all duration-300 ease-in-out transform flex flex-col border-l border-border/40 ${isLogsOpen
-            ? "translate-x-0 w-[320px] lg:w-[40%]"
-            : "translate-x-full lg:translate-x-0 lg:w-0 lg:overflow-hidden lg:border-none"
-          }`}
-      >
-        <div className="h-16 flex items-center justify-between px-6 border-b border-border/40 bg-[#1A1A1A]/80 backdrop-blur shrink-0">
-          <div className="flex items-center gap-2">
-            <Terminal strokeWidth={1.5} size={16} className="text-muted-foreground" />
-            <span className="text-xs font-mono font-medium tracking-wider text-foreground/80 uppercase">
-              Execution Logs
-            </span>
-          </div>
-          <button
-            onClick={() => setIsLogsOpen(false)}
-            className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground/80 hover:bg-muted transition-colors lg:hidden"
-          >
-            <ChevronRight strokeWidth={1.5} size={18} />
-          </button>
-        </div>
-
-        <div className="flex-1 overflow-y-auto p-4 space-y-3 font-mono text-sm">
-          {allLogs.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full text-muted-foreground/60 text-xs">
-              <Terminal strokeWidth={1.5} size={24} className="mb-2 opacity-50" />
-              <span>Waiting for tasks...</span>
-            </div>
-          ) : (
-            allLogs.map((log, idx) => <DetailedLogEntry key={idx} log={log} />)
-          )}
-          <div ref={logsEndRef} />
-        </div>
-      </div>  */}
 
       <ConfirmDialog
         open={!!deleteConfirm}

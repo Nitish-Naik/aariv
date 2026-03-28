@@ -1,137 +1,101 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ArrowRight, BarChart3, BriefcaseBusiness, Code2 } from "lucide-react";
+import { ArrowDown } from "lucide-react";
 
-const staticStats = [
-  { value: "500+", label: "apps connected" },
-  { value: "3h+", label: "saved per day" },
-  { value: "24/7", label: "always running" },
-  { value: "100%", label: "OAuth — no passwords" },
+const stats = [
+  { value: "3", label: "Core apps" },
+  { value: "3h+", label: "Saved per day" },
+  { value: "24/7", label: "Always running" },
+  { value: "100%", label: "OAuth secure" },
 ];
 
 const useCases = [
   {
     persona: "Founder",
-    before:
-      "45 min every morning triaging email, Slack, and Linear before any real work started.",
-    after:
-      "Morning brief delivered at 6:47am. 4 replies drafted, 3 tickets updated, Slack digest ready. Day starts in 5 minutes.",
-    app: "Gmail · Slack · Linear",
+    before: "45 minutes every morning scanning email and Slack before real work starts.",
+    after: "Morning brief at 6:47am. Replies drafted, conflicts resolved, Slack digested. Day starts in 2 minutes.",
+    apps: "Gmail · Slack · Calendar",
   },
   {
-    persona: "Sales rep",
-    before:
-      "Manually logging every call and email into HubSpot at end of day. Always a day behind.",
-    after:
-      "CalmPilot logs each call and email to the right contact automatically. CRM is live, not lagging.",
-    app: "Gmail · HubSpot · Calendar",
+    persona: "Sales Rep",
+    before: "Losing leads because follow-up emails slip through the cracks.",
+    after: "CalmPilot flags urgent replies, drafts follow-ups, and alerts you to calendar conflicts.",
+    apps: "Gmail · Calendar",
   },
   {
     persona: "Engineer",
-    before:
-      "Copying GitHub issue context into Slack and Notion every sprint. Same information, three places.",
-    after:
-      "New GitHub issues auto-post to the team channel and create Notion entries with full context attached.",
-    app: "GitHub · Slack · Notion",
+    before: "Context-switching between email, Slack, and calendar 30+ times a day.",
+    after: "One brief covers everything. Slack summaries, meeting prep, urgent emails — 2 minutes.",
+    apps: "Gmail · Slack · Calendar",
   },
 ];
 
 export default function SocialProof() {
-  const stats = staticStats;
-
   return (
-    <section className="bg-background border-y border-border py-16">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Stats row */}
+    <section className="bg-black relative py-16 sm:py-20">
+      <div aria-hidden="true" className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
+      <div aria-hidden="true" className="absolute bottom-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
+
+      <div className="max-w-5xl mx-auto px-6 sm:px-8 lg:px-12">
+        {/* Stats */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="grid grid-cols-2 md:grid-cols-4 gap-px bg-muted/40 rounded-2xl overflow-hidden border border-border"
+          className="grid grid-cols-2 md:grid-cols-4 gap-px rounded-2xl overflow-hidden border border-white/[0.06]"
         >
           {stats.map((s, i) => (
-            <div key={i} className="bg-background px-6 py-6 text-center">
-              <p className="text-2xl font-bold text-foreground tabular-nums">
-                {s.value}
-              </p>
-              <p className="text-xs text-muted-foreground mt-1 font-medium">
-                {s.label}
-              </p>
+            <div key={i} className="bg-zinc-950 px-6 py-5 text-center">
+              <p className="text-2xl font-bold text-white tabular-nums tracking-tight">{s.value}</p>
+              <p className="text-[11px] text-zinc-500 mt-1 font-medium uppercase tracking-wider">{s.label}</p>
             </div>
           ))}
         </motion.div>
 
-        {/* Before / After use cases */}
-        <div className="mt-12">
+        {/* Use Cases */}
+        <div className="mt-14 sm:mt-16">
           <motion.p
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
-            className="text-xs text-muted-foreground uppercase tracking-widest font-medium mb-6 text-center"
+            className="text-zinc-500 text-xs uppercase tracking-[0.15em] font-medium mb-6 text-center"
           >
             What actually changes
           </motion.p>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {useCases.map((uc, i) => (
               <motion.div
                 key={i}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ delay: i * 0.1, duration: 0.5 }}
-                className="rounded-2xl bg-card border border-border p-5 sm:p-6 flex flex-col gap-5"
+                transition={{ delay: i * 0.08, duration: 0.5 }}
+                className="rounded-2xl border border-white/[0.06] bg-white/[0.015] p-6 flex flex-col gap-4"
               >
-                {/* Persona tag */}
-                <span className="self-start inline-flex items-center gap-1.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-widest px-2.5 py-1 rounded-md bg-muted/40 border border-border">
-                  {uc.persona === "Founder" && (
-                    <BriefcaseBusiness size={12} className="text-muted-foreground" />
-                  )}
-                  {uc.persona === "Sales rep" && (
-                    <BarChart3 size={12} className="text-muted-foreground" />
-                  )}
-                  {uc.persona === "Engineer" && (
-                    <Code2 size={12} className="text-muted-foreground" />
-                  )}
+                <span className="self-start text-[11px] font-semibold text-zinc-500 uppercase tracking-[0.12em] px-2.5 py-1 rounded-md bg-white/[0.03] border border-white/[0.06]">
                   {uc.persona}
                 </span>
 
-                {/* Before */}
                 <div>
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold mb-1.5">
-                    Before
-                  </p>
-                  <p className="text-muted-foreground text-[13px] leading-relaxed">
-                    {uc.before}
-                  </p>
+                  <p className="text-[10px] text-zinc-600 uppercase tracking-wider font-semibold mb-1.5">Before</p>
+                  <p className="text-zinc-500 text-[13px] leading-relaxed">{uc.before}</p>
                 </div>
 
-                {/* Arrow */}
-                <div className="flex items-center gap-2.5">
-                  <div className="flex-1 h-px bg-muted/60" />
-                  <span className="inline-flex items-center justify-center w-7 h-7 rounded-full border border-emerald-500/30 bg-emerald-500/10">
-                    <ArrowRight
-                      size={14}
-                      className="text-emerald-400 shrink-0"
-                    />
-                  </span>
-                  <div className="flex-1 h-px bg-muted/60" />
+                <div className="flex justify-center">
+                  <div className="w-6 h-6 rounded-full border border-emerald-500/20 bg-emerald-500/10 flex items-center justify-center">
+                    <ArrowDown size={12} className="text-emerald-400" />
+                  </div>
                 </div>
 
-                {/* After */}
                 <div>
-                  <p className="text-[10px] text-emerald-500 uppercase tracking-wider font-semibold mb-1.5">
-                    After
-                  </p>
-                  <p className="text-foreground/80 text-[13px] leading-relaxed">
-                    {uc.after}
-                  </p>
+                  <p className="text-[10px] text-emerald-500 uppercase tracking-wider font-semibold mb-1.5">After</p>
+                  <p className="text-zinc-300 text-[13px] leading-relaxed">{uc.after}</p>
                 </div>
 
-                {/* Apps used */}
-                <p className="text-[11px] text-muted-foreground font-mono mt-auto pt-2 border-t border-border">
-                  {uc.app}
+                <p className="text-[11px] text-zinc-600 font-mono mt-auto pt-3 border-t border-white/[0.05]">
+                  {uc.apps}
                 </p>
               </motion.div>
             ))}

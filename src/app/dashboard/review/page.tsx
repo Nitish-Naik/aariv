@@ -1,5 +1,6 @@
 "use client";
 
+import { useUpgradeDialog } from "@/components/UpgradeDialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,18 +18,19 @@ import { useLogo } from "@/context/LogoContext";
 import { useToast } from "@/context/ToastContext";
 import { api } from "@/lib/api";
 import { getAppColor } from "@/lib/appMeta";
+import { usePromptStore } from "@/lib/prompt-store";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  Activity,
   AlertTriangle,
   ArrowDownAZ,
+  ArrowRight,
   Calendar,
   Check,
   CheckSquare,
   ChevronDown,
   Clock,
   Cloud,
-  GitPullRequest,
+  // GitPullRequest removed — GitHub not available for launch
   Inbox,
   Loader2,
   Mail,
@@ -42,9 +44,10 @@ import {
   Trash2,
   X,
   XCircle,
+  Zap,
 } from "lucide-react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type SortMode = "newest" | "oldest" | "confidence-high" | "confidence-low";
@@ -95,15 +98,17 @@ function AppDot({
   if (!logo || failed)
     return (
       <span
-        className="w-1.5 h-1.5 rounded-full shrink-0"
+        className="w-6 h-6 rounded-lg shrink-0 flex items-center justify-center text-[10px] font-bold text-white"
         style={{ backgroundColor: color }}
-      />
+      >
+        {alt.charAt(0).toUpperCase()}
+      </span>
     );
   return (
     <img
       src={logo}
       alt={alt}
-      className="w-3.5 h-3.5 rounded-sm object-contain shrink-0"
+      className="w-6 h-6 rounded-lg object-contain shrink-0"
       onError={() => setFailed(true)}
     />
   );
@@ -121,7 +126,6 @@ const SNOOZE_OPTIONS = [
 const CATEGORY_ICONS: Record<string, React.ReactNode> = {
   email: <Mail strokeWidth={1.5} size={14} />,
   calendar: <Calendar strokeWidth={1.5} size={14} />,
-  code: <GitPullRequest strokeWidth={1.5} size={14} />,
   message: <MessageSquare strokeWidth={1.5} size={14} />,
   task: <CheckSquare strokeWidth={1.5} size={14} />,
   general: <Inbox strokeWidth={1.5} size={14} />,
@@ -302,7 +306,7 @@ function ExpandableText({
       </p>
       <button
         onClick={() => setExpanded(!expanded)}
-        className="mt-1 text-[11px] font-medium text-muted-foreground/60 hover:text-foreground transition-colors"
+        className="mt-1 text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors"
       >
         {expanded ? "Show less" : "Show more"}
       </button>
@@ -366,7 +370,10 @@ function ConfidenceBadge({ confidence }: { confidence: number }) {
 export default function ReviewPage() {
   const { user } = useAuth();
   const { getLogo } = useLogo();
+  const { openUpgrade } = useUpgradeDialog();
   const { success: toastSuccess, error: toastError } = useToast();
+  const router = useRouter();
+  const setPendingPrompt = usePromptStore((s) => s.setPendingPrompt);
   const searchParams = useSearchParams();
   const highlightRef = useRef<HTMLDivElement>(null);
   const [items, setItems] = useState<ReviewItem[]>([]);
@@ -607,9 +614,11 @@ export default function ReviewPage() {
   const filteredItems = useMemo(() => {
     let result = items;
 
-    // Category filter
+    // App / category filter
     if (categoryFilter !== "all") {
-      result = result.filter((i) => i.category === categoryFilter);
+      result = result.filter(
+        (i) => i.source_app === categoryFilter || i.source_app?.toLowerCase() === categoryFilter.toLowerCase() || i.category === categoryFilter
+      );
     }
 
     // Search
@@ -683,10 +692,10 @@ export default function ReviewPage() {
   return (
     <div className="flex flex-col min-h-screen">
       {/* Page header */}
-      <div className="px-4 sm:px-6 py-4 border-b border-white/[0.02] flex items-center justify-between shrink-0">
+      <div className="px-5 sm:px-6 py-4 sm:py-5 border-b border-white/[0.06] flex items-center justify-between shrink-0">
         <div>
-          <h1 className="text-sm font-semibold text-foreground">Inbox</h1>
-          <p className="text-xs text-muted-foreground mt-0.5">
+          <h1 className="text-base font-semibold text-white tracking-[-0.01em]">Inbox</h1>
+          <p className="text-[12px] text-zinc-500 mt-0.5">
             {viewFilter === "pending"
               ? counts.total === 0
                 ? "Nothing needs your judgment"
@@ -743,7 +752,7 @@ export default function ReviewPage() {
       </div>
 
       {/* Filter tabs */}
-      <div className="px-4 sm:px-6 border-b border-white/[0.02] flex items-center gap-1">
+      <div className="px-5 sm:px-6 border-b border-white/[0.06] flex items-center gap-1">
         {(["pending", "resolved", "all"] as ViewFilter[]).map((filter) => (
           <button
             key={filter}
@@ -751,23 +760,60 @@ export default function ReviewPage() {
               setViewFilter(filter);
               setSelectedIds(new Set());
             }}
-            className={`px-3 py-3 text-xs font-medium transition-colors capitalize border-b-2 -mb-px ${
+            className={`px-3 py-3 text-xs font-medium transition-colors duration-200 capitalize border-b-2 -mb-px ${
               viewFilter === filter
-                ? "text-foreground border-foreground"
-                : "text-muted-foreground hover:text-foreground/80 border-transparent"
+                ? "text-white border-white"
+                : "text-zinc-500 hover:text-zinc-300 border-transparent"
             }`}
           >
             {filter}
           </button>
         ))}
         <Link
-          href="/dashboard/feed"
+          href="/dashboard/triggers"
           className="ml-auto flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors py-3"
         >
-          <Activity strokeWidth={1.5} size={12} />
-          Feed
+          <Zap strokeWidth={1.5} size={12} />
+          Automations
         </Link>
       </div>
+
+      {/* App filter pills */}
+      {(() => {
+        const apps = Array.from(new Set(items.map((i) => i.source_app).filter(Boolean))).sort();
+        if (apps.length === 0) return null;
+        const appLabels: Record<string, string> = {
+          gmail: "Email", googlecalendar: "Calendar", slack: "Slack",
+          github: "GitHub", notion: "Notion", linear: "Linear",
+        };
+        return (
+          <div className="px-5 sm:px-6 py-2.5 flex items-center gap-2 border-b border-white/[0.04]">
+            <button
+              onClick={() => setCategoryFilter("all")}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all duration-200 ${
+                categoryFilter === "all"
+                  ? "bg-white/[0.08] border-white/[0.12] text-foreground"
+                  : "border-white/[0.06] text-muted-foreground hover:text-foreground hover:border-white/[0.1]"
+              }`}
+            >
+              All
+            </button>
+            {apps.map((app) => (
+              <button
+                key={app}
+                onClick={() => setCategoryFilter(categoryFilter === app ? "all" : app)}
+                className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all duration-200 ${
+                  categoryFilter === app
+                    ? "bg-white/[0.08] border-white/[0.12] text-foreground"
+                    : "border-white/[0.06] text-muted-foreground hover:text-foreground hover:border-white/[0.1]"
+                }`}
+              >
+                {appLabels[app.toLowerCase()] || app}
+              </button>
+            ))}
+          </div>
+        );
+      })()}
 
       <div className="flex-1 px-4 sm:px-6 py-4">
         {/* Search + Sort/Filter bar */}
@@ -873,16 +919,16 @@ export default function ReviewPage() {
               className={`text-sm flex-1 ${error === "INSUFFICIENT_CREDITS" ? "text-amber-400" : "text-destructive"}`}
             >
               {error === "INSUFFICIENT_CREDITS"
-                ? "You're out of credits. Add credits to continue."
+                ? "Plan limit reached. Upgrade to continue."
                 : error}
             </p>
             {error === "INSUFFICIENT_CREDITS" && (
               <Button
                 variant="outline"
                 size="sm"
-                render={<a href="/dashboard/settings" />}
+                onClick={openUpgrade}
               >
-                Add Credits
+                Upgrade
               </Button>
             )}
           </div>
@@ -895,7 +941,7 @@ export default function ReviewPage() {
             animate={{ opacity: 1 }}
             className="flex flex-col items-center justify-center w-full mt-20 text-center gap-4"
           >
-            <div className="w-12 h-12 rounded-2xl bg-muted border border-border/55 flex items-center justify-center">
+            <div className="w-12 h-12 rounded-2xl bg-muted border border-white/[0.07] flex items-center justify-center">
               <Cloud
                 strokeWidth={1.5}
                 size={20}
@@ -1025,7 +1071,7 @@ export default function ReviewPage() {
                       {item.status === "pending" && (
                         <button
                           onClick={() => toggleSelect(item.id)}
-                          className="shrink-0 text-muted-foreground/40 hover:text-muted-foreground transition-colors"
+                          className="shrink-0 text-muted-foreground hover:text-foreground transition-colors"
                           aria-label={
                             selectedIds.has(item.id) ? "Deselect" : "Select"
                           }
@@ -1033,11 +1079,11 @@ export default function ReviewPage() {
                           {selectedIds.has(item.id) ? (
                             <CheckSquare
                               strokeWidth={1.5}
-                              size={13}
+                              size={18}
                               className="text-foreground"
                             />
                           ) : (
-                            <Square strokeWidth={1.5} size={13} />
+                            <Square strokeWidth={1.5} size={18} />
                           )}
                         </button>
                       )}
@@ -1050,11 +1096,11 @@ export default function ReviewPage() {
                         {item.source_app}
                       </span>
                       {item.category && CATEGORY_ICONS[item.category] && (
-                        <span className="text-muted-foreground/40">
+                        <span className="text-muted-foreground">
                           {CATEGORY_ICONS[item.category]}
                         </span>
                       )}
-                      <span className="text-[11px] text-muted-foreground/60">
+                      <span className="text-[11px] text-muted-foreground">
                         {timeAgo(item.created_at)}
                       </span>
                       {item.priority === "high" && (
@@ -1087,7 +1133,7 @@ export default function ReviewPage() {
                     <div className="mt-2.5 mb-3">
                       <button
                         onClick={() => toggleExpand(item.id)}
-                        className="flex items-center gap-1.5 text-[11px] text-muted-foreground/60 hover:text-muted-foreground transition-colors"
+                        className="flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-muted-foreground transition-colors"
                       >
                         {loadingPayload === item.id ? (
                           <Loader2
@@ -1181,19 +1227,19 @@ export default function ReviewPage() {
                       <div className="flex items-center gap-1.5 mt-3">
                         <Button
                           size="sm"
-                          onClick={() => handleAction(item.id, "approve")}
+                          onClick={() => {
+                            // Open assistant with review item context
+                            const prompt = `Act on this ${item.category || "item"}: "${item.title}"\n\nContext: ${item.description}\n\nApp: ${item.source_app || "unknown"}\n\nWhat should I do with this?`;
+                            setPendingPrompt(prompt);
+                            // Mark as resolved
+                            handleAction(item.id, "approve");
+                            // Navigate to assistant
+                            router.push("/dashboard/assistant");
+                          }}
                           disabled={isActing}
                         >
-                          {isActing ? (
-                            <Loader2
-                              strokeWidth={1.5}
-                              size={12}
-                              className="animate-spin"
-                            />
-                          ) : (
-                            <Check strokeWidth={2} size={12} />
-                          )}
-                          Yes, do it
+                          <ArrowRight strokeWidth={2} size={12} />
+                          Act on this
                         </Button>
                         <Button
                           variant="ghost"

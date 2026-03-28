@@ -34,20 +34,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       url: canonical,
       type: "website",
       siteName: "CalmPilot",
-      images: [
-        {
-          url: "/opengraph-image",
-          width: 1200,
-          height: 630,
-          alt: title,
-        },
-      ],
     },
     twitter: {
       card: "summary_large_image",
       title,
       description,
-      images: ["/opengraph-image"],
     },
   };
 }
@@ -93,7 +84,7 @@ export default function IntegrationPage({ params }: Props) {
   const otherIntegrations = INTEGRATIONS.filter((i) => i.slug !== integration.slug).slice(0, 6);
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-200 font-sans selection:bg-zinc-800">
+    <div className="min-h-screen bg-black text-zinc-200 font-sans selection:bg-zinc-800">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
 
@@ -147,10 +138,10 @@ export default function IntegrationPage({ params }: Props) {
                 <ArrowRight size={16} />
               </Link>
               <Link
-                href="/#waitlist"
+                href="/login"
                 className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-zinc-900 text-zinc-200 font-medium text-sm border border-white/10 hover:bg-zinc-800 transition-colors"
               >
-                Join Waitlist
+                Get started free
               </Link>
             </div>
           </div>

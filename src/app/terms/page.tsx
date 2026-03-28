@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 
 export default function TermsPage() {
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-200">
+    <div className="min-h-screen bg-black text-zinc-200">
       <div className="max-w-3xl mx-auto px-6 py-20">
         {/* Back */}
         <Link
@@ -75,9 +75,9 @@ export default function TermsPage() {
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-white mb-3">7. Credits and Billing</h2>
+            <h2 className="text-lg font-semibold text-white mb-3">7. Subscriptions and Billing</h2>
             <p>
-              CalmPilot operates on a credit-based system. Credits are consumed as AI actions are executed. Credits are non-refundable unless required by applicable law. We reserve the right to modify pricing with reasonable notice.
+              CalmPilot offers free and paid subscription plans. Paid plans are billed monthly via our payment processor Dodo Payments. Each plan includes a set number of messages per month. Once your monthly limit is reached, messaging is paused until the next billing cycle. Subscriptions can be cancelled at any time. We reserve the right to modify pricing with reasonable notice.
             </p>
           </section>
 

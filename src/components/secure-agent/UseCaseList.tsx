@@ -7,10 +7,10 @@ import { Logo } from "./Logo";
 export default function UseCaseList() {
   const prompts = [
     "Check Gmail for unread customer emails and quietly draft thoughtful replies.",
-    "Summarize the last 24 hours of messages in the #product-feedback channel.",
-    "Draft a set of organized release notes in Notion based on closed Jira tickets.",
-    "Analyze the Mixpanel 'Trial Drop-off' events table and prepare a brief on friction points.",
-    "Draft polite rejections to the candidates in the 'Declined' column in Linear.",
+    "Summarize the last 24 hours of messages in the #product-feedback Slack channel.",
+    "What's on my calendar today? Flag any conflicts and propose reschedules.",
+    "Find all emails from investors this week and draft a status update reply.",
+    "Send a Slack message to the team about tomorrow's standup being moved to 10am.",
   ];
 
   return (
@@ -54,20 +54,20 @@ export default function UseCaseList() {
           </motion.p>
         </div>
 
-        <div className="bg-background border border-border rounded-xl p-1.5 sm:p-2 md:p-3 shadow-2xl relative overflow-hidden">
+        <div className="border border-white/[0.07] rounded-2xl p-1.5 sm:p-2 md:p-3 shadow-[0_0_60px_-20px_rgba(99,102,241,0.2)] relative overflow-hidden">
           {/* Inner glowing ring */}
           <div className="absolute inset-0 rounded-[2rem] ring-1 ring-inset ring-white/5 pointer-events-none" />
 
           {/* Simulated Terminal Window */}
-          <div className="bg-background rounded-lg border border-border overflow-hidden flex flex-col h-full relative z-10">
+          <div className="bg-zinc-950 rounded-xl border border-white/[0.06] overflow-hidden flex flex-col h-full relative z-10">
             {/* Terminal Header */}
-            <div className="h-11 sm:h-12 border-b border-border flex items-center px-3 sm:px-4 bg-muted/25">
+            <div className="h-11 sm:h-12 border-b border-white/[0.07] flex items-center px-3 sm:px-4 bg-muted/25">
               <div className="flex gap-2 mr-4">
                 <div className="w-3 h-3 rounded-full bg-zinc-800" />
                 <div className="w-3 h-3 rounded-full bg-zinc-800" />
                 <div className="w-3 h-3 rounded-full bg-zinc-800" />
               </div>
-              <div className="flex items-center gap-2 px-2.5 sm:px-3 py-1 rounded-md bg-muted/40 border border-border mx-auto -ml-6 sm:-ml-8">
+              <div className="flex items-center gap-2 px-2.5 sm:px-3 py-1 rounded-md bg-muted/40 border border-white/[0.07] mx-auto -ml-6 sm:-ml-8">
                 <Logo className="w-4 h-4 opacity-50" />
                 <span className="text-xs text-muted-foreground font-mono">
                   calmpilot_cli
@@ -84,7 +84,7 @@ export default function UseCaseList() {
                   whileInView={{ opacity: 1, x: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: idx * 0.15, duration: 0.5 }}
-                  className="group flex items-start gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl hover:bg-muted/25 transition-colors relative"
+                  className="group flex items-start gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl hover:bg-white/[0.03] transition-colors relative"
                 >
                   {/* Line Indicator */}
                   <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-0 bg-indigo-500 group-hover:h-1/2 transition-all rounded-r-full" />

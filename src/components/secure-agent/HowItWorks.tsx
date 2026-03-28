@@ -3,93 +3,79 @@
 import { motion } from "framer-motion";
 import { Link2, MessageSquare, Moon } from "lucide-react";
 
-const colorMap: Record<string, string> = {
-    indigo: "bg-indigo-500/10 border-indigo-500/20 text-indigo-400",
-    violet: "bg-violet-500/10 border-violet-500/20 text-violet-400",
-    emerald: "bg-emerald-500/10 border-emerald-500/20 text-emerald-400",
-};
-
 export default function HowItWorks() {
     const steps = [
         {
             number: "01",
-            icon: <Link2 strokeWidth={1.5} className="w-6 h-6 text-indigo-400" />,
+            icon: <Link2 strokeWidth={1.5} className="w-6 h-6" />,
             title: "Connect your apps",
-            description: "Link Gmail, Slack, Notion, GitHub and 500+ more in one click. Pure OAuth — no passwords, no API keys, no config files.",
-            color: "indigo",
+            description: "Gmail, Calendar, and Slack. One click each. Pure OAuth — no passwords, no API keys.",
+            accent: "from-indigo-500 to-blue-500",
+            glow: "bg-indigo-500/10",
         },
         {
             number: "02",
-            icon: <MessageSquare strokeWidth={1.5} className="w-6 h-6 text-violet-400" />,
+            icon: <MessageSquare strokeWidth={1.5} className="w-6 h-6" />,
             title: "Tell it what matters",
-            description: 'Describe your workflow in plain English. "Draft replies to customer emails every morning." CalmPilot figures out the rest.',
-            color: "violet",
+            description: "Describe your workflow in plain English. CalmPilot figures out the rest.",
+            accent: "from-violet-500 to-purple-500",
+            glow: "bg-violet-500/10",
         },
         {
             number: "03",
-            icon: <Moon strokeWidth={1.5} className="w-6 h-6 text-emerald-400" />,
+            icon: <Moon strokeWidth={1.5} className="w-6 h-6" />,
             title: "Wake up to work done",
-            description: "Your agent runs while you sleep — silently handling tasks, drafting content, and preparing your morning brief. You review, it executes.",
-            color: "emerald",
+            description: "Your morning brief is ready. Review in 2 minutes. Approve what matters.",
+            accent: "from-emerald-500 to-teal-500",
+            glow: "bg-emerald-500/10",
         },
     ];
 
     return (
-        <section className="py-32 bg-background relative overflow-hidden">
-            <div aria-hidden="true" className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl h-[400px] bg-indigo-500/5 rounded-[100%] blur-[120px] pointer-events-none z-0" />
-
-            <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-                <div className="text-center mb-20">
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        whileInView={{ opacity: 1, scale: 1 }}
+        <section className="py-28 sm:py-36 bg-black relative overflow-hidden">
+            <div className="max-w-5xl mx-auto px-6 sm:px-8 lg:px-12 relative z-10">
+                <div className="text-center mb-16 sm:mb-20">
+                    <motion.p
+                        initial={{ opacity: 0 }}
+                        whileInView={{ opacity: 1 }}
                         viewport={{ once: true }}
-                        className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-muted/40 border border-border text-muted-foreground text-sm font-medium mb-6"
+                        className="text-indigo-400 text-sm font-medium tracking-wide mb-4"
                     >
-                        <span>How it works</span>
-                    </motion.div>
+                        How it works
+                    </motion.p>
                     <motion.h2
                         initial={{ opacity: 0, y: 20 }}
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
-                        transition={{ delay: 0.1 }}
-                        className="text-4xl md:text-5xl font-semibold text-foreground tracking-tight mb-5 font-sans"
+                        transition={{ delay: 0.05 }}
+                        className="text-3xl sm:text-4xl md:text-5xl font-bold text-white tracking-[-0.03em]"
                     >
-                        Up and running in minutes.
+                        Three steps. Then it runs forever.
                     </motion.h2>
-                    <motion.p
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ delay: 0.2 }}
-                        className="text-lg text-muted-foreground font-light max-w-xl mx-auto leading-relaxed"
-                    >
-                        No engineers needed. No configuration rabbit holes. Three steps and your AI is working for you.
-                    </motion.p>
                 </div>
 
-                <div className="grid md:grid-cols-3 gap-6 relative">
-                    {/* Connector lines between steps */}
-                    <div aria-hidden="true" className="hidden md:block absolute top-12 left-[33%] right-[33%] h-px bg-gradient-to-r from-indigo-500/20 via-violet-500/20 to-transparent pointer-events-none" />
-                    <div aria-hidden="true" className="hidden md:block absolute top-12 left-[66%] right-0 h-px bg-gradient-to-r from-violet-500/20 via-emerald-500/20 to-transparent pointer-events-none" />
-
+                <div className="grid md:grid-cols-3 gap-5 sm:gap-6">
                     {steps.map((step, i) => (
                         <motion.div
                             key={i}
                             initial={{ opacity: 0, y: 30 }}
                             whileInView={{ opacity: 1, y: 0 }}
                             viewport={{ once: true }}
-                            transition={{ delay: i * 0.15, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-                            className="relative bg-background border border-border rounded-xl p-8 hover:bg-muted transition-colors"
+                            transition={{ delay: i * 0.12, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+                            className="group relative rounded-2xl border border-white/[0.06] bg-white/[0.02] p-7 sm:p-8 hover:border-white/[0.1] transition-all duration-500"
                         >
-                            <div className="flex items-start justify-between mb-6">
-                                <div className={`w-12 h-12 rounded-2xl border flex items-center justify-center shadow-lg ${colorMap[step.color]}`}>
+                            {/* Hover glow */}
+                            <div className={`absolute inset-0 ${step.glow} opacity-0 group-hover:opacity-100 rounded-2xl blur-2xl transition-opacity duration-500 pointer-events-none`} />
+
+                            <div className="relative z-10">
+                                <div className={`inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br ${step.accent} text-white mb-6`}>
                                     {step.icon}
                                 </div>
-                                <span className="text-4xl font-bold text-foreground/5 font-mono">{step.number}</span>
+
+                                <p className="text-zinc-600 text-xs font-mono mb-3">{step.number}</p>
+                                <h3 className="text-lg font-semibold text-white mb-2 tracking-[-0.01em]">{step.title}</h3>
+                                <p className="text-zinc-400 text-sm leading-relaxed">{step.description}</p>
                             </div>
-                            <h3 className="text-lg font-semibold text-foreground mb-3 tracking-tight">{step.title}</h3>
-                            <p className="text-muted-foreground font-light leading-relaxed text-sm">{step.description}</p>
                         </motion.div>
                     ))}
                 </div>

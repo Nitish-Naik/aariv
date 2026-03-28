@@ -61,7 +61,8 @@ export function LogoProvider({ children }: { children: React.ReactNode }) {
         for (const int of data.integrations || []) {
           if (int.appName) {
             const slug = normalizeAppSlug(int.appName);
-            map[slug] = int.logo || getAppLogo(slug);
+            // Prefer local SVGs (reliable) over Composio CDN (can be dark/broken)
+            map[slug] = getAppLogo(slug) || int.logo;
           }
         }
         setLogoMap((prev) => ({ ...prev, ...map }));
