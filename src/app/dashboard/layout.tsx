@@ -35,7 +35,7 @@ function StatusBanner() {
             You&apos;ve used all <span className="font-semibold">{chat_messages_limit} free messages</span> this month.
           </span>
         </div>
-        <button onClick={openUpgrade} className="shrink-0 flex items-center gap-1 px-3 py-1 rounded-full bg-indigo-500/15 hover:bg-indigo-500/25 text-indigo-300 text-xs font-semibold transition-all duration-200">
+        <button onClick={() => openUpgrade()} className="shrink-0 flex items-center gap-1 px-3 py-1 rounded-full bg-indigo-500/15 hover:bg-indigo-500/25 text-indigo-300 text-xs font-semibold transition-all duration-200">
           <Sparkles size={11} />
           Upgrade
         </button>
@@ -52,7 +52,7 @@ function StatusBanner() {
             <span className="font-semibold">{chat_messages_limit - chat_messages_used} of {chat_messages_limit}</span> messages remaining this month.
           </span>
         </div>
-        <button onClick={openUpgrade} className="shrink-0 flex items-center gap-1 px-3 py-1 rounded-full bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 text-xs font-semibold transition-all duration-200">
+        <button onClick={() => openUpgrade()} className="shrink-0 flex items-center gap-1 px-3 py-1 rounded-full bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 text-xs font-semibold transition-all duration-200">
           Upgrade <ArrowRight size={11} />
         </button>
       </div>
@@ -64,7 +64,7 @@ function StatusBanner() {
       <span>
         Free plan · <span className="font-medium text-white/70">{chat_messages_used}/{chat_messages_limit}</span> messages
       </span>
-      <button onClick={openUpgrade} className="shrink-0 flex items-center gap-1 text-white/60 hover:text-white/80 font-medium transition-colors">
+      <button onClick={() => openUpgrade()} className="shrink-0 flex items-center gap-1 text-white/60 hover:text-white/80 font-medium transition-colors">
         <Sparkles size={10} />
         See plans
       </button>

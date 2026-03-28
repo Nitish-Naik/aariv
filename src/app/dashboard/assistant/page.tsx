@@ -1035,7 +1035,7 @@ function AssistantPageInner() {
                     className="flex flex-col items-start gap-2 p-4 rounded-xl border border-white/[0.06] bg-white/[0.02] text-left hover:bg-white/[0.05] hover:border-white/[0.1] transition-all duration-200 group"
                   >
                     <span className="text-[13px] text-muted-foreground group-hover:text-foreground transition-colors leading-snug">
-                      {chip.label.replace(/^[\p{Emoji_Presentation}\p{Extended_Pictographic}\u200d\ufe0f]+\s*/u, "")}
+                      {chip.label.replace(/^(?:[\uD83C-\uDBFF][\uDC00-\uDFFF]|[\u2600-\u27BF]|\u200D|\uFE0F)+\s*/, "")}
                     </span>
                   </button>
                 ))}

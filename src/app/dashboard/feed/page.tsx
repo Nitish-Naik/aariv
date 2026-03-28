@@ -642,7 +642,7 @@ export default function FeedPage() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={openUpgrade}
+                onClick={() => openUpgrade()}
               >
                 Upgrade
               </Button>

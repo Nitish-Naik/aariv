@@ -926,7 +926,7 @@ export default function ReviewPage() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={openUpgrade}
+                onClick={() => openUpgrade()}
               >
                 Upgrade
               </Button>

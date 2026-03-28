@@ -1215,7 +1215,7 @@ export default function DashboardHome() {
   const [newEventCount, setNewEventCount] = useState(0);
   const fetchingRef = useRef(false);
 
-  const fetchBriefingRef = useRef<(silent?: boolean) => void>();
+  const fetchBriefingRef = useRef<((silent?: boolean) => void) | null>(null);
 
   const fetchBriefing = useCallback(
     async (silent = false) => {
@@ -1371,7 +1371,7 @@ export default function DashboardHome() {
               <h3 className="text-base font-semibold text-foreground mb-1">Plan limit reached</h3>
               <p className="text-sm text-muted-foreground">Upgrade your plan to continue using CalmPilot.</p>
             </div>
-            <Button size="sm" className="gap-2" onClick={openUpgrade}>
+            <Button size="sm" className="gap-2" onClick={() => openUpgrade()}>
               <Sparkles strokeWidth={1.75} size={13} />
               Upgrade
             </Button>

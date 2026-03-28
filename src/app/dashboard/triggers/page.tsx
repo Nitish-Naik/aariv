@@ -373,7 +373,7 @@ function ConfigFormModal({
                 <>
                   Plan limit reached.{" "}
                   <button
-                    onClick={openUpgrade}
+                    onClick={() => openUpgrade()}
                     className="underline hover:text-indigo-300"
                   >
                     Upgrade →
