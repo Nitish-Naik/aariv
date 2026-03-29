@@ -64,7 +64,7 @@ export default function IntegrationsShowcase() {
                   <p className="text-sm font-medium text-foreground">Slack</p>
                   <p className="text-xs text-muted-foreground">Messages, DMs, channel summaries</p>
                 </div>
-                <span className="ml-auto text-[10px] text-violet-400 font-medium uppercase tracking-wider">Starter</span>
+                <span className="ml-auto text-[10px] text-emerald-400 font-medium uppercase tracking-wider">Free</span>
               </div>
             </div>
 

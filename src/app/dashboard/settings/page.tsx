@@ -444,7 +444,20 @@ export default function SettingsPage() {
                   onClick={async () => {
                     setDeleteLoad(true);
                     try {
-                      await api.delete("/auth/account");
+                      // Account deletion takes longer — Composio cleanup, DB purge, etc.
+                      const headers = await (await import("@/lib/supabase")).supabase.auth.getSession()
+                        .then(({ data }) => ({
+                          "Content-Type": "application/json",
+                          ...(data.session?.access_token ? { Authorization: `Bearer ${data.session.access_token}` } : {}),
+                        }));
+                      const controller = new AbortController();
+                      setTimeout(() => controller.abort(), 120000); // 2 min timeout
+                      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api"}/auth/account`, {
+                        method: "DELETE",
+                        headers,
+                        signal: controller.signal,
+                      });
+                      if (!res.ok) throw new Error("Failed to delete account");
                       await signOut();
                     } catch (e: any) {
                       setDeleteLoad(false);
