@@ -12,6 +12,18 @@ function isPublicRoute(pathname: string): boolean {
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
+  // If ?code= appears on any page, redirect to /auth/callback to exchange it
+  const code = request.nextUrl.searchParams.get("code");
+  if (code && !request.nextUrl.pathname.startsWith("/auth/callback")) {
+    const callbackUrl = new URL("/auth/callback", request.url);
+    callbackUrl.searchParams.set("code", code);
+    // Preserve any other params (next, etc.)
+    request.nextUrl.searchParams.forEach((value, key) => {
+      if (key !== "code") callbackUrl.searchParams.set(key, value);
+    });
+    return NextResponse.redirect(callbackUrl);
+  }
+
   // Skip auth check entirely for public routes — saves ~200-500ms TTFB
   if (isPublicRoute(request.nextUrl.pathname)) {
     return supabaseResponse;
