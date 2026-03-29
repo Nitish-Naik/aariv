@@ -1,18 +1,21 @@
-import FAQ from "@/components/secure-agent/FAQ";
-import FeaturesGrid from "@/components/secure-agent/FeaturesGrid";
-import FinalCTA from "@/components/secure-agent/FinalCTA";
-import Footer from "@/components/secure-agent/Footer";
+import dynamic from "next/dynamic";
 import Hero from "@/components/secure-agent/Hero";
-import HowItWorks from "@/components/secure-agent/HowItWorks";
-import IntegrationsShowcase from "@/components/secure-agent/IntegrationsShowcase";
 import Navbar from "@/components/secure-agent/Navbar";
-import PricingSection from "@/components/secure-agent/PricingSection";
-import SecurityBand from "@/components/secure-agent/SecurityBand";
-import SocialProof from "@/components/secure-agent/SocialProof";
-import Testimonials from "@/components/secure-agent/Testimonials";
-import UseCaseList from "@/components/secure-agent/UseCaseList";
-import WhatIsCalmPilot from "@/components/secure-agent/WhatIsCalmPilot";
 import { Metadata } from "next";
+
+// Lazy-load below-fold sections to reduce initial JS bundle and improve LCP
+const SocialProof = dynamic(() => import("@/components/secure-agent/SocialProof"));
+const HowItWorks = dynamic(() => import("@/components/secure-agent/HowItWorks"));
+const IntegrationsShowcase = dynamic(() => import("@/components/secure-agent/IntegrationsShowcase"));
+const FeaturesGrid = dynamic(() => import("@/components/secure-agent/FeaturesGrid"));
+const SecurityBand = dynamic(() => import("@/components/secure-agent/SecurityBand"));
+const WhatIsCalmPilot = dynamic(() => import("@/components/secure-agent/WhatIsCalmPilot"));
+const UseCaseList = dynamic(() => import("@/components/secure-agent/UseCaseList"));
+const PricingSection = dynamic(() => import("@/components/secure-agent/PricingSection"));
+const FAQ = dynamic(() => import("@/components/secure-agent/FAQ"));
+const Testimonials = dynamic(() => import("@/components/secure-agent/Testimonials"));
+const FinalCTA = dynamic(() => import("@/components/secure-agent/FinalCTA"));
+const Footer = dynamic(() => import("@/components/secure-agent/Footer"));
 
 export const metadata: Metadata = {
   title:

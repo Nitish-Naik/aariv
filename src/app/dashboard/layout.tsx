@@ -11,7 +11,7 @@ import { LogoProvider } from "@/context/LogoContext";
 import { BillingProvider, useBilling } from "@/context/useBilling";
 import { api } from "@/lib/api";
 import { getDashboardHotLogoUrls } from "@/lib/platform-logos";
-import { AnimatePresence, motion } from "framer-motion";
+
 import { AlertTriangle, ArrowRight, Sparkles, Zap } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
@@ -159,12 +159,19 @@ export default function DashboardLayout({
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const urls = getDashboardHotLogoUrls();
-    for (const url of urls) {
-      if (url.startsWith("data:")) continue;
-      const img = new window.Image();
-      img.src = url;
-    }
+    // Defer logo preloading until browser is idle — avoids blocking initial paint
+    const idle = window.requestIdleCallback ?? ((cb: () => void) => setTimeout(cb, 2000));
+    const id = idle(() => {
+      const urls = getDashboardHotLogoUrls();
+      for (const url of urls) {
+        if (url.startsWith("data:")) continue;
+        const img = new window.Image();
+        img.src = url;
+      }
+    });
+    return () => {
+      if (window.cancelIdleCallback) window.cancelIdleCallback(id as number);
+    };
   }, []);
 
   const pathname = usePathname();
@@ -208,17 +215,7 @@ export default function DashboardLayout({
               <SubscriptionSuccessBanner />
               <StatusBanner />
               <ErrorBoundary>
-                <AnimatePresence mode="wait" initial={false}>
-                  <motion.div
-                    key={pathname}
-                    initial={{ opacity: 0, y: 4 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.15, ease: "easeOut" }}
-                  >
-                    {children}
-                  </motion.div>
-                </AnimatePresence>
+                {children}
               </ErrorBoundary>
             </main>
           </div>

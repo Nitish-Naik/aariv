@@ -227,7 +227,7 @@ export default function IntegrationsPage() {
                   api.post("/triggers/auto-setup", { userId: user!.id, appName: connectedAppName }).catch(() => {});
                 }
               } catch {}
-            }, 2000);
+            }, 5000);
             setTimeout(() => clearInterval(setupPoll), 30000);
             // Show modal immediately — don't wait for polling confirmation
             const slug = connectedAppName.toLowerCase().replace(/-/g, "");

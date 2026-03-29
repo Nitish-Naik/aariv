@@ -51,45 +51,51 @@ export function BillingProvider({ children }: { children: ReactNode }) {
         }
     };
 
-    // Initial fetch
+    // Defer initial fetch so it doesn't block first paint
     useEffect(() => {
-        fetchBalance();
+        if (!user) { setIsLoading(false); return; }
+        const id = requestAnimationFrame(() => { fetchBalance(); });
+        return () => cancelAnimationFrame(id);
     }, [user]);
 
-    // Supabase Realtime — update on plan/usage changes
+    // Supabase Realtime — defer subscription until after initial paint
     useEffect(() => {
         if (!user) return;
 
-        const channel = supabase
-            .channel(`billing:${user.id}`)
-            .on(
-                "postgres_changes",
-                {
-                    event: "UPDATE",
-                    schema: "public",
-                    table: "user_credits",
-                    filter: `user_id=eq.${user.id}`,
-                },
-                (payload) => {
-                    const row = payload.new as Record<string, unknown>;
-                    setBalanceData((prev) =>
-                        prev
-                            ? {
-                                ...prev,
-                                subscription_tier: (row.subscription_tier as SubscriptionTier) ?? prev.subscription_tier,
-                                chat_messages_used: parseInt(String(row.chat_messages_used ?? prev.chat_messages_used)),
-                                chat_messages_limit: parseInt(String(row.chat_messages_limit ?? prev.chat_messages_limit)),
-                                trigger_fires_today: parseInt(String(row.trigger_fires_today ?? prev.trigger_fires_today)),
-                                trigger_fires_limit: parseInt(String(row.trigger_fires_limit ?? prev.trigger_fires_limit)),
-                            }
-                            : prev
-                    );
-                }
-            )
-            .subscribe();
+        let channel: ReturnType<typeof supabase.channel> | null = null;
+        const timerId = setTimeout(() => {
+            channel = supabase
+                .channel(`billing:${user.id}`)
+                .on(
+                    "postgres_changes",
+                    {
+                        event: "UPDATE",
+                        schema: "public",
+                        table: "user_credits",
+                        filter: `user_id=eq.${user.id}`,
+                    },
+                    (payload) => {
+                        const row = payload.new as Record<string, unknown>;
+                        setBalanceData((prev) =>
+                            prev
+                                ? {
+                                    ...prev,
+                                    subscription_tier: (row.subscription_tier as SubscriptionTier) ?? prev.subscription_tier,
+                                    chat_messages_used: parseInt(String(row.chat_messages_used ?? prev.chat_messages_used)),
+                                    chat_messages_limit: parseInt(String(row.chat_messages_limit ?? prev.chat_messages_limit)),
+                                    trigger_fires_today: parseInt(String(row.trigger_fires_today ?? prev.trigger_fires_today)),
+                                    trigger_fires_limit: parseInt(String(row.trigger_fires_limit ?? prev.trigger_fires_limit)),
+                                }
+                                : prev
+                        );
+                    }
+                )
+                .subscribe();
+        }, 3000);
 
         return () => {
-            supabase.removeChannel(channel);
+            clearTimeout(timerId);
+            if (channel) supabase.removeChannel(channel);
         };
     }, [user]);
 

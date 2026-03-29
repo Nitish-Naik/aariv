@@ -1,8 +1,21 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
+// Routes that never need an auth check — skip Supabase call entirely
+const PUBLIC_PREFIXES = ["/login", "/auth", "/blog", "/integrations", "/terms", "/privacy"];
+
+function isPublicRoute(pathname: string): boolean {
+  if (pathname === "/") return true;
+  return PUBLIC_PREFIXES.some((p) => pathname.startsWith(p));
+}
+
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
+
+  // Skip auth check entirely for public routes — saves ~200-500ms TTFB
+  if (isPublicRoute(request.nextUrl.pathname)) {
+    return supabaseResponse;
+  }
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -25,22 +38,12 @@ export async function middleware(request: NextRequest) {
     },
   );
 
-  // Refresh the auth token on every request
+  // Refresh the auth token only for protected routes
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Redirect unauthenticated users to /login (except public routes)
-  if (
-    !user &&
-    !request.nextUrl.pathname.startsWith("/login") &&
-    !request.nextUrl.pathname.startsWith("/auth") &&
-    !request.nextUrl.pathname.startsWith("/blog") &&
-    !request.nextUrl.pathname.startsWith("/integrations") &&
-    !request.nextUrl.pathname.startsWith("/terms") &&
-    !request.nextUrl.pathname.startsWith("/privacy") &&
-    request.nextUrl.pathname !== "/"
-  ) {
+  if (!user) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);

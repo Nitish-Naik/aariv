@@ -206,15 +206,15 @@ export function Sidebar() {
     if (!user?.id) return;
     const load = () => {
       import("@/lib/api").then(({ api }) => {
-        // Only show inbox badge if user has connected apps
-        api.get("/integrations").then((data) => {
-          const apps = data?.integrations || [];
+        // Fetch integrations and pending review count in parallel
+        Promise.all([
+          api.get("/integrations").catch(() => null),
+          api.get("/review?status=pending").catch(() => null),
+        ]).then(([intData, reviewData]) => {
+          const apps = intData?.integrations || [];
           const hasApps = apps.some((a: any) => a.status === "connected");
-          if (!hasApps) { setPendingCount(0); return; }
-          api.get(`/review?status=pending`).then((d) => {
-            setPendingCount(d?.counts?.total ?? 0);
-          }).catch(() => {});
-        }).catch(() => {});
+          setPendingCount(hasApps ? (reviewData?.counts?.total ?? 0) : 0);
+        });
       });
     };
     load();

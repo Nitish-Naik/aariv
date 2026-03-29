@@ -7,7 +7,7 @@ import Script from "next/script";
 import "./globals.css";
 import { Providers } from "./providers";
 
-const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
+const inter = Inter({ subsets: ["latin"], variable: "--font-sans", display: "swap" });
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://calmpilot.app"),
@@ -81,8 +81,11 @@ export const metadata: Metadata = {
     title: "CalmPilot",
   },
   icons: {
-    icon: [{ url: "/icons/icon-192.svg", type: "image/svg+xml" }],
-    apple: "/icons/icon-192.svg",
+    icon: [
+      { url: "/icons/icon-256.png", type: "image/png", sizes: "256x256" },
+      { url: "/icons/icon-192.svg", type: "image/svg+xml" },
+    ],
+    apple: "/icons/icon-256.png",
   },
   robots: {
     index: true,
@@ -235,7 +238,7 @@ export default function RootLayout({
           <>
             <Script
               src="https://scripts.simpleanalyticscdn.com/latest.js"
-              strategy="afterInteractive"
+              strategy="lazyOnload"
               data-collect-dnt="true"
             />
             <noscript>

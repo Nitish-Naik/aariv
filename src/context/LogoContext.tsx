@@ -14,8 +14,6 @@
  *   <img src={getLogo("gmail")} />
  */
 
-import { useAuth } from "@/context/AuthContext";
-import { api } from "@/lib/api";
 import { getAppLogo, normalizeAppSlug } from "@/lib/platform-logos";
 import { createContext, useContext, useEffect, useState } from "react";
 
@@ -34,7 +32,6 @@ const LogoContext = createContext<LogoContextValue>({
 });
 
 export function LogoProvider({ children }: { children: React.ReactNode }) {
-  const { user } = useAuth();
   const [logoMap, setLogoMap] = useState<LogoMap>(() => {
     if (typeof window === "undefined") return {};
     try {
@@ -52,23 +49,8 @@ export function LogoProvider({ children }: { children: React.ReactNode }) {
     } catch {}
   }, [logoMap]);
 
-  useEffect(() => {
-    if (!user?.id) return;
-    api
-      .get("/integrations")
-      .then((data) => {
-        const map: LogoMap = {};
-        for (const int of data.integrations || []) {
-          if (int.appName) {
-            const slug = normalizeAppSlug(int.appName);
-            // Prefer local SVGs (reliable) over Composio CDN (can be dark/broken)
-            map[slug] = getAppLogo(slug) || int.logo;
-          }
-        }
-        setLogoMap((prev) => ({ ...prev, ...map }));
-      })
-      .catch(() => {});
-  }, [user?.id]);
+  // Logos are resolved locally via getAppLogo() in getLogo() — no API call needed.
+  // This eliminates a redundant /integrations fetch on every dashboard page load.
 
   const getLogo = (slug: string): string | undefined => {
     const key = normalizeAppSlug(slug);
