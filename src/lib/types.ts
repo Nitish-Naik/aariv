@@ -1,6 +1,11 @@
 // Types ported from the Expo app
 export type Platform = string;
 
+/**
+ * Represents a third-party platform integration (e.g. Gmail, Slack, Notion).
+ * `connected` reflects whether the user has an active Composio connection.
+ * `isPro` marks integrations that require a paid subscription tier.
+ */
 export interface PlatformConnection {
   id: string;
   platform: Platform;
@@ -33,6 +38,10 @@ export interface ActionItem {
   requiresApproval: boolean;
 }
 
+/**
+ * A calendar event returned by the AI assistant from any connected calendar
+ * platform. `attendees` contains display names or email addresses.
+ */
 export interface CalendarEvent {
   id: string;
   title: string;
@@ -56,6 +65,11 @@ export interface InboxItem {
   priority?: "low" | "medium" | "high";
 }
 
+/**
+ * Represents an authenticated application user.
+ * Mapped from the Supabase session object on every auth state change.
+ * `googleId` is non-empty only for users who signed in via Google OAuth.
+ */
 export interface User {
   id: string;
   email: string;
@@ -99,11 +113,31 @@ export interface MessageCard {
   timestamp: string;
 }
 
+/**
+ * A collection of structured data cards of a single type produced by an
+ * AI tool call. Rendered as a card list rather than raw JSON in the chat UI.
+ *
+ * @example
+ * ```ts
+ * { cardType: "email", cards: [{ id: "1", sender: "...", ... }] }
+ * ```
+ */
 export interface DataCardGroup {
   cardType: DataCardType;
   cards: (EmailCard | CalendarCard | MessageCard)[];
 }
 
+/**
+ * A single message in a conversation thread.
+ *
+ * - `role` — `"user"` for human input, `"assistant"` for AI responses,
+ *   `"system"` for injected context messages.
+ * - `logs` — tool-call trace entries shown in the reasoning panel.
+ * - `data_cards` — structured tool output rendered as card groups
+ *   (emails, calendar events, messages) instead of plain text.
+ * - `is_proactive` — set when the assistant initiated the message without
+ *   a user prompt (e.g. a trigger-fired briefing).
+ */
 export interface ChatMessage {
   id: string;
   role: "user" | "assistant" | "system";

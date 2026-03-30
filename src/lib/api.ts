@@ -48,9 +48,32 @@ async function handleResponse(response: Response) {
   return response.json();
 }
 
+/**
+ * Centralised HTTP client for all backend requests.
+ *
+ * - Automatically attaches the Supabase JWT as a `Bearer` token.
+ * - Enforces a 30-second timeout on every request (except `stream`).
+ * - Handles 401 (session expiry) by signing out and redirecting to `/login`.
+ * - Handles 402 (quota exceeded) by throwing a typed error with the quota code.
+ * - Throws a friendly `"Could not connect to server"` error on network failure.
+ *
+ * @example
+ * ```ts
+ * const data = await api.get("/user/profile");
+ * await api.post("/chat/send", { message: "Hello" });
+ * ```
+ */
 export const api = {
   getBaseUrl: () => API_URL,
 
+  /**
+   * Sends a `GET` request to the given API endpoint.
+   *
+   * @param endpoint - Path relative to `NEXT_PUBLIC_API_URL` (e.g. `"/user/me"`).
+   * @param options - Optional `RequestInit` overrides (e.g. a custom `signal`).
+   * @returns Parsed JSON response.
+   * @throws On timeout, network failure, 401, 402, or non-2xx status.
+   */
   get: async (endpoint: string, options?: RequestInit) => {
     const headers = await getAuthHeaders();
     const controller = new AbortController();
@@ -79,6 +102,14 @@ export const api = {
     }
   },
 
+  /**
+   * Sends a `POST` request with a JSON-serialised body.
+   *
+   * @param endpoint - Path relative to `NEXT_PUBLIC_API_URL`.
+   * @param body - Request payload; will be JSON-stringified.
+   * @param options - Optional `RequestInit` overrides.
+   * @returns Parsed JSON response.
+   */
   post: async (endpoint: string, body: any, options?: RequestInit) => {
     const headers = await getAuthHeaders();
     const controller = new AbortController();
@@ -109,6 +140,14 @@ export const api = {
     }
   },
 
+  /**
+   * Sends a `PUT` request with a JSON-serialised body.
+   *
+   * @param endpoint - Path relative to `NEXT_PUBLIC_API_URL`.
+   * @param body - Full replacement payload; will be JSON-stringified.
+   * @param options - Optional `RequestInit` overrides.
+   * @returns Parsed JSON response.
+   */
   put: async (endpoint: string, body: any, options?: RequestInit) => {
     const headers = await getAuthHeaders();
     const controller = new AbortController();
@@ -139,6 +178,14 @@ export const api = {
     }
   },
 
+  /**
+   * Sends a `PATCH` request with a JSON-serialised partial body.
+   *
+   * @param endpoint - Path relative to `NEXT_PUBLIC_API_URL`.
+   * @param body - Partial update payload; will be JSON-stringified.
+   * @param options - Optional `RequestInit` overrides.
+   * @returns Parsed JSON response.
+   */
   patch: async (endpoint: string, body: any, options?: RequestInit) => {
     const headers = await getAuthHeaders();
     const controller = new AbortController();
@@ -169,6 +216,13 @@ export const api = {
     }
   },
 
+  /**
+   * Sends a `DELETE` request, optionally including a JSON body.
+   *
+   * @param endpoint - Path relative to `NEXT_PUBLIC_API_URL`.
+   * @param options - Optional `{ data }` object whose value is JSON-stringified as the body.
+   * @returns Parsed JSON response.
+   */
   delete: async (endpoint: string, options?: { data?: any }) => {
     const headers = await getAuthHeaders();
     const controller = new AbortController();
@@ -192,6 +246,17 @@ export const api = {
     }
   },
 
+  /**
+   * Opens a streaming `POST` request and returns the raw `Response` so the
+   * caller can read it as a `ReadableStream` (e.g. for SSE or chunked JSON).
+   * Unlike other methods, `stream` does NOT enforce a timeout or parse the
+   * response body — callers are responsible for handling both.
+   *
+   * @param endpoint - Path relative to `NEXT_PUBLIC_API_URL`.
+   * @param body - Request payload; will be JSON-stringified.
+   * @param signal - Optional `AbortSignal` to cancel the stream.
+   * @returns The raw `Response` object.
+   */
   stream: async (endpoint: string, body: any, signal?: AbortSignal) => {
     const headers = await getAuthHeaders();
     return fetch(`${API_URL}${endpoint}`, {

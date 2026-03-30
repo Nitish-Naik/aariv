@@ -25,6 +25,18 @@ const AuthContext = createContext<AuthContextType>({
   signInWithGoogle: async () => {},
 });
 
+/**
+ * Hook to access authentication state and methods from any component.
+ *
+ * @returns The current `user` object (or `null`), `isLoading` flag,
+ *   `signInWithGoogle`, and `signOut`.
+ *
+ * @example
+ * ```tsx
+ * const { user, signInWithGoogle, signOut } = useAuth();
+ * if (!user) return <LoginButton onClick={signInWithGoogle} />;
+ * ```
+ */
 export function useAuth() {
   return useContext(AuthContext);
 }
@@ -43,6 +55,20 @@ function mapSupabaseUser(sbUser: any): User {
   };
 }
 
+/**
+ * Provides authentication state and methods throughout the app.
+ * Uses Supabase Auth with Google OAuth. On sign-in it syncs user metadata
+ * (name, avatar, timezone) with the backend via `POST /auth/sync`.
+ *
+ * Wrap the component tree with this provider once, near the root layout.
+ *
+ * @example
+ * ```tsx
+ * <AuthProvider>
+ *   <App />
+ * </AuthProvider>
+ * ```
+ */
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -82,6 +108,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
+  /**
+   * Posts user metadata to the backend after a successful sign-in.
+   * Deduplicates calls using `lastSyncedUserIdRef` so the backend receives
+   * at most one sync request per user session.
+   * Sync failure is intentionally non-fatal — the user can still use the app.
+   *
+   * @param mappedUser - The locally mapped `User` object derived from Supabase session data.
+   */
   async function syncWithBackend(mappedUser: User) {
     if (lastSyncedUserIdRef.current === mappedUser.id) return;
     lastSyncedUserIdRef.current = mappedUser.id;
@@ -97,6 +131,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  /**
+   * Initiates the Google OAuth flow via Supabase.
+   * Requests offline access and forces the consent screen so a refresh token
+   * is always returned. Redirects back to `/auth/callback` on completion.
+   *
+   * @throws If Supabase returns an OAuth error.
+   */
   const signInWithGoogle = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
@@ -111,6 +152,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (error) throw error;
   };
 
+  /**
+   * Signs the current user out of Supabase, clears local user state,
+   * and redirects the browser to `/login`.
+   */
   const signOut = async () => {
     await supabase.auth.signOut();
     setUser(null);

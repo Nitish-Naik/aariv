@@ -7,6 +7,13 @@ import { useAuth } from "./AuthContext";
 
 export type SubscriptionTier = "free" | "starter" | "pro";
 
+/**
+ * Represents the user's current billing quota and subscription status,
+ * as returned by `GET /billing/balance/:userId`.
+ *
+ * `in_grace_period` is set when a user has exceeded their plan limit but
+ * is still within a grace window before enforcement kicks in.
+ */
 export interface BillingBalance {
     subscription_tier: SubscriptionTier;
     chat_messages_used: number;
@@ -26,6 +33,19 @@ interface BillingContextValue {
 
 const BillingContext = createContext<BillingContextValue | null>(null);
 
+/**
+ * Fetches and caches billing quota data for the authenticated user.
+ * Subscribes to Supabase Realtime on the `user_credits` table so quota
+ * counters update instantly without polling. The initial fetch and the
+ * Realtime subscription are both deferred to avoid blocking first paint.
+ *
+ * @example
+ * ```tsx
+ * <BillingProvider>
+ *   <App />
+ * </BillingProvider>
+ * ```
+ */
 export function BillingProvider({ children }: { children: ReactNode }) {
     const { user } = useAuth();
     const [balanceData, setBalanceData] = useState<BillingBalance | null>(null);
@@ -106,6 +126,21 @@ export function BillingProvider({ children }: { children: ReactNode }) {
     );
 }
 
+/**
+ * Hook to access billing quota and subscription data from any component.
+ * Must be rendered inside `BillingProvider`.
+ *
+ * @returns `balanceData`, `isLoading`, `error`, and a `refetch` function
+ *   to manually refresh quota from the backend.
+ *
+ * @throws If called outside of `BillingProvider`.
+ *
+ * @example
+ * ```tsx
+ * const { balanceData } = useBilling();
+ * const remaining = balanceData?.chat_messages_limit - balanceData?.chat_messages_used;
+ * ```
+ */
 export function useBilling(): BillingContextValue {
     const ctx = useContext(BillingContext);
     if (!ctx) throw new Error("useBilling must be used within a BillingProvider");

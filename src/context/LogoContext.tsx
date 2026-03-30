@@ -52,6 +52,15 @@ export function LogoProvider({ children }: { children: React.ReactNode }) {
   // Logos are resolved locally via getAppLogo() in getLogo() — no API call needed.
   // This eliminates a redundant /integrations fetch on every dashboard page load.
 
+  /**
+   * Resolves a platform logo URL for the given app slug.
+   * Applies the fallback chain described at the top of this file:
+   * cached map → inline SVG data-URI → Composio CDN.
+   *
+   * @param slug - The app identifier (e.g. `"gmail"`, `"GOOGLECALENDAR"`).
+   *   Normalised internally, so casing and dashes do not matter.
+   * @returns A URL string, or `undefined` if no logo is available.
+   */
   const getLogo = (slug: string): string | undefined => {
     const key = normalizeAppSlug(slug);
     return logoMap[key] ?? getAppLogo(key);
@@ -64,6 +73,18 @@ export function LogoProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
+/**
+ * Hook to access the `getLogo` helper from any component.
+ *
+ * @returns `{ logoMap, getLogo }` — `getLogo(slug)` returns a resolved logo
+ *   URL or `undefined`.
+ *
+ * @example
+ * ```tsx
+ * const { getLogo } = useLogo();
+ * <img src={getLogo("gmail")} alt="Gmail" />
+ * ```
+ */
 export function useLogo() {
   return useContext(LogoContext);
 }

@@ -39,6 +39,20 @@ const TOAST_ICON: Record<ToastType, { icon: typeof Check; color: string }> = {
 
 /* ─── Provider ────────────────────────────────────────── */
 
+/**
+ * Renders an animated, Apple-style toast notification stack fixed to the
+ * bottom-center of the viewport. Exposes `toast`, `success`, `error`, and
+ * `info` methods via `ToastContext`.
+ *
+ * Each toast auto-dismisses after `duration` ms (default 4 000 ms).
+ *
+ * @example
+ * ```tsx
+ * <ToastProvider>
+ *   <App />
+ * </ToastProvider>
+ * ```
+ */
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
@@ -101,6 +115,23 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 
 /* ─── Hook ────────────────────────────────────────────── */
 
+/**
+ * Hook to show toast notifications from any component.
+ * Must be rendered inside `ToastProvider`.
+ *
+ * @returns Methods:
+ *   - `toast(message, type?, duration?)` — generic, defaults to `"success"` / 4 000 ms
+ *   - `success(message)` — green checkmark toast
+ *   - `error(message)` — red warning toast
+ *   - `info(message)` — blue info toast
+ *
+ * @example
+ * ```tsx
+ * const { success, error } = useToast();
+ * success("Saved!");
+ * error("Something went wrong.");
+ * ```
+ */
 export function useToast() {
   return useContext(ToastContext);
 }

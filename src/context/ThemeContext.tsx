@@ -16,6 +16,17 @@ const ThemeContext = createContext<ThemeContextType>({
   toggleTheme: () => {},
 });
 
+/**
+ * Hook to access the current theme and toggle it from any component.
+ *
+ * @returns `theme` (`"light"` | `"dark"`), `isDark` boolean shorthand,
+ *   and `toggleTheme` to flip between the two.
+ *
+ * @example
+ * ```tsx
+ * const { isDark, toggleTheme } = useTheme();
+ * ```
+ */
 export function useTheme() {
   return useContext(ThemeContext);
 }
@@ -44,6 +55,11 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem("calmpilot-theme", theme);
   }, [theme]);
 
+  /**
+   * Flips between `"light"` and `"dark"`, persisting the preference to
+   * `localStorage` under the key `calmpilot-theme` and applying the
+   * `dark` class to `document.documentElement` accordingly.
+   */
   const toggleTheme = () => {
     setTheme((prev) => (prev === "light" ? "dark" : "light"));
   };
