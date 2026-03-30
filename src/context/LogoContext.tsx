@@ -31,6 +31,19 @@ const LogoContext = createContext<LogoContextValue>({
   getLogo: () => undefined,
 });
 
+/**
+ * Fetches and caches platform logo URLs for the entire session.
+ * Logos are resolved locally via `getAppLogo()` — no API call is made.
+ * The resulting logo map is persisted in `sessionStorage` under the key
+ * `calmpilot_logo_map_v1` to avoid redundant lookups across renders.
+ *
+ * @example
+ * ```tsx
+ * <LogoProvider>
+ *   <App />
+ * </LogoProvider>
+ * ```
+ */
 export function LogoProvider({ children }: { children: React.ReactNode }) {
   const [logoMap, setLogoMap] = useState<LogoMap>(() => {
     if (typeof window === "undefined") return {};

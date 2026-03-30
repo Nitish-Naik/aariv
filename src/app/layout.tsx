@@ -84,7 +84,9 @@ export const metadata: Metadata = {
     icon: [
       { url: "/icons/icon-256.png", type: "image/png", sizes: "256x256" },
       { url: "/icons/icon-192.svg", type: "image/svg+xml" },
+      { url: "/icons/icon-256.png", rel: "icon", sizes: "any" },
     ],
+    shortcut: "/icons/icon-256.png",
     apple: "/icons/icon-256.png",
   },
   robots: {
@@ -173,7 +175,7 @@ const faqJsonLd = {
       name: "What apps does CalmPilot integrate with?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "CalmPilot integrates with Gmail, Google Calendar, and Slack via OAuth — with more integrations coming soon. All connections are secure, password-free, and revocable at any time.",
+        text: "CalmPilot integrates with 1000+ apps including Gmail, Google Calendar, Slack, GitHub, Linear, Notion, Discord, Stripe, Jira, Trello, and many more via secure OAuth. All connections are password-free and revocable at any time.",
       },
     },
     {

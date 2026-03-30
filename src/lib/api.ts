@@ -64,8 +64,6 @@ async function handleResponse(response: Response) {
  * ```
  */
 export const api = {
-  getBaseUrl: () => API_URL,
-
   /**
    * Sends a `GET` request to the given API endpoint.
    *
@@ -267,6 +265,22 @@ export const api = {
     });
   },
 
+  /**
+   * Returns the base API URL resolved from `NEXT_PUBLIC_API_URL`,
+   * falling back to `http://localhost:8080/api` in local development.
+   *
+   * @returns The base URL string (no trailing slash).
+   */
+  getBaseUrl: () => API_URL,
+
+  /**
+   * Fetches the list of active Composio connections for the authenticated user
+   * from `GET /chat/connections`. Unlike other methods, this call does not
+   * enforce a timeout — it uses the raw `fetch` with auth headers.
+   *
+   * @returns Parsed JSON response containing the array of connections.
+   * @throws On non-2xx status codes or network failure.
+   */
   getConnections: async () => {
     const headers = await getAuthHeaders();
     const response = await fetch(`${API_URL}/chat/connections`, {

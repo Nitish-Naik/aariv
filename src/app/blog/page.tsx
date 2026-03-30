@@ -1,4 +1,19 @@
+import { Metadata } from "next";
 import Link from "next/link";
+
+export const metadata: Metadata = {
+  title: "Blog — CalmPilot",
+  description:
+    "Product updates and automation playbooks. Deep dives on workflows, integrations, and AI agent best practices.",
+  alternates: { canonical: "https://calmpilot.app/blog" },
+  openGraph: {
+    title: "Blog — CalmPilot",
+    description:
+      "Product updates and automation playbooks from the CalmPilot team.",
+    url: "https://calmpilot.app/blog",
+    type: "website",
+  },
+};
 
 export default function BlogPage() {
   return (

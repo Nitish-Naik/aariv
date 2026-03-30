@@ -27,9 +27,26 @@ export const metadata: Metadata = {
   },
 };
 
+const breadcrumbJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: [
+    {
+      "@type": "ListItem",
+      position: 1,
+      name: "Home",
+      item: "https://calmpilot.app",
+    },
+  ],
+};
+
 export default function Home() {
   return (
     <div className="min-h-screen bg-black text-zinc-200 font-sans selection:bg-neutral-800">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
       <Navbar />
 
       <main>

@@ -31,6 +31,22 @@ export function useTheme() {
   return useContext(ThemeContext);
 }
 
+/**
+ * Provides theme state (`"light"` | `"dark"`) throughout the app.
+ * Reads the initial theme from `localStorage` (`calmpilot-theme`) or
+ * the OS `prefers-color-scheme` media query, and applies the `dark` class
+ * to `document.documentElement` whenever the theme changes.
+ *
+ * Automatically migrates the legacy `aariv-theme` key to `calmpilot-theme`
+ * on first render.
+ *
+ * @example
+ * ```tsx
+ * <ThemeProvider>
+ *   <App />
+ * </ThemeProvider>
+ * ```
+ */
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setTheme] = useState<ThemeType>("dark");
 

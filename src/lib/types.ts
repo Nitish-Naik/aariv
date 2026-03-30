@@ -18,6 +18,11 @@ export interface PlatformConnection {
   permissions: string[];
 }
 
+/**
+ * A proposed action that the AI assistant wants to execute on behalf of the user.
+ * Actions require explicit approval when `requiresApproval` is `true`.
+ * They expire at `expiresAt` and transition through `pending → approved/rejected → executed`.
+ */
 export interface ActionItem {
   id: string;
   type:
@@ -79,6 +84,11 @@ export interface User {
   subscriptionTier?: "free" | "starter" | "pro";
 }
 
+/**
+ * An OAuth re-authorization action returned by the assistant when a connected
+ * integration requires the user to re-grant permissions.
+ * `url` is the Composio-generated OAuth redirect link.
+ */
 export interface AuthAction {
   appName: string;
   url: string;
@@ -160,6 +170,11 @@ export interface ChatMessage {
   completions?: string[];
 }
 
+/**
+ * A top-level conversation thread belonging to a user.
+ * Each conversation contains an ordered sequence of `ChatMessage` objects
+ * stored on the backend and identified by `id`.
+ */
 export interface Conversation {
   id: string;
   title: string;
