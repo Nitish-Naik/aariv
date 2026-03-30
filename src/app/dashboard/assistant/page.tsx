@@ -724,13 +724,14 @@ function AssistantPageInner() {
             History
           </span>
           <div className="flex items-center gap-1">
+            {/* 
             <button
               onClick={handleNewChat}
               className="p-1.5 rounded-full text-muted-foreground hover:text-foreground hover:bg-white/[0.06] transition-all duration-200"
               title="New chat"
             >
               <Plus strokeWidth={1.5} size={16} />
-            </button>
+            </button> */ }
             <button
               onClick={() => setIsSidebarOpen(false)}
               className="p-1.5 rounded-full text-muted-foreground hover:text-foreground hover:bg-white/[0.06] transition-all duration-200 lg:hidden"

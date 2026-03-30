@@ -1034,7 +1034,7 @@ export default function SettingsPage() {
               </div>
 
               {/* Trigger fires */}
-              <div>
+              {/* <div>
                 <div className="flex items-center justify-between text-xs mb-1.5">
                   <span className="text-muted-foreground">Trigger fires today</span>
                   <span className="text-foreground font-medium tabular-nums">
@@ -1051,7 +1051,7 @@ export default function SettingsPage() {
                     />
                   </div>
                 )}
-              </div>
+              </div> */}
             </div>
 
             {/* Upgrade nudge for free tier */}
