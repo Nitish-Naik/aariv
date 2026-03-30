@@ -175,6 +175,13 @@ export default function IntegrationsPage() {
       const app = params.get("app") || "App";
       const appSlug = app.toLowerCase().replace(/-/g, "");
       api.post("/triggers/auto-setup", { userId: user!.id, appName: app }).catch(() => {});
+
+      // If running inside a popup (opened by window.open), close it and let the main tab handle the UI
+      if (window.opener) {
+        try { window.close(); } catch {}
+        return;
+      }
+
       setPostConnectApp(appSlug);
       window.history.replaceState({}, "", "/dashboard/integrations");
     }
