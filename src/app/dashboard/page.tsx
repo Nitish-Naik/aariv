@@ -1380,6 +1380,8 @@ export default function DashboardHome() {
   const [showNudge, setShowNudge] = useState(false);
   const [connectedApps, setConnectedApps] = useState<string[]>([]);
   const [newEventCount, setNewEventCount] = useState(0);
+  const [bootstrapMode, setBootstrapMode] = useState(false);
+  const bootstrapPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const fetchingRef = useRef(false);
 
   const fetchBriefingRef = useRef<((silent?: boolean) => void) | null>(null);
@@ -1463,8 +1465,43 @@ export default function DashboardHome() {
   fetchBriefingRef.current = fetchBriefing;
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("bootstrap") === "true") {
+      setBootstrapMode(true);
+      window.history.replaceState({}, "", "/dashboard");
+      const poll = setInterval(async () => {
+        try {
+          const status = await api.get("/dashboard/bootstrap-status");
+          if (status.bootstrap_status === "completed" || status.bootstrap_status === "failed") {
+            clearInterval(poll);
+            setBootstrapMode(false);
+            fetchBriefing();
+          }
+        } catch {
+          // Ignore poll errors
+        }
+      }, 3000);
+      bootstrapPollRef.current = poll;
+      // Safety timeout: stop polling after 60 seconds and try anyway
+      setTimeout(() => {
+        if (bootstrapPollRef.current) {
+          clearInterval(bootstrapPollRef.current);
+          bootstrapPollRef.current = null;
+          setBootstrapMode(false);
+          fetchBriefing();
+        }
+      }, 60000);
+      return;
+    }
     fetchBriefing();
   }, [fetchBriefing]);
+
+  // Cleanup bootstrap poll on unmount
+  useEffect(() => {
+    return () => {
+      if (bootstrapPollRef.current) clearInterval(bootstrapPollRef.current);
+    };
+  }, []);
 
   // ── Supabase Realtime: listen for new trigger events ──
   useEffect(() => {
@@ -1482,9 +1519,10 @@ export default function DashboardHome() {
         },
         (payload: any) => {
           setNewEventCount((prev) => prev + 1);
-          // Auto-refresh when a calendar trigger fires
           const slug = payload?.new?.trigger_slug || "";
-          if (slug.startsWith("GOOGLECALENDAR")) {
+          const source = payload?.new?.source || "";
+          // Auto-refresh on bootstrap events or calendar triggers
+          if (source === "bootstrap" || slug.startsWith("GOOGLECALENDAR")) {
             fetchBriefingRef.current?.(true);
           }
         },
@@ -1513,6 +1551,25 @@ export default function DashboardHome() {
   };
 
   const firstName = user?.name?.split(" ")[0] || "there";
+
+  if (bootstrapMode) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] px-6 text-center">
+        <Logo className="w-12 h-12 mx-auto mb-6 animate-pulse" />
+        <h2 className="text-lg font-semibold text-foreground mb-2">
+          Preparing your briefing, {firstName}...
+        </h2>
+        <p className="text-sm text-muted-foreground max-w-xs mb-8">
+          CalmPilot is reading your recent emails and calendar to create your
+          first daily briefing. This takes about 30 seconds.
+        </p>
+        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+          <RefreshCw size={14} className="animate-spin" />
+          <span>Fetching your data...</span>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) return <LoadingSkeleton firstName={firstName} />;
 

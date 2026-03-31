@@ -129,18 +129,25 @@ function PostConnectModal({
           {/* CTAs */}
           <div className="flex flex-col gap-2">
             <Link
+              href="/dashboard?bootstrap=true"
+              onClick={() => onClose()}
+              className="w-full text-center px-4 py-2.5 bg-white text-black text-sm font-semibold rounded-full hover:bg-zinc-100 active:scale-[0.97] transition-all duration-200"
+            >
+              See your briefing →
+            </Link>
+            <Link
               href="/dashboard/assistant"
               onClick={() => {
                 setPendingPrompt(appPrompt.prompt);
                 onClose();
               }}
-              className="w-full text-center px-4 py-2.5 bg-white text-black text-sm font-semibold rounded-full hover:bg-zinc-100 active:scale-[0.97] transition-all duration-200"
+              className="w-full text-center px-4 py-2.5 text-sm font-medium text-zinc-500 hover:text-white rounded-full hover:bg-white/[0.05] transition-all duration-200"
             >
               {appPrompt.cta}
             </Link>
             <button
               onClick={onClose}
-              className="w-full text-center px-4 py-2.5 text-sm font-medium text-zinc-500 hover:text-white rounded-full hover:bg-white/[0.05] transition-all duration-200"
+              className="w-full text-center px-4 py-2.5 text-sm font-medium text-zinc-400 hover:text-white rounded-full hover:bg-white/[0.03] transition-all duration-200"
             >
               Connect another app
             </button>
