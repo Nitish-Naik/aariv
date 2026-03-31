@@ -126,14 +126,14 @@ function PostConnectModal({
             <span className="text-[13px] text-emerald-300">Triggers are now monitoring your {appName}</span>
           </div>
 
-          {/* CTAs */}
+          {/* CTAs — contextual based on which app was connected */}
           <div className="flex flex-col gap-2">
             <Link
               href="/dashboard?bootstrap=true"
               onClick={() => onClose()}
               className="w-full text-center px-4 py-2.5 bg-white text-black text-sm font-semibold rounded-full hover:bg-zinc-100 active:scale-[0.97] transition-all duration-200"
             >
-              See your briefing →
+              {appSlug === "googlecalendar" ? "See your schedule →" : appSlug === "gmail" ? "See your briefing →" : "See your dashboard →"}
             </Link>
             <Link
               href="/dashboard/assistant"
