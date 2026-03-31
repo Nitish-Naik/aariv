@@ -593,13 +593,14 @@ function AssistantPageInner() {
 
                     return {
                       ...msg,
-                      content: event.data.response,
+                      // Use streamed tokens (msg.content) — only fall back to event.data.response if no tokens received
+                      content: msg.content || event.data.response || "",
                       auth_actions:
                         event.data.auth_actions?.length > 0
                           ? event.data.auth_actions
                           : msg.auth_actions,
                       logs: finalLogs,
-                      completions: parseCompletions(event.data.response || ""),
+                      completions: parseCompletions(msg.content || event.data.response || ""),
                     };
                   } else if (
                     event.type === "insufficient_credits" ||

@@ -1067,16 +1067,16 @@ function CalmState({
             )}
             {!calendarConnected && (
               <Link
-                href="/dashboard/integrations"
+                href="/dashboard/integrations?connect=googlecalendar"
                 className="flex items-center gap-2 group"
               >
                 <Calendar
                   strokeWidth={1.5}
                   size={14}
-                  className="text-muted-foreground"
+                  className="text-indigo-400/70"
                 />
                 <span className="text-sm text-indigo-400 group-hover:text-indigo-300 font-medium transition-colors">
-                  Connect calendar
+                  Add your schedule
                 </span>
               </Link>
             )}
@@ -1150,6 +1150,7 @@ function ActiveState({
   reviewCounts,
   onRefresh,
   refreshing,
+  connectedApps = [],
 }: {
   firstName: string;
   briefing: Briefing;
@@ -1157,6 +1158,7 @@ function ActiveState({
   reviewCounts: ReviewCounts;
   onRefresh?: () => void;
   refreshing?: boolean;
+  connectedApps?: string[];
 }) {
   const router = useRouter();
   const setPendingPrompt = usePromptStore((s) => s.setPendingPrompt);
@@ -1270,7 +1272,7 @@ function ActiveState({
 
         {/* Schedule */}
         <div className="lg:col-span-1">
-          <ScheduleSection />
+          <ScheduleSection calendarConnected={connectedApps.includes("googlecalendar")} />
         </div>
       </div>
     </div>
@@ -1547,18 +1549,42 @@ export default function DashboardHome() {
   if (bootstrapMode) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] px-6 text-center">
-        <Logo className="w-12 h-12 mx-auto mb-6 animate-pulse" />
-        <h2 className="text-lg font-semibold text-foreground mb-2">
+        {/* Subtle glow behind logo */}
+        <div className="relative mb-8">
+          <div className="absolute inset-0 w-16 h-16 rounded-full bg-indigo-500/20 blur-xl mx-auto" />
+          <Logo className="relative w-14 h-14 mx-auto animate-pulse" />
+        </div>
+
+        <h2 className="text-xl font-semibold text-foreground mb-2 tracking-[-0.02em]">
           Preparing your briefing, {firstName}...
         </h2>
-        <p className="text-sm text-muted-foreground max-w-xs mb-8">
-          CalmPilot is connecting to your apps and preparing your first
-          daily briefing. This takes about 30 seconds.
+        <p className="text-sm text-muted-foreground max-w-sm mb-10 leading-relaxed">
+          CalmPilot is reading your recent emails and preparing your first morning briefing.
         </p>
-        <div className="flex items-center gap-3 text-xs text-muted-foreground">
-          <RefreshCw size={14} className="animate-spin" />
-          <span>Fetching your data...</span>
+
+        {/* Animated steps */}
+        <div className="w-full max-w-xs space-y-3 mb-8">
+          <div className="flex items-center gap-3 text-left">
+            <div className="w-5 h-5 rounded-full bg-emerald-500/20 flex items-center justify-center shrink-0">
+              <CheckCircle2 size={12} className="text-emerald-400" />
+            </div>
+            <span className="text-xs text-emerald-400">Gmail connected</span>
+          </div>
+          <div className="flex items-center gap-3 text-left">
+            <div className="w-5 h-5 rounded-full bg-indigo-500/20 flex items-center justify-center shrink-0">
+              <RefreshCw size={10} className="text-indigo-400 animate-spin" />
+            </div>
+            <span className="text-xs text-muted-foreground">Fetching your recent emails...</span>
+          </div>
+          <div className="flex items-center gap-3 text-left opacity-40">
+            <div className="w-5 h-5 rounded-full bg-white/[0.06] flex items-center justify-center shrink-0">
+              <Sparkles size={10} className="text-muted-foreground" />
+            </div>
+            <span className="text-xs text-muted-foreground">Generating your briefing</span>
+          </div>
         </div>
+
+        <p className="text-[11px] text-muted-foreground/50">Usually takes 15-30 seconds</p>
       </div>
     );
   }
@@ -1620,31 +1646,38 @@ export default function DashboardHome() {
   }
 
   /* Nudge banner */
-  const nudgeBanner = showNudge ? (
-    <div className="mx-6 sm:mx-8 mb-4 flex items-center gap-4 pl-4 border-l-2 border-indigo-500/30">
-      <div className="flex-1 min-w-0">
-        <p className="text-sm text-muted-foreground">
-          {!connectedApps.includes("slack")
-            ? "Connect Slack to include your team messages."
-            : "Connect Google Calendar to include your meetings."}
-        </p>
+  const missingCalendar = !connectedApps.includes("googlecalendar");
+  const missingSlack = !connectedApps.includes("slack");
+  const nudgeApp = missingCalendar ? "googlecalendar" : missingSlack ? "slack" : null;
+  const nudgeBanner = showNudge && nudgeApp ? (
+    <div className="mx-6 sm:mx-8 mb-4 rounded-xl border border-indigo-500/10 bg-indigo-500/[0.03] p-4">
+      <div className="flex items-start gap-3">
+        <Sparkles size={14} className="text-indigo-400 shrink-0 mt-0.5" />
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium text-foreground mb-0.5">
+            {missingCalendar
+              ? "Your briefing is missing your schedule"
+              : "Your briefing is missing your team messages"}
+          </p>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            {missingCalendar
+              ? "Connect Calendar to see meetings, conflicts, and focus time in your daily brief."
+              : "Connect Slack to see channel updates, DMs, and team discussions in your morning brief."}
+          </p>
+        </div>
+        <button
+          onClick={() => router.push(`/dashboard/integrations?connect=${nudgeApp}`)}
+          className="shrink-0 text-xs font-medium text-indigo-400 hover:text-indigo-300 bg-indigo-500/10 hover:bg-indigo-500/20 px-3 py-1.5 rounded-full transition-all duration-200"
+        >
+          Connect
+        </button>
+        <button
+          onClick={dismissNudge}
+          className="shrink-0 text-muted-foreground/50 hover:text-foreground transition-colors"
+        >
+          <X strokeWidth={1.75} size={14} />
+        </button>
       </div>
-      <button
-        onClick={() =>
-          router.push(
-            `/dashboard/integrations?connect=${!connectedApps.includes("slack") ? "slack" : "googlecalendar"}`,
-          )
-        }
-        className="shrink-0 text-sm text-indigo-400 hover:text-indigo-300 font-medium transition-colors"
-      >
-        Connect
-      </button>
-      <button
-        onClick={dismissNudge}
-        className="shrink-0 text-muted-foreground hover:text-foreground transition-colors"
-      >
-        <X strokeWidth={1.75} size={14} />
-      </button>
     </div>
   ) : null;
 
@@ -1692,6 +1725,7 @@ export default function DashboardHome() {
         briefing={briefing}
         logoMap={logoMap}
         reviewCounts={reviewCounts}
+        connectedApps={connectedApps}
         onRefresh={() => {
           setNewEventCount(0);
           fetchBriefing(true);

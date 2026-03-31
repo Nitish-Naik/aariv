@@ -53,15 +53,15 @@ const CORE_APPS = [
 // App-specific prompts for the aha moment
 const APP_PROMPTS: Record<string, { cta: string; prompt: string }> = {
   gmail: {
-    cta: "See what's in my inbox →",
+    cta: "Ask CalmPilot about my emails →",
     prompt: "Summarize my 10 most recent inbox emails. For each, show the sender name, subject, and whether it looks urgent. Group them by priority.",
   },
   googlecalendar: {
-    cta: "See my schedule →",
+    cta: "Ask CalmPilot about my day →",
     prompt: "What's on my calendar today? Show me all meetings with times, and flag any conflicts.",
   },
   slack: {
-    cta: "See my messages →",
+    cta: "Ask CalmPilot about Slack →",
     prompt: "Check my Slack for any unread direct messages and summarize recent activity in my most active channels.",
   },
 };
