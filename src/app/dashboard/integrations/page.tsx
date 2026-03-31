@@ -284,6 +284,7 @@ export default function IntegrationsPage() {
   };
 
   const connectedCount = CORE_APPS.filter((app) => getConnectionStatus(app.slug).connected).length;
+  const isOnboarding = connectedCount < 2 && !loading;
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -300,6 +301,34 @@ export default function IntegrationsPage() {
           )}
         </p>
       </div>
+
+      {/* Onboarding progress banner — shown until 2+ apps connected */}
+      {isOnboarding && (
+        <div className="px-5 sm:px-6 pt-5">
+          <div className="max-w-xl mx-auto">
+            <div className="rounded-2xl border border-indigo-500/10 bg-indigo-500/[0.03] p-5">
+              <p className="text-xs font-medium text-indigo-400 uppercase tracking-wider mb-2">
+                Getting started — {connectedCount === 0 ? "Step 1 of 2" : "Step 2 of 2"}
+              </p>
+              <h2 className="text-[15px] font-semibold text-white mb-1">
+                {connectedCount === 0
+                  ? "Connect Gmail to get your first morning briefing"
+                  : "Connect Calendar or Slack to unlock the full experience"}
+              </h2>
+              <p className="text-xs text-zinc-400 leading-relaxed">
+                {connectedCount === 0
+                  ? "One click. CalmPilot reads your inbox overnight and briefs you in the morning."
+                  : "Gmail is connected! Add Calendar to see your schedule, or Slack for team messages."}
+              </p>
+              {/* Progress dots */}
+              <div className="flex items-center gap-2 mt-4">
+                <div className={`h-1.5 flex-1 rounded-full ${connectedCount >= 1 ? "bg-emerald-400" : "bg-white/[0.08]"}`} />
+                <div className={`h-1.5 flex-1 rounded-full ${connectedCount >= 2 ? "bg-emerald-400" : "bg-white/[0.08]"}`} />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* App cards */}
       <div className="flex-1 px-5 sm:px-6 py-6 sm:py-8">

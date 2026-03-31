@@ -916,67 +916,59 @@ const RECOMMENDED_APPS = [
 
 function OnboardingState({ firstName }: { firstName: string }) {
   const router = useRouter();
-  const { getLogo } = useLogo();
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex-1 flex flex-col items-center justify-center px-6 py-20 max-w-md mx-auto w-full">
+      <div className="flex-1 flex flex-col items-center justify-center px-6 py-20 max-w-sm mx-auto w-full">
         <div className="mb-6">
-          <Logo className="w-11 h-11" />
+          <Logo className="w-12 h-12" />
         </div>
 
-        <h1 className="text-3xl font-semibold text-foreground tracking-[-0.03em] mb-2 text-center">
+        <h1 className="text-2xl font-semibold text-foreground tracking-[-0.03em] mb-2 text-center">
           Welcome, {firstName}
         </h1>
-        <p className="text-base text-muted-foreground text-center mb-12 leading-relaxed">
-          Connect your first app so CalmPilot can start managing your day.
+        <p className="text-sm text-muted-foreground text-center mb-3 leading-relaxed">
+          Let&apos;s set you up in 60 seconds.
         </p>
 
-        <div className="w-full space-y-0 divide-y divide-white/[0.04]">
-          {RECOMMENDED_APPS.map((app) => (
-            <button
-              key={app.slug}
-              onClick={() =>
-                router.push(`/dashboard/integrations?connect=${app.slug}`)
-              }
-              className="w-full flex items-center gap-4 py-5 hover:bg-white/[0.02] transition-colors text-left group -mx-2 px-2 rounded-xl"
-            >
-              <DashboardAppLogo
-                logoUrl={getLogo(app.slug)}
-                alt={app.name}
-                color={app.color}
-                icon={app.icon}
-                className="w-11 h-11 rounded-xl shrink-0"
-              />
-              <div className="flex-1 min-w-0">
-                <p className="text-base font-medium text-foreground">
-                  {app.name}
-                </p>
-                <p className="text-sm text-muted-foreground mt-0.5 truncate">
-                  {app.description}
-                </p>
-              </div>
-              <ArrowRight
-                size={16}
-                className="text-muted-foreground/40 group-hover:text-muted-foreground transition-colors shrink-0"
-              />
-            </button>
-          ))}
+        {/* Steps */}
+        <div className="w-full rounded-2xl border border-white/[0.06] bg-white/[0.015] p-5 mb-6">
+          <div className="flex items-start gap-3 mb-4">
+            <div className="w-6 h-6 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-xs font-bold shrink-0">1</div>
+            <div>
+              <p className="text-sm font-medium text-foreground">Connect Gmail</p>
+              <p className="text-xs text-muted-foreground">CalmPilot reads your inbox overnight</p>
+            </div>
+          </div>
+          <div className="flex items-start gap-3 mb-4 opacity-40">
+            <div className="w-6 h-6 rounded-full bg-white/[0.06] text-muted-foreground flex items-center justify-center text-xs font-bold shrink-0">2</div>
+            <div>
+              <p className="text-sm font-medium text-foreground">See your morning briefing</p>
+              <p className="text-xs text-muted-foreground">Real data from your inbox in 30 seconds</p>
+            </div>
+          </div>
+          <div className="flex items-start gap-3 opacity-40">
+            <div className="w-6 h-6 rounded-full bg-white/[0.06] text-muted-foreground flex items-center justify-center text-xs font-bold shrink-0">3</div>
+            <div>
+              <p className="text-sm font-medium text-foreground">Add Calendar & Slack</p>
+              <p className="text-xs text-muted-foreground">Unlock the full experience</p>
+            </div>
+          </div>
         </div>
 
         <Button
           onClick={() => router.push("/dashboard/integrations")}
-          className="w-full mt-8 gap-2"
+          className="w-full gap-2"
           size="lg"
         >
-          <Plug strokeWidth={1.75} size={15} />
-          Browse all apps
+          <Mail strokeWidth={1.75} size={15} />
+          Connect Gmail to get started
         </Button>
         <button
           onClick={() => router.push("/dashboard/assistant")}
-          className="mt-3 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          className="mt-4 text-xs text-muted-foreground hover:text-foreground transition-colors"
         >
-          Skip to chat
+          Skip — I&apos;ll explore on my own
         </button>
       </div>
     </div>
