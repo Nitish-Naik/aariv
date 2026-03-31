@@ -133,7 +133,7 @@ function PostConnectModal({
               onClick={() => onClose()}
               className="w-full text-center px-4 py-2.5 bg-white text-black text-sm font-semibold rounded-full hover:bg-zinc-100 active:scale-[0.97] transition-all duration-200"
             >
-              {appSlug === "googlecalendar" ? "See your schedule →" : appSlug === "gmail" ? "See your briefing →" : "See your dashboard →"}
+              {appSlug === "googlecalendar" ? "See your schedule →" : appSlug === "gmail" ? "See your briefing →" : appSlug === "slack" ? "See your messages →" : "See your dashboard →"}
             </Link>
             <Link
               href="/dashboard/assistant"

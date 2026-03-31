@@ -1560,8 +1560,8 @@ export default function DashboardHome() {
           Preparing your briefing, {firstName}...
         </h2>
         <p className="text-sm text-muted-foreground max-w-xs mb-8">
-          CalmPilot is reading your recent emails and calendar to create your
-          first daily briefing. This takes about 30 seconds.
+          CalmPilot is connecting to your apps and preparing your first
+          daily briefing. This takes about 30 seconds.
         </p>
         <div className="flex items-center gap-3 text-xs text-muted-foreground">
           <RefreshCw size={14} className="animate-spin" />
