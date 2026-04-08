@@ -84,9 +84,12 @@ export default function Hero() {
                 className="w-4 h-4 group-hover:translate-x-0.5 transition-transform duration-200"
               />
             </Link>
-            <span className="text-sm text-zinc-500">
-              No credit card required
-            </span>
+            <Link
+              href="/demo"
+              className="text-sm text-zinc-400 hover:text-white transition-colors underline underline-offset-4 decoration-zinc-700 hover:decoration-zinc-400"
+            >
+              See a sample briefing →
+            </Link>
           </motion.div>
         </div>
 

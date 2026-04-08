@@ -1460,6 +1460,36 @@ export default function DashboardHome() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
+    if (params.get("instant") === "true") {
+      // Instant mode: user just connected their first app.
+      // Poll bootstrap, then fetch instant briefing so they see data NOW.
+      setBootstrapMode(true);
+      window.history.replaceState({}, "", "/dashboard");
+      const poll = setInterval(async () => {
+        try {
+          const status = await api.get("/dashboard/bootstrap-status");
+          if (status.bootstrap_status === "completed" || status.bootstrap_status === "failed") {
+            clearInterval(poll);
+            setBootstrapMode(false);
+            // Fetch with instant=true to get fresh 24h briefing immediately
+            fetchBriefing();
+          }
+        } catch {
+          // Ignore poll errors
+        }
+      }, 3000);
+      bootstrapPollRef.current = poll;
+      // Safety timeout: stop polling after 60 seconds and try anyway
+      setTimeout(() => {
+        if (bootstrapPollRef.current) {
+          clearInterval(bootstrapPollRef.current);
+          bootstrapPollRef.current = null;
+          setBootstrapMode(false);
+          fetchBriefing();
+        }
+      }, 60000);
+      return;
+    }
     if (params.get("bootstrap") === "true") {
       setBootstrapMode(true);
       window.history.replaceState({}, "", "/dashboard");

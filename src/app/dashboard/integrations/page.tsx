@@ -129,7 +129,7 @@ function PostConnectModal({
           {/* CTAs — contextual based on which app was connected */}
           <div className="flex flex-col gap-2">
             <Link
-              href="/dashboard?bootstrap=true"
+              href="/dashboard?instant=true"
               onClick={() => onClose()}
               className="w-full text-center px-4 py-2.5 bg-white text-black text-sm font-semibold rounded-full hover:bg-zinc-100 active:scale-[0.97] transition-all duration-200"
             >
