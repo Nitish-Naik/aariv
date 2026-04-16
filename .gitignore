@@ -31,7 +31,14 @@ yarn-error.*
 *.pem
 
 # local env files
+.env
+.env.*
 .env*.local
+python-agent/.env
+
+# Google OAuth client secrets — never commit these
+client_secret*.json
+google-services.json
 
 # typescript
 *.tsbuildinfo
@@ -43,4 +50,7 @@ app-example
 /android
 
 
-/python-agent
+/python-agent.mcp.json
+
+# Firecrawl cache — may contain scraped data, cookies, session info
+.firecrawl/

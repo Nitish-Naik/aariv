@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -r logos.composio.dev 'C:\\\\Users\\\\P NITISH\\\\OneDrive\\\\Desktop\\\\aariv\\\\composio' --include=*.md --include=*.mdx)",
+      "Bash(npx shadcn@latest add tooltip dialog dropdown-menu skeleton tabs --yes)",
+      "Bash(npx shadcn@latest add tooltip dialog dropdown-menu skeleton tabs --overwrite --yes)",
+      "Bash(npx shadcn@latest add tooltip dropdown-menu skeleton tabs --overwrite)",
+      "Read(//c/Users/**)",
+      "Bash(xargs ls:*)",
+      "Bash(find /c/Users/P NITISH/Downloads/aariv -type f -name *.tsx)",
+      "Bash(iconv -f UTF-16LE -t UTF-8 'c:/Users/P NITISH/Downloads/aariv/web/.build.log')",
+      "Bash(iconv -f UTF-16 -t UTF-8 \"c:/Users/P NITISH/Downloads/aariv/web/.build.log\")",
+      "Bash(grep -l \"use client\\\\|async\\\\|fetch\\\\|await\" \"/c/Users/P NITISH/Downloads/aariv/web/src/components/secure-agent\"/*.tsx)",
+      "Bash(npm list:*)",
+      "Bash(grep -r \"export const dynamic\\\\|export const revalidate\\\\|generateStaticParams\" /c/Users/P NITISH/Downloads/aariv/web/src/app --include=*.ts --include=*.tsx)"
+    ]
+  }
+}

@@ -24,8 +24,8 @@ services:
       retries: 3
       start_period: 10s
     networks:
-      - aariv-network
+      - calmpilot-network
 
 networks:
-  aariv-network:
+  calmpilot-network:
     driver: bridge
