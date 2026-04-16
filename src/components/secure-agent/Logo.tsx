@@ -1,0 +1,43 @@
+export function Logo({ className = "w-8 h-8" }: { className?: string }) {
+    return (
+        <svg
+            className={className}
+            viewBox="0 0 32 32"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+            aria-hidden="true"
+        >
+            <defs>
+                <linearGradient id="calmGradient" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+                    <stop stopColor="#818cf8" />
+                    <stop offset="1" stopColor="#c084fc" />
+                </linearGradient>
+            </defs>
+
+            {/* 6 Spokes — radiating from center, 60° apart */}
+            {/* Top */}
+            <line x1="16" y1="12.5" x2="16" y2="4.5" stroke="url(#calmGradient)" strokeWidth="1.5" strokeLinecap="round" />
+            {/* Top-right */}
+            <line x1="19.1" y1="14.25" x2="26" y2="10.25" stroke="url(#calmGradient)" strokeWidth="1.5" strokeLinecap="round" />
+            {/* Bottom-right */}
+            <line x1="19.1" y1="17.75" x2="26" y2="21.75" stroke="url(#calmGradient)" strokeWidth="1.5" strokeLinecap="round" />
+            {/* Bottom */}
+            <line x1="16" y1="19.5" x2="16" y2="27.5" stroke="url(#calmGradient)" strokeWidth="1.5" strokeLinecap="round" />
+            {/* Bottom-left */}
+            <line x1="12.9" y1="17.75" x2="6" y2="21.75" stroke="url(#calmGradient)" strokeWidth="1.5" strokeLinecap="round" />
+            {/* Top-left */}
+            <line x1="12.9" y1="14.25" x2="6" y2="10.25" stroke="url(#calmGradient)" strokeWidth="1.5" strokeLinecap="round" />
+
+            {/* 6 Outer nodes — connected apps */}
+            <circle cx="16" cy="3.5" r="2" fill="url(#calmGradient)" fillOpacity="0.9" />
+            <circle cx="26.4" cy="9.5" r="2" fill="url(#calmGradient)" fillOpacity="0.7" />
+            <circle cx="26.4" cy="22.5" r="2" fill="url(#calmGradient)" fillOpacity="0.5" />
+            <circle cx="16" cy="28.5" r="2" fill="url(#calmGradient)" fillOpacity="0.7" />
+            <circle cx="5.6" cy="22.5" r="2" fill="url(#calmGradient)" fillOpacity="0.9" />
+            <circle cx="5.6" cy="9.5" r="2" fill="url(#calmGradient)" fillOpacity="0.6" />
+
+            {/* Center hub — the pilot */}
+            <circle cx="16" cy="16" r="4" fill="url(#calmGradient)" />
+        </svg>
+    );
+}
